@@ -1,0 +1,69 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "asOf": "2026-08-01",
+    "accuracy": "control status per ISW / Critical Threats assessments; coordinates are settlement centroids"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Pokrovsk", "kind": "hotspot", "rank": 1, "status": "Held by Ukraine, under sustained pressure", "note": "Donetsk oblast rail junction and logistics hub. The focal point of Russia's slow-moving offensive for more than a year; repeated assaults have been repelled." },
+      "geometry": { "type": "Point", "coordinates": [37.18, 48.28] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Kupiansk", "kind": "hotspot", "rank": 1, "status": "Held by Ukraine, contested", "note": "Kharkiv oblast town on the Oskil River. Changed hands early in the war and remains an infiltration front." },
+      "geometry": { "type": "Point", "coordinates": [37.62, 49.71] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Kostiantynivka", "kind": "hotspot", "rank": 2, "status": "Held by Ukraine, contested", "note": "Southern anchor of the Sloviansk–Kramatorsk agglomeration and the next objective beyond Chasiv Yar." },
+      "geometry": { "type": "Point", "coordinates": [37.72, 48.53] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Chasiv Yar", "kind": "hotspot", "rank": 2, "status": "Contested", "note": "High ground west of Bakhmut. Whoever holds the ridge has observation over the approaches to Kostiantynivka." },
+      "geometry": { "type": "Point", "coordinates": [37.83, 48.59] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Toretsk", "kind": "hotspot", "rank": 3, "status": "Contested", "note": "Mining town on the southern flank of the Donetsk front." },
+      "geometry": { "type": "Point", "coordinates": [37.85, 48.39] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Siversk", "kind": "hotspot", "rank": 3, "status": "Held by Ukraine, contested", "note": "Northern shoulder of the Donetsk salient." },
+      "geometry": { "type": "Point", "coordinates": [38.11, 48.87] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Huliaipole", "kind": "hotspot", "rank": 2, "status": "Held by Ukraine, contested", "note": "Hinge between the Donetsk and Zaporizhzhia sectors." },
+      "geometry": { "type": "Point", "coordinates": [36.26, 47.66] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Orikhiv", "kind": "hotspot", "rank": 3, "status": "Held by Ukraine, contested", "note": "Launch point of Ukraine's 2023 southern counteroffensive; heavily fortified on both sides since." },
+      "geometry": { "type": "Point", "coordinates": [35.79, 47.57] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Vovchansk", "kind": "hotspot", "rank": 3, "status": "Contested", "note": "Northern Kharkiv oblast, a few kilometres from the Russian border." },
+      "geometry": { "type": "Point", "coordinates": [37.09, 50.29] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Zaporizhzhia NPP", "kind": "hotspot", "rank": 1, "status": "Russian-held since March 2022", "note": "Europe's largest nuclear power station, at Enerhodar. All six reactors are shut down; the plant sits beside the line of contact and has repeatedly lost off-site power." },
+      "geometry": { "type": "Point", "coordinates": [34.59, 47.51] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Kerch Strait bridge", "kind": "hotspot", "rank": 1, "status": "Russian-operated, repeatedly struck", "note": "The road and rail link between Russia and Crimea. Damaged in October 2022 and July 2023 and struck since; it remains the spine of Russian logistics into the peninsula." },
+      "geometry": { "type": "Point", "coordinates": [36.53, 45.31] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Kursk border sector", "kind": "hotspot", "rank": 2, "status": "Status uncertain — verify before use", "note": "Ukraine's August 2024 incursion was the first foreign ground operation on Russian soil since the Second World War. Russian counteroffensives have since reduced Ukrainian holdings; check a current source rather than trusting this marker." },
+      "geometry": { "type": "Point", "coordinates": [35.27, 51.19] }
+    }
+  ]
+}

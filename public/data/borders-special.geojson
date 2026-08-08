@@ -1,0 +1,44 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "accuracy": "schematic",
+    "note": "These lines are drawn to communicate that a boundary is contested, not to adjudicate it. Geometry is simplified."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Russia–Ukraine recognised border", "kind": "reference", "rank": 1, "note": "The internationally recognised border. It is not the current line of control — see the line of contact layer for that." },
+      "geometry": { "type": "LineString", "coordinates": [[35.40, 50.45], [36.30, 50.30], [37.15, 50.35], [38.20, 50.30], [39.30, 49.90], [40.20, 49.20], [40.10, 48.70], [39.90, 48.30], [39.70, 47.90], [38.30, 47.10]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Transnistria administrative line", "kind": "de-facto", "rank": 2, "note": "A breakaway strip along the left bank of the Dniester, outside Chișinău's control since 1992 and host to a Russian military presence." },
+      "geometry": { "type": "LineString", "coordinates": [[29.55, 48.25], [29.35, 47.95], [29.10, 47.60], [29.50, 47.20], [29.60, 46.85], [29.95, 46.55], [30.10, 46.42]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Abkhazia administrative line", "kind": "de-facto", "rank": 2, "note": "Georgian territory outside Tbilisi's control since the 1990s, recognised as independent by Russia after the 2008 war." },
+      "geometry": { "type": "LineString", "coordinates": [[40.20, 43.55], [40.80, 43.30], [41.30, 42.95], [41.55, 42.60], [41.60, 42.40]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "South Ossetia administrative line", "kind": "de-facto", "rank": 2, "note": "Georgian territory outside Tbilisi's control, recognised as independent by Russia after the 2008 war. The line has crept south in places through so-called borderisation." },
+      "geometry": { "type": "LineString", "coordinates": [[43.40, 42.55], [43.80, 42.35], [44.20, 42.30], [44.55, 42.45]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Cyprus Green Line", "kind": "de-facto", "rank": 2, "note": "The UN buffer zone dividing the island since 1974. The north is recognised only by Türkiye." },
+      "geometry": { "type": "LineString", "coordinates": [[32.72, 35.10], [33.10, 35.12], [33.37, 35.18], [33.75, 35.32], [34.05, 35.42]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Kosovo–Serbia boundary", "kind": "disputed", "rank": 2, "note": "Kosovo declared independence in 2008. Serbia and several EU members do not recognise it; the northern municipalities remain the friction point." },
+      "geometry": { "type": "LineString", "coordinates": [[20.25, 42.85], [20.60, 43.05], [21.00, 43.10], [21.45, 42.90], [21.75, 42.65]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Armenia–Azerbaijan delimitation", "kind": "disputed", "rank": 2, "note": "Azerbaijan regained Nagorno-Karabakh in 2023. Formal delimitation of the interstate border is still incomplete, including around the exclaves and the Syunik corridor." },
+      "geometry": { "type": "LineString", "coordinates": [[45.00, 41.25], [45.40, 40.70], [45.90, 40.00], [46.35, 39.35], [46.55, 38.90]] }
+    }
+  ]
+}

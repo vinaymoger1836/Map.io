@@ -1,0 +1,59 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "asOf": "2026-08-01",
+    "accuracy": "approximate",
+    "note": "Hand-simplified outline for cartographic display, not an operational product. Replace geometry from a sourced dataset before relying on it. Reference reading: ISW / Critical Threats daily control-of-terrain assessments.",
+    "editing": "Keep the property names (name, kind, rank, note, status). Coordinates are [longitude, latitude]."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Russian-occupied mainland Ukraine",
+        "kind": "occupied",
+        "rank": 1,
+        "status": "Under Russian control",
+        "note": "Covers most of Luhansk oblast, much of Donetsk, southern Zaporizhzhia and the left bank of Kherson oblast. Roughly a fifth of Ukraine's internationally recognised territory is under Russian control when Crimea is included."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [38.20, 50.30], [38.70, 50.10], [39.30, 49.90], [40.00, 49.60],
+            [40.20, 49.20], [40.10, 48.70], [39.90, 48.30], [39.70, 47.90],
+            [38.90, 47.55], [38.30, 47.10], [37.55, 47.09], [36.79, 46.75],
+            [35.90, 46.60], [35.40, 46.40], [34.80, 46.20], [34.10, 46.12],
+            [33.40, 46.20], [32.35, 46.40], [32.70, 46.70], [33.37, 46.75],
+            [34.00, 47.05], [34.60, 47.35], [35.10, 47.52], [35.70, 47.52],
+            [36.26, 47.62], [36.88, 47.85], [37.15, 48.10], [37.40, 48.28],
+            [37.70, 48.40], [37.80, 48.55], [37.90, 48.70], [38.10, 48.90],
+            [37.95, 49.05], [37.66, 49.35], [37.62, 49.72], [37.60, 50.05],
+            [37.15, 50.35], [38.20, 50.30]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Crimea",
+        "kind": "occupied-2014",
+        "rank": 1,
+        "status": "Annexed by Russia in 2014",
+        "note": "Annexed in 2014 in a move most of the international community does not recognise. Home to Sevastopol and the historic headquarters of the Black Sea Fleet, much of which has since relocated east to Novorossiysk under Ukrainian strike pressure."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [33.60, 45.95], [34.60, 46.10], [35.00, 45.90], [35.80, 45.55],
+            [36.60, 45.45], [36.20, 45.15], [35.40, 45.30], [34.80, 44.80],
+            [34.00, 44.40], [33.40, 44.55], [32.50, 45.30], [33.10, 45.60],
+            [33.60, 45.95]
+          ]
+        ]
+      }
+    }
+  ]
+}

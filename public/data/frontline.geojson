@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "asOf": "2026-08-01",
+    "accuracy": "approximate",
+    "note": "The line of contact runs roughly 1,000 km. Through mid-2026 it moved by villages and treelines rather than by regions; ISW assessed Russian gains through July 2026 at well under 2 km² per day.",
+    "editing": "The band drawn either side of this line represents the contested zone. Widen or narrow it in lib/mapLayers.ts (layer ctl-front-band)."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Line of contact",
+        "kind": "front",
+        "rank": 1,
+        "note": "From northern Kharkiv oblast, south along the Oskil, through the Donetsk oblast agglomerations, west across Zaporizhzhia, then along the Dnipro to the Black Sea."
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.15, 50.35], [37.60, 50.05], [37.62, 49.72], [37.66, 49.35],
+          [37.95, 49.05], [38.10, 48.90], [37.90, 48.70], [37.80, 48.55],
+          [37.70, 48.40], [37.40, 48.28], [37.15, 48.10], [36.88, 47.85],
+          [36.26, 47.62], [35.70, 47.52], [35.10, 47.52], [34.60, 47.35],
+          [34.00, 47.05], [33.37, 46.75], [32.70, 46.70], [32.35, 46.40]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "note": "Ports and settlements that anchor Arctic shipping and basing."
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Murmansk",
+    "kind": "port",
+    "rank": 1,
+    "note": "Russia’s only large ice-free Arctic port, western terminal of the Northern Sea Route and base of the nuclear icebreaker fleet."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     33.08,
+     68.97
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sabetta",
+    "kind": "port",
+    "rank": 1,
+    "note": "Purpose-built LNG port on the Yamal Peninsula, the commercial reason the route exists."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     72.05,
+     71.27
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Dudinka",
+    "kind": "port",
+    "rank": 2,
+    "note": "River port serving Norilsk’s nickel and palladium output."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     86.18,
+     69.41
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tiksi",
+    "kind": "port",
+    "rank": 2,
+    "note": "Lena delta port and a reactivated Russian military airfield."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     128.87,
+     71.63
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Pevek",
+    "kind": "port",
+    "rank": 2,
+    "note": "Eastern Russian Arctic port, powered by a floating nuclear plant."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     170.31,
+     69.7
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Longyearbyen",
+    "kind": "port",
+    "rank": 2,
+    "note": "Svalbard’s main settlement. The archipelago is Norwegian, but the 1920 treaty gives signatories — including Russia — equal commercial access."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     15.65,
+     78.22
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kirkenes",
+    "kind": "port",
+    "rank": 2,
+    "note": "Norwegian port on the Russian border, once pitched as a European rail head for Arctic shipping."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     30.05,
+     69.73
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Nuuk",
+    "kind": "port",
+    "rank": 2,
+    "note": "Capital of Greenland, the pivot of renewed strategic interest in the North Atlantic."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -51.72,
+     64.18
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Utqiaġvik",
+    "kind": "port",
+    "rank": 3,
+    "note": "Northernmost settlement in the United States, near the Bering approach to the route."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -156.79,
+     71.29
+    ]
+   }
+  }
+ ]
+}

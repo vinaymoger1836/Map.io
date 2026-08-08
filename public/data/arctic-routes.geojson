@@ -1,0 +1,128 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "accuracy": "schematic corridors"
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Northern Sea Route",
+    "kind": "nsr",
+    "rank": 1,
+    "note": "Murmansk to the Bering Strait along the Russian Arctic coast. Roughly 40 percent shorter than the Suez route between north-west Europe and north-east Asia, and controlled through a Russian permitting and icebreaker escort regime."
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      33.08,
+      68.97
+     ],
+     [
+      40,
+      69.6
+     ],
+     [
+      48,
+      70.2
+     ],
+     [
+      58.5,
+      70.4
+     ],
+     [
+      66,
+      72.5
+     ],
+     [
+      72.05,
+      71.27
+     ],
+     [
+      78,
+      74.5
+     ],
+     [
+      90,
+      76.5
+     ],
+     [
+      104,
+      77.7
+     ],
+     [
+      116,
+      76.5
+     ],
+     [
+      130,
+      75.8
+     ],
+     [
+      142,
+      75.2
+     ],
+     [
+      155,
+      73.5
+     ],
+     [
+      168,
+      70.5
+     ],
+     [
+      -172,
+      67.5
+     ],
+     [
+      -169,
+      65.8
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Transpolar Sea Route (projected)",
+    "kind": "nsr",
+    "rank": 2,
+    "note": "A straight-line crossing over the pole through international waters, viable only if summer ice keeps retreating. It would bypass Russian jurisdiction entirely, which is precisely why it matters politically."
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      10,
+      71
+     ],
+     [
+      15,
+      78
+     ],
+     [
+      30,
+      84
+     ],
+     [
+      90,
+      89
+     ],
+     [
+      -170,
+      84
+     ],
+     [
+      -170,
+      74
+     ],
+     [
+      -169,
+      65.8
+     ]
+    ]
+   }
+  }
+ ]
+}

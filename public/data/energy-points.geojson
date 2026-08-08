@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "metadata": { "accuracy": "coordinates approximate to the facility, not surveyed" },
+  "features": [
+    { "type": "Feature", "properties": { "name": "Świnoujście LNG", "kind": "lng", "rank": 1, "note": "Poland's first LNG import terminal and the anchor of its move off Russian pipeline gas." }, "geometry": { "type": "Point", "coordinates": [14.25, 53.92] } },
+    { "type": "Feature", "properties": { "name": "Klaipėda FSRU", "kind": "lng", "rank": 2, "note": "The floating terminal that ended Lithuania's single-supplier dependence, in service since 2014." }, "geometry": { "type": "Point", "coordinates": [21.10, 55.72] } },
+    { "type": "Feature", "properties": { "name": "Wilhelmshaven LNG", "kind": "lng", "rank": 1, "note": "Germany's first import terminal, stood up in months over the winter of 2022–23." }, "geometry": { "type": "Point", "coordinates": [8.15, 53.51] } },
+    { "type": "Feature", "properties": { "name": "Gate terminal, Rotterdam", "kind": "lng", "rank": 2, "note": "One of north-west Europe's main import and reload hubs." }, "geometry": { "type": "Point", "coordinates": [4.02, 51.96] } },
+    { "type": "Feature", "properties": { "name": "Zeebrugge LNG", "kind": "lng", "rank": 2, "note": "Import and transshipment terminal, historically a reload point for Russian Arctic cargoes." }, "geometry": { "type": "Point", "coordinates": [3.19, 51.33] } },
+    { "type": "Feature", "properties": { "name": "Sines LNG", "kind": "lng", "rank": 3, "note": "Iberia's Atlantic import point; the peninsula's weak pipeline links to France limit how much reaches the rest of the EU." }, "geometry": { "type": "Point", "coordinates": [-8.87, 37.95] } },
+    { "type": "Feature", "properties": { "name": "Revithoussa LNG", "kind": "lng", "rank": 3, "note": "Greek import terminal feeding the Balkan interconnectors." }, "geometry": { "type": "Point", "coordinates": [23.38, 37.96] } },
+    { "type": "Feature", "properties": { "name": "Alexandroupolis FSRU", "kind": "lng", "rank": 3, "note": "Northern Greek terminal built to push gas north into Bulgaria and beyond." }, "geometry": { "type": "Point", "coordinates": [25.87, 40.83] } },
+    { "type": "Feature", "properties": { "name": "Inkoo FSRU", "kind": "lng", "rank": 3, "note": "Finland's chartered floating terminal, commissioned after Russian pipeline supply was cut in 2022." }, "geometry": { "type": "Point", "coordinates": [24.00, 59.99] } },
+    { "type": "Feature", "properties": { "name": "Yamal LNG, Sabetta", "kind": "lng", "rank": 1, "note": "Russia's flagship Arctic LNG plant and port on the Ob Gulf, shipping east along the Northern Sea Route in summer and west year-round." }, "geometry": { "type": "Point", "coordinates": [72.05, 71.27] } },
+
+    { "type": "Feature", "properties": { "name": "Schwedt refinery", "kind": "refinery", "rank": 2, "note": "Supplies much of Berlin and eastern Germany; converted from Druzhba crude to seaborne imports via Rostock and Gdańsk." }, "geometry": { "type": "Point", "coordinates": [14.28, 53.06] } },
+    { "type": "Feature", "properties": { "name": "Ryazan refinery", "kind": "refinery", "rank": 2, "note": "One of Russia's largest, and a recurring target of long-range Ukrainian drone strikes." }, "geometry": { "type": "Point", "coordinates": [39.66, 54.55] } },
+    { "type": "Feature", "properties": { "name": "Volgograd refinery", "kind": "refinery", "rank": 3, "note": "Southern Russian processing hub within reach of Ukrainian deep strikes." }, "geometry": { "type": "Point", "coordinates": [44.55, 48.66] } },
+    { "type": "Feature", "properties": { "name": "Kirishi refinery", "kind": "refinery", "rank": 3, "note": "North-western Russia's main refinery, feeding the Baltic export terminals." }, "geometry": { "type": "Point", "coordinates": [32.06, 59.45] } },
+    { "type": "Feature", "properties": { "name": "Tuapse refinery", "kind": "refinery", "rank": 3, "note": "Black Sea coast refinery and export terminal." }, "geometry": { "type": "Point", "coordinates": [39.08, 44.10] } },
+    { "type": "Feature", "properties": { "name": "Omsk refinery", "kind": "refinery", "rank": 3, "note": "Russia's largest by capacity, deep in Siberia and far from the front." }, "geometry": { "type": "Point", "coordinates": [73.30, 54.95] } },
+    { "type": "Feature", "properties": { "name": "Primorsk oil terminal", "kind": "refinery", "rank": 2, "note": "The main Baltic crude export outlet and a key loading point for the shadow tanker fleet." }, "geometry": { "type": "Point", "coordinates": [28.61, 60.34] } },
+    { "type": "Feature", "properties": { "name": "Novorossiysk oil terminal", "kind": "refinery", "rank": 2, "note": "Black Sea export hub, including the outlet for the Caspian Pipeline Consortium carrying Kazakh crude." }, "geometry": { "type": "Point", "coordinates": [37.79, 44.70] } }
+  ]
+}

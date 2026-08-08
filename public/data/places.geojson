@@ -1,0 +1,1268 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "note": "Rank drives zoom-dependent visibility. Regenerate with scripts/generate-data.mjs."
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Moscow",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     37.62,
+     55.75
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kyiv",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     30.52,
+     50.45
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "London",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.13,
+     51.51
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Paris",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.35,
+     48.86
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Berlin",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.4,
+     52.52
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Warsaw",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     21.01,
+     52.23
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Istanbul",
+    "kind": "city",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.98,
+     41.01
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Madrid",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -3.7,
+     40.42
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Rome",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.5,
+     41.9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Brussels",
+    "kind": "capital",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.35,
+     50.85
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Ankara",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     32.86,
+     39.93
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Saint Petersburg",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     30.34,
+     59.93
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Minsk",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     27.57,
+     53.9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Vilnius",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.28,
+     54.69
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Riga",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.11,
+     56.95
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tallinn",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.75,
+     59.44
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Helsinki",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.94,
+     60.17
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Stockholm",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     18.07,
+     59.33
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Oslo",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.75,
+     59.91
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Copenhagen",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.57,
+     55.68
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Amsterdam",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.9,
+     52.37
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Vienna",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     16.37,
+     48.21
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Prague",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     14.42,
+     50.09
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Budapest",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     19.04,
+     47.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bucharest",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.1,
+     44.43
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sofia",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.32,
+     42.7
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Belgrade",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     20.46,
+     44.79
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Zagreb",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     15.98,
+     45.81
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Athens",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.73,
+     37.98
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bern",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.45,
+     46.95
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Lisbon",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -9.14,
+     38.72
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Dublin",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -6.26,
+     53.35
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Reykjavík",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -21.94,
+     64.15
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bratislava",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     17.11,
+     48.15
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Ljubljana",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     14.51,
+     46.06
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Chișinău",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.86,
+     47.01
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tbilisi",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     44.79,
+     41.72
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Yerevan",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     44.51,
+     40.18
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Baku",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     49.87,
+     40.41
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Astana",
+    "kind": "capital",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     71.43,
+     51.13
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kharkiv",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     36.23,
+     49.99
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Odesa",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     30.73,
+     46.48
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Lviv",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     24.03,
+     49.84
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Dnipro",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     35.05,
+     48.47
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kaliningrad",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     20.51,
+     54.71
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Murmansk",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     33.08,
+     68.97
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Rostov-on-Don",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.72,
+     47.24
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Yekaterinburg",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     60.6,
+     56.84
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Novosibirsk",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     82.93,
+     55.03
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Vladivostok",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     131.89,
+     43.12
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sevastopol",
+    "kind": "city",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     33.52,
+     44.62
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sarajevo",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     18.41,
+     43.86
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Skopje",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     21.43,
+     42
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tirana",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     19.82,
+     41.33
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Podgorica",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     19.26,
+     42.44
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Pristina",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     21.17,
+     42.66
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Luxembourg",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.13,
+     49.61
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Nicosia",
+    "kind": "capital",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     33.36,
+     35.17
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Zaporizhzhia",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     35.14,
+     47.84
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kherson",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     32.62,
+     46.64
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mykolaiv",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     31.99,
+     46.98
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kramatorsk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     37.55,
+     48.73
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sloviansk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     37.6,
+     48.85
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Donetsk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     37.8,
+     48
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Luhansk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.32,
+     48.57
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mariupol",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     37.55,
+     47.1
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Melitopol",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     35.37,
+     46.85
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Simferopol",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34.1,
+     44.95
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sumy",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34.8,
+     50.91
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Chernihiv",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     31.29,
+     51.49
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Belgorod",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     36.59,
+     50.6
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kursk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     36.19,
+     51.73
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bryansk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34.36,
+     53.24
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Voronezh",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.2,
+     51.67
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Volgograd",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     44.52,
+     48.71
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sochi",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.73,
+     43.6
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Arkhangelsk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     40.54,
+     64.54
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Norilsk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     88.2,
+     69.35
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Narva",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.19,
+     59.38
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gdańsk",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     18.65,
+     54.35
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Rzeszów",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     22,
+     50.04
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Constanța",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.65,
+     44.18
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Varna",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     27.92,
+     43.21
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Trabzon",
+    "kind": "city",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     39.72,
+     41
+    ]
+   }
+  }
+ ]
+}

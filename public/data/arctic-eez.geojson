@@ -1,0 +1,163 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "accuracy": "schematic — these are political claims, drawn to show that they overlap, not to represent submitted coordinates"
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Russian extended shelf submission",
+    "kind": "eez",
+    "claimant": "Russia",
+    "rank": 1,
+    "note": "Russia claims the Lomonosov and Mendeleev ridges as natural prolongations of its continental shelf, which would carry its seabed rights across the pole. Submitted to the UN shelf commission; overlapping with Danish and Canadian claims."
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       32,
+       69.5
+      ],
+      [
+       60,
+       70.5
+      ],
+      [
+       90,
+       76
+      ],
+      [
+       120,
+       73.5
+      ],
+      [
+       150,
+       70
+      ],
+      [
+       170,
+       68.5
+      ],
+      [
+       170,
+       89.6
+      ],
+      [
+       101,
+       89.9
+      ],
+      [
+       32,
+       89.6
+      ],
+      [
+       32,
+       69.5
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Danish (Greenland) shelf submission",
+    "kind": "eez",
+    "claimant": "Denmark",
+    "rank": 2,
+    "note": "Denmark filed a claim on Greenland’s behalf covering the Lomonosov Ridge beyond the pole — the largest of the Arctic submissions and directly overlapping Russia’s."
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -60,
+       82.5
+      ],
+      [
+       -40,
+       83.5
+      ],
+      [
+       -20,
+       82.5
+      ],
+      [
+       0,
+       81.5
+      ],
+      [
+       0,
+       89.6
+      ],
+      [
+       -30,
+       89.9
+      ],
+      [
+       -60,
+       89.6
+      ],
+      [
+       -60,
+       82.5
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Canadian shelf submission",
+    "kind": "eez",
+    "claimant": "Canada",
+    "rank": 2,
+    "note": "Canada’s submission also runs along the Lomonosov Ridge toward the pole. Separately, Canada treats the Northwest Passage as internal waters, which the United States disputes."
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -140,
+       71
+      ],
+      [
+       -120,
+       74
+      ],
+      [
+       -100,
+       79
+      ],
+      [
+       -80,
+       81
+      ],
+      [
+       -80,
+       89.6
+      ],
+      [
+       -110,
+       89.9
+      ],
+      [
+       -140,
+       89.6
+      ],
+      [
+       -140,
+       71
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

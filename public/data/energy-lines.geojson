@@ -1,0 +1,59 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "accuracy": "schematic corridors, not surveyed routes",
+    "note": "Status values are active or idle. Idle covers pipelines that are physically damaged, mothballed, or not currently flowing."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Nord Stream 1", "kind": "gas", "status": "idle", "rank": 1, "note": "Vyborg to Greifswald across the Baltic. Sabotaged in September 2022 and out of service since." },
+      "geometry": { "type": "LineString", "coordinates": [[28.75, 60.71], [27.00, 59.90], [22.00, 58.50], [18.50, 56.50], [15.50, 55.20], [13.45, 54.13]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Nord Stream 2", "kind": "gas", "status": "idle", "rank": 2, "note": "Completed but never commercially certified; one of its two strings survived the 2022 sabotage." },
+      "geometry": { "type": "LineString", "coordinates": [[28.28, 59.67], [26.00, 59.00], [21.00, 57.50], [17.50, 55.80], [14.50, 54.60], [13.45, 54.13]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Yamal–Europe", "kind": "gas", "status": "idle", "rank": 2, "note": "Across Belarus and Poland to Frankfurt (Oder). Westbound flows stopped in 2022." },
+      "geometry": { "type": "LineString", "coordinates": [[36.70, 57.05], [32.00, 55.50], [27.50, 53.90], [23.70, 52.60], [20.00, 52.40], [16.50, 52.40], [14.55, 52.34]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Urengoy–Pomary–Uzhhorod (Brotherhood)", "kind": "gas", "status": "idle", "rank": 2, "note": "The Soviet-era trunk line across Ukraine. Russian gas transit through it ended when the transit agreement expired at the start of 2025." },
+      "geometry": { "type": "LineString", "coordinates": [[38.00, 55.00], [34.00, 52.50], [31.00, 50.60], [28.00, 50.20], [25.50, 49.30], [22.30, 48.62]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "TurkStream", "kind": "gas", "status": "active", "rank": 1, "note": "Anapa to Kıyıköy under the Black Sea, then north through Bulgaria. The last significant pipeline route for Russian gas into south-eastern Europe." },
+      "geometry": { "type": "LineString", "coordinates": [[37.32, 44.90], [35.00, 43.30], [32.00, 42.30], [29.50, 41.80], [28.10, 41.63], [27.20, 42.00], [26.30, 42.70], [25.50, 43.50], [24.50, 44.30], [23.30, 45.00], [22.20, 45.80]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Druzhba (northern branch)", "kind": "oil", "status": "idle", "rank": 2, "note": "Samara to Schwedt via Mozyr. Germany and Poland stopped taking Russian crude through it; the German section now runs on seaborne imports." },
+      "geometry": { "type": "LineString", "coordinates": [[50.15, 53.20], [46.00, 53.00], [40.00, 52.70], [35.00, 52.40], [31.00, 52.20], [29.25, 52.05], [26.00, 52.30], [23.50, 52.60], [21.00, 52.50], [18.00, 52.70], [15.50, 53.00], [14.28, 53.06]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Druzhba (southern branch)", "kind": "oil", "status": "active", "rank": 2, "note": "Mozyr south into Slovakia and Hungary, which retained exemptions from the EU crude embargo." },
+      "geometry": { "type": "LineString", "coordinates": [[29.25, 52.05], [27.50, 51.00], [26.00, 50.00], [24.00, 49.00], [22.00, 48.60], [20.50, 48.50], [19.05, 47.50]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Power of Siberia", "kind": "gas", "status": "active", "rank": 1, "note": "Chayanda field to the Chinese border at Blagoveshchensk. The eastward pivot of Russian gas exports after Europe." },
+      "geometry": { "type": "LineString", "coordinates": [[108.00, 60.50], [112.00, 58.00], [118.00, 55.50], [124.00, 52.50], [127.53, 50.28]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Baltic Pipe", "kind": "gas", "status": "active", "rank": 2, "note": "Norwegian gas to Poland via Denmark, commissioned in 2022 as a direct substitute for Yamal volumes." },
+      "geometry": { "type": "LineString", "coordinates": [[3.50, 58.50], [6.00, 57.00], [8.50, 56.20], [11.00, 55.50], [13.50, 54.90], [15.05, 54.10]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Southern Gas Corridor (TANAP/TAP)", "kind": "gas", "status": "active", "rank": 1, "note": "Caspian gas from Shah Deniz across Türkiye and Greece to Italy — the only major non-Russian pipeline corridor into the EU from the east." },
+      "geometry": { "type": "LineString", "coordinates": [[49.87, 40.41], [46.00, 40.60], [43.00, 40.50], [39.50, 40.00], [36.00, 39.70], [32.00, 39.60], [28.50, 40.30], [26.30, 40.60], [24.50, 40.80], [22.00, 40.90], [20.50, 40.50], [19.40, 40.40], [18.42, 40.28]] }
+    }
+  ]
+}
