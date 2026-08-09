@@ -1,11 +1,11 @@
-import { ARCTIC, BORDERS, CONTROL, ENERGY, MILITARY } from './theme';
+import { ARCTIC, BORDERS, CONTROL, ENERGY, MILITARY, WATER } from './theme';
 
 /**
  * One registry drives both the map and the panel. The panel row *is* the
  * legend key — there is no second legend to fall out of sync.
  */
 
-export type SwatchShape = 'fill' | 'line' | 'dash' | 'dot' | 'band' | 'ring';
+export type SwatchShape = 'fill' | 'line' | 'dash' | 'dot' | 'band' | 'ring' | 'text';
 
 export interface Swatch {
   shape: SwatchShape;
@@ -36,36 +36,36 @@ export const GROUPS: LayerGroup[] = [
   {
     id: 'control',
     title: 'Russia–Ukraine',
-    note: 'Control of terrain as of 1 August 2026, hand-simplified. Treat it as orientation, not as an operational picture.',
-    open: true,
+    note: 'Control of terrain as of 1 August 2026, hand-simplified. Treat it as orientation, not as an operational picture. Off by default — switch on what you want to see.',
+    open: false,
     keys: [
       {
         id: 'ctl-occupied',
         label: 'Occupied since 2022',
         swatch: { shape: 'fill', color: CONTROL.occupied },
         layers: ['ctl-occupied-fill', 'ctl-occupied-line'],
-        on: true,
+        on: false,
       },
       {
         id: 'ctl-crimea',
         label: 'Annexed in 2014',
         swatch: { shape: 'fill', color: CONTROL.occupiedSince2014 },
         layers: ['ctl-crimea-fill', 'ctl-crimea-line'],
-        on: true,
+        on: false,
       },
       {
         id: 'ctl-front',
         label: 'Line of contact',
         swatch: { shape: 'band', color: CONTROL.frontline },
         layers: ['ctl-front-band', 'ctl-front-line'],
-        on: true,
+        on: false,
       },
       {
         id: 'ctl-hotspots',
         label: 'Contested points',
         swatch: { shape: 'ring', color: CONTROL.hotspot },
         layers: ['ctl-hotspot-ring', 'ctl-hotspot-dot', 'ctl-hotspot-label'],
-        on: true,
+        on: false,
       },
     ],
   },
@@ -87,14 +87,14 @@ export const GROUPS: LayerGroup[] = [
         label: 'NATO member outlines',
         swatch: { shape: 'line', color: BORDERS.nato },
         layers: ['bd-nato'],
-        on: true,
+        on: false,
       },
       {
         id: 'bd-eu',
         label: 'EU member outlines',
         swatch: { shape: 'line', color: BORDERS.eu },
         layers: ['bd-eu'],
-        on: true,
+        on: false,
       },
       {
         id: 'bd-csto',
@@ -108,14 +108,14 @@ export const GROUPS: LayerGroup[] = [
         label: 'De facto lines of control',
         swatch: { shape: 'dash', color: BORDERS.deFacto },
         layers: ['bd-defacto'],
-        on: true,
+        on: false,
       },
       {
         id: 'bd-disputed',
         label: 'Disputed boundaries',
         swatch: { shape: 'dash', color: BORDERS.disputed },
         layers: ['bd-disputed'],
-        on: true,
+        on: false,
       },
       {
         id: 'bd-reference',
@@ -302,6 +302,28 @@ export const GROUPS: LayerGroup[] = [
         label: 'Cities',
         swatch: { shape: 'dot', color: '#8C9AAA' },
         layers: ['pl-city-dot', 'pl-city-label'],
+        on: true,
+      },
+    ],
+  },
+  {
+    id: 'waters',
+    title: 'Waters',
+    note: 'Names only. The anchor point sits in open water near the middle of each body — it is not the extent of it. Water names sit at the bottom of the label stack, so they give way wherever a place name wants the same spot.',
+    open: false,
+    keys: [
+      {
+        id: 'wt-ocean',
+        label: 'Oceans',
+        swatch: { shape: 'text', color: WATER.ocean },
+        layers: ['wt-ocean-label'],
+        on: true,
+      },
+      {
+        id: 'wt-sea',
+        label: 'Seas, gulfs and straits',
+        swatch: { shape: 'text', color: WATER.sea },
+        layers: ['wt-sea-label'],
         on: true,
       },
     ],

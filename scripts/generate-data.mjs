@@ -306,3 +306,73 @@ write(
     { note: 'Ports and settlements that anchor Arctic shipping and basing.' }
   )
 );
+
+/* ------------------------------------------------------------------ */
+/* Waters — [name, lon, lat, rank, kind]                               */
+/* Label anchors, not geometry: each point sits in open water near the */
+/* middle of the body it names, so the label lands clear of any coast. */
+/* ------------------------------------------------------------------ */
+
+const WATERS = [
+  ['Atlantic Ocean', -22.0, 44.0, 1, 'ocean'],
+  ['Arctic Ocean', 10.0, 84.0, 1, 'ocean'],
+  ['Pacific Ocean', 165.0, 40.0, 2, 'ocean'],
+
+  ['Mediterranean Sea', 17.5, 35.0, 1, 'sea'],
+  ['Black Sea', 34.0, 43.3, 1, 'sea'],
+  ['Baltic Sea', 19.5, 57.5, 1, 'sea'],
+  ['North Sea', 3.5, 56.0, 1, 'sea'],
+  ['Norwegian Sea', 2.0, 68.0, 1, 'sea'],
+  ['Barents Sea', 40.0, 74.0, 1, 'sea'],
+  ['Kara Sea', 75.0, 74.0, 1, 'sea'],
+  ['Caspian Sea', 50.5, 41.5, 1, 'sea'],
+
+  ['Greenland Sea', -5.0, 76.0, 2, 'sea'],
+  ['Sea of Azov', 36.5, 46.1, 2, 'sea'],
+  ['Aegean Sea', 25.0, 38.0, 2, 'sea'],
+  ['Adriatic Sea', 15.5, 43.0, 2, 'sea'],
+  ['Ionian Sea', 18.5, 38.0, 2, 'sea'],
+  ['Tyrrhenian Sea', 12.0, 39.8, 2, 'sea'],
+  ['Bay of Biscay', -5.0, 45.3, 2, 'sea'],
+  ['English Channel', -1.0, 50.0, 2, 'sea'],
+  ['Irish Sea', -5.2, 53.7, 2, 'sea'],
+  ['Celtic Sea', -8.0, 50.5, 2, 'sea'],
+  ['Gulf of Bothnia', 20.5, 62.5, 2, 'sea'],
+  ['Gulf of Finland', 25.5, 60.0, 2, 'sea'],
+  ['White Sea', 38.0, 65.5, 2, 'sea'],
+  ['Skagerrak', 9.0, 57.8, 2, 'sea'],
+  ['Sea of Marmara', 28.0, 40.7, 2, 'sea'],
+  ['Laptev Sea', 125.0, 75.0, 2, 'sea'],
+  ['East Siberian Sea', 160.0, 73.0, 2, 'sea'],
+  ['Chukchi Sea', -175.0, 70.0, 2, 'sea'],
+  ['Bering Sea', 178.0, 58.0, 2, 'sea'],
+  ['Sea of Okhotsk', 150.0, 53.0, 2, 'sea'],
+  ['Sea of Japan', 135.0, 40.0, 2, 'sea'],
+  ['Beaufort Sea', -140.0, 72.0, 2, 'sea'],
+  ['Baffin Bay', -68.0, 74.0, 2, 'sea'],
+  ['Labrador Sea', -55.0, 58.0, 2, 'sea'],
+  ['Denmark Strait', -27.0, 67.0, 2, 'sea'],
+  ['Red Sea', 38.0, 22.0, 2, 'sea'],
+  ['Persian Gulf', 51.5, 27.0, 2, 'sea'],
+  ['Hudson Bay', -85.0, 60.0, 2, 'sea'],
+
+  ['Kattegat', 11.5, 56.8, 3, 'sea'],
+  ['Gulf of Riga', 23.5, 57.7, 3, 'sea'],
+  ['Ligurian Sea', 8.8, 43.5, 3, 'sea'],
+  ['Balearic Sea', 2.0, 40.0, 3, 'sea'],
+  ['Alboran Sea', -3.0, 36.0, 3, 'sea'],
+  ['Levantine Sea', 32.0, 34.0, 3, 'sea'],
+  ['Strait of Gibraltar', -5.6, 35.9, 3, 'sea'],
+  ['Kerch Strait', 36.5, 45.3, 3, 'sea'],
+  ['Pechora Sea', 55.0, 69.5, 3, 'sea'],
+  ['Gulf of Ob', 73.0, 70.0, 3, 'sea'],
+  ['Aral Sea', 59.5, 45.0, 3, 'sea'],
+];
+
+write(
+  'waters.geojson',
+  fc(
+    WATERS.map(([name, lon, lat, rank, kind]) => point(lon, lat, { name, kind, rank })),
+    { note: 'Ocean and sea name anchors. Points position a label; they are not the extent of the water body.' }
+  )
+);

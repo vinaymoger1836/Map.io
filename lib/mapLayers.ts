@@ -5,7 +5,7 @@ import type {
 } from 'maplibre-gl';
 import { BLOCS } from './blocs';
 import type { MapData } from './data';
-import { ARCTIC, BORDERS, CHROME, CONTROL, ENERGY, MILITARY, TIERS } from './theme';
+import { ARCTIC, BORDERS, CHROME, CONTROL, ENERGY, MILITARY, TIERS, WATER } from './theme';
 
 /* ------------------------------------------------------------------ */
 /* Zoom tiers                                                          */
@@ -122,6 +122,7 @@ export function installLayers(map: MLMap, data: MapData) {
   addSource('arctic-eez', data.arcticEez);
   addSource('arctic-ports', data.arcticPorts);
   addSource('places', data.places);
+  addSource('waters', data.waters);
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const add = (layer: any, before?: string) => {
@@ -140,9 +141,12 @@ export function installLayers(map: MLMap, data: MapData) {
       anchor?: string;
       uppercase?: boolean;
       full?: number;
+      /** Insert under this layer, which also drops it down the collision order. */
+      before?: string;
     }
   ) =>
-    add({
+    add(
+      {
       id,
       type: 'symbol',
       source,
@@ -167,7 +171,9 @@ export function installLayers(map: MLMap, data: MapData) {
         'text-halo-width': 1.4,
         'text-halo-blur': 0.4,
       },
-    });
+      },
+      opts.before
+    );
 
   /* ---------- fills, tucked under the basemap's own labels ---------- */
 
@@ -593,6 +599,33 @@ export function installLayers(map: MLMap, data: MapData) {
     color: CONTROL.hotspot,
     size: 11,
     uppercase: true,
+  });
+
+  // Water names are the lowest-priority text on the map, so they go *under* the
+  // basemap's own symbols. MapLibre places symbols from the top layer down and
+  // the first one to claim a spot keeps it, which means depth is priority:
+  // everything above — our place labels, then the basemap's country names —
+  // gets its position first and the sea name gives way instead of hiding a city.
+  label('wt-sea-label', 'waters', {
+    filter: isKind('sea'),
+    color: WATER.sea,
+    size: 10,
+    uppercase: true,
+    anchor: 'center',
+    offset: [0, 0],
+    full: 0.85,
+    before: firstSymbol,
+  });
+
+  label('wt-ocean-label', 'waters', {
+    filter: isKind('ocean'),
+    color: WATER.ocean,
+    size: 12.5,
+    uppercase: true,
+    anchor: 'center',
+    offset: [0, 0],
+    full: 0.9,
+    before: firstSymbol,
   });
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }

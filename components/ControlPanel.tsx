@@ -58,6 +58,28 @@ function KeySwatch({ swatch }: { swatch: Swatch }) {
     );
   }
 
+  // Label-only layers have no mark on the map, so the key shows the type itself.
+  if (shape === 'text') {
+    return (
+      <span className="key-swatch" style={base}>
+        <span
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'grid',
+            placeItems: 'center',
+            color,
+            fontSize: 9,
+            letterSpacing: '0.14em',
+            lineHeight: 1,
+          }}
+        >
+          Aa
+        </span>
+      </span>
+    );
+  }
+
   if (shape === 'ring') {
     return (
       <span className="key-swatch" style={base}>

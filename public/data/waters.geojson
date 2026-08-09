@@ -1,0 +1,758 @@
+{
+ "type": "FeatureCollection",
+ "metadata": {
+  "note": "Ocean and sea name anchors. Points position a label; they are not the extent of the water body."
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Atlantic Ocean",
+    "kind": "ocean",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -22,
+     44
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Arctic Ocean",
+    "kind": "ocean",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10,
+     84
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Pacific Ocean",
+    "kind": "ocean",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     165,
+     40
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mediterranean Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     17.5,
+     35
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Black Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34,
+     43.3
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Baltic Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     19.5,
+     57.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "North Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.5,
+     56
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Norwegian Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2,
+     68
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Barents Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     40,
+     74
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kara Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     75,
+     74
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Caspian Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     50.5,
+     41.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Greenland Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -5,
+     76
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sea of Azov",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     36.5,
+     46.1
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Aegean Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25,
+     38
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Adriatic Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     15.5,
+     43
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Ionian Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     18.5,
+     38
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tyrrhenian Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12,
+     39.8
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bay of Biscay",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -5,
+     45.3
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "English Channel",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -1,
+     50
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Irish Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -5.2,
+     53.7
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Celtic Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8,
+     50.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Bothnia",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     20.5,
+     62.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Finland",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.5,
+     60
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "White Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     38,
+     65.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Skagerrak",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9,
+     57.8
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sea of Marmara",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28,
+     40.7
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Laptev Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     125,
+     75
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "East Siberian Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     160,
+     73
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Chukchi Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -175,
+     70
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bering Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     178,
+     58
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sea of Okhotsk",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     150,
+     53
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sea of Japan",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     135,
+     40
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Beaufort Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -140,
+     72
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Baffin Bay",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -68,
+     74
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Labrador Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -55,
+     58
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Denmark Strait",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -27,
+     67
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Red Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     38,
+     22
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Persian Gulf",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     51.5,
+     27
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Hudson Bay",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85,
+     60
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kattegat",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.5,
+     56.8
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Riga",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     23.5,
+     57.7
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Ligurian Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     8.8,
+     43.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Balearic Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2,
+     40
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Alboran Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -3,
+     36
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Levantine Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     32,
+     34
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Strait of Gibraltar",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -5.6,
+     35.9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Kerch Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     36.5,
+     45.3
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Pechora Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     55,
+     69.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Ob",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     73,
+     70
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Aral Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     59.5,
+     45
+    ]
+   }
+  }
+ ]
+}

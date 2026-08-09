@@ -41,6 +41,7 @@ export interface MapData {
   arcticEez: FC;
   arcticPorts: FC;
   places: FC;
+  waters: FC;
   /** True when country geometry could not be fetched — blocs and outlines are then empty. */
   countriesFailed: boolean;
 }
@@ -76,6 +77,7 @@ export async function loadMapData(): Promise<MapData> {
     arcticEez,
     arcticPorts,
     places,
+    waters,
   ] = await Promise.all([
     loadCountries(),
     getLocal('control'),
@@ -90,6 +92,7 @@ export async function loadMapData(): Promise<MapData> {
     getLocal('arctic-eez'),
     getLocal('arctic-ports'),
     getLocal('places'),
+    getLocal('waters'),
   ]);
 
   return {
@@ -107,5 +110,6 @@ export async function loadMapData(): Promise<MapData> {
     arcticEez,
     arcticPorts,
     places,
+    waters,
   };
 }

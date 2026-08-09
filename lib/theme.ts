@@ -55,6 +55,15 @@ export const MILITARY = {
   airDefence: '#9B7FD4',
 } as const;
 
+/**
+ * Water body names. These are geography, not data — muted enough to read as
+ * part of the basemap rather than as another thing the map is asserting.
+ */
+export const WATER = {
+  ocean: '#7E9BB2',
+  sea: '#6B87A0',
+} as const;
+
 /** Arctic. */
 export const ARCTIC = {
   iceMax: '#6E93AE',
