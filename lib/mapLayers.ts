@@ -31,6 +31,29 @@ function byTier(full = 1): DataDrivenPropertyValueSpecification<number> {
   ] as unknown as DataDrivenPropertyValueSpecification<number>;
 }
 
+/**
+ * The text a label carries at the current zoom: its name once the feature's
+ * rank has come into tier, an empty string before that.
+ *
+ * Fading `text-opacity` to zero is not enough on its own. A symbol at zero
+ * opacity still claims its box in the collision index, so an out-of-tier label
+ * you cannot see goes on suppressing the ones you can — an invisible Sevastopol
+ * was what kept BLACK SEA off the map. A symbol whose text resolves to an empty
+ * string produces no glyphs and never enters the index at all.
+ */
+function nameByTier(): DataDrivenPropertyValueSpecification<string> {
+  const name = ['get', 'name'];
+  return [
+    'step',
+    ['zoom'],
+    ['case', ['<=', ['get', 'rank'], 1], name, ''],
+    Z2,
+    ['case', ['<=', ['get', 'rank'], 2], name, ''],
+    Z3,
+    name,
+  ] as unknown as DataDrivenPropertyValueSpecification<string>;
+}
+
 /** Same idea for radius: a hidden feature also has no hit area. */
 function radiusByTier(r1: number, r3: number): DataDrivenPropertyValueSpecification<number> {
   return [
@@ -152,7 +175,7 @@ export function installLayers(map: MLMap, data: MapData) {
       source,
       ...(opts.filter ? { filter: opts.filter } : {}),
       layout: {
-        'text-field': ['get', 'name'],
+        'text-field': nameByTier(),
         'text-font': font,
         'text-size': opts.size ?? 11,
         'text-offset': opts.offset ?? [0, 0.95],

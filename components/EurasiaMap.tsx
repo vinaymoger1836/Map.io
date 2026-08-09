@@ -125,7 +125,6 @@ export default function EurasiaMap() {
       dragRotate: false,
     });
     mapRef.current = map;
-    (window as unknown as { __map: MLMap }).__map = map; // TEMP DEBUG
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');

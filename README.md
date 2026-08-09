@@ -13,6 +13,10 @@ npm run dev      # http://localhost:3000
 No API keys. Basemap tiles come from CARTO and OpenFreeMap; country geometry is
 fetched from world-atlas (Natural Earth) on jsDelivr.
 
+It opens quiet: international borders, place names and water names, and nothing
+else. Every other group — the war layers included — starts switched off, so the
+map asserts nothing you did not ask it to.
+
 ---
 
 ## The one thing to read before using this
@@ -45,6 +49,7 @@ up on reload without a rebuild.
 | `military.geojson` | Bases, naval HQs, nuclear and early-warning sites |
 | `arctic-*.geojson` | Sea ice, routes, shelf claims, ports |
 | `places.geojson` | Cities and capitals — regenerate, don't hand-edit |
+| `waters.geojson` | Ocean and sea name anchors — regenerate, don't hand-edit |
 
 Every feature carries the same property vocabulary:
 
@@ -58,7 +63,7 @@ Every feature carries the same property vocabulary:
 }
 ```
 
-`places.geojson` and the Arctic geometry are generated:
+`places.geojson`, `waters.geojson` and the Arctic geometry are generated:
 
 ```bash
 node scripts/generate-data.mjs
@@ -82,6 +87,12 @@ top-level zoom `step` whose branches test the rank — MapLibre requires zoom
 expressions at the top level, which is why the test is nested that way round rather
 than the obvious way. Radius is faded in the same expression as opacity, so a
 feature you can't see also has no click target.
+
+Labels get the same treatment twice over. `nameByTier()` drives `text-field`, so an
+out-of-tier label resolves to an empty string rather than to transparent text —
+opacity alone was not enough, because a symbol at zero opacity still claims its box
+in the collision index and goes on pushing visible labels off the map. An invisible
+`Sevastopol` was what kept `BLACK SEA` from ever being drawn.
 
 The tier boundaries are in `lib/theme.ts`. Change `TIERS` and both the map and the
 readout rail follow.
