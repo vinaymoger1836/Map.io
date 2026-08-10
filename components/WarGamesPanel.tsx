@@ -350,7 +350,7 @@ export default function WarGamesPanel(wg: WarGames) {
               : 'Pick a nation first — units fly their nation’s colour.'
             : tool === 'paint'
               ? 'Click a country to colour it. That colour becomes its units’ colour too.'
-              : 'Click a unit to select it, drag to reposition, Delete to remove.'}
+              : 'Click a unit to select it. Drag it — or its ring — to reposition. Delete removes it.'}
         </p>
       </section>
 

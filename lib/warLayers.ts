@@ -238,7 +238,10 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
     filter: ['==', ['get', 'id'], '__none__'],
     layout: { visibility: 'none' },
     paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 14, 6, 20, 10, 26],
+      // Sized a little wider than the icon it rings, because it doubles as the
+      // grab handle: a ring that merely traces the chip is a highlight you
+      // cannot take hold of.
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 19, 6, 26, 10, 33],
       'circle-color': CHROME.brass,
       'circle-opacity': 0.14,
       'circle-stroke-color': CHROME.brass,

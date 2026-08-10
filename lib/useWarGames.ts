@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Map as MLMap, MapMouseEvent } from 'maplibre-gl';
+import type { Map as MLMap, MapMouseEvent, MapTouchEvent } from 'maplibre-gl';
 
 import { loadWorldData, type WorldData } from './data';
 import { detectFont } from './mapLayers';
@@ -46,6 +46,9 @@ import {
 } from './warLayers';
 
 export type Tool = 'select' | 'paint' | 'deploy';
+
+/** Mouse and touch both carry the two things dragging needs. */
+type PointerLike = MapMouseEvent | MapTouchEvent;
 
 /**
  * What the Deploy tool is holding: one class of unit at an echelon, or a
@@ -448,18 +451,32 @@ export function useWarGames({
     if (!map || !mapReady || !active) return;
 
     const canvas = map.getCanvas();
-    let dragging: { id: string; moved: boolean } | null = null;
+    let drag: {
+      id: string;
+      moved: boolean;
+      lngLat: [number, number];
+      /** Where the unit sat relative to the pointer when it was picked up. */
+      offset: [number, number];
+    } | null = null;
 
-    const unitAt = (e: MapMouseEvent) => {
-      if (!map.getLayer('wg-unit')) return null;
-      const hits = map.queryRenderedFeatures(e.point, { layers: ['wg-unit'] });
-      const id = hits[0]?.properties?.id;
+    /**
+     * What is under the pointer, counting the selection ring as part of the
+     * unit it belongs to. The ring is drawn larger than the icon, so a player
+     * aiming at the obvious highlight would otherwise grab empty ocean — but
+     * an icon under the pointer always wins over a ring around it.
+     */
+    const unitAt = (e: PointerLike) => {
+      const layers = ['wg-unit', 'wg-unit-halo'].filter((id) => map.getLayer(id));
+      if (!layers.length) return null;
+      const hits = map.queryRenderedFeatures(e.point, { layers });
+      const chosen = hits.find((h) => h.layer.id === 'wg-unit') ?? hits[0];
+      const id = chosen?.properties?.id;
       return typeof id === 'string' ? id : null;
     };
 
     const onClick = (e: MapMouseEvent) => {
       // A click that ended a drag is a move, not a selection.
-      if (dragging?.moved) return;
+      if (drag?.moved) return;
 
       if (toolRef.current === 'deploy') {
         deploy([e.lngLat.lng, e.lngLat.lat]);
@@ -484,45 +501,59 @@ export function useWarGames({
       setSelectedId(null);
     };
 
-    const onDown = (e: MapMouseEvent) => {
+    const beginDrag = (e: PointerLike) => {
       if (toolRef.current === 'deploy') return;
       const hit = unitAt(e);
       if (!hit) return;
-      dragging = { id: hit, moved: false };
+      // Grabbing the edge of a unit must not teleport its centre under the
+      // pointer: the unit keeps the offset it was picked up by.
+      const held = boardRef.current.units.find((u) => u.id === hit);
+      const offset: [number, number] = held
+        ? [held.lngLat[0] - e.lngLat.lng, held.lngLat[1] - e.lngLat.lat]
+        : [0, 0];
+      drag = { id: hit, moved: false, lngLat: held?.lngLat ?? [e.lngLat.lng, e.lngLat.lat], offset };
+      // Picking a unit up selects it, so the panel is already showing what you
+      // are holding by the time you put it down.
       setSelectedId(hit);
       map.dragPan.disable();
       e.preventDefault();
     };
 
-    const onMove = (e: MapMouseEvent) => {
-      if (!dragging) {
+    const continueDrag = (e: PointerLike) => {
+      if (!drag) {
         // Anything under the pointer that can be picked up says so.
         const over = toolRef.current === 'deploy' ? null : unitAt(e);
         canvas.style.cursor =
           toolRef.current === 'deploy' ? 'crosshair' : over ? 'grab' : toolRef.current === 'paint' ? 'copy' : '';
         return;
       }
-      dragging.moved = true;
+      drag.moved = true;
+      drag.lngLat = [e.lngLat.lng + drag.offset[0], e.lngLat.lat + drag.offset[1]];
       canvas.style.cursor = 'grabbing';
-      const next: [number, number] = [e.lngLat.lng, e.lngLat.lat];
       // Push the drag straight to the source so the icon tracks the pointer at
       // frame rate; React hears about it once, on release.
       const units = boardRef.current.units.map((u) =>
-        u.id === dragging?.id ? { ...u, lngLat: next } : u
+        u.id === drag?.id ? { ...u, lngLat: drag.lngLat } : u
       );
       setUnits(map, units, boardRef.current.nations, boardRef.current.formations);
     };
 
-    const onUp = (e: MapMouseEvent) => {
-      if (!dragging) return;
-      const { id, moved } = dragging;
+    /**
+     * Ends on the last position the drag reported rather than on the release
+     * event, so a release the map never sees — off the canvas, off the window —
+     * still drops the unit where the player left it instead of stranding the
+     * map with panning switched off.
+     */
+    const endDrag = () => {
+      if (!drag) return;
+      const { id, moved, lngLat } = drag;
       map.dragPan.enable();
       canvas.style.cursor = '';
-      if (moved) moveUnit(id, [e.lngLat.lng, e.lngLat.lat]);
+      if (moved) moveUnit(id, lngLat);
       // Let the click handler see the drag before it is cleared.
-      const finished = dragging;
+      const finished = drag;
       setTimeout(() => {
-        if (dragging === finished) dragging = null;
+        if (drag === finished) drag = null;
       }, 0);
     };
 
@@ -537,16 +568,30 @@ export function useWarGames({
     };
 
     map.on('click', onClick);
-    map.on('mousedown', onDown);
-    map.on('mousemove', onMove);
-    map.on('mouseup', onUp);
+    map.on('mousedown', beginDrag);
+    map.on('mousemove', continueDrag);
+    map.on('mouseup', endDrag);
+    // Touch gets the same three events, so a unit can be dragged with a finger
+    // rather than only with a mouse.
+    map.on('touchstart', beginDrag);
+    map.on('touchmove', continueDrag);
+    map.on('touchend', endDrag);
+    map.on('touchcancel', endDrag);
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
     window.addEventListener('keydown', onKey);
 
     return () => {
       map.off('click', onClick);
-      map.off('mousedown', onDown);
-      map.off('mousemove', onMove);
-      map.off('mouseup', onUp);
+      map.off('mousedown', beginDrag);
+      map.off('mousemove', continueDrag);
+      map.off('mouseup', endDrag);
+      map.off('touchstart', beginDrag);
+      map.off('touchmove', continueDrag);
+      map.off('touchend', endDrag);
+      map.off('touchcancel', endDrag);
+      window.removeEventListener('mouseup', endDrag);
+      window.removeEventListener('touchend', endDrag);
       window.removeEventListener('keydown', onKey);
       map.dragPan.enable();
       canvas.style.cursor = '';

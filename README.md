@@ -125,6 +125,13 @@ Three tools, in the order you use them:
 | **Deploy** | Click the map to place the selected unit; stays armed, `Esc` stops |
 | **Select** | Click a unit to select, drag to reposition, `Delete` to remove |
 
+Dragging works by mouse or finger, and a unit can be taken hold of anywhere on
+its symbol, its label, or the selection ring around it — the ring is drawn a
+little wider than the chip precisely so it can be grabbed. A unit keeps the
+offset it was picked up by rather than snapping its centre under the pointer,
+and the map does not pan while a unit is in hand. Picking a unit up selects it,
+so the console is already showing what you are holding when you put it down.
+
 A nation's colour is its units' colour, so recolouring a country recolours
 everything it has on the board.
 
