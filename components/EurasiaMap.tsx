@@ -8,6 +8,7 @@ import maplibregl, { type Map as MLMap } from 'maplibre-gl';
 import ControlPanel from './ControlPanel';
 import DetailPanel, { type Selection } from './DetailPanel';
 import ReadoutRail from './ReadoutRail';
+import WarGamesPanel from './WarGamesPanel';
 
 import { loadMapData, type MapData } from '@/lib/data';
 import {
@@ -16,6 +17,15 @@ import {
   KEY_LAYERS,
 } from '@/lib/layerSpec';
 import { INTERACTIVE_LAYERS, applyVisibility, installLayers } from '@/lib/mapLayers';
+import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
+
+/**
+ * Two modes share one map. The situation map is the published assessment;
+ * War Games is the sandbox on top of the same globe. Both keep their layers
+ * installed and swap visibility, so switching is instant and neither mode has
+ * to rebuild the world to be looked at.
+ */
+type Mode = 'situation' | 'wargames';
 
 const BASEMAPS = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -76,14 +86,25 @@ export default function EurasiaMap() {
   const [cursor, setCursor] = useState<[number, number] | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [mode, setMode] = useState<Mode>('situation');
+
+  const modeRef = useRef(mode);
+  const warHydrateRef = useRef<((map: MLMap) => void) | null>(null);
 
   visibilityRef.current = visibility;
+  modeRef.current = mode;
+
+  const war = useWarGames({ mapRef, mapReady: ready, active: mode === 'wargames' });
+  warHydrateRef.current = war.hydrate;
 
   /** Re-adds every source and layer. Safe to call after a basemap swap. */
   const hydrate = useCallback((map: MLMap) => {
     if (!dataRef.current) return;
     installLayers(map, dataRef.current);
-    applyVisibility(map, KEY_LAYERS, visibilityRef.current);
+    // War Games owns the screen when it is open, so the situation layers stay
+    // dark rather than bleeding a Ukraine front line across a global board.
+    applyVisibility(map, KEY_LAYERS, modeRef.current === 'wargames' ? {} : visibilityRef.current);
+    warHydrateRef.current?.(map);
   }, []);
 
 /** Tear the map down a tick late so a StrictMode remount can cancel it. */
@@ -202,7 +223,7 @@ export default function EurasiaMap() {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    if (!map || !ready || mode !== 'situation') return;
 
     const onClick = (e: maplibregl.MapMouseEvent) => {
       const live = INTERACTIVE_LAYERS.filter((id) => {
