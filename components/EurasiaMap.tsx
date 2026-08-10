@@ -260,8 +260,9 @@ export default function EurasiaMap() {
     return () => {
       map.off('click', onClick);
       map.off('mousemove', onMove);
+      map.getCanvas().style.cursor = '';
     };
-  }, [ready]);
+  }, [ready, mode]);
 
   /* ---------------- toggles ---------------- */
 
@@ -345,6 +346,30 @@ export default function EurasiaMap() {
     [visibility]
   );
 
+  /**
+   * Switching modes is a visibility change, not a rebuild. Leaving War Games
+   * also returns the camera and projection to the situation map's home, because
+   * arriving back on the far side of the Pacific with the front line switched
+   * on reads as a bug even though nothing is broken.
+   */
+  const switchMode = useCallback(
+    (next: Mode) => {
+      const map = mapRef.current;
+      if (next === mode) return;
+      setSelection(null);
+      setMode(next);
+      if (!map) return;
+
+      applyVisibility(map, KEY_LAYERS, next === 'wargames' ? {} : visibilityRef.current);
+      if (next === 'situation') {
+        rawSetProjection(map, 'mercator');
+        setProjection('mercator');
+        map.flyTo({ ...HOME, duration: 1200 });
+      }
+    },
+    [mode]
+  );
+
   /* ---------------- render ---------------- */
 
   return (
@@ -366,26 +391,45 @@ export default function EurasiaMap() {
           </div>
         )}
 
-        <header className="masthead">
-          <h1>Eurasia</h1>
-          <div className="sub">Borders · blocs · energy · the front</div>
+        <header className={`masthead${mode === 'wargames' ? ' wargames' : ''}`}>
+          <h1>{mode === 'wargames' ? 'War Games' : 'Eurasia'}</h1>
+          <div className="sub">
+            {mode === 'wargames'
+              ? 'Paint nations · deploy forces · the whole board'
+              : 'Borders · blocs · energy · the front'}
+          </div>
         </header>
 
         <div className="actions">
-          <button className="action" onClick={() => flyTo(WAR_VIEW)}>
-            The front
-          </button>
-          <button
-            className={`action${arcticOn ? ' active' : ''}`}
-            aria-pressed={arcticOn}
-            onClick={toggleArctic}
-            title={globeSupported ? undefined : 'Globe projection unavailable — polar view will be distorted'}
-          >
-            {globeSupported ? 'Arctic' : 'Arctic (flat)'}
-          </button>
-          <button className="action" onClick={reset}>
-            Reset
-          </button>
+          {mode === 'situation' ? (
+            <>
+              <button className="action" onClick={() => flyTo(WAR_VIEW)}>
+                The front
+              </button>
+              <button
+                className={`action${arcticOn ? ' active' : ''}`}
+                aria-pressed={arcticOn}
+                onClick={toggleArctic}
+                title={
+                  globeSupported ? undefined : 'Globe projection unavailable — polar view will be distorted'
+                }
+              >
+                {globeSupported ? 'Arctic' : 'Arctic (flat)'}
+              </button>
+              <button className="action" onClick={reset}>
+                Reset
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="action" onClick={() => flyTo(WORLD_VIEW)}>
+                World view
+              </button>
+              <button className="action" onClick={() => switchMode('situation')}>
+                Situation map
+              </button>
+            </>
+          )}
           <button
             className="action"
             onClick={() =>
@@ -394,30 +438,41 @@ export default function EurasiaMap() {
           >
             {basemap}
           </button>
+          {mode === 'situation' && (
+            <button className="action accent" onClick={() => switchMode('wargames')}>
+              War games
+            </button>
+          )}
         </div>
 
         {panelOpen ? (
-          <div className="panel">
-            <ControlPanel
-              state={visibility}
-              onToggle={toggle}
-              asOf="1 Aug 2026"
-              warning={dataWarning}
-              note={projectionNote}
-            />
+          <div className={`panel${mode === 'wargames' ? ' panel-wide' : ''}`}>
+            {mode === 'wargames' ? (
+              <WarGamesPanel {...war} />
+            ) : (
+              <ControlPanel
+                state={visibility}
+                onToggle={toggle}
+                asOf="1 Aug 2026"
+                warning={dataWarning}
+                note={projectionNote}
+              />
+            )}
             <button
               className="panel-toggle"
               style={{ position: 'static', borderLeft: 0, borderRight: 0, borderBottom: 0 }}
               onClick={() => setPanelOpen(false)}
             >
-              Hide layers
+              {mode === 'wargames' ? 'Hide console' : 'Hide layers'}
             </button>
           </div>
         ) : (
           <button className="panel-toggle" onClick={() => setPanelOpen(true)}>
-            Layers · {activeLayers} on
+            {mode === 'wargames' ? `Console · ${war.board.units.length} units` : `Layers · ${activeLayers} on`}
           </button>
         )}
+
+        {mode === 'wargames' && war.loading && <div className="wg-loading">Loading world roster…</div>}
 
         {selection && <DetailPanel selection={selection} onClose={() => setSelection(null)} />}
       </div>
@@ -427,6 +482,9 @@ export default function EurasiaMap() {
         zoom={zoom}
         projection={projection}
         activeLayers={activeLayers}
+        mode={mode}
+        unitCount={war.board.units.length}
+        nationCount={Object.keys(war.board.nations).length}
       />
     </div>
   );

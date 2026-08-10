@@ -21,13 +21,21 @@ export default function ReadoutRail({
   zoom,
   projection,
   activeLayers,
+  mode = 'situation',
+  unitCount = 0,
+  nationCount = 0,
 }: {
   lngLat: [number, number] | null;
   zoom: number;
   projection: 'mercator' | 'globe';
   activeLayers: number;
+  mode?: 'situation' | 'wargames';
+  /** War Games only — what is on the board. */
+  unitCount?: number;
+  nationCount?: number;
 }) {
   const tier = tierForZoom(zoom);
+  const wargames = mode === 'wargames';
 
   return (
     <div className="rail">
@@ -53,13 +61,26 @@ export default function ReadoutRail({
 
       <div className="rail-cell optional">
         <span className="k">Showing</span>
-        <span className="v">{tier.note}</span>
+        <span className="v">{wargames ? 'World board' : tier.note}</span>
       </div>
 
-      <div className="rail-cell optional">
-        <span className="k">Layers</span>
-        <span className="v">{activeLayers}</span>
-      </div>
+      {wargames ? (
+        <>
+          <div className="rail-cell">
+            <span className="k">Nations</span>
+            <span className="v">{nationCount}</span>
+          </div>
+          <div className="rail-cell">
+            <span className="k">Units</span>
+            <span className="v">{unitCount}</span>
+          </div>
+        </>
+      ) : (
+        <div className="rail-cell optional">
+          <span className="k">Layers</span>
+          <span className="v">{activeLayers}</span>
+        </div>
+      )}
 
       <div className="rail-cell optional">
         <span className="k">Proj</span>
