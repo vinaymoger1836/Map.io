@@ -27,6 +27,13 @@ import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
  */
 type Mode = 'situation' | 'wargames';
 
+/**
+ * The only situation-map layers War Games keeps. Ocean and sea names are
+ * geography rather than assessment, and the board silences the basemap's own
+ * labels — without these the water would be anonymous.
+ */
+const WARGAMES_VISIBILITY: Record<string, boolean> = { 'wt-ocean': true, 'wt-sea': true };
+
 const BASEMAPS = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   light: 'https://tiles.openfreemap.org/styles/positron',
@@ -94,7 +101,12 @@ export default function EurasiaMap() {
   visibilityRef.current = visibility;
   modeRef.current = mode;
 
-  const war = useWarGames({ mapRef, mapReady: ready, active: mode === 'wargames' });
+  const war = useWarGames({
+    mapRef,
+    mapReady: ready,
+    active: mode === 'wargames',
+    darkBasemap: basemap === 'dark',
+  });
   warHydrateRef.current = war.hydrate;
 
   /** Re-adds every source and layer. Safe to call after a basemap swap. */
@@ -103,7 +115,7 @@ export default function EurasiaMap() {
     installLayers(map, dataRef.current);
     // War Games owns the screen when it is open, so the situation layers stay
     // dark rather than bleeding a Ukraine front line across a global board.
-    applyVisibility(map, KEY_LAYERS, modeRef.current === 'wargames' ? {} : visibilityRef.current);
+    applyVisibility(map, KEY_LAYERS, modeRef.current === 'wargames' ? WARGAMES_VISIBILITY : visibilityRef.current);
     warHydrateRef.current?.(map);
   }, []);
 
@@ -146,6 +158,12 @@ export default function EurasiaMap() {
       dragRotate: false,
     });
     mapRef.current = map;
+
+    // A handle on the map in development, so layer and source state can be
+    // inspected from the console without instrumenting the component.
+    if (process.env.NODE_ENV !== 'production') {
+      (window as unknown as { __map?: MLMap }).__map = map;
+    }
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
@@ -360,7 +378,7 @@ export default function EurasiaMap() {
       setMode(next);
       if (!map) return;
 
-      applyVisibility(map, KEY_LAYERS, next === 'wargames' ? {} : visibilityRef.current);
+      applyVisibility(map, KEY_LAYERS, next === 'wargames' ? WARGAMES_VISIBILITY : visibilityRef.current);
       if (next === 'situation') {
         rawSetProjection(map, 'mercator');
         setProjection('mercator');

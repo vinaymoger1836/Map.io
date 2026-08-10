@@ -71,6 +71,8 @@ export default function WarGamesPanel(wg: WarGames) {
 
   const activeColor = activeNation?.color ?? color;
   const type = UNIT_BY_ID.get(typeId);
+  /** What the Deploy tool would place right now, named the way the map names it. */
+  const pendingLabel = unitLabel({ id: '', typeId, echelonId, iso: activeIso ?? '', lngLat: [0, 0] });
 
   /* Painted nations first, then the rest — the board you are building is the
      list you keep coming back to. */
@@ -193,13 +195,65 @@ export default function WarGamesPanel(wg: WarGames) {
         <p className="wg-hint">
           {tool === 'deploy'
             ? canDeploy
-              ? `Click the map to deploy ${ECHELON_BY_ID.get(echelonId)?.label.toLowerCase() ?? ''} ${type?.label.toLowerCase() ?? ''}. Esc to stop.`
+              ? `Click the map to deploy ${pendingLabel.toLowerCase()}. Esc to stop.`
               : 'Pick a nation first — units fly their nation’s colour.'
             : tool === 'paint'
               ? 'Click a country to colour it. That colour becomes its units’ colour too.'
               : 'Click a unit to select it, drag to reposition, Delete to remove.'}
         </p>
       </section>
+
+      {/* ---------- selection ---------- */}
+      {/* Sits high in the console: selecting a unit on the map should not send
+          you hunting down a scroll for the controls that act on it. */}
+      {selectedUnit && (
+        <section className="wg-block wg-selected">
+          <h3 className="wg-h">Selected</h3>
+          <div className="wg-selected-head">
+            <img
+              src={previewIcon(
+                selectedUnit.typeId,
+                board.nations[selectedUnit.iso]?.color ?? NEUTRAL,
+                selectedUnit.echelonId
+              )}
+              alt=""
+            />
+            <div>
+              <b>{unitLabel(selectedUnit)}</b>
+              <span>{board.nations[selectedUnit.iso]?.name ?? 'Unassigned'}</span>
+            </div>
+          </div>
+
+          <input
+            className="wg-search"
+            value={selectedUnit.name ?? ''}
+            placeholder={unitLabel(selectedUnit)}
+            onChange={(e) => wg.updateUnit(selectedUnit.id, { name: e.target.value || undefined })}
+            aria-label="Unit name"
+          />
+
+          <div className="wg-echelons">
+            {echelonsFor(UNIT_BY_ID.get(selectedUnit.typeId)!).map((e) => (
+              <button
+                key={e.id}
+                className={`wg-echelon${selectedUnit.echelonId === e.id ? ' on' : ''}`}
+                onClick={() => wg.updateUnit(selectedUnit.id, { echelonId: e.id })}
+              >
+                {e.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="wg-row">
+            <button className="wg-btn" onClick={() => wg.flyToUnit(selectedUnit.id)}>
+              Centre
+            </button>
+            <button className="wg-btn danger" onClick={() => wg.removeUnit(selectedUnit.id)}>
+              Remove
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* ---------- units ---------- */}
       <section className="wg-block">
@@ -256,56 +310,6 @@ export default function WarGamesPanel(wg: WarGames) {
           </>
         )}
       </section>
-
-      {/* ---------- selection ---------- */}
-      {selectedUnit && (
-        <section className="wg-block wg-selected">
-          <h3 className="wg-h">Selected</h3>
-          <div className="wg-selected-head">
-            <img
-              src={previewIcon(
-                selectedUnit.typeId,
-                board.nations[selectedUnit.iso]?.color ?? NEUTRAL,
-                selectedUnit.echelonId
-              )}
-              alt=""
-            />
-            <div>
-              <b>{unitLabel(selectedUnit)}</b>
-              <span>{board.nations[selectedUnit.iso]?.name ?? 'Unassigned'}</span>
-            </div>
-          </div>
-
-          <input
-            className="wg-search"
-            value={selectedUnit.name ?? ''}
-            placeholder={unitLabel(selectedUnit)}
-            onChange={(e) => wg.updateUnit(selectedUnit.id, { name: e.target.value || undefined })}
-            aria-label="Unit name"
-          />
-
-          <div className="wg-echelons">
-            {echelonsFor(UNIT_BY_ID.get(selectedUnit.typeId)!).map((e) => (
-              <button
-                key={e.id}
-                className={`wg-echelon${selectedUnit.echelonId === e.id ? ' on' : ''}`}
-                onClick={() => wg.updateUnit(selectedUnit.id, { echelonId: e.id })}
-              >
-                {e.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="wg-row">
-            <button className="wg-btn" onClick={() => wg.flyToUnit(selectedUnit.id)}>
-              Centre
-            </button>
-            <button className="wg-btn danger" onClick={() => wg.removeUnit(selectedUnit.id)}>
-              Remove
-            </button>
-          </div>
-        </section>
-      )}
 
       {/* ---------- order of battle ---------- */}
       <section className="wg-block">

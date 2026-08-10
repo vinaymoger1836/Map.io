@@ -324,8 +324,13 @@ export function iconId(typeId: string, color: string): string {
 }
 
 export function unitLabel(u: DeployedUnit): string {
+  if (u.name) return u.name;
   const type = UNIT_BY_ID.get(u.typeId);
   const ech = ECHELON_BY_ID.get(u.echelonId);
-  if (u.name) return u.name;
-  return ech ? `${ech.abbr} ${type?.label ?? ''}`.trim() : (type?.label ?? '');
+  const name = type?.label ?? '';
+  if (!ech) return name;
+  // "CSG Carrier strike group" says it twice. Where the type already names its
+  // own size, the prefix is noise.
+  if (name.toLowerCase().includes(ech.label.toLowerCase())) return name;
+  return `${ech.abbr} ${name}`.trim();
 }

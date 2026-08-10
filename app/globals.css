@@ -540,6 +540,510 @@ button {
   outline: none;
 }
 
+/* ------------------------------------------------------------------
+   War Games console
+   Same ink-and-brass chrome as the situation map. The only saturated
+   colour in here belongs to a nation — its swatches, its unit icons,
+   its line in the order of battle.
+   ------------------------------------------------------------------ */
+
+.action.accent {
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 55%, var(--rule));
+}
+
+.action.accent:hover {
+  color: var(--ink);
+  background: var(--brass);
+}
+
+.masthead.wargames {
+  border-left-color: #d9534f;
+}
+
+.panel.panel-wide {
+  width: 348px;
+}
+
+.wg-loading {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 7px 14px;
+  background: color-mix(in srgb, var(--ink-panel) 92%, transparent);
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.wg-block {
+  padding: 12px 13px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wg-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 9px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wg-h-button {
+  width: 100%;
+  padding: 0;
+  text-align: left;
+}
+
+.wg-h-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--paper-dim);
+}
+
+.wg-sub {
+  margin: 12px 0 7px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-count {
+  margin-left: auto;
+  padding: 1px 6px;
+  background: var(--ink-raised);
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-dim);
+}
+
+.wg-chip {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+}
+
+/* ---------- nation ---------- */
+
+.wg-search {
+  width: 100%;
+  padding: 7px 9px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+.wg-search::placeholder {
+  color: color-mix(in srgb, var(--paper-dim) 75%, transparent);
+}
+
+.wg-search:focus {
+  outline: none;
+  border-color: var(--brass);
+}
+
+.wg-country-list {
+  max-height: 152px;
+  margin: 8px 0 10px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.wg-country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--paper-dim);
+  border-left: 2px solid transparent;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.wg-country:hover {
+  background: var(--ink-raised);
+  color: var(--paper);
+}
+
+.wg-country.on {
+  background: var(--ink-raised);
+  border-left-color: var(--brass);
+  color: var(--paper);
+}
+
+.wg-country-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wg-color {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--rule);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.wg-color:hover {
+  transform: scale(1.12);
+}
+
+.wg-color.on {
+  box-shadow: 0 0 0 2px var(--brass);
+}
+
+.wg-color-custom {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #d9534f, #e4b93c 30%, #4fa85f 60%, #5a6fd6);
+  cursor: pointer;
+}
+
+.wg-color-custom input {
+  width: 40px;
+  height: 40px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ---------- tools ---------- */
+
+.wg-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.wg-tool {
+  padding: 8px 4px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.wg-tool:hover {
+  color: var(--paper);
+  border-color: color-mix(in srgb, var(--brass) 60%, var(--rule));
+}
+
+.wg-tool.on {
+  color: var(--ink);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+.wg-hint {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+/* ---------- units ---------- */
+
+.wg-domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.wg-domain {
+  padding: 5px 9px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-domain:hover {
+  color: var(--paper);
+}
+
+.wg-domain.on {
+  color: var(--paper);
+  border-color: var(--brass);
+  background: var(--ink-raised);
+}
+
+.wg-units {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.wg-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 7px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 9.5px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--paper-dim);
+  transition: transform 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.wg-unit img {
+  width: 34px;
+  height: 31px;
+  object-fit: contain;
+}
+
+.wg-unit:hover {
+  transform: translateY(-1px);
+  color: var(--paper);
+  border-color: color-mix(in srgb, var(--brass) 60%, var(--rule));
+}
+
+.wg-unit.on {
+  color: var(--paper);
+  border-color: var(--brass);
+  background: var(--ink-raised);
+}
+
+.wg-echelons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wg-echelon {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 11px;
+  color: var(--paper-dim);
+}
+
+.wg-echelon:hover {
+  color: var(--paper);
+}
+
+.wg-echelon.on {
+  color: var(--paper);
+  border-color: var(--brass);
+  background: var(--ink-raised);
+}
+
+.wg-echelon-strength {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--paper-dim) 80%, transparent);
+}
+
+/* ---------- selection ---------- */
+
+.wg-selected {
+  background: color-mix(in srgb, var(--brass) 6%, transparent);
+}
+
+.wg-selected-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.wg-selected-head img {
+  width: 40px;
+  height: 37px;
+}
+
+.wg-selected-head div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wg-selected-head b {
+  font-size: 13px;
+}
+
+.wg-selected-head span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-dim);
+}
+
+.wg-selected .wg-echelons,
+.wg-selected .wg-row {
+  margin-top: 8px;
+}
+
+/* ---------- order of battle ---------- */
+
+.wg-ob-nation {
+  margin-top: 10px;
+  border-left: 1px solid var(--rule);
+  padding-left: 9px;
+}
+
+.wg-ob-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+}
+
+.wg-ob-row {
+  display: flex;
+  align-items: center;
+}
+
+.wg-ob-jump {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 4px;
+  text-align: left;
+  font-size: 11.5px;
+  color: var(--paper-dim);
+}
+
+.wg-ob-jump img {
+  width: 22px;
+  height: 20px;
+  flex: none;
+}
+
+.wg-ob-jump span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-ob-jump:hover {
+  color: var(--paper);
+}
+
+.wg-ob-del {
+  padding: 2px 7px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--paper-dim);
+}
+
+.wg-ob-del:hover {
+  color: #e4572e;
+}
+
+/* ---------- footer ---------- */
+
+.wg-row {
+  display: flex;
+  gap: 6px;
+}
+
+.wg-footer {
+  padding: 12px 13px;
+}
+
+.wg-btn {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-btn:hover:not(:disabled) {
+  color: var(--paper);
+  border-color: var(--brass);
+}
+
+.wg-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.wg-btn.danger:hover {
+  color: #e4572e;
+  border-color: #e4572e;
+}
+
+.wg-empty {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+.wg-error {
+  margin: 0;
+  padding: 10px 13px;
+  font-size: 11px;
+  color: #e4572e;
+}
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 760px) {
@@ -563,6 +1067,20 @@ button {
     top: auto;
     bottom: 14px;
     left: 14px;
+  }
+
+  .panel.panel-wide {
+    width: auto;
+    max-height: 60vh;
+  }
+
+  .wg-units {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .wg-loading {
+    top: auto;
+    bottom: 62px;
   }
 
   .detail {

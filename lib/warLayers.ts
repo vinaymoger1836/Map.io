@@ -31,15 +31,18 @@ export const WAR_LAYERS = [
   'wg-unit',
 ] as const;
 
-/** Layers a click should be tested against, most specific first. */
-export const WAR_INTERACTIVE = ['wg-unit', 'wg-nation-fill'] as const;
-
 /**
- * Zoom steps at which more of the world's names are allowed on screen. Each
- * feature carries the zoom it deserves (`z`, from Natural Earth's own label
- * ranking); these are the checkpoints where that test is re-run.
+ * Zoom steps at which more of the world's names are allowed on screen.
+ *
+ * The stops are whole numbers on purpose. A layout property is evaluated once
+ * per tile, at that tile's zoom — which is always an integer — so a stop at 4.2
+ * does not fire at map zoom 4.2, it fires when tiles for zoom 5 arrive. Half
+ * steps look considered and behave like a bug; whole ones do what they say.
  */
-const BREAKS = [1.4, 2.2, 2.8, 3.4, 4, 4.6, 5.2, 5.8, 6.4, 7.2];
+const BREAKS = [2, 3, 4, 5, 6, 7, 8];
+
+/** Features below this `z` are the handful the world view can hold at once. */
+const BASE_Z = 1.5;
 
 /**
  * Builds a step-over-zoom expression that yields `visible` for features whose
@@ -50,16 +53,39 @@ const BREAKS = [1.4, 2.2, 2.8, 3.4, 4, 4.6, 5.2, 5.8, 6.4, 7.2];
  * to an empty *string* — otherwise an invisible Ulaanbaatar can suppress a
  * visible Beijing.
  */
-function byZ<T>(visible: T, hidden: T): unknown {
+function byZ(visible: unknown, hidden: unknown): unknown {
   const at = (z: number) => ['case', ['<=', ['get', 'z'], z], visible, hidden];
-  const expr: unknown[] = ['step', ['zoom'], at(BREAKS[0])];
-  for (const z of BREAKS.slice(1)) expr.push(z, at(z));
+  const expr: unknown[] = ['step', ['zoom'], at(BASE_Z)];
+  for (const z of BREAKS) expr.push(z, at(z));
   return expr;
 }
 
+/**
+ * Label ink for the two kinds of basemap. Cream type with a dark halo is right
+ * on dark-matter and wrong on positron, where it reads as a photocopy; the
+ * board should look like it belongs to whatever it is drawn on.
+ */
+const INK = {
+  dark: {
+    country: CHROME.paper,
+    capital: CHROME.paper,
+    city: CHROME.paperDim,
+    unit: CHROME.paper,
+    halo: CHROME.ink,
+  },
+  light: {
+    country: '#16222E',
+    capital: '#16222E',
+    city: '#4C5D6E',
+    unit: '#16222E',
+    halo: '#FFFFFF',
+  },
+} as const;
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
+export function installWarLayers(map: MLMap, world: WorldData, font: string[], dark = true) {
+  const ink = dark ? INK.dark : INK.light;
   const firstSymbol = (map.getStyle()?.layers ?? []).find((l) => l.type === 'symbol')?.id;
 
   const source = (id: string, data: unknown) => {
@@ -119,9 +145,9 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
       'text-padding': 4,
     },
     paint: {
-      'text-color': CHROME.paper,
+      'text-color': ink.country,
       'text-opacity': byZ(0.92, 0),
-      'text-halo-color': CHROME.ink,
+      'text-halo-color': ink.halo,
       'text-halo-width': 1.6,
       'text-halo-blur': 0.5,
     },
@@ -135,7 +161,7 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
     layout: { visibility: 'none' },
     paint: {
       'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 1.6, 8, 3.4],
-      'circle-color': CHROME.paperDim,
+      'circle-color': ink.city,
       'circle-opacity': byZ(0.9, 0),
     },
   });
@@ -155,9 +181,9 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
       'text-padding': 3,
     },
     paint: {
-      'text-color': CHROME.paperDim,
+      'text-color': ink.city,
       'text-opacity': byZ(1, 0),
-      'text-halo-color': CHROME.ink,
+      'text-halo-color': ink.halo,
       'text-halo-width': 1.4,
     },
   });
@@ -172,7 +198,7 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
       'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 2.2, 8, 4.4],
       'circle-color': CHROME.brass,
       'circle-opacity': byZ(1, 0),
-      'circle-stroke-color': CHROME.ink,
+      'circle-stroke-color': ink.halo,
       'circle-stroke-width': 1,
       'circle-stroke-opacity': byZ(0.9, 0),
     },
@@ -193,9 +219,9 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
       'text-padding': 3,
     },
     paint: {
-      'text-color': CHROME.paper,
+      'text-color': ink.capital,
       'text-opacity': byZ(1, 0),
-      'text-halo-color': CHROME.ink,
+      'text-halo-color': ink.halo,
       'text-halo-width': 1.5,
     },
   });
@@ -231,7 +257,8 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
       'icon-anchor': 'center',
       // Names are noise on a crowded world board; they arrive once you are
       // close enough for the board to be about a theatre rather than a planet.
-      'text-field': ['step', ['zoom'], '', 4.2, ['get', 'label']],
+      // Whole-number stop for the same reason as BREAKS above.
+      'text-field': ['step', ['zoom'], '', 4, ['get', 'label']],
       'text-font': font,
       'text-size': 10,
       'text-offset': [0, 1.5],
@@ -240,8 +267,8 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[]) {
       'text-padding': 2,
     },
     paint: {
-      'text-color': CHROME.paper,
-      'text-halo-color': CHROME.ink,
+      'text-color': ink.unit,
+      'text-halo-color': ink.halo,
       'text-halo-width': 1.6,
       'text-halo-blur': 0.4,
     },
@@ -254,6 +281,42 @@ export function setWarVisible(map: MLMap, on: boolean) {
   for (const id of WAR_LAYERS) {
     if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
   }
+}
+
+/** Layers this app installs itself, which the basemap sweep below must skip. */
+const OURS = /^(wg-|al-|ar-|bd-|ctl-|en-|mi-|pl-|wt-)/;
+
+/**
+ * Basemap symbols we silenced, so exit puts back exactly those.
+ *
+ * Only layers this module actually switched off go in here. A layer the style
+ * itself ships hidden must stay hidden on the way out, and the set survives a
+ * basemap swap because ids from the old style are simply no longer found.
+ */
+const hiddenSymbols = new Set<string>();
+
+/**
+ * Silences the basemap's own labels for the duration of War Games.
+ *
+ * Two sets of place names on one map is not twice as informative: the styles
+ * disagree about which cities matter and where their anchors sit, so you get
+ * Jaipur twice, four pixels apart, in two fonts. The board names the world; the
+ * basemap draws it.
+ */
+export function hideBasemapSymbols(map: MLMap) {
+  for (const layer of map.getStyle()?.layers ?? []) {
+    if (layer.type !== 'symbol' || OURS.test(layer.id)) continue;
+    if (map.getLayoutProperty(layer.id, 'visibility') === 'none') continue;
+    map.setLayoutProperty(layer.id, 'visibility', 'none');
+    hiddenSymbols.add(layer.id);
+  }
+}
+
+export function restoreBasemapSymbols(map: MLMap) {
+  for (const id of hiddenSymbols) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+  }
+  hiddenSymbols.clear();
 }
 
 /** Applies the current nation colours to the country fill and its outline. */
@@ -298,7 +361,7 @@ function emptyCollection() {
 }
 
 /** Turns the board's units into the GeoJSON the unit layers read. */
-export function unitsToGeoJSON(units: DeployedUnit[], nations: Record<string, Nation>) {
+function unitsToGeoJSON(units: DeployedUnit[], nations: Record<string, Nation>) {
   return {
     type: 'FeatureCollection',
     features: units.map((u) => {

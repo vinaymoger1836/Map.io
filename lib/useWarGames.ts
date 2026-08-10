@@ -31,9 +31,11 @@ import {
 } from './warGames';
 import { ensureIcons, type IconSpec } from './unitIcons';
 import {
+  hideBasemapSymbols,
   highlightUnit,
   installWarLayers,
   paintNations,
+  restoreBasemapSymbols,
   setUnits,
   setWarVisible,
 } from './warLayers';
@@ -78,7 +80,6 @@ export interface WarGames {
 
   clearUnits: () => void;
   clearNations: () => void;
-  resetBoard: () => void;
 
   /** Re-installs layers and icons — call after a basemap swap. */
   hydrate: (map: MLMap) => void;
@@ -91,10 +92,13 @@ export function useWarGames({
   mapRef,
   mapReady,
   active,
+  darkBasemap = true,
 }: {
   mapRef: React.MutableRefObject<MLMap | null>;
   mapReady: boolean;
   active: boolean;
+  /** Drives label ink: the board should read on whatever it is drawn on. */
+  darkBasemap?: boolean;
 }): WarGames {
   const [board, setBoard] = useState<BoardState>(EMPTY_BOARD);
   const [world, setWorld] = useState<WorldData | null>(null);
@@ -203,15 +207,16 @@ export function useWarGames({
   const hydrate = useCallback(
     (map: MLMap) => {
       if (!world) return;
-      installWarLayers(map, world, detectFont(map));
+      installWarLayers(map, world, detectFont(map), darkBasemap);
       ensureIcons(map, iconSpecs);
       paintNations(map, boardRef.current.nations);
       setUnits(map, boardRef.current.units, boardRef.current.nations);
       highlightUnit(map, selectedId);
       setWarVisible(map, active);
+      if (active) hideBasemapSymbols(map);
       hydratedRef.current = true;
     },
-    [world, iconSpecs, selectedId, active]
+    [world, iconSpecs, selectedId, active, darkBasemap]
   );
 
   // Install on entry; the camera only jumps the first time, so leaving and
@@ -221,7 +226,10 @@ export function useWarGames({
     const map = mapRef.current;
     if (!map || !mapReady) return;
     if (!active) {
-      if (hydratedRef.current) setWarVisible(map, false);
+      if (hydratedRef.current) {
+        setWarVisible(map, false);
+        restoreBasemapSymbols(map);
+      }
       return;
     }
     if (!world) return;
@@ -313,12 +321,6 @@ export function useWarGames({
 
   const clearNations = useCallback(() => {
     setBoard((prev) => ({ ...prev, nations: {} }));
-  }, []);
-
-  const resetBoard = useCallback(() => {
-    setBoard(EMPTY_BOARD);
-    setSelectedId(null);
-    setActiveIso(null);
   }, []);
 
   const flyToUnit = useCallback(
@@ -480,7 +482,6 @@ export function useWarGames({
     flyToUnit,
     clearUnits,
     clearNations,
-    resetBoard,
     hydrate,
   };
 }

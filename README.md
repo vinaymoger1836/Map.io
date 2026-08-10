@@ -5,6 +5,10 @@ An interactive MapLibre GL map of Europe, Russia and the Arctic, built on Next.j
 overlaid, energy and military layers sit on top, and the Russia–Ukraine line of
 contact is drawn from an editable snapshot.
 
+It has two modes. The **situation map** is the published assessment described
+above. **War Games** is a sandbox on the same globe: the whole world named, every
+country paintable, and military units you place yourself.
+
 ```bash
 npm install
 npm run dev      # http://localhost:3000
@@ -50,6 +54,8 @@ up on reload without a rebuild.
 | `arctic-*.geojson` | Sea ice, routes, shelf claims, ports |
 | `places.geojson` | Cities and capitals — regenerate, don't hand-edit |
 | `waters.geojson` | Ocean and sea name anchors — regenerate, don't hand-edit |
+| `world-countries.geojson` | War Games: one label anchor per country — generated |
+| `world-places.geojson` | War Games: capitals and major cities — generated |
 
 Every feature carries the same property vocabulary:
 
@@ -70,6 +76,11 @@ node scripts/generate-data.mjs
 ```
 
 Edit the arrays at the top of that script rather than the JSON it produces.
+
+The two `world-*.geojson` files at the bottom of that script are derived from
+Natural Earth over the network — 240 countries and a thousand cities is exactly
+the kind of data a human transcribes wrongly. Without a connection that section
+is skipped with a warning and the committed files stand.
 
 ### Wiring it to a live source later
 
@@ -99,6 +110,57 @@ readout rail follow.
 
 ---
 
+## War Games
+
+A sandbox mode, reached from the **War games** button. It opens on the world at
+zoom 1.9 with every country, capital and major city named, and it silences the
+basemap's own labels while it is open — two sets of place names on one map is not
+twice as informative, it is Jaipur twice in two fonts.
+
+Three tools, in the order you use them:
+
+| Tool | What it does |
+| --- | --- |
+| **Paint** | Click a country to give it the active colour |
+| **Deploy** | Click the map to place the selected unit; stays armed, `Esc` stops |
+| **Select** | Click a unit to select, drag to reposition, `Delete` to remove |
+
+A nation's colour is its units' colour, so recolouring a country recolours
+everything it has on the board. Around 50 unit types across five domains —
+ground, air, naval, subsurface and fixed installations — each with the echelons
+that make sense for it, from a special forces team to a carrier strike group.
+
+The board (nations, colours, units) is kept in `localStorage` and survives a
+reload. **Clear units** and **Clear colours** at the foot of the console empty it.
+
+### How the symbols are drawn
+
+Every nation picks its own colour, so a sprite sheet would need one image per
+(unit type × colour). Instead `lib/unitIcons.ts` paints each icon to a canvas on
+demand and hands it to MapLibre as an image, cached by id — which keeps units on
+a *symbol* layer, with the collision handling and GPU batching that brings,
+rather than hundreds of DOM markers fighting the map for frames.
+
+The symbology follows APP-6 loosely: the frame shape encodes the domain (arch for
+air, hull for surface, inverted arch for subsurface, clipped corners for a fixed
+site), the glyph encodes function, and the mark above the frame encodes size —
+dots and bars for ground echelons, a short word for naval and air groupings.
+
+### Where the pieces live
+
+```
+lib/warGames.ts    unit catalogue, echelons, nation colours, board persistence
+lib/unitIcons.ts   the canvas icon factory
+lib/warLayers.ts   MapLibre sources and layers for the board
+lib/useWarGames.ts board state and the map wiring
+components/WarGamesPanel.tsx   the console
+```
+
+Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`. The
+panel and the map both render from that catalogue.
+
+---
+
 ## Adding a layer
 
 1. Add the GeoJSON to `public/data/`, load it in `lib/data.ts`.
@@ -115,10 +177,15 @@ the switch and the legend key are the same row.
 
 ```
 app/            layout, page, globals.css (all design tokens)
-components/     EurasiaMap (map + state), ControlPanel, DetailPanel, ReadoutRail
+components/     EurasiaMap (map + mode state), ControlPanel, DetailPanel,
+                ReadoutRail, WarGamesPanel
 lib/theme.ts    colour and zoom tiers — the single source of truth
 lib/layerSpec.ts  the layer registry that drives the panel
 lib/mapLayers.ts  MapLibre sources, layers, expressions
+lib/warGames.ts   War Games catalogue and board state
+lib/warLayers.ts  War Games map layers
+lib/unitIcons.ts  canvas-drawn unit symbols
+lib/useWarGames.ts  War Games state and map wiring
 lib/blocs.ts    alliance membership by ISO numeric code
 lib/data.ts     data loading
 scripts/        data generation
@@ -140,3 +207,8 @@ scripts/        data generation
   offline build.
 - **Sea ice extent is illustrative**, hand-fitted to typical modern maxima and
   minima. Use NSIDC data for anything quantitative.
+- **War Games units are markers, not a model.** Nothing moves, shoots, spots or
+  is scored; the mode is a board you arrange, not a simulation.
+- **A War Games board is local to one browser.** It lives in `localStorage`, so
+  it does not follow you to another machine and clearing site data loses it.
+  Export/import would be a small addition to `lib/warGames.ts` if you need it.
