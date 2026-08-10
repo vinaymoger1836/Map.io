@@ -12,6 +12,8 @@
  * is the nation's colour — which is the whole point of the mode.
  */
 
+import type { SystemSpec } from './specs';
+
 export type Domain = 'ground' | 'air' | 'sea' | 'sub' | 'site';
 
 export interface DomainSpec {
@@ -207,6 +209,8 @@ export function echelonsFor(type: UnitType): Echelon[] {
 export interface Component {
   typeId: string;
   count: number;
+  /** Which system these are, when the player has said. Drives specs and stock. */
+  systemId?: string;
 }
 
 export interface Formation {
@@ -339,10 +343,13 @@ export const totalStrength = (composition: Component[]): number =>
   composition.reduce((sum, part) => sum + Math.max(0, part.count), 0);
 
 /** A one-line composition, for places too small to list it: "3 × Destroyer, …". */
-export function describeComposition(composition: Component[]): string {
+export function describeComposition(composition: Component[], systems: SystemSpec[] = []): string {
   return composition
     .filter((part) => part.count > 0)
-    .map((part) => `${part.count} × ${UNIT_BY_ID.get(part.typeId)?.label ?? part.typeId}`)
+    .map(
+      (part) =>
+        `${part.count} × ${systemName(systems, part.systemId) ?? UNIT_BY_ID.get(part.typeId)?.label ?? part.typeId}`
+    )
     .join(', ');
 }
 
@@ -424,6 +431,10 @@ export interface DeployedGeneric extends DeployedBase {
   kind: 'unit';
   typeId: string;
   echelonId: string;
+  /** The specific system deployed, where one was chosen. */
+  systemId?: string;
+  /** How many. This is the number national stock is drawn down by. */
+  count: number;
 }
 
 export interface DeployedFormation extends DeployedBase {
@@ -450,7 +461,8 @@ export interface BoardState {
 
 export const EMPTY_BOARD: BoardState = { nations: {}, units: [], formations: [] };
 
-const STORAGE_KEY = 'mapio.wargames.v1';
+/** Where boards lived before configuration moved to the document store. */
+export const LEGACY_BOARD_KEY = 'mapio.wargames.v1';
 
 /**
  * Boards written before special units existed have no `kind`, and three of
@@ -483,7 +495,9 @@ function reviveUnit(raw: unknown, custom: Formation[]): DeployedUnit | null {
     const formation = formationId ? findFormation(formationId, custom) : undefined;
     if (!formation) return null;
     const composition = Array.isArray(u.composition)
-      ? (u.composition as Component[]).filter((p) => p && UNIT_BY_ID.has(p.typeId))
+      ? (u.composition as Component[])
+          .filter((p) => p && UNIT_BY_ID.has(p.typeId))
+          .map((p) => ({ typeId: p.typeId, count: p.count, systemId: p.systemId }))
       : formation.composition;
     return { kind: 'formation', id, iso, lngLat, name, formationId: formation.id, composition };
   }
@@ -495,7 +509,10 @@ function reviveUnit(raw: unknown, custom: Formation[]): DeployedUnit | null {
     typeof u.echelonId === 'string' && type.echelons.includes(u.echelonId)
       ? u.echelonId
       : type.defaultEchelon;
-  return { kind: 'unit', id, iso, lngLat, name, typeId, echelonId };
+  // Boards written before counts existed are one of whatever they were.
+  const count = typeof u.count === 'number' && u.count > 0 ? Math.round(u.count) : 1;
+  const systemId = typeof u.systemId === 'string' ? u.systemId : undefined;
+  return { kind: 'unit', id, iso, lngLat, name, typeId, echelonId, systemId, count };
 }
 
 function reviveFormation(raw: unknown): Formation | null {
@@ -515,39 +532,27 @@ function reviveFormation(raw: unknown): Formation | null {
   };
 }
 
-/** A board survives a reload — losing an hour of pin-placing to F5 is not a game. */
-export function loadBoard(): BoardState {
-  if (typeof window === 'undefined') return EMPTY_BOARD;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY_BOARD;
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
+/**
+ * Rebuilds a board from whatever was stored, discarding anything that no longer
+ * makes sense. Storage is somebody else's problem — see `lib/store.ts` — so this
+ * stays a pure function and can be pointed at a file, a browser or a server.
+ */
+export function reviveBoard(parsed: unknown): BoardState {
+  if (!parsed || typeof parsed !== 'object') return EMPTY_BOARD;
+  const raw = parsed as Record<string, unknown>;
 
-    const formations = Array.isArray(parsed.formations)
-      ? parsed.formations.map(reviveFormation).filter((f): f is Formation => Boolean(f))
-      : [];
-    const units = Array.isArray(parsed.units)
-      ? parsed.units.map((u) => reviveUnit(u, formations)).filter((u): u is DeployedUnit => Boolean(u))
-      : [];
+  const formations = Array.isArray(raw.formations)
+    ? raw.formations.map(reviveFormation).filter((f): f is Formation => Boolean(f))
+    : [];
+  const units = Array.isArray(raw.units)
+    ? raw.units.map((u) => reviveUnit(u, formations)).filter((u): u is DeployedUnit => Boolean(u))
+    : [];
 
-    return {
-      nations: (parsed.nations as BoardState['nations']) ?? {},
-      units,
-      formations,
-    };
-  } catch (err) {
-    console.error('[wargames] saved board could not be read — starting empty.', err);
-    return EMPTY_BOARD;
-  }
-}
-
-export function saveBoard(board: BoardState) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
-  } catch (err) {
-    console.error('[wargames] board could not be saved.', err);
-  }
+  return {
+    nations: (raw.nations as BoardState['nations']) ?? {},
+    units,
+    formations,
+  };
 }
 
 let counter = 0;
@@ -561,19 +566,32 @@ export function iconId(typeId: string, color: string): string {
   return `wg:${typeId}:${color.replace('#', '')}`;
 }
 
-export function unitLabel(u: DeployedUnit, custom: Formation[] = []): string {
+const systemName = (systems: SystemSpec[] | undefined, id: string | undefined) =>
+  id ? systems?.find((s) => s.id === id)?.name : undefined;
+
+/**
+ * What a deployed thing is called. A count leads, because "12 x F-16C" is the
+ * fact you want first; without one the echelon leads, as before.
+ */
+export function unitLabel(
+  u: DeployedUnit,
+  custom: Formation[] = [],
+  systems: SystemSpec[] = []
+): string {
   if (u.name) return u.name;
   if (u.kind === 'formation') {
     return findFormation(u.formationId, custom)?.label ?? 'Special unit';
   }
-  const type = UNIT_BY_ID.get(u.typeId);
+
+  const base = systemName(systems, u.systemId) ?? UNIT_BY_ID.get(u.typeId)?.label ?? '';
+  if (u.count > 1) return `${u.count} × ${base}`;
+
   const ech = ECHELON_BY_ID.get(u.echelonId);
-  const name = type?.label ?? '';
-  if (!ech) return name;
-  // "CSG Carrier strike group" says it twice. Where the type already names its
-  // own size, the prefix is noise.
-  if (name.toLowerCase().includes(ech.label.toLowerCase())) return name;
-  return `${ech.abbr} ${name}`.trim();
+  if (!ech) return base;
+  // "CSG Carrier strike group" says it twice. Where the name already carries
+  // its own size, the prefix is noise.
+  if (base.toLowerCase().includes(ech.label.toLowerCase())) return base;
+  return `${ech.abbr} ${base}`.trim();
 }
 
 /** The icon a deployed thing draws, whichever kind it is. */

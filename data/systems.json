@@ -1,0 +1,100 @@
+[
+  {
+    "id": "s-400-our-estimate-msn8hhn81",
+    "name": "S-400 (our estimate)",
+    "typeId": "sam-launcher",
+    "origin": "Russia",
+    "note": "Battalion of launchers with a 91N6E acquisition radar.",
+    "sensor": {
+      "detectionKm": 450,
+      "tracks": 80,
+      "engagements": 36,
+      "sees": [
+        "air",
+        "ballistic"
+      ],
+      "horizonLimited": true,
+      "antennaM": 25
+    },
+    "weapons": [
+      {
+        "name": "40N6",
+        "rangeKm": 380,
+        "magazine": 8,
+        "salvo": 2,
+        "pk": 0.7,
+        "reactionSec": 10,
+        "engages": [
+          "air",
+          "ballistic"
+        ]
+      },
+      {
+        "name": "48N6DM",
+        "rangeKm": 250,
+        "magazine": 8,
+        "salvo": 2,
+        "pk": 0.75,
+        "reactionSec": 10,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": "open sources vary",
+        "confidence": "medium"
+      },
+      "sensor.tracks": {
+        "source": "open sources vary",
+        "confidence": "medium"
+      },
+      "sensor.engagements": {
+        "source": "estimate",
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": "open sources vary",
+        "confidence": "medium"
+      },
+      "weapons.0.pk": {
+        "source": "estimate",
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": "estimate",
+        "confidence": "low"
+      },
+      "weapons.0.magazine": {
+        "source": "open sources vary",
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": "estimate",
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": "open sources vary",
+        "confidence": "medium"
+      },
+      "weapons.1.pk": {
+        "source": "estimate",
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": "estimate",
+        "confidence": "low"
+      },
+      "weapons.1.magazine": {
+        "source": "open sources vary",
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": "estimate",
+        "confidence": "low"
+      }
+    },
+    "custom": true
+  }
+]

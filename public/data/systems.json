@@ -1,0 +1,5794 @@
+[
+ {
+  "id": "s-400",
+  "name": "S-400 Triumf",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Battalion of launchers with a 91N6E acquisition radar.",
+  "sensor": {
+   "detectionKm": 600,
+   "tracks": 80,
+   "engagements": 36,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "40N6",
+    "rangeKm": 380,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   },
+   {
+    "name": "48N6DM",
+    "rangeKm": 250,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "s-300pmu2",
+  "name": "S-300PMU-2 Favorit",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 36,
+   "engagements": 12,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "48N6E2",
+    "rangeKm": 200,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 12,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "s-350",
+  "name": "S-350 Vityaz",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 40,
+   "engagements": 16,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "9M96E2",
+    "rangeKm": 120,
+    "magazine": 12,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "pantsir-s1",
+  "name": "Pantsir-S1",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Point defence, usually protecting a longer-ranged battery.",
+  "sensor": {
+   "detectionKm": 36,
+   "tracks": 20,
+   "engagements": 4,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "57E6",
+    "rangeKm": 20,
+    "magazine": 12,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "2A38M 30 mm",
+    "rangeKm": 4,
+    "magazine": 1400,
+    "salvo": 50,
+    "pk": 0.3,
+    "reactionSec": 3,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "buk-m3",
+  "name": "Buk-M3",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 160,
+   "tracks": 36,
+   "engagements": 6,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "9M317M",
+    "rangeKm": 70,
+    "magazine": 6,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "tor-m2",
+  "name": "Tor-M2",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 32,
+   "tracks": 48,
+   "engagements": 4,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "9M338K",
+    "rangeKm": 16,
+    "magazine": 16,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "patriot-pac3",
+  "name": "MIM-104 Patriot PAC-3",
+  "typeId": "sam-launcher",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 170,
+   "tracks": 100,
+   "engagements": 9,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "PAC-3 MSE",
+    "rangeKm": 120,
+    "magazine": 12,
+    "salvo": 2,
+    "pk": 0.8,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   },
+   {
+    "name": "PAC-2 GEM-T",
+    "rangeKm": 160,
+    "magazine": 16,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "thaad",
+  "name": "THAAD",
+  "typeId": "sam-launcher",
+  "origin": "United States",
+  "note": "AN/TPY-2 radar; exo-atmospheric intercept, no aircraft engagement.",
+  "sensor": {
+   "detectionKm": 870,
+   "tracks": 60,
+   "engagements": 6,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "THAAD interceptor",
+    "rangeKm": 200,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.8,
+    "reactionSec": 15,
+    "engages": [
+     "ballistic"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "nasams",
+  "name": "NASAMS",
+  "typeId": "sam-launcher",
+  "origin": "Norway / United States",
+  "sensor": {
+   "detectionKm": 120,
+   "tracks": 60,
+   "engagements": 6,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "AMRAAM-ER",
+    "rangeKm": 50,
+    "magazine": 6,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "iris-t-slm",
+  "name": "IRIS-T SLM",
+  "typeId": "sam-launcher",
+  "origin": "Germany",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 50,
+   "engagements": 8,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "IRIS-T SLM",
+    "rangeKm": 40,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 6,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "samp-t",
+  "name": "SAMP/T",
+  "typeId": "sam-launcher",
+  "origin": "France / Italy",
+  "sensor": {
+   "detectionKm": 350,
+   "tracks": 100,
+   "engagements": 10,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "Aster 30",
+    "rangeKm": 120,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "hq-9b",
+  "name": "HQ-9B",
+  "typeId": "sam-launcher",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 100,
+   "engagements": 12,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "HQ-9B",
+    "rangeKm": 250,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 12,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "hq-16",
+  "name": "HQ-16",
+  "typeId": "sam-launcher",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 140,
+   "tracks": 40,
+   "engagements": 6,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "HQ-16",
+    "rangeKm": 40,
+    "magazine": 6,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "barak-8",
+  "name": "Barak 8 (land)",
+  "typeId": "sam-launcher",
+  "origin": "Israel / India",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 60,
+   "engagements": 8,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "Barak 8",
+    "rangeKm": 100,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "akash",
+  "name": "Akash",
+  "typeId": "sam-launcher",
+  "origin": "India",
+  "sensor": {
+   "detectionKm": 150,
+   "tracks": 64,
+   "engagements": 4,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "Akash",
+    "rangeKm": 30,
+    "magazine": 3,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "iron-dome",
+  "name": "Iron Dome",
+  "typeId": "sam-launcher",
+  "origin": "Israel",
+  "note": "Against rockets and artillery, not aircraft.",
+  "sensor": {
+   "detectionKm": 70,
+   "tracks": 200,
+   "engagements": 20,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "Tamir",
+    "rangeKm": 70,
+    "magazine": 20,
+    "salvo": 2,
+    "pk": 0.85,
+    "reactionSec": 4,
+    "engages": [
+     "ballistic"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "kub-mobile",
+  "name": "Mobile SHORAD (generic)",
+  "typeId": "mobile-ad",
+  "origin": "—",
+  "note": "A stand-in for whatever short-range system a formation actually carries.",
+  "sensor": {
+   "detectionKm": 30,
+   "tracks": 20,
+   "engagements": 2,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 25
+  },
+  "weapons": [
+   {
+    "name": "Short-range SAM",
+    "rangeKm": 12,
+    "magazine": 8,
+    "salvo": 1,
+    "pk": 0.6,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "nebo-m",
+  "name": "Nebo-M",
+  "typeId": "radar",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 600,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "an-tpy-2",
+  "name": "AN/TPY-2",
+  "typeId": "radar",
+  "origin": "United States",
+  "note": "X-band, ballistic missile defence.",
+  "sensor": {
+   "detectionKm": 1000,
+   "tracks": 100,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "jy-27a",
+  "name": "JY-27A",
+  "typeId": "radar",
+  "origin": "China",
+  "note": "VHF, marketed against low-observable aircraft.",
+  "sensor": {
+   "detectionKm": 500,
+   "tracks": 100,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "ground-radar",
+  "name": "Air surveillance radar (generic)",
+  "typeId": "radar",
+  "origin": "—",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 100,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "oth-radar",
+  "name": "Over-the-horizon radar",
+  "typeId": "radar",
+  "origin": "—",
+  "note": "Sees past the horizon by bouncing off the ionosphere; poor accuracy, enormous reach.",
+  "sensor": {
+   "detectionKm": 3000,
+   "tracks": 300,
+   "sees": [
+    "air",
+    "ballistic"
+   ],
+   "horizonLimited": true,
+   "antennaM": 40
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "f-35a",
+  "name": "F-35A Lightning II",
+  "typeId": "fighter",
+  "origin": "United States",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 150,
+   "tracks": 20,
+   "sees": [
+    "air",
+    "ground"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "AIM-120D",
+    "rangeKm": 160,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1100,
+   "refuelledRadiusKm": 1900,
+   "speedKmh": 1930,
+   "payloadKg": 8100,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "f-22a",
+  "name": "F-22A Raptor",
+  "typeId": "fighter",
+  "origin": "United States",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 200,
+   "tracks": 20,
+   "sees": [
+    "air"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "AIM-120D",
+    "rangeKm": 160,
+    "magazine": 6,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 850,
+   "refuelledRadiusKm": 1600,
+   "speedKmh": 2410,
+   "payloadKg": 4500,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "f-16c",
+  "name": "F-16C Fighting Falcon",
+  "typeId": "fighter",
+  "origin": "United States",
+  "signature": "medium",
+  "sensor": {
+   "detectionKm": 120,
+   "tracks": 10,
+   "sees": [
+    "air",
+    "ground"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "AIM-120C",
+    "rangeKm": 105,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 550,
+   "refuelledRadiusKm": 1200,
+   "speedKmh": 2120,
+   "payloadKg": 7700,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "f-15e",
+  "name": "F-15E Strike Eagle",
+  "typeId": "strike",
+  "origin": "United States",
+  "signature": "high",
+  "weapons": [
+   {
+    "name": "AIM-120C",
+    "rangeKm": 105,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1270,
+   "refuelledRadiusKm": 2200,
+   "speedKmh": 2650,
+   "payloadKg": 11000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "f-18ef",
+  "name": "F/A-18E/F Super Hornet",
+  "typeId": "strike",
+  "origin": "United States",
+  "note": "Carrier-borne.",
+  "signature": "medium",
+  "weapons": [
+   {
+    "name": "AIM-120C",
+    "rangeKm": 105,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 720,
+   "refuelledRadiusKm": 1400,
+   "speedKmh": 1915,
+   "payloadKg": 8050,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "su-35s",
+  "name": "Su-35S",
+  "typeId": "fighter",
+  "origin": "Russia",
+  "signature": "high",
+  "sensor": {
+   "detectionKm": 350,
+   "tracks": 30,
+   "sees": [
+    "air"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "R-77-1",
+    "rangeKm": 110,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "R-37M",
+    "rangeKm": 300,
+    "magazine": 2,
+    "salvo": 1,
+    "pk": 0.5,
+    "reactionSec": 25,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1600,
+   "refuelledRadiusKm": 2400,
+   "speedKmh": 2400,
+   "payloadKg": 8000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "su-57",
+  "name": "Su-57 Felon",
+  "typeId": "fighter",
+  "origin": "Russia",
+  "signature": "low",
+  "weapons": [
+   {
+    "name": "R-77M",
+    "rangeKm": 190,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1500,
+   "refuelledRadiusKm": 2300,
+   "speedKmh": 2135,
+   "payloadKg": 10000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "su-34",
+  "name": "Su-34 Fullback",
+  "typeId": "strike",
+  "origin": "Russia",
+  "signature": "high",
+  "weapons": [],
+  "platform": {
+   "combatRadiusKm": 1100,
+   "refuelledRadiusKm": 1900,
+   "speedKmh": 1900,
+   "payloadKg": 12000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "mig-31bm",
+  "name": "MiG-31BM",
+  "typeId": "fighter",
+  "origin": "Russia",
+  "signature": "high",
+  "sensor": {
+   "detectionKm": 320,
+   "tracks": 24,
+   "sees": [
+    "air"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "R-37M",
+    "rangeKm": 300,
+    "magazine": 4,
+    "salvo": 1,
+    "pk": 0.5,
+    "reactionSec": 25,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1450,
+   "refuelledRadiusKm": 2200,
+   "speedKmh": 3000,
+   "payloadKg": 9000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "j-20",
+  "name": "J-20 Mighty Dragon",
+  "typeId": "fighter",
+  "origin": "China",
+  "signature": "low",
+  "weapons": [
+   {
+    "name": "PL-15",
+    "rangeKm": 200,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.55,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1100,
+   "refuelledRadiusKm": 2000,
+   "speedKmh": 2100,
+   "payloadKg": 11000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "j-16",
+  "name": "J-16",
+  "typeId": "strike",
+  "origin": "China",
+  "signature": "high",
+  "weapons": [
+   {
+    "name": "PL-15",
+    "rangeKm": 200,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.55,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1500,
+   "refuelledRadiusKm": 2300,
+   "speedKmh": 2100,
+   "payloadKg": 12000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "rafale",
+  "name": "Rafale",
+  "typeId": "fighter",
+  "origin": "France",
+  "signature": "medium",
+  "weapons": [
+   {
+    "name": "Meteor",
+    "rangeKm": 200,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.6,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1850,
+   "refuelledRadiusKm": 2600,
+   "speedKmh": 1912,
+   "payloadKg": 9500,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "typhoon",
+  "name": "Eurofighter Typhoon",
+  "typeId": "fighter",
+  "origin": "Europe",
+  "signature": "medium",
+  "weapons": [
+   {
+    "name": "Meteor",
+    "rangeKm": 200,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.6,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1390,
+   "refuelledRadiusKm": 2300,
+   "speedKmh": 2495,
+   "payloadKg": 9000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "gripen-e",
+  "name": "JAS 39E Gripen",
+  "typeId": "fighter",
+  "origin": "Sweden",
+  "signature": "medium",
+  "weapons": [
+   {
+    "name": "Meteor",
+    "rangeKm": 200,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.6,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1500,
+   "refuelledRadiusKm": 2200,
+   "speedKmh": 2200,
+   "payloadKg": 6000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "su-30mki",
+  "name": "Su-30MKI",
+  "typeId": "fighter",
+  "origin": "India / Russia",
+  "signature": "high",
+  "weapons": [
+   {
+    "name": "R-77",
+    "rangeKm": 110,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.5,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 1500,
+   "refuelledRadiusKm": 2400,
+   "speedKmh": 2120,
+   "payloadKg": 8000,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "tejas",
+  "name": "HAL Tejas Mk1A",
+  "typeId": "fighter",
+  "origin": "India",
+  "signature": "medium",
+  "weapons": [],
+  "platform": {
+   "combatRadiusKm": 500,
+   "refuelledRadiusKm": 1000,
+   "speedKmh": 2200,
+   "payloadKg": 3500,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "a-10c",
+  "name": "A-10C Thunderbolt II",
+  "typeId": "strike",
+  "origin": "United States",
+  "note": "Close air support; short reach, long loiter.",
+  "signature": "high",
+  "weapons": [],
+  "platform": {
+   "combatRadiusKm": 460,
+   "speedKmh": 700,
+   "payloadKg": 7260,
+   "crew": 1
+  },
+  "provenance": {
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "b-2a",
+  "name": "B-2A Spirit",
+  "typeId": "bomber",
+  "origin": "United States",
+  "signature": "low",
+  "platform": {
+   "combatRadiusKm": 5500,
+   "refuelledRadiusKm": 9000,
+   "speedKmh": 1010,
+   "payloadKg": 18000,
+   "crew": 2
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.refuelledRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "b-1b",
+  "name": "B-1B Lancer",
+  "typeId": "bomber",
+  "origin": "United States",
+  "signature": "medium",
+  "platform": {
+   "combatRadiusKm": 5500,
+   "refuelledRadiusKm": 9000,
+   "speedKmh": 1330,
+   "payloadKg": 34000,
+   "crew": 4
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "b-52h",
+  "name": "B-52H Stratofortress",
+  "typeId": "bomber",
+  "origin": "United States",
+  "signature": "high",
+  "platform": {
+   "combatRadiusKm": 7200,
+   "refuelledRadiusKm": 12000,
+   "speedKmh": 1000,
+   "payloadKg": 31500,
+   "crew": 5
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "tu-160",
+  "name": "Tu-160 Blackjack",
+  "typeId": "bomber",
+  "origin": "Russia",
+  "signature": "high",
+  "platform": {
+   "combatRadiusKm": 7300,
+   "refuelledRadiusKm": 11000,
+   "speedKmh": 2220,
+   "payloadKg": 40000,
+   "crew": 4
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "tu-95ms",
+  "name": "Tu-95MS Bear",
+  "typeId": "bomber",
+  "origin": "Russia",
+  "signature": "high",
+  "platform": {
+   "combatRadiusKm": 6400,
+   "refuelledRadiusKm": 9000,
+   "speedKmh": 830,
+   "payloadKg": 15000,
+   "crew": 7
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "h-6k",
+  "name": "H-6K",
+  "typeId": "bomber",
+  "origin": "China",
+  "signature": "high",
+  "platform": {
+   "combatRadiusKm": 3500,
+   "speedKmh": 1050,
+   "payloadKg": 12000,
+   "crew": 4
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "e-3g",
+  "name": "E-3G Sentry",
+  "typeId": "awacs",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 400,
+   "tracks": 600,
+   "sees": [
+    "air",
+    "surface"
+   ]
+  },
+  "platform": {
+   "combatRadiusKm": 1600,
+   "speedKmh": 850,
+   "crew": 20,
+   "enduranceDays": 0
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "a-50u",
+  "name": "A-50U Mainstay",
+  "typeId": "awacs",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 400,
+   "tracks": 300,
+   "sees": [
+    "air",
+    "surface"
+   ]
+  },
+  "platform": {
+   "combatRadiusKm": 1400,
+   "speedKmh": 800,
+   "crew": 15
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "kj-500",
+  "name": "KJ-500",
+  "typeId": "awacs",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 470,
+   "tracks": 100,
+   "sees": [
+    "air",
+    "surface"
+   ]
+  },
+  "platform": {
+   "combatRadiusKm": 1500,
+   "speedKmh": 550,
+   "crew": 10
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "e-2d",
+  "name": "E-2D Advanced Hawkeye",
+  "typeId": "awacs",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 550,
+   "tracks": 300,
+   "sees": [
+    "air",
+    "surface"
+   ]
+  },
+  "platform": {
+   "combatRadiusKm": 320,
+   "speedKmh": 640,
+   "crew": 5
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  },
+  "note": "Carrier-borne."
+ },
+ {
+  "id": "kc-46a",
+  "name": "KC-46A Pegasus",
+  "typeId": "tanker",
+  "origin": "United States",
+  "platform": {
+   "combatRadiusKm": 6500,
+   "speedKmh": 915,
+   "payloadKg": 96000,
+   "crew": 3
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  },
+  "note": "Payload is transferable fuel."
+ },
+ {
+  "id": "il-78",
+  "name": "Il-78 Midas",
+  "typeId": "tanker",
+  "origin": "Russia",
+  "platform": {
+   "combatRadiusKm": 3500,
+   "speedKmh": 830,
+   "payloadKg": 85000,
+   "crew": 6
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "c-17a",
+  "name": "C-17A Globemaster III",
+  "typeId": "airlift",
+  "origin": "United States",
+  "platform": {
+   "combatRadiusKm": 4480,
+   "speedKmh": 830,
+   "payloadKg": 77500,
+   "crew": 3
+  },
+  "provenance": {
+   "platform.payloadKg": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "p-8a",
+  "name": "P-8A Poseidon",
+  "typeId": "mpa",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 320,
+   "tracks": 100,
+   "sees": [
+    "surface",
+    "subsurface"
+   ]
+  },
+  "platform": {
+   "combatRadiusKm": 2200,
+   "speedKmh": 900,
+   "crew": 9
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "mq-9",
+  "name": "MQ-9A Reaper",
+  "typeId": "uav",
+  "origin": "United States",
+  "signature": "medium",
+  "sensor": {
+   "detectionKm": 60,
+   "tracks": 4,
+   "sees": [
+    "ground",
+    "surface"
+   ]
+  },
+  "platform": {
+   "combatRadiusKm": 1850,
+   "speedKmh": 300,
+   "payloadKg": 1700
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "bayraktar-tb2",
+  "name": "Bayraktar TB2",
+  "typeId": "uav",
+  "origin": "Türkiye",
+  "signature": "medium",
+  "platform": {
+   "combatRadiusKm": 150,
+   "speedKmh": 220,
+   "payloadKg": 150
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  },
+  "note": "Radius is line-of-sight control; far greater with a satellite link."
+ },
+ {
+  "id": "shahed-136",
+  "name": "Shahed-136",
+  "typeId": "uav",
+  "origin": "Iran",
+  "signature": "low",
+  "platform": {
+   "combatRadiusKm": 2000,
+   "speedKmh": 185,
+   "payloadKg": 50
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.payloadKg": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  },
+  "note": "One-way attack drone; the radius is one-way."
+ },
+ {
+  "id": "ah-64e",
+  "name": "AH-64E Apache",
+  "typeId": "attack-heli",
+  "origin": "United States",
+  "platform": {
+   "combatRadiusKm": 480,
+   "speedKmh": 300,
+   "payloadKg": 3000,
+   "crew": 2
+  },
+  "weapons": [
+   {
+    "name": "AGM-114 Hellfire",
+    "rangeKm": 11,
+    "magazine": 16,
+    "salvo": 1,
+    "pk": 0.8,
+    "reactionSec": 15,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "ka-52",
+  "name": "Ka-52 Alligator",
+  "typeId": "attack-heli",
+  "origin": "Russia",
+  "platform": {
+   "combatRadiusKm": 460,
+   "speedKmh": 300,
+   "payloadKg": 2000,
+   "crew": 2
+  },
+  "provenance": {
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "ch-47f",
+  "name": "CH-47F Chinook",
+  "typeId": "transport-heli",
+  "origin": "United States",
+  "platform": {
+   "combatRadiusKm": 370,
+   "speedKmh": 300,
+   "payloadKg": 10800,
+   "crew": 3
+  },
+  "provenance": {
+   "platform.payloadKg": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.combatRadiusKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "arleigh-burke",
+  "name": "Arleigh Burke class (Flight IIA)",
+  "typeId": "destroyer",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 320,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "SM-6",
+    "rangeKm": 240,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 15,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   },
+   {
+    "name": "SM-2MR",
+    "rangeKm": 170,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 15,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "Tomahawk",
+    "rangeKm": 1600,
+    "magazine": 24,
+    "salvo": 4,
+    "pk": 0.8,
+    "reactionSec": 300,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 9200,
+   "crew": 330,
+   "vls": 96,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.2.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.2.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.2.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.2.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.2.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "ticonderoga",
+  "name": "Ticonderoga class",
+  "typeId": "cruiser",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 320,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "SM-6",
+    "rangeKm": 240,
+    "magazine": 40,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 15,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 9800,
+   "crew": 330,
+   "vls": 122,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "type-055",
+  "name": "Type 055 (Renhai)",
+  "typeId": "cruiser",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "HHQ-9B",
+    "rangeKm": 200,
+    "magazine": 48,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 15,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "YJ-18",
+    "rangeKm": 540,
+    "magazine": 16,
+    "salvo": 4,
+    "pk": 0.7,
+    "reactionSec": 120,
+    "engages": [
+     "surface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 12000,
+   "crew": 300,
+   "vls": 112,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "type-052d",
+  "name": "Type 052D (Luyang III)",
+  "typeId": "destroyer",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "HHQ-9",
+    "rangeKm": 200,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 15,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 7500,
+   "crew": 280,
+   "vls": 64,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "admiral-gorshkov",
+  "name": "Admiral Gorshkov class",
+  "typeId": "frigate",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "Redut 9M96",
+    "rangeKm": 150,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 12,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "Kalibr",
+    "rangeKm": 1500,
+    "magazine": 16,
+    "salvo": 4,
+    "pk": 0.75,
+    "reactionSec": 300,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 5400,
+   "crew": 210,
+   "vls": 32,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "slava",
+  "name": "Slava class",
+  "typeId": "cruiser",
+  "origin": "Russia",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "S-300F Fort",
+    "rangeKm": 90,
+    "magazine": 64,
+    "salvo": 2,
+    "pk": 0.65,
+    "reactionSec": 20,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 11500,
+   "crew": 480,
+   "vls": 64,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "type-45",
+  "name": "Type 45 (Daring class)",
+  "typeId": "destroyer",
+  "origin": "United Kingdom",
+  "sensor": {
+   "detectionKm": 400,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "Aster 30",
+    "rangeKm": 120,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 12,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 8500,
+   "crew": 190,
+   "vls": 48,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "fremm",
+  "name": "FREMM class",
+  "typeId": "frigate",
+  "origin": "France / Italy",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "Aster 15",
+    "rangeKm": 30,
+    "magazine": 16,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 6000,
+   "crew": 145,
+   "vls": 32,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "kolkata",
+  "name": "Kolkata class",
+  "typeId": "destroyer",
+  "origin": "India",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "Barak 8",
+    "rangeKm": 100,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 12,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "BrahMos",
+    "rangeKm": 450,
+    "magazine": 16,
+    "salvo": 4,
+    "pk": 0.8,
+    "reactionSec": 120,
+    "engages": [
+     "surface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 7400,
+   "crew": 330,
+   "vls": 48,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "maya",
+  "name": "Maya class",
+  "typeId": "destroyer",
+  "origin": "Japan",
+  "sensor": {
+   "detectionKm": 320,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [
+   {
+    "name": "SM-6",
+    "rangeKm": 240,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 15,
+    "engages": [
+     "air",
+     "ballistic"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 10250,
+   "crew": 300,
+   "vls": 96,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "visby",
+  "name": "Visby class",
+  "typeId": "corvette",
+  "origin": "Sweden",
+  "note": "Low-signature hull.",
+  "sensor": {
+   "detectionKm": 100,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 640,
+   "crew": 43,
+   "speedKmh": 65,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "nimitz",
+  "name": "Nimitz class",
+  "typeId": "carrier-ship",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 100000,
+   "crew": 5000,
+   "aircraft": 75,
+   "speedKmh": 56,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "gerald-ford",
+  "name": "Gerald R. Ford class",
+  "typeId": "carrier-ship",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 350,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 100000,
+   "crew": 4500,
+   "aircraft": 75,
+   "speedKmh": 56,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "queen-elizabeth",
+  "name": "Queen Elizabeth class",
+  "typeId": "carrier-ship",
+  "origin": "United Kingdom",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 65000,
+   "crew": 1600,
+   "aircraft": 40,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "liaoning",
+  "name": "Liaoning / Shandong",
+  "typeId": "carrier-ship",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 60000,
+   "crew": 2600,
+   "aircraft": 36,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "fujian",
+  "name": "Fujian",
+  "typeId": "carrier-ship",
+  "origin": "China",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 80000,
+   "crew": 3000,
+   "aircraft": 50,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "vikrant",
+  "name": "INS Vikrant",
+  "typeId": "carrier-ship",
+  "origin": "India",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 45000,
+   "crew": 1600,
+   "aircraft": 30,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "charles-de-gaulle",
+  "name": "Charles de Gaulle",
+  "typeId": "carrier-ship",
+  "origin": "France",
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 42500,
+   "crew": 1900,
+   "aircraft": 30,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "america-class",
+  "name": "America class",
+  "typeId": "amphib-ship",
+  "origin": "United States",
+  "sensor": {
+   "detectionKm": 200,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 45000,
+   "crew": 1200,
+   "aircraft": 20,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "mistral",
+  "name": "Mistral class",
+  "typeId": "amphib-ship",
+  "origin": "France",
+  "sensor": {
+   "detectionKm": 150,
+   "tracks": 200,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": true,
+   "antennaM": 30
+  },
+  "weapons": [],
+  "platform": {
+   "displacementT": 21500,
+   "crew": 180,
+   "aircraft": 16,
+   "speedKmh": 55,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "supply-oiler",
+  "name": "Fleet replenishment oiler",
+  "typeId": "logistics-ship",
+  "origin": "—",
+  "weapons": [],
+  "platform": {
+   "displacementT": 40000,
+   "crew": 90,
+   "speedKmh": 37,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.vls": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "virginia",
+  "name": "Virginia class",
+  "typeId": "submarine",
+  "origin": "United States",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 100,
+   "tracks": 20,
+   "sees": [
+    "surface",
+    "subsurface"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "Mk 48 torpedo",
+    "rangeKm": 50,
+    "magazine": 25,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 120,
+    "engages": [
+     "surface",
+     "subsurface"
+    ]
+   },
+   {
+    "name": "Tomahawk",
+    "rangeKm": 1600,
+    "magazine": 12,
+    "salvo": 4,
+    "pk": 0.8,
+    "reactionSec": 300,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 7900,
+   "crew": 135,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "astute",
+  "name": "Astute class",
+  "typeId": "submarine",
+  "origin": "United Kingdom",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 100,
+   "tracks": 20,
+   "sees": [
+    "surface",
+    "subsurface"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "Spearfish torpedo",
+    "rangeKm": 54,
+    "magazine": 38,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 120,
+    "engages": [
+     "surface",
+     "subsurface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 7400,
+   "crew": 98,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "yasen-m",
+  "name": "Yasen-M class",
+  "typeId": "submarine",
+  "origin": "Russia",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 90,
+   "tracks": 20,
+   "sees": [
+    "surface",
+    "subsurface"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "Kalibr",
+    "rangeKm": 1500,
+    "magazine": 32,
+    "salvo": 4,
+    "pk": 0.75,
+    "reactionSec": 300,
+    "engages": [
+     "ground"
+    ]
+   },
+   {
+    "name": "Oniks",
+    "rangeKm": 600,
+    "magazine": 32,
+    "salvo": 4,
+    "pk": 0.7,
+    "reactionSec": 180,
+    "engages": [
+     "surface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 13800,
+   "crew": 64,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.1.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "kilo",
+  "name": "Kilo class (Project 636)",
+  "typeId": "submarine",
+  "origin": "Russia",
+  "note": "Diesel-electric; very quiet, limited submerged endurance.",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 60,
+   "tracks": 20,
+   "sees": [
+    "surface",
+    "subsurface"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "53-65 torpedo",
+    "rangeKm": 19,
+    "magazine": 18,
+    "salvo": 2,
+    "pk": 0.6,
+    "reactionSec": 120,
+    "engages": [
+     "surface",
+     "subsurface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 3950,
+   "crew": 52,
+   "speedKmh": 60,
+   "enduranceDays": 45
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "type-093",
+  "name": "Type 093 (Shang class)",
+  "typeId": "submarine",
+  "origin": "China",
+  "signature": "low",
+  "sensor": {
+   "detectionKm": 70,
+   "tracks": 20,
+   "sees": [
+    "surface",
+    "subsurface"
+   ]
+  },
+  "weapons": [
+   {
+    "name": "YJ-18",
+    "rangeKm": 540,
+    "magazine": 12,
+    "salvo": 4,
+    "pk": 0.65,
+    "reactionSec": 180,
+    "engages": [
+     "surface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 7000,
+   "crew": 100,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "ohio-ssbn",
+  "name": "Ohio class SSBN",
+  "typeId": "ssbn",
+  "origin": "United States",
+  "signature": "low",
+  "weapons": [
+   {
+    "name": "Trident II D5",
+    "rangeKm": 12000,
+    "magazine": 20,
+    "salvo": 1,
+    "pk": 0.9,
+    "reactionSec": 900,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 18750,
+   "crew": 155,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "borei",
+  "name": "Borei class SSBN",
+  "typeId": "ssbn",
+  "origin": "Russia",
+  "signature": "low",
+  "weapons": [
+   {
+    "name": "Bulava",
+    "rangeKm": 9300,
+    "magazine": 16,
+    "salvo": 1,
+    "pk": 0.85,
+    "reactionSec": 900,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 24000,
+   "crew": 107,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "arihant",
+  "name": "Arihant class SSBN",
+  "typeId": "ssbn",
+  "origin": "India",
+  "signature": "low",
+  "weapons": [
+   {
+    "name": "K-15 Sagarika",
+    "rangeKm": 750,
+    "magazine": 12,
+    "salvo": 1,
+    "pk": 0.85,
+    "reactionSec": 900,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 6000,
+   "crew": 95,
+   "speedKmh": 60,
+   "enduranceDays": 90
+  },
+  "provenance": {
+   "platform.displacementT": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "platform.enduranceDays": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "sensor.detectionKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "iskander-m",
+  "name": "Iskander-M",
+  "typeId": "missile",
+  "origin": "Russia",
+  "weapons": [
+   {
+    "name": "9M723",
+    "rangeKm": 500,
+    "magazine": 2,
+    "salvo": 2,
+    "pk": 0.8,
+    "reactionSec": 240,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "atacms",
+  "name": "ATACMS",
+  "typeId": "missile",
+  "origin": "United States",
+  "weapons": [
+   {
+    "name": "MGM-140",
+    "rangeKm": 300,
+    "magazine": 2,
+    "salvo": 2,
+    "pk": 0.8,
+    "reactionSec": 180,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "df-21d",
+  "name": "DF-21D",
+  "typeId": "missile",
+  "origin": "China",
+  "note": "Anti-ship ballistic missile; the kill probability is the most contested number here.",
+  "weapons": [
+   {
+    "name": "DF-21D",
+    "rangeKm": 1500,
+    "magazine": 1,
+    "salvo": 1,
+    "pk": 0.5,
+    "reactionSec": 600,
+    "engages": [
+     "surface"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "df-26",
+  "name": "DF-26",
+  "typeId": "missile",
+  "origin": "China",
+  "weapons": [
+   {
+    "name": "DF-26",
+    "rangeKm": 4000,
+    "magazine": 1,
+    "salvo": 1,
+    "pk": 0.6,
+    "reactionSec": 600,
+    "engages": [
+     "ground",
+     "surface"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "himars",
+  "name": "M142 HIMARS",
+  "typeId": "rocket",
+  "origin": "United States",
+  "weapons": [
+   {
+    "name": "GMLRS",
+    "rangeKm": 80,
+    "magazine": 6,
+    "salvo": 6,
+    "pk": 0.7,
+    "reactionSec": 120,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "bm-30-smerch",
+  "name": "BM-30 Smerch",
+  "typeId": "rocket",
+  "origin": "Russia",
+  "weapons": [
+   {
+    "name": "9M55K",
+    "rangeKm": 90,
+    "magazine": 12,
+    "salvo": 12,
+    "pk": 0.4,
+    "reactionSec": 180,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "tomahawk-tel",
+  "name": "Typhon / Tomahawk (land)",
+  "typeId": "missile",
+  "origin": "United States",
+  "weapons": [
+   {
+    "name": "Tomahawk",
+    "rangeKm": 1600,
+    "magazine": 4,
+    "salvo": 4,
+    "pk": 0.8,
+    "reactionSec": 600,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "bastion-p",
+  "name": "K-300P Bastion-P",
+  "typeId": "missile",
+  "origin": "Russia",
+  "weapons": [
+   {
+    "name": "P-800 Oniks",
+    "rangeKm": 600,
+    "magazine": 2,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 300,
+    "engages": [
+     "surface"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "brahmos-land",
+  "name": "BrahMos (land)",
+  "typeId": "missile",
+  "origin": "India",
+  "weapons": [
+   {
+    "name": "BrahMos",
+    "rangeKm": 450,
+    "magazine": 3,
+    "salvo": 3,
+    "pk": 0.8,
+    "reactionSec": 300,
+    "engages": [
+     "ground",
+     "surface"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "minuteman-iii",
+  "name": "LGM-30G Minuteman III",
+  "typeId": "silo",
+  "origin": "United States",
+  "weapons": [
+   {
+    "name": "Minuteman III",
+    "rangeKm": 13000,
+    "magazine": 1,
+    "salvo": 1,
+    "pk": 0.9,
+    "reactionSec": 300,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "rs-24-yars",
+  "name": "RS-24 Yars",
+  "typeId": "silo",
+  "origin": "Russia",
+  "weapons": [
+   {
+    "name": "RS-24",
+    "rangeKm": 11000,
+    "magazine": 1,
+    "salvo": 1,
+    "pk": 0.9,
+    "reactionSec": 300,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "m1a2-abrams",
+  "name": "M1A2 Abrams",
+  "typeId": "armour",
+  "origin": "United States",
+  "weapons": [
+   {
+    "name": "120 mm M256",
+    "rangeKm": 4,
+    "magazine": 42,
+    "salvo": 1,
+    "pk": 0.8,
+    "reactionSec": 10,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "speedKmh": 67,
+   "crew": 4
+  },
+  "provenance": {
+   "platform.crew": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "t-90m",
+  "name": "T-90M",
+  "typeId": "armour",
+  "origin": "Russia",
+  "weapons": [
+   {
+    "name": "125 mm 2A46M",
+    "rangeKm": 5,
+    "magazine": 43,
+    "salvo": 1,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "speedKmh": 60,
+   "crew": 3
+  },
+  "provenance": {
+   "platform.crew": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "leopard-2a7",
+  "name": "Leopard 2A7",
+  "typeId": "armour",
+  "origin": "Germany",
+  "weapons": [
+   {
+    "name": "120 mm Rh-120",
+    "rangeKm": 4,
+    "magazine": 42,
+    "salvo": 1,
+    "pk": 0.8,
+    "reactionSec": 10,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "speedKmh": 70,
+   "crew": 4
+  },
+  "provenance": {
+   "platform.crew": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "m109a7",
+  "name": "M109A7 Paladin",
+  "typeId": "artillery",
+  "origin": "United States",
+  "weapons": [
+   {
+    "name": "155 mm",
+    "rangeKm": 30,
+    "magazine": 39,
+    "salvo": 3,
+    "pk": 0.4,
+    "reactionSec": 60,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "speedKmh": 61,
+   "crew": 4
+  },
+  "provenance": {
+   "platform.crew": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "caesar",
+  "name": "CAESAR 155 mm",
+  "typeId": "artillery",
+  "origin": "France",
+  "weapons": [
+   {
+    "name": "155 mm",
+    "rangeKm": 42,
+    "magazine": 18,
+    "salvo": 3,
+    "pk": 0.4,
+    "reactionSec": 60,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "speedKmh": 80,
+   "crew": 5
+  },
+  "provenance": {
+   "platform.crew": {
+    "source": "open sources",
+    "confidence": "high"
+   },
+   "weapons.0.rangeKm": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": "estimate",
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": "open sources vary",
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": "estimate",
+    "confidence": "low"
+   }
+  }
+ }
+]

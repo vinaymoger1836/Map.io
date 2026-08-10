@@ -1,0 +1,154 @@
+{
+  "nations": {
+    "356": {
+      "iso": "356",
+      "name": "India",
+      "color": "#D9534F"
+    },
+    "392": {
+      "iso": "392",
+      "name": "Japan",
+      "color": "#8B6FD6"
+    }
+  },
+  "units": [
+    {
+      "kind": "formation",
+      "id": "umsn46t261",
+      "iso": "392",
+      "lngLat": [
+        154.95410156249585,
+        34.293032256515986
+      ],
+      "formationId": "csg",
+      "composition": [
+        {
+          "typeId": "carrier-ship",
+          "count": 1
+        },
+        {
+          "typeId": "destroyer",
+          "count": 4
+        },
+        {
+          "typeId": "frigate",
+          "count": 2
+        },
+        {
+          "typeId": "submarine",
+          "count": 1
+        },
+        {
+          "typeId": "logistics-ship",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "formation",
+      "id": "umsn4doc93",
+      "iso": "392",
+      "lngLat": [
+        145.80078125000352,
+        37.30953567186626
+      ],
+      "formationId": "custom-umsn4dmps2",
+      "composition": [
+        {
+          "typeId": "strike",
+          "count": 3
+        },
+        {
+          "typeId": "bomber",
+          "count": 1
+        },
+        {
+          "typeId": "awacs",
+          "count": 1
+        },
+        {
+          "typeId": "tanker",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "unit",
+      "id": "umsn8eqvw1",
+      "iso": "392",
+      "lngLat": [
+        140.9003906249991,
+        36.8486295421404
+      ],
+      "typeId": "fighter",
+      "echelonId": "squadron",
+      "systemId": "f-16c",
+      "count": 12
+    },
+    {
+      "kind": "unit",
+      "id": "umsn94yi71",
+      "iso": "392",
+      "lngLat": [
+        20.107421875000597,
+        60.37143149033059
+      ],
+      "typeId": "sam-launcher",
+      "echelonId": "battalion",
+      "systemId": "s-400",
+      "count": 1
+    },
+    {
+      "kind": "unit",
+      "id": "umsn94zcv2",
+      "iso": "392",
+      "lngLat": [
+        20.10742187499929,
+        0.7470491450062866
+      ],
+      "typeId": "sam-launcher",
+      "echelonId": "battalion",
+      "systemId": "s-400",
+      "count": 1
+    },
+    {
+      "kind": "unit",
+      "id": "umsn95qqq3",
+      "iso": "392",
+      "lngLat": [
+        20.28320312499912,
+        0.5273363048134456
+      ],
+      "typeId": "sam-launcher",
+      "echelonId": "battalion",
+      "systemId": "s-400",
+      "count": 1
+    }
+  ],
+  "formations": [
+    {
+      "id": "custom-umsn4dmps2",
+      "label": "Air strike package",
+      "abbr": "ASP",
+      "composition": [
+        {
+          "typeId": "strike",
+          "count": 3
+        },
+        {
+          "typeId": "bomber",
+          "count": 1
+        },
+        {
+          "typeId": "awacs",
+          "count": 1
+        },
+        {
+          "typeId": "tanker",
+          "count": 1
+        }
+      ],
+      "custom": true
+    }
+  ]
+}

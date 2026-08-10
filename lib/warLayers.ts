@@ -20,11 +20,23 @@ import {
   type Formation,
   type Nation,
 } from './warGames';
+import {
+  combineEnvelopes,
+  effectiveDetectionKm,
+  envelopesFor,
+  systemById,
+  type Envelope,
+  type EnvelopeKind,
+  type SystemSpec,
+} from './specs';
+import { geodesicCircle } from './geo';
 import { unitIconId } from './unitIcons';
 
 export const WAR_LAYERS = [
   'wg-nation-fill',
   'wg-nation-line',
+  'wg-envelope-fill',
+  'wg-envelope-line',
   'wg-country-label',
   'wg-city-dot',
   'wg-city-label',
@@ -85,6 +97,9 @@ const INK = {
   },
 } as const;
 
+/** Matches nothing, which is what coverage shows until it is asked for. */
+const HIDE_ALL = ['==', ['get', 'unitId'], '__none__'] as unknown as ExpressionSpecification;
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export function installWarLayers(map: MLMap, world: WorldData, font: string[], dark = true) {
@@ -100,6 +115,7 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
   source('wg-world-countries', world.countries);
   source('wg-world-places', world.places);
   source('wg-units', emptyCollection());
+  source('wg-envelopes', emptyCollection());
 
   const add = (layer: any, before?: string) => {
     if (!map.getLayer(layer.id)) map.addLayer(layer, before);
@@ -127,6 +143,60 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       source: 'countries',
       layout: { visibility: 'none', 'line-join': 'round' },
       paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 1.6 },
+    },
+    firstSymbol
+  );
+
+  /* ---------- coverage envelopes ---------- */
+
+  // Above the painted nations, below every label: shading that buries the place
+  // names is shading nobody can use. Overlaps are left to compound on purpose —
+  // two SAM belts over the same ground should look denser than one, and the gap
+  // between them should read as a gap.
+  add(
+    {
+      id: 'wg-envelope-fill',
+      type: 'fill',
+      source: 'wg-envelopes',
+      filter: HIDE_ALL,
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-color': ['get', 'color'],
+        'fill-opacity': [
+          'match',
+          ['get', 'kind'],
+          'engagement',
+          0.13,
+          'detection',
+          0.05,
+          0.04,
+        ],
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-envelope-line',
+      type: 'line',
+      source: 'wg-envelopes',
+      filter: HIDE_ALL,
+      layout: { visibility: 'none', 'line-join': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-opacity': 0.75,
+        'line-width': ['match', ['get', 'kind'], 'engagement', 1.6, 1],
+        'line-dasharray': [
+          'match',
+          ['get', 'kind'],
+          'engagement',
+          ['literal', [1, 0]],
+          'detection',
+          ['literal', [4, 2]],
+          ['literal', [1, 2]],
+        ],
+      },
     },
     firstSymbol
   );
@@ -370,7 +440,8 @@ function emptyCollection() {
 function unitsToGeoJSON(
   units: DeployedUnit[],
   nations: Record<string, Nation>,
-  formations: Formation[]
+  formations: Formation[],
+  systems: SystemSpec[]
 ) {
   return {
     type: 'FeatureCollection',
@@ -390,11 +461,11 @@ function unitsToGeoJSON(
             // A strike group's label carries its size, because the whole point
             // of a special unit is that it is more than one thing.
             label: isFormation
-              ? `${unitLabel(u, formations)} · ${totalStrength(u.composition)}`
-              : unitLabel(u, formations),
+              ? `${unitLabel(u, formations, systems)} · ${totalStrength(u.composition)}`
+              : unitLabel(u, formations, systems),
             nation: nations[u.iso]?.name ?? '',
             type: isFormation ? (formation?.label ?? 'Special unit') : (u.typeId ?? ''),
-            detail: isFormation ? describeComposition(u.composition) : '',
+            detail: isFormation ? describeComposition(u.composition, systems) : '',
           },
           geometry: { type: 'Point', coordinates: u.lngLat },
         },
@@ -407,10 +478,121 @@ export function setUnits(
   map: MLMap,
   units: DeployedUnit[],
   nations: Record<string, Nation>,
-  formations: Formation[]
+  formations: Formation[],
+  systems: SystemSpec[] = []
 ) {
   const src = map.getSource('wg-units') as { setData?: (d: unknown) => void } | undefined;
-  src?.setData?.(unitsToGeoJSON(units, nations, formations));
+  src?.setData?.(unitsToGeoJSON(units, nations, formations, systems));
+}
+
+/* ------------------------------------------------------------------ */
+/* Coverage                                                            */
+/* ------------------------------------------------------------------ */
+
+/** What the coverage controls can ask for. */
+export interface CoverageState {
+  mode: 'off' | 'selected' | 'nation' | 'all';
+  kinds: Record<EnvelopeKind, boolean>;
+  /** Altitude of the target the sensors are being judged against, in metres. */
+  targetAltM: number;
+}
+
+/**
+ * Every reach on the board, as polygons in real coordinates.
+ *
+ * A unit's envelopes come from its system; a formation's come from the systems
+ * inside it, widest of each kind — which is how a carrier group inherits its
+ * escorts' umbrella without anybody typing a number into the formation.
+ */
+export function envelopesToGeoJSON(
+  units: DeployedUnit[],
+  nations: Record<string, Nation>,
+  systems: SystemSpec[],
+  targetAltM: number
+) {
+  const features: unknown[] = [];
+
+  for (const unit of units) {
+    const color = nations[unit.iso]?.color ?? '#9AA7B4';
+    let envelopes: Envelope[];
+    let specs: (SystemSpec | undefined)[];
+
+    if (unit.kind === 'formation') {
+      specs = unit.composition.filter((p) => p.count > 0).map((p) => systemById(systems, p.systemId));
+      envelopes = combineEnvelopes(specs);
+    } else {
+      const spec = systemById(systems, unit.systemId);
+      specs = [spec];
+      envelopes = envelopesFor(spec);
+    }
+
+    for (const envelope of envelopes) {
+      let radiusKm = envelope.radiusKm;
+
+      // A radar on the ground cannot see past the horizon, whatever the
+      // brochure says. Judged against the altitude the player is asking about.
+      if (envelope.kind === 'detection') {
+        const limited = specs
+          .map((spec) => (spec ? effectiveDetectionKm(spec, targetAltM) : null))
+          .filter((v): v is number => v !== null);
+        if (limited.length) radiusKm = Math.max(...limited);
+      }
+      if (radiusKm <= 0) continue;
+
+      features.push({
+        type: 'Feature',
+        properties: {
+          unitId: unit.id,
+          iso: unit.iso,
+          kind: envelope.kind,
+          color,
+          radiusKm: Math.round(radiusKm),
+          label: envelope.label,
+        },
+        geometry: geodesicCircle(unit.lngLat, radiusKm),
+      });
+    }
+  }
+
+  return { type: 'FeatureCollection', features };
+}
+
+export function setEnvelopes(
+  map: MLMap,
+  units: DeployedUnit[],
+  nations: Record<string, Nation>,
+  systems: SystemSpec[],
+  targetAltM: number
+) {
+  const src = map.getSource('wg-envelopes') as { setData?: (d: unknown) => void } | undefined;
+  src?.setData?.(envelopesToGeoJSON(units, nations, systems, targetAltM));
+}
+
+/**
+ * Which envelopes are on screen. A filter rather than a rebuild: toggling a
+ * category should be a frame, not a recomputation of every circle on the board.
+ */
+export function applyCoverage(
+  map: MLMap,
+  state: CoverageState,
+  selectedId: string | null,
+  activeIso: string | null
+) {
+  if (!map.getLayer('wg-envelope-fill')) return;
+
+  const kinds = (Object.keys(state.kinds) as EnvelopeKind[]).filter((k) => state.kinds[k]);
+  let filter: unknown = HIDE_ALL;
+
+  if (kinds.length && state.mode !== 'off') {
+    const ofKind = ['in', ['get', 'kind'], ['literal', kinds]];
+    if (state.mode === 'all') filter = ofKind;
+    else if (state.mode === 'nation')
+      filter = ['all', ofKind, ['==', ['get', 'iso'], activeIso ?? '__none__']];
+    else filter = ['all', ofKind, ['==', ['get', 'unitId'], selectedId ?? '__none__']];
+  }
+
+  map.setFilter('wg-envelope-fill', filter as ExpressionSpecification);
+  map.setFilter('wg-envelope-line', filter as ExpressionSpecification);
 }
 
 export function highlightUnit(map: MLMap, id: string | null) {

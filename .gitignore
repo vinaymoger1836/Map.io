@@ -22,6 +22,9 @@ tsconfig.tsbuildinfo
 .turbo
 .swc
 
+# half-written store documents; the real ones are committed
+data/*.json.tmp
+
 # testing
 coverage
 *.lcov

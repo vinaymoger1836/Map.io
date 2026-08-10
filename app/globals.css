@@ -1002,6 +1002,44 @@ button {
   margin-bottom: 8px;
 }
 
+/* ---------- coverage ---------- */
+
+.wg-tools-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.wg-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.wg-kind {
+  padding: 5px 9px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-kind:hover:not(:disabled) {
+  color: var(--paper);
+}
+
+.wg-kind.on {
+  color: var(--paper);
+  background: var(--ink-raised);
+  border-color: var(--brass);
+}
+
+.wg-kind:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* ---------- units ---------- */
 
 .wg-domains {
@@ -1240,7 +1278,295 @@ button {
   color: #e4572e;
 }
 
+/* ---------- systems ---------- */
+
+.wg-systems {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 8px 0;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.wg-system {
+  border: 1px solid var(--rule);
+  background: var(--ink);
+}
+
+.wg-system.on {
+  border-color: var(--brass);
+}
+
+.wg-system-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 7px;
+  text-align: left;
+}
+
+.wg-system-head img {
+  width: 26px;
+  height: 24px;
+  flex: none;
+}
+
+.wg-system-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.wg-system-name b {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-system-name em {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  color: var(--paper-dim);
+}
+
+.wg-system-sum {
+  flex: none;
+  max-width: 40%;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-align: right;
+  color: var(--paper-dim);
+}
+
+.wg-system-body {
+  padding: 8px 9px 9px;
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------- spec sheet ---------- */
+
+.wg-spec {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  font-size: 11.5px;
+}
+
+.wg-spec-row {
+  display: contents;
+}
+
+.wg-spec dt {
+  color: var(--paper-dim);
+}
+
+.wg-spec dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.wg-spec.compact {
+  font-size: 11px;
+}
+
+/* A figure's confidence, not its value: filled is firm, hollow is an estimate. */
+.wg-conf {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.wg-conf.high {
+  background: #4fa85f;
+}
+
+.wg-conf.medium {
+  background: var(--brass);
+}
+
+.wg-conf.low {
+  border: 1px solid var(--paper-dim);
+}
+
+/* ---------- spec form ---------- */
+
+.wg-facet {
+  border-top: 1px solid var(--rule);
+  margin-top: 8px;
+}
+
+.wg-facet-body {
+  padding-bottom: 6px;
+}
+
+.wg-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.wg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10.5px;
+  color: var(--paper-dim);
+}
+
+.wg-field.wide {
+  margin: 8px 0;
+}
+
+.wg-field em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.wg-field input,
+.wg-field select,
+.wg-inline-select {
+  padding: 5px 6px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.wg-field input:focus,
+.wg-field select:focus,
+.wg-inline-select:focus {
+  outline: none;
+  border-color: var(--brass);
+}
+
+.wg-inline-select {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--paper-dim);
+}
+
+.wg-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 7px 0;
+  font-size: 11px;
+  color: var(--paper-dim);
+}
+
+.wg-weapon {
+  padding: 7px;
+  margin-bottom: 6px;
+  border: 1px solid var(--rule);
+}
+
+.wg-weapon-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.wg-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.wg-target {
+  padding: 3px 6px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-target.on {
+  color: var(--ink);
+  background: var(--paper-dim);
+  border-color: var(--paper-dim);
+}
+
+/* ---------- counts ---------- */
+
+.wg-count-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.wg-quick {
+  min-width: 26px;
+  padding: 4px 0;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-dim);
+}
+
+.wg-quick.on,
+.wg-quick:hover {
+  color: var(--paper);
+  border-color: var(--brass);
+}
+
+.wg-comp-id {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* ---------- footer ---------- */
+
+.wg-mini {
+  padding: 2px 7px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-mini:hover:not(:disabled) {
+  color: var(--paper);
+  border-color: var(--brass);
+}
+
+.wg-mini:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.wg-storage {
+  margin: 0;
+  padding: 0 13px 12px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--paper-dim) 75%, transparent);
+}
 
 .wg-row {
   display: flex;

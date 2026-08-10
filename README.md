@@ -135,9 +135,9 @@ so the console is already showing what you are holding when you put it down.
 A nation's colour is its units' colour, so recolouring a country recolours
 everything it has on the board.
 
-The board (nations, colours, units, and any special units you invented) is kept
-in `localStorage` and survives a reload. **Clear units** and **Clear colours** at
-the foot of the console empty it.
+The board (nations, colours, units, and any special units you invented) is saved
+to disk and survives a reload — see *Where things are saved* below. **Clear
+units** and **Clear colours** at the foot of the console empty it.
 
 ### Units and special units
 
@@ -180,6 +180,97 @@ those pins would otherwise lose their name and symbol.
 Selecting a deployed special unit shows its composition first, with **Edit**
 below for renaming it or changing what is inside that one.
 
+### Systems and specifications
+
+A unit type says what symbol to draw. A **system** says what the thing actually
+is — an S-400 rather than a launcher, an F-16C rather than a fighter — and it is
+the system that carries the numbers. Pick a type, then pick a system for it, then
+say how many: a deployment is `12 × F-16C Fighting Falcon`, and that count is
+what the map labels and the order of battle add up.
+
+Specs are **facets**, not a schema per class. Every system has the same optional
+slots and fills the ones that apply:
+
+| Facet | Holds |
+| --- | --- |
+| `sensor` | detection range, tracks held, fire channels, what it sees |
+| `weapons` | range, ready rounds, salvo, kill probability, reaction time |
+| `platform` | combat radius, refuelled radius, speed, payload, VLS, aircraft, crew |
+| `signature` | how visible it is |
+
+An S-400 fills sensor and weapons; a fighter fills platform and weapons; a
+destroyer fills all of them; a supply truck fills none. Everything downstream —
+coverage rings, inventory, engagement maths — reads facets, so a system you
+invent tomorrow gets all of it without a line of new code.
+
+The **Systems** tab browses the shipped library, and duplicating an entry is how
+you disagree with a figure: library entries are read-only, your copy is yours,
+and a copy with the same id replaces the original everywhere.
+
+**About the numbers.** Open sources disagree about the same system, and some
+figures are estimates of things nobody publishes. Every field can carry a source
+and a confidence, shown as a dot beside the value: filled green where published
+and broadly agreed, amber where sources vary, hollow where it is an estimate.
+Kill probabilities and reaction times are marked as estimates without exception —
+they exist so an engagement model has something to work with, not because anyone
+knows them. Regenerate the library with:
+
+```bash
+node scripts/generate-systems.mjs   # -> public/data/systems.json
+```
+
+### Where things are saved
+
+War Games configuration is written as JSON files under `data/` by a route at
+`app/api/store/[doc]/route.ts`, so it survives a cleared browser, can be diffed
+and backed up, and is worth committing:
+
+| Document | Holds |
+| --- | --- |
+| `data/board.json` | the working board — nations, units, your special units |
+| `data/systems.json` | systems you authored or edited |
+
+`lib/store.ts` is the only file that knows this. It falls back to `localStorage`
+if the route is unavailable — a static export, say — and the console says which
+of the two is in use. A board saved before any of this existed is migrated out of
+`localStorage` on first load.
+
+The route is unauthenticated and single-user by design: it runs on the machine
+serving the app. **If this is ever exposed to a network, that route needs an auth
+check before anything else.**
+
+Every board change is undoable — `Ctrl+Z`, `Ctrl+Shift+Z`, or the buttons beside
+the tool row. History is per session and is not saved.
+
+### Coverage
+
+What a unit can reach, drawn on the map: weapon envelopes, sensor detection, and
+combat radius, in the nation's colour. A formation's coverage comes from the
+systems inside it, so a carrier group inherits its escorts' umbrella without
+anybody typing a number into the formation.
+
+Four modes, because the useful views are narrow ones:
+
+| Mode | Shows |
+| --- | --- |
+| **Off** | Nothing — the default, because forty units with three rings each is a picture of nothing |
+| **Selected** | Only the unit you have selected |
+| **Nation** | Everything the active nation has on the board — this is where a hole in a defence belt becomes visible |
+| **All** | Every unit; overlaps compound, so layered defence reads darker |
+
+**Rings are ground distance, not pixels.** A 400 km reach is not a circle on Web
+Mercator, and a fixed-pixel circle would flatter a system at 68°N and understate
+one at the equator. `lib/geo.ts` walks a geodesic and hands MapLibre a polygon in
+real coordinates — which is also why zooming behaves: it is geography, not
+decoration. Verified by measuring: every vertex of a 380 km ring sits 380 km from
+its unit at both 60°N and the equator, while the two rings look nothing alike.
+
+**The radar horizon is modelled.** Sensors marked `horizonLimited` are cut short
+by the earth's curve against the altitude you are asking about. Switch the target
+altitude from **High** to **Low** and an S-400's 600 km detection range collapses
+to 62 km — which is roughly the truth about a 100 m target, and a useful
+corrective to reading brochure figures off a map.
+
 ### How the symbols are drawn
 
 Every nation picks its own colour, so a sprite sheet would need one image per
@@ -197,11 +288,18 @@ dots and bars for ground echelons, a short word for naval and air groupings.
 
 ```
 lib/warGames.ts    unit and formation catalogues, echelons, nation colours,
-                   board state and its persistence
+                   board state and how it is revived
+lib/specs.ts       system specifications, facets, envelopes, provenance
+lib/geo.ts         geodesic circles and distance — no dependency
+lib/store.ts       the document store — the only thing that knows about storage
 lib/unitIcons.ts   the canvas icon factory
 lib/warLayers.ts   MapLibre sources and layers for the board
 lib/useWarGames.ts board state and the map wiring
-components/WarGamesPanel.tsx   the console
+app/api/store/[doc]/route.ts   reads and writes data/*.json
+components/WarGamesPanel.tsx   the console, composition only
+components/wargames/           its blocks: NationBlock, Palette, SelectedUnit,
+                               SystemsEditor, CompositionEditor, SpecSheet,
+                               Coverage, OrderOfBattle
 ```
 
 Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`; adding a
@@ -264,6 +362,13 @@ scripts/        data generation
   minima. Use NSIDC data for anything quantitative.
 - **War Games units are markers, not a model.** Nothing moves, shoots, spots or
   is scored; the mode is a board you arrange, not a simulation.
-- **A War Games board is local to one browser.** It lives in `localStorage`, so
-  it does not follow you to another machine and clearing site data loses it.
-  Export/import would be a small addition to `lib/warGames.ts` if you need it.
+- **A board is local to one machine.** It is a file under `data/`, so it
+  survives a cleared browser but does not follow you to another computer.
+  Scenarios and export/import are the next phase.
+- **Coverage rings are flat circles of constant range.** Terrain does not mask
+  them, a system's reach is not really uniform in every direction, and a ring
+  drawn around a point near a pole will not enclose the pole properly.
+- **System figures are approximate and some are guesses.** They carry their
+  confidence for exactly that reason. Correct anything that matters to you —
+  duplicating a library entry takes two clicks — rather than trusting a number
+  because it is on a screen.

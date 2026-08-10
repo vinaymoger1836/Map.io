@@ -24,9 +24,9 @@ import {
   allFormations,
   deriveAbbr,
   findFormation,
-  loadBoard,
+  reviveBoard,
+  LEGACY_BOARD_KEY,
   nextUnitId,
-  saveBoard,
   unitLook,
   type BoardState,
   type Component,
@@ -34,15 +34,20 @@ import {
   type Formation,
   type Nation,
 } from './warGames';
+import { mergeSystems, nextSystemId, tidySpec, type EnvelopeKind, type SystemSpec } from './specs';
+import { getStore, readDoc, readWithLegacyFallback, writeDoc } from './store';
 import { ensureIcons, type IconSpec } from './unitIcons';
 import {
+  applyCoverage,
   hideBasemapSymbols,
   highlightUnit,
   installWarLayers,
   paintNations,
   restoreBasemapSymbols,
+  setEnvelopes,
   setUnits,
   setWarVisible,
+  type CoverageState,
 } from './warLayers';
 
 export type Tool = 'select' | 'paint' | 'deploy';
@@ -55,7 +60,9 @@ type PointerLike = MapMouseEvent | MapTouchEvent;
  * special unit with a composition. Keeping the two in one tagged value means
  * the panel and the deploy handler cannot disagree about which is armed.
  */
-export type Pick = { kind: 'unit'; typeId: string } | { kind: 'formation'; formationId: string };
+export type Pick =
+  | { kind: 'unit'; typeId: string; systemId?: string }
+  | { kind: 'formation'; formationId: string };
 
 export interface CountryOption {
   iso: string;
@@ -85,9 +92,20 @@ export interface WarGames {
   /** Which catalogue the palette is showing, and what is picked in it. */
   pick: Pick;
   chooseUnit: (typeId: string) => void;
+  chooseSystem: (systemId: string | undefined) => void;
   chooseFormation: (formationId: string) => void;
   echelonId: string;
   setEchelonId: (id: string) => void;
+  /** How many the next deployment places, and draws from stock. */
+  deployCount: number;
+  setDeployCount: (n: number) => void;
+
+  /** The library plus the player's own, merged. */
+  systems: SystemSpec[];
+  saveSystem: (spec: SystemSpec) => void;
+  deleteSystem: (id: string) => void;
+  /** Where configuration is being kept, so the interface can say so. */
+  storageKind: 'files' | 'browser' | 'unknown';
 
   /** Composition the next special unit will be deployed with. */
   pendingComposition: Component[];
@@ -101,6 +119,8 @@ export interface WarGames {
   selectUnit: (id: string | null) => void;
   renameUnit: (id: string, name: string | undefined) => void;
   setUnitEchelon: (id: string, echelonId: string) => void;
+  setUnitSystem: (id: string, systemId: string | undefined) => void;
+  setUnitCount: (id: string, count: number) => void;
   setUnitComposition: (id: string, composition: Component[]) => void;
   removeUnit: (id: string) => void;
   flyToUnit: (id: string) => void;
@@ -108,9 +128,25 @@ export interface WarGames {
   clearUnits: () => void;
   clearNations: () => void;
 
+  /** Which reaches are drawn, and what they are judged against. */
+  coverage: CoverageState;
+  setCoverageMode: (mode: CoverageState['mode']) => void;
+  toggleCoverageKind: (kind: EnvelopeKind) => void;
+  setTargetAltitude: (metres: number) => void;
+
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+
   /** Re-installs layers and icons — call after a basemap swap. */
   hydrate: (map: MLMap) => void;
 }
+
+const BOARD_DOC = 'board';
+const SYSTEMS_DOC = 'systems';
+/** How many board states undo remembers. Enough for a session's mistakes. */
+const HISTORY_LIMIT = 50;
 
 /** The whole board, which is the point of the mode. */
 export const WORLD_VIEW = { center: [18, 26] as [number, number], zoom: 1.9 };
@@ -137,8 +173,20 @@ export function useWarGames({
   const [color, setColor] = useState<string>(NATION_COLORS[0]);
   const [pick, setPick] = useState<Pick>({ kind: 'unit', typeId: 'infantry' });
   const [echelonId, setEchelonId] = useState('battalion');
+  const [deployCount, setDeployCountState] = useState(1);
   const [pendingComposition, setPendingComposition] = useState<Component[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const [coverage, setCoverage] = useState<CoverageState>({
+    // Off by default: forty units with three rings each is a picture of nothing.
+    mode: 'off',
+    kinds: { engagement: true, detection: true, strike: true, 'strike-refuelled': false },
+    targetAltM: 10_000,
+  });
+
+  const [library, setLibrary] = useState<SystemSpec[]>([]);
+  const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
+  const [storageKind, setStorageKind] = useState<'files' | 'browser' | 'unknown'>('unknown');
 
   const boardRef = useRef(board);
   const toolRef = useRef(tool);
@@ -146,7 +194,9 @@ export function useWarGames({
   const colorRef = useRef(color);
   const pickRef = useRef(pick);
   const echelonRef = useRef(echelonId);
+  const countRef = useRef(deployCount);
   const compositionRef = useRef(pendingComposition);
+  const coverageRef = useRef(coverage);
   const countriesRef = useRef<Map<string, CountryOption>>(new Map());
   const hydratedRef = useRef(false);
 
@@ -156,22 +206,122 @@ export function useWarGames({
   colorRef.current = color;
   pickRef.current = pick;
   echelonRef.current = echelonId;
+  countRef.current = deployCount;
   compositionRef.current = pendingComposition;
+  coverageRef.current = coverage;
 
-  /* ---------------- persistence ---------------- */
+  /* ---------------- persistence and history ---------------- */
 
-  useEffect(() => {
-    setBoard(loadBoard());
+  // The board is edited through `commit`, never through setBoard directly, so
+  // that every change lands in the undo stack and boardRef stays truthful
+  // between renders — two commits in one tick must not read the same "before".
+  const historyRef = useRef<BoardState[]>([]);
+  const futureRef = useRef<BoardState[]>([]);
+  const [historyMark, setHistoryMark] = useState(0);
+  const loadedRef = useRef(false);
+
+  const commit = useCallback((next: (prev: BoardState) => BoardState) => {
+    const prev = boardRef.current;
+    const value = next(prev);
+    if (value === prev) return;
+    historyRef.current = [...historyRef.current, prev].slice(-HISTORY_LIMIT);
+    futureRef.current = [];
+    boardRef.current = value;
+    setBoard(value);
+    setHistoryMark((n) => n + 1);
   }, []);
 
-  const firstSave = useRef(true);
+  const setCoverageMode = useCallback(
+    (mode: CoverageState['mode']) => setCoverage((prev) => ({ ...prev, mode })),
+    []
+  );
+
+  const toggleCoverageKind = useCallback(
+    (kind: EnvelopeKind) =>
+      setCoverage((prev) => ({ ...prev, kinds: { ...prev.kinds, [kind]: !prev.kinds[kind] } })),
+    []
+  );
+
+  const setTargetAltitude = useCallback(
+    (metres: number) => setCoverage((prev) => ({ ...prev, targetAltM: metres })),
+    []
+  );
+
+  const undo = useCallback(() => {
+    const prev = historyRef.current.pop();
+    if (!prev) return;
+    futureRef.current.push(boardRef.current);
+    boardRef.current = prev;
+    setBoard(prev);
+    setHistoryMark((n) => n + 1);
+  }, []);
+
+  const redo = useCallback(() => {
+    const next = futureRef.current.pop();
+    if (!next) return;
+    historyRef.current.push(boardRef.current);
+    boardRef.current = next;
+    setBoard(next);
+    setHistoryMark((n) => n + 1);
+  }, []);
+
+  // Load everything the board needs before the first save can fire, so an empty
+  // initial state never overwrites a good document on disk.
   useEffect(() => {
-    if (firstSave.current) {
-      firstSave.current = false;
-      return;
-    }
-    saveBoard(board);
+    let cancelled = false;
+    (async () => {
+      const store = await getStore();
+      const [saved, custom, shipped] = await Promise.all([
+        readWithLegacyFallback<unknown>(BOARD_DOC, LEGACY_BOARD_KEY),
+        readDoc<SystemSpec[]>(SYSTEMS_DOC),
+        fetch('/data/systems.json')
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => []),
+      ]);
+      if (cancelled) return;
+
+      const revived = reviveBoard(saved);
+      boardRef.current = revived;
+      setBoard(revived);
+      setCustomSystems(Array.isArray(custom) ? custom : []);
+      setLibrary(Array.isArray(shipped) ? shipped : []);
+      setStorageKind(store.kind);
+      loadedRef.current = true;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Saves are debounced: painting a country runs through several colours on the
+  // way to the one you wanted, and none of the intermediate ones deserve a write.
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    const timer = setTimeout(() => void writeDoc(BOARD_DOC, board), 400);
+    return () => clearTimeout(timer);
   }, [board]);
+
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    const timer = setTimeout(() => void writeDoc(SYSTEMS_DOC, customSystems), 400);
+    return () => clearTimeout(timer);
+  }, [customSystems]);
+
+  const systems = useMemo(() => mergeSystems(library, customSystems), [library, customSystems]);
+  const systemsRef = useRef(systems);
+  systemsRef.current = systems;
+
+  const saveSystem = useCallback((spec: SystemSpec) => {
+    const tidied = tidySpec({ ...spec, custom: true, id: spec.id || nextSystemId(spec.name) });
+    setCustomSystems((prev) => {
+      const without = prev.filter((s) => s.id !== tidied.id);
+      return [...without, tidied];
+    });
+  }, []);
+
+  const deleteSystem = useCallback((id: string) => {
+    setCustomSystems((prev) => prev.filter((s) => s.id !== id));
+  }, []);
 
   /* ---------------- world roster ---------------- */
 
@@ -239,7 +389,15 @@ export function useWarGames({
       installWarLayers(map, world, detectFont(map), darkBasemap);
       ensureIcons(map, iconSpecs);
       paintNations(map, boardRef.current.nations);
-      setUnits(map, boardRef.current.units, boardRef.current.nations, boardRef.current.formations);
+      setUnits(map, boardRef.current.units, boardRef.current.nations, boardRef.current.formations, systemsRef.current);
+      setEnvelopes(
+        map,
+        boardRef.current.units,
+        boardRef.current.nations,
+        systemsRef.current,
+        coverageRef.current.targetAltM
+      );
+      applyCoverage(map, coverageRef.current, selectedId, activeIsoRef.current);
       highlightUnit(map, selectedId);
       setWarVisible(map, active);
       if (active) hideBasemapSymbols(map);
@@ -277,8 +435,16 @@ export function useWarGames({
     if (!map || !hydratedRef.current) return;
     ensureIcons(map, iconSpecs);
     paintNations(map, board.nations);
-    setUnits(map, board.units, board.nations, board.formations);
-  }, [board, iconSpecs, mapRef]);
+    setUnits(map, board.units, board.nations, board.formations, systems);
+    setEnvelopes(map, board.units, board.nations, systems, coverage.targetAltM);
+  }, [board, iconSpecs, systems, coverage.targetAltM, mapRef]);
+
+  // Showing or hiding a category is a filter, not a rebuild.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !hydratedRef.current) return;
+    applyCoverage(map, coverage, selectedId, activeIso);
+  }, [coverage, selectedId, activeIso, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -290,14 +456,14 @@ export function useWarGames({
 
   const applyColor = useCallback((iso: string, hex: string) => {
     const meta = countriesRef.current.get(iso);
-    setBoard((prev) => ({
+    commit((prev) => ({
       ...prev,
       nations: {
         ...prev.nations,
         [iso]: { iso, name: meta?.name ?? prev.nations[iso]?.name ?? iso, color: hex },
       },
     }));
-  }, []);
+  }, [commit]);
 
   const chooseNation = useCallback(
     (iso: string) => {
@@ -312,10 +478,28 @@ export function useWarGames({
   const chooseUnit = useCallback((typeId: string) => {
     const type = UNIT_BY_ID.get(typeId);
     if (!type) return;
-    setPick({ kind: 'unit', typeId });
+    // Keep the system only while it still belongs to the type being picked.
+    setPick((prev) => {
+      const held = prev.kind === 'unit' ? prev.systemId : undefined;
+      const stillFits = systemsRef.current.find((sp) => sp.id === held)?.typeId === typeId;
+      return { kind: 'unit', typeId, systemId: stillFits ? held : undefined };
+    });
     // Keep the current echelon when the new type supports it, so switching
     // between, say, armour and infantry does not reset you to battalion.
     setEchelonId((prev) => (type.echelons.includes(prev) ? prev : type.defaultEchelon));
+  }, []);
+
+  const chooseSystem = useCallback((systemId: string | undefined) => {
+    const spec = systemsRef.current.find((sp) => sp.id === systemId);
+    setPick((prev) =>
+      prev.kind === 'unit'
+        ? { kind: 'unit', typeId: spec?.typeId ?? prev.typeId, systemId }
+        : prev
+    );
+  }, []);
+
+  const setDeployCount = useCallback((n: number) => {
+    setDeployCountState(Number.isFinite(n) ? Math.max(1, Math.round(n)) : 1);
   }, []);
 
   const chooseFormation = useCallback((formationId: string) => {
@@ -351,10 +535,12 @@ export function useWarGames({
             lngLat,
             typeId: current.typeId,
             echelonId: echelonRef.current,
+            systemId: current.systemId,
+            count: countRef.current,
           };
 
-    setBoard((prev) => ({ ...prev, units: [...prev.units, unit] }));
-  }, []);
+    commit((prev) => ({ ...prev, units: [...prev.units, unit] }));
+  }, [commit]);
 
   /* ---------------- special units ---------------- */
 
@@ -370,31 +556,34 @@ export function useWarGames({
         composition: clean.map((part) => ({ ...part })),
         custom: true,
       };
-      setBoard((prev) => ({ ...prev, formations: [...prev.formations, formation] }));
+      commit((prev) => ({ ...prev, formations: [...prev.formations, formation] }));
       setPick({ kind: 'formation', formationId: formation.id });
       setPendingComposition(formation.composition.map((part) => ({ ...part })));
     },
-    []
+    [commit]
   );
 
   const deleteFormation = useCallback((id: string) => {
     // Units already on the board keep their own composition, so deleting the
     // template does not disband what it was used to deploy — but they would
     // lose their name and icon, so they go with it.
-    setBoard((prev) => ({
+    commit((prev) => ({
       ...prev,
       formations: prev.formations.filter((f) => f.id !== id),
       units: prev.units.filter((u) => !(u.kind === 'formation' && u.formationId === id)),
     }));
     setPick((prev) => (prev.kind === 'formation' && prev.formationId === id ? { kind: 'unit', typeId: 'infantry' } : prev));
-  }, []);
+  }, [commit]);
 
-  const patchUnit = useCallback((id: string, patch: (u: DeployedUnit) => DeployedUnit) => {
-    setBoard((prev) => ({
-      ...prev,
-      units: prev.units.map((u) => (u.id === id ? patch(u) : u)),
-    }));
-  }, []);
+  const patchUnit = useCallback(
+    (id: string, patch: (u: DeployedUnit) => DeployedUnit) => {
+      commit((prev) => ({
+        ...prev,
+        units: prev.units.map((u) => (u.id === id ? patch(u) : u)),
+      }));
+    },
+    [commit]
+  );
 
   const moveUnit = useCallback(
     (id: string, lngLat: [number, number]) => patchUnit(id, (u) => ({ ...u, lngLat })),
@@ -412,6 +601,20 @@ export function useWarGames({
     [patchUnit]
   );
 
+  const setUnitSystem = useCallback(
+    (id: string, systemId: string | undefined) =>
+      patchUnit(id, (u) => (u.kind === 'unit' ? { ...u, systemId } : u)),
+    [patchUnit]
+  );
+
+  const setUnitCount = useCallback(
+    (id: string, count: number) =>
+      patchUnit(id, (u) =>
+        u.kind === 'unit' ? { ...u, count: Math.max(1, Math.round(count) || 1) } : u
+      ),
+    [patchUnit]
+  );
+
   const setUnitComposition = useCallback(
     (id: string, composition: Component[]) =>
       patchUnit(id, (u) =>
@@ -420,19 +623,22 @@ export function useWarGames({
     [patchUnit]
   );
 
-  const removeUnit = useCallback((id: string) => {
-    setBoard((prev) => ({ ...prev, units: prev.units.filter((u) => u.id !== id) }));
-    setSelectedId((cur) => (cur === id ? null : cur));
-  }, []);
+  const removeUnit = useCallback(
+    (id: string) => {
+      commit((prev) => ({ ...prev, units: prev.units.filter((u) => u.id !== id) }));
+      setSelectedId((cur) => (cur === id ? null : cur));
+    },
+    [commit]
+  );
 
   const clearUnits = useCallback(() => {
-    setBoard((prev) => ({ ...prev, units: [] }));
+    commit((prev) => ({ ...prev, units: [] }));
     setSelectedId(null);
-  }, []);
+  }, [commit]);
 
   const clearNations = useCallback(() => {
-    setBoard((prev) => ({ ...prev, nations: {} }));
-  }, []);
+    commit((prev) => ({ ...prev, nations: {} }));
+  }, [commit]);
 
   const flyToUnit = useCallback(
     (id: string) => {
@@ -535,7 +741,7 @@ export function useWarGames({
       const units = boardRef.current.units.map((u) =>
         u.id === drag?.id ? { ...u, lngLat: drag.lngLat } : u
       );
-      setUnits(map, units, boardRef.current.nations, boardRef.current.formations);
+      setUnits(map, units, boardRef.current.nations, boardRef.current.formations, systemsRef.current);
     };
 
     /**
@@ -564,6 +770,15 @@ export function useWarGames({
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault();
         removeUnit(selectedId);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
       }
     };
 
@@ -596,7 +811,7 @@ export function useWarGames({
       map.dragPan.enable();
       canvas.style.cursor = '';
     };
-  }, [active, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId]);
+  }, [active, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId, undo, redo]);
 
   // The cursor is the clearest statement of which tool is armed.
   useEffect(() => {
@@ -609,6 +824,11 @@ export function useWarGames({
     () => board.units.find((u) => u.id === selectedId) ?? null,
     [board.units, selectedId]
   );
+
+  // The stacks live in refs so a drag does not re-render on every frame;
+  // historyMark is the render trigger that keeps these two honest.
+  const canUndo = useMemo(() => historyRef.current.length > 0, [historyMark]);
+  const canRedo = useMemo(() => futureRef.current.length > 0, [historyMark]);
 
   return {
     ready: Boolean(world),
@@ -626,9 +846,16 @@ export function useWarGames({
     applyColor,
     pick,
     chooseUnit,
+    chooseSystem,
     chooseFormation,
     echelonId,
     setEchelonId,
+    deployCount,
+    setDeployCount,
+    systems,
+    saveSystem,
+    deleteSystem,
+    storageKind,
     pendingComposition,
     setPendingComposition,
     formations: allFormations(board.formations),
@@ -638,11 +865,21 @@ export function useWarGames({
     selectUnit: setSelectedId,
     renameUnit,
     setUnitEchelon,
+    setUnitSystem,
+    setUnitCount,
     setUnitComposition,
     removeUnit,
     flyToUnit,
     clearUnits,
     clearNations,
+    coverage,
+    setCoverageMode,
+    toggleCoverageKind,
+    setTargetAltitude,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
     hydrate,
   };
 }
