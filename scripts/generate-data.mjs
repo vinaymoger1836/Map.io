@@ -1,9 +1,15 @@
 /**
- * Regenerates the mechanical GeoJSON layers (places, Arctic geometry).
+ * Regenerates the mechanical GeoJSON layers (places, Arctic geometry, and the
+ * world roster War Games runs on).
  * Run with:  node scripts/generate-data.mjs
  *
  * The hand-curated layers — control, frontline, hotspots, borders-special,
  * energy, military — are NOT touched by this script. Edit those directly.
+ *
+ * The world layers at the bottom need network access: they are derived from
+ * Natural Earth rather than typed out by hand, because 240 countries and a
+ * thousand cities is exactly the kind of data a human transcribes wrongly.
+ * Without a connection that section is skipped and the committed files stand.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -460,3 +466,187 @@ write(
     { note: 'Ocean and sea name anchors. Points position a label; they are not the extent of the water body.' }
   )
 );
+
+/* ------------------------------------------------------------------ */
+/* World roster — every country, capital and major city                */
+/*                                                                     */
+/* War Games needs the whole planet named, which the Eurasia layers    */
+/* above deliberately are not. Both files carry a `z` property: the    */
+/* zoom at which the label earns its place on screen. Natural Earth    */
+/* already ships that judgement (MIN_LABEL for countries, min_zoom for */
+/* places) and it is better tuned than anything derived from           */
+/* population alone — Brasília outranks its population, Shanghai does  */
+/* not outrank Beijing.                                                */
+/* ------------------------------------------------------------------ */
+
+const NE = 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/';
+const WORLD_ATLAS = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
+
+/** Natural Earth leaves ISO_N3 at -99 for a handful of states. */
+const ISO_N3_PATCH = {
+  France: '250',
+  Norway: '578',
+  Kosovo: '383',
+};
+
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const round = (n, places = 4) => Number(n.toFixed(places));
+const normalise = (s) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z]/g, '');
+
+/** Centroid of a country's largest ring — the fallback when NE has no anchor. */
+function largestRingCentroid(geometry) {
+  const polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+  let best = null;
+  let bestArea = -1;
+  for (const poly of polys) {
+    const ring = poly[0];
+    let area = 0;
+    let x = 0;
+    let y = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const cross = ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+      area += cross;
+      x += (ring[j][0] + ring[i][0]) * cross;
+      y += (ring[j][1] + ring[i][1]) * cross;
+    }
+    area /= 2;
+    const size = Math.abs(area);
+    if (size > bestArea && area !== 0) {
+      bestArea = size;
+      best = [x / (6 * area), y / (6 * area)];
+    }
+  }
+  return best;
+}
+
+async function getJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`);
+  return res.json();
+}
+
+async function buildWorld() {
+  const [atlas, neCountries, nePlaces] = await Promise.all([
+    getJSON(WORLD_ATLAS),
+    getJSON(`${NE}ne_50m_admin_0_countries.geojson`),
+    getJSON(`${NE}ne_50m_populated_places_simple.geojson`),
+  ]);
+
+  /* --- countries ------------------------------------------------- */
+
+  // The roster is keyed off world-atlas, not Natural Earth, because the map
+  // paints countries by the world-atlas feature id. Matching the other way
+  // round would leave states that can be labelled but not coloured.
+  const byIso = new Map();
+  const byName = new Map();
+  for (const f of neCountries.features) {
+    const p = f.properties;
+    const iso = ISO_N3_PATCH[p.NAME] ?? String(p.ISO_N3 ?? '');
+    if (iso && iso !== '-99') byIso.set(iso.replace(/^0+(?=\d)/, ''), p);
+    byName.set(normalise(p.NAME), p);
+    if (p.NAME_LONG) byName.set(normalise(p.NAME_LONG), p);
+    if (p.ADMIN) byName.set(normalise(p.ADMIN), p);
+    if (p.BRK_NAME) byName.set(normalise(p.BRK_NAME), p);
+  }
+
+  const geoms = atlas.objects.countries.geometries;
+
+  // Decoding TopoJSON here would pull in a dependency the script does not have,
+  // so the centroid fallback runs off the NE geometry we already fetched.
+  const neGeomByIso = new Map();
+  for (const f of neCountries.features) {
+    const p = f.properties;
+    const iso = ISO_N3_PATCH[p.NAME] ?? String(p.ISO_N3 ?? '');
+    if (iso && iso !== '-99') neGeomByIso.set(iso.replace(/^0+(?=\d)/, ''), f.geometry);
+  }
+
+  const countries = [];
+  let unmatched = 0;
+  for (const g of geoms) {
+    const iso = String(g.id ?? '');
+    const name = g.properties?.name;
+    if (!iso || !name) continue;
+
+    const ne = byIso.get(iso) ?? byName.get(normalise(name));
+    const geometry = neGeomByIso.get(iso) ?? (ne ? null : null);
+
+    let lon = ne && Number.isFinite(ne.LABEL_X) ? ne.LABEL_X : null;
+    let lat = ne && Number.isFinite(ne.LABEL_Y) ? ne.LABEL_Y : null;
+    if ((lon === null || lat === null) && geometry) {
+      const c = largestRingCentroid(geometry);
+      if (c) [lon, lat] = c;
+    }
+    if (lon === null || lat === null) {
+      unmatched++;
+      continue;
+    }
+
+    const minLabel = ne && Number.isFinite(ne.MIN_LABEL) ? ne.MIN_LABEL : 4;
+    countries.push(
+      point(round(lon), round(lat), {
+        name,
+        iso,
+        iso3: ne?.ADM0_A3 ?? null,
+        continent: ne?.CONTINENT ?? 'Other',
+        pop: ne?.POP_EST ?? null,
+        z: round(clamp(minLabel - 0.4, 1.4, 6), 2),
+      })
+    );
+  }
+  countries.sort((a, b) => a.properties.name.localeCompare(b.properties.name));
+  if (unmatched) console.log(`  (${unmatched} countries had no usable label anchor)`);
+
+  write(
+    'world-countries.geojson',
+    fc(countries, {
+      note: 'Country name anchors keyed by the world-atlas feature id, so a label and a painted country are always the same country.',
+    })
+  );
+
+  /* --- capitals and cities --------------------------------------- */
+
+  const CAPITAL = new Set(['Admin-0 capital', 'Admin-0 capital alt']);
+  const places = [];
+  for (const f of nePlaces.features) {
+    const p = f.properties;
+    const isCapital = CAPITAL.has(p.featurecla) || p.adm0cap === 1;
+    const pop = p.pop_max ?? 0;
+
+    // Everything that governs a country, plus cities big or prominent enough
+    // to be worth a marker on a world board. The rest is noise at this scale.
+    if (!isCapital && pop < 1_000_000 && (p.scalerank ?? 20) > 5) continue;
+
+    const minZoom = Number.isFinite(p.min_zoom) ? p.min_zoom : 6;
+    const z = isCapital
+      ? clamp(minZoom - 1.2, 2.2, 5.4)
+      : clamp(Math.max(minZoom, 3.6), 3.6, 6.6);
+
+    places.push(
+      point(round(p.longitude ?? f.geometry.coordinates[0]), round(p.latitude ?? f.geometry.coordinates[1]), {
+        name: p.name,
+        kind: isCapital ? 'capital' : 'city',
+        country: p.adm0name ?? null,
+        pop: pop || null,
+        z: round(z, 2),
+      })
+    );
+  }
+  places.sort((a, b) => a.properties.z - b.properties.z);
+
+  write(
+    'world-places.geojson',
+    fc(places, { note: 'Capitals and major cities worldwide. `z` is the zoom at which the label appears.' })
+  );
+}
+
+try {
+  await buildWorld();
+} catch (err) {
+  console.warn(`world layers skipped — ${err.message}`);
+  console.warn('  (the committed world-*.geojson files are unchanged)');
+}
