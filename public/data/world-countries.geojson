@@ -261,16 +261,16 @@
    "properties": {
     "name": "Australia",
     "iso": "036",
-    "iso3": "AUS",
+    "iso3": "ATC",
     "continent": "Oceania",
-    "pop": 25364307,
-    "z": 1.4
+    "pop": 0,
+    "z": 4.1
    },
    "geometry": {
     "type": "Point",
     "coordinates": [
-     134.0497,
-     -24.1295
+     123.5864,
+     -12.4326
     ]
    }
   },

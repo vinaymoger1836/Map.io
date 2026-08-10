@@ -489,6 +489,9 @@ const ISO_N3_PATCH = {
   Kosovo: '383',
 };
 
+/** world-atlas zero-pads its ids ("076"), Natural Earth does not. */
+const isoKey = (v) => String(v ?? '').replace(/^0+(?=\d)/, '');
+
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const round = (n, places = 4) => Number(n.toFixed(places));
 const normalise = (s) =>
@@ -547,7 +550,7 @@ async function buildWorld() {
   for (const f of neCountries.features) {
     const p = f.properties;
     const iso = ISO_N3_PATCH[p.NAME] ?? String(p.ISO_N3 ?? '');
-    if (iso && iso !== '-99') byIso.set(iso.replace(/^0+(?=\d)/, ''), p);
+    if (iso && iso !== '-99') byIso.set(isoKey(iso), p);
     byName.set(normalise(p.NAME), p);
     if (p.NAME_LONG) byName.set(normalise(p.NAME_LONG), p);
     if (p.ADMIN) byName.set(normalise(p.ADMIN), p);
@@ -562,7 +565,7 @@ async function buildWorld() {
   for (const f of neCountries.features) {
     const p = f.properties;
     const iso = ISO_N3_PATCH[p.NAME] ?? String(p.ISO_N3 ?? '');
-    if (iso && iso !== '-99') neGeomByIso.set(iso.replace(/^0+(?=\d)/, ''), f.geometry);
+    if (iso && iso !== '-99') neGeomByIso.set(isoKey(iso), f.geometry);
   }
 
   const countries = [];
@@ -572,8 +575,8 @@ async function buildWorld() {
     const name = g.properties?.name;
     if (!iso || !name) continue;
 
-    const ne = byIso.get(iso) ?? byName.get(normalise(name));
-    const geometry = neGeomByIso.get(iso);
+    const ne = byIso.get(isoKey(iso)) ?? byName.get(normalise(name));
+    const geometry = neGeomByIso.get(isoKey(iso));
 
     let lon = ne && Number.isFinite(ne.LABEL_X) ? ne.LABEL_X : null;
     let lat = ne && Number.isFinite(ne.LABEL_Y) ? ne.LABEL_Y : null;
