@@ -22,6 +22,21 @@
   {
    "type": "Feature",
    "properties": {
+    "name": "South Atlantic Ocean",
+    "kind": "ocean",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -15,
+     -30
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
     "name": "Arctic Ocean",
     "kind": "ocean",
     "rank": 1
@@ -39,13 +54,58 @@
    "properties": {
     "name": "Pacific Ocean",
     "kind": "ocean",
-    "rank": 2
+    "rank": 1
    },
    "geometry": {
     "type": "Point",
     "coordinates": [
      165,
      40
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "South Pacific Ocean",
+    "kind": "ocean",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -125,
+     -25
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Indian Ocean",
+    "kind": "ocean",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     80,
+     -20
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Southern Ocean",
+    "kind": "ocean",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     60,
+     -60
     ]
    }
   },
@@ -397,201 +457,6 @@
   {
    "type": "Feature",
    "properties": {
-    "name": "Laptev Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     125,
-     75
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "East Siberian Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     160,
-     73
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Chukchi Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     -175,
-     70
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Bering Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     178,
-     58
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Sea of Okhotsk",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     150,
-     53
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Sea of Japan",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     135,
-     40
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Beaufort Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     -140,
-     72
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Baffin Bay",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     -68,
-     74
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Labrador Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     -55,
-     58
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Denmark Strait",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     -27,
-     67
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Red Sea",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     38,
-     22
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Persian Gulf",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     51.5,
-     27
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
-    "name": "Hudson Bay",
-    "kind": "sea",
-    "rank": 2
-   },
-   "geometry": {
-    "type": "Point",
-    "coordinates": [
-     -85,
-     60
-    ]
-   }
-  },
-  {
-   "type": "Feature",
-   "properties": {
     "name": "Kattegat",
     "kind": "sea",
     "rank": 3
@@ -712,6 +577,96 @@
   {
    "type": "Feature",
    "properties": {
+    "name": "Laptev Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     125,
+     75
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "East Siberian Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     160,
+     73
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Chukchi Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -175,
+     70
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Beaufort Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -140,
+     72
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Baffin Bay",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -68,
+     74
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Denmark Strait",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -27,
+     67
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
     "name": "Pechora Sea",
     "kind": "sea",
     "rank": 3
@@ -736,6 +691,921 @@
     "coordinates": [
      73,
      70
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bering Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -169,
+     65.8
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Davis Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -58,
+     66
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Hudson Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -70,
+     62
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Hudson Bay",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85,
+     60
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Caribbean Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -75,
+     15
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Mexico",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -90,
+     25
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Labrador Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -55,
+     58
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Alaska",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -145,
+     55
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of California",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -111,
+     27
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sargasso Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -60,
+     30
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of St. Lawrence",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -61,
+     48
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Florida Straits",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -80,
+     24.3
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Scotia Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45,
+     -57
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Drake Passage",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -65,
+     -58
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Weddell Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45,
+     -72
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Ross Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     175,
+     -75
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Amundsen Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -110,
+     -72
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bellingshausen Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85,
+     -70
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Río de la Plata",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -56.5,
+     -35.3
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Red Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     38,
+     22
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Persian Gulf",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     51.5,
+     27
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Guinea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2,
+     2
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Aden",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     48,
+     12.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Mozambique Channel",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     41,
+     -18
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Oman",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     58.5,
+     24.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Strait of Hormuz",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     56.5,
+     26.6
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bab el-Mandeb",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     43.4,
+     12.6
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Suez",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     33,
+     28.8
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Arabian Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     63,
+     15
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bay of Bengal",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     88,
+     15
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "South China Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     114,
+     14
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Philippine Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     132,
+     18
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Andaman Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     96,
+     10
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Java Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111,
+     -5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Banda Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     128,
+     -6
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Timor Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     128,
+     -11.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Arafura Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     136,
+     -9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Thailand",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     101.5,
+     9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Celebes Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     122,
+     4
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sulu Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     120,
+     9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Molucca Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     125,
+     0
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Laccadive Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     73,
+     6
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Strait of Malacca",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     99.5,
+     4
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Tonkin",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     107.5,
+     19.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sunda Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     105.6,
+     -5.9
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sea of Okhotsk",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     150,
+     53
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Sea of Japan",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     135,
+     40
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bering Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     178,
+     58
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "East China Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     125,
+     29
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Yellow Sea",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     123.5,
+     35.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bohai Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     119.5,
+     38.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Taiwan Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     119.5,
+     24.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Korea Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     129,
+     34.3
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Coral Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     155,
+     -18
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tasman Sea",
+    "kind": "sea",
+    "rank": 1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     160,
+     -38
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Great Australian Bight",
+    "kind": "sea",
+    "rank": 2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     131,
+     -36
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bismarck Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     149,
+     -4
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Solomon Sea",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     154,
+     -8
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Gulf of Carpentaria",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     139.5,
+     -14
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bass Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     146,
+     -39.7
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Cook Strait",
+    "kind": "sea",
+    "rank": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     174.4,
+     -41.3
     ]
    }
   },

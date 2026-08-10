@@ -311,13 +311,27 @@ write(
 /* Waters — [name, lon, lat, rank, kind]                               */
 /* Label anchors, not geometry: each point sits in open water near the */
 /* middle of the body it names, so the label lands clear of any coast. */
+/*                                                                     */
+/* Rank is a zoom budget, not a judgement of importance. Rank 1 draws  */
+/* at world zoom, so it is reserved for bodies wide enough to hold a   */
+/* label there; rank 2 waits for ~4.6 and rank 3 for ~6.4, by which    */
+/* point there is room for the enclosed seas, gulfs and straits. A     */
+/* body that is famous but narrow (Hormuz, Gibraltar) still belongs    */
+/* deep in the stack — at world zoom its label would be longer than    */
+/* the water it names.                                                 */
 /* ------------------------------------------------------------------ */
 
 const WATERS = [
+  /* Oceans -------------------------------------------------------- */
   ['Atlantic Ocean', -22.0, 44.0, 1, 'ocean'],
+  ['South Atlantic Ocean', -15.0, -30.0, 1, 'ocean'],
   ['Arctic Ocean', 10.0, 84.0, 1, 'ocean'],
-  ['Pacific Ocean', 165.0, 40.0, 2, 'ocean'],
+  ['Pacific Ocean', 165.0, 40.0, 1, 'ocean'],
+  ['South Pacific Ocean', -125.0, -25.0, 1, 'ocean'],
+  ['Indian Ocean', 80.0, -20.0, 1, 'ocean'],
+  ['Southern Ocean', 60.0, -60.0, 1, 'ocean'],
 
+  /* Europe and the Mediterranean ---------------------------------- */
   ['Mediterranean Sea', 17.5, 35.0, 1, 'sea'],
   ['Black Sea', 34.0, 43.3, 1, 'sea'],
   ['Baltic Sea', 19.5, 57.5, 1, 'sea'],
@@ -342,19 +356,6 @@ const WATERS = [
   ['White Sea', 38.0, 65.5, 2, 'sea'],
   ['Skagerrak', 9.0, 57.8, 2, 'sea'],
   ['Sea of Marmara', 28.0, 40.7, 2, 'sea'],
-  ['Laptev Sea', 125.0, 75.0, 2, 'sea'],
-  ['East Siberian Sea', 160.0, 73.0, 2, 'sea'],
-  ['Chukchi Sea', -175.0, 70.0, 2, 'sea'],
-  ['Bering Sea', 178.0, 58.0, 2, 'sea'],
-  ['Sea of Okhotsk', 150.0, 53.0, 2, 'sea'],
-  ['Sea of Japan', 135.0, 40.0, 2, 'sea'],
-  ['Beaufort Sea', -140.0, 72.0, 2, 'sea'],
-  ['Baffin Bay', -68.0, 74.0, 2, 'sea'],
-  ['Labrador Sea', -55.0, 58.0, 2, 'sea'],
-  ['Denmark Strait', -27.0, 67.0, 2, 'sea'],
-  ['Red Sea', 38.0, 22.0, 2, 'sea'],
-  ['Persian Gulf', 51.5, 27.0, 2, 'sea'],
-  ['Hudson Bay', -85.0, 60.0, 2, 'sea'],
 
   ['Kattegat', 11.5, 56.8, 3, 'sea'],
   ['Gulf of Riga', 23.5, 57.7, 3, 'sea'],
@@ -364,8 +365,91 @@ const WATERS = [
   ['Levantine Sea', 32.0, 34.0, 3, 'sea'],
   ['Strait of Gibraltar', -5.6, 35.9, 3, 'sea'],
   ['Kerch Strait', 36.5, 45.3, 3, 'sea'],
+
+  /* Arctic and the Russian north ---------------------------------- */
+  ['Laptev Sea', 125.0, 75.0, 2, 'sea'],
+  ['East Siberian Sea', 160.0, 73.0, 2, 'sea'],
+  ['Chukchi Sea', -175.0, 70.0, 2, 'sea'],
+  ['Beaufort Sea', -140.0, 72.0, 2, 'sea'],
+  ['Baffin Bay', -68.0, 74.0, 2, 'sea'],
+  ['Denmark Strait', -27.0, 67.0, 2, 'sea'],
   ['Pechora Sea', 55.0, 69.5, 3, 'sea'],
   ['Gulf of Ob', 73.0, 70.0, 3, 'sea'],
+  ['Bering Strait', -169.0, 65.8, 3, 'sea'],
+  ['Davis Strait', -58.0, 66.0, 3, 'sea'],
+  ['Hudson Strait', -70.0, 62.0, 3, 'sea'],
+
+  /* North America ------------------------------------------------- */
+  ['Hudson Bay', -85.0, 60.0, 1, 'sea'],
+  ['Caribbean Sea', -75.0, 15.0, 1, 'sea'],
+  ['Gulf of Mexico', -90.0, 25.0, 1, 'sea'],
+  ['Labrador Sea', -55.0, 58.0, 2, 'sea'],
+  ['Gulf of Alaska', -145.0, 55.0, 2, 'sea'],
+  ['Gulf of California', -111.0, 27.0, 2, 'sea'],
+  ['Sargasso Sea', -60.0, 30.0, 2, 'sea'],
+  ['Gulf of St. Lawrence', -61.0, 48.0, 3, 'sea'],
+  ['Florida Straits', -80.0, 24.3, 3, 'sea'],
+
+  /* South America and the far south ------------------------------- */
+  ['Scotia Sea', -45.0, -57.0, 2, 'sea'],
+  ['Drake Passage', -65.0, -58.0, 2, 'sea'],
+  ['Weddell Sea', -45.0, -72.0, 2, 'sea'],
+  ['Ross Sea', 175.0, -75.0, 2, 'sea'],
+  ['Amundsen Sea', -110.0, -72.0, 3, 'sea'],
+  ['Bellingshausen Sea', -85.0, -70.0, 3, 'sea'],
+  ['Río de la Plata', -56.5, -35.3, 3, 'sea'],
+
+  /* Africa and the Middle East ------------------------------------ */
+  ['Red Sea', 38.0, 22.0, 1, 'sea'],
+  ['Persian Gulf', 51.5, 27.0, 1, 'sea'],
+  ['Gulf of Guinea', 2.0, 2.0, 1, 'sea'],
+  ['Gulf of Aden', 48.0, 12.5, 2, 'sea'],
+  ['Mozambique Channel', 41.0, -18.0, 2, 'sea'],
+  ['Gulf of Oman', 58.5, 24.5, 3, 'sea'],
+  ['Strait of Hormuz', 56.5, 26.6, 3, 'sea'],
+  ['Bab el-Mandeb', 43.4, 12.6, 3, 'sea'],
+  ['Gulf of Suez', 33.0, 28.8, 3, 'sea'],
+
+  /* South and Southeast Asia -------------------------------------- */
+  ['Arabian Sea', 63.0, 15.0, 1, 'sea'],
+  ['Bay of Bengal', 88.0, 15.0, 1, 'sea'],
+  ['South China Sea', 114.0, 14.0, 1, 'sea'],
+  ['Philippine Sea', 132.0, 18.0, 1, 'sea'],
+  ['Andaman Sea', 96.0, 10.0, 2, 'sea'],
+  ['Java Sea', 111.0, -5.0, 2, 'sea'],
+  ['Banda Sea', 128.0, -6.0, 2, 'sea'],
+  ['Timor Sea', 128.0, -11.5, 2, 'sea'],
+  ['Arafura Sea', 136.0, -9.0, 2, 'sea'],
+  ['Gulf of Thailand', 101.5, 9.0, 2, 'sea'],
+  ['Celebes Sea', 122.0, 4.0, 3, 'sea'],
+  ['Sulu Sea', 120.0, 9.0, 3, 'sea'],
+  ['Molucca Sea', 125.0, 0.0, 3, 'sea'],
+  ['Laccadive Sea', 73.0, 6.0, 3, 'sea'],
+  ['Strait of Malacca', 99.5, 4.0, 3, 'sea'],
+  ['Gulf of Tonkin', 107.5, 19.5, 3, 'sea'],
+  ['Sunda Strait', 105.6, -5.9, 3, 'sea'],
+
+  /* East Asia and the North Pacific ------------------------------- */
+  ['Sea of Okhotsk', 150.0, 53.0, 1, 'sea'],
+  ['Sea of Japan', 135.0, 40.0, 1, 'sea'],
+  ['Bering Sea', 178.0, 58.0, 1, 'sea'],
+  ['East China Sea', 125.0, 29.0, 1, 'sea'],
+  ['Yellow Sea', 123.5, 35.5, 2, 'sea'],
+  ['Bohai Sea', 119.5, 38.5, 3, 'sea'],
+  ['Taiwan Strait', 119.5, 24.5, 3, 'sea'],
+  ['Korea Strait', 129.0, 34.3, 3, 'sea'],
+
+  /* Australia and the South Pacific ------------------------------- */
+  ['Coral Sea', 155.0, -18.0, 1, 'sea'],
+  ['Tasman Sea', 160.0, -38.0, 1, 'sea'],
+  ['Great Australian Bight', 131.0, -36.0, 2, 'sea'],
+  ['Bismarck Sea', 149.0, -4.0, 3, 'sea'],
+  ['Solomon Sea', 154.0, -8.0, 3, 'sea'],
+  ['Gulf of Carpentaria', 139.5, -14.0, 3, 'sea'],
+  ['Bass Strait', 146.0, -39.7, 3, 'sea'],
+  ['Cook Strait', 174.4, -41.3, 3, 'sea'],
+
+  /* Inland ---------------------------------------------------------*/
   ['Aral Sea', 59.5, 45.0, 3, 'sea'],
 ];
 
