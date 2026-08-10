@@ -62,6 +62,26 @@ async function loadCountries(): Promise<{ fc: FC; failed: boolean }> {
   }
 }
 
+export interface WorldData {
+  /** One label anchor per country, keyed to the same id the map paints by. */
+  countries: FC;
+  /** Capitals and major cities worldwide. */
+  places: FC;
+}
+
+/**
+ * The world roster is only needed by War Games, and it is larger than every
+ * other local layer put together — so it loads when that mode is first opened
+ * rather than on every visit to the situation map.
+ */
+export async function loadWorldData(): Promise<WorldData> {
+  const [countries, places] = await Promise.all([
+    getLocal('world-countries'),
+    getLocal('world-places'),
+  ]);
+  return { countries, places };
+}
+
 export async function loadMapData(): Promise<MapData> {
   const [
     countries,
