@@ -2,20 +2,26 @@
  * Builds public/data/systems.json — the shipped systems library.
  * Run with:  node scripts/generate-systems.mjs
  *
- * ON THE NUMBERS. These are open-source figures, and open sources disagree
- * about the same system: a manufacturer's "range" is a maximum against a
- * favourable target, a defence ministry's is something else, and a kill
- * probability is nobody's published fact at all. Every figure therefore carries
- * a source and a confidence:
+ * ON THE NUMBERS — READ THIS BEFORE TRUSTING ANY OF THEM.
  *
- *   high    widely published and broadly agreed — hull numbers, VLS cells
- *   medium  open sources vary by a useful margin — radar and missile ranges
- *   low     an estimate, and treated as one — kill probability, reaction time
+ * These figures were written from memory. Nothing here was looked up, and no
+ * entry cites a source. They are placeholders: good enough to build features
+ * against, not good enough to reason from.
  *
- * Kill probabilities and reaction times are marked low without exception. They
- * exist so the engagement model has something to work with, not because anyone
- * knows them. Change them and the model changes; that is the point of showing
- * them rather than burying them in the simulation.
+ * They fall into three honest tiers, which is what `confidence` records:
+ *
+ *   high    recalled, widely published, unlikely to be far wrong — hull
+ *           displacement, VLS cell counts, crew, air wing size
+ *   medium  recalled, but conditional or contested — every radar and missile
+ *           range, none of which means anything without the target it assumes
+ *   low     invented. Kill probability, reaction time and salvo size are not
+ *           published by anyone; these exist so the engagement model has
+ *           something to multiply, not because they are known
+ *
+ * The replacement path is `scripts/systems-research-prompt.md`, which produces a
+ * file whose figures carry real citations. `scripts/validate-systems.mjs` checks
+ * the result and will tell you how many figures actually have a source behind
+ * them — which today is zero.
  *
  * Edit the tables below rather than the JSON they produce.
  */
@@ -27,10 +33,11 @@ import { fileURLToPath } from 'node:url';
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data');
 mkdirSync(OUT, { recursive: true });
 
-/* Confidence shorthand, applied to whole facets to keep the tables readable. */
-const PUB = 'open sources'; // published and broadly agreed
-const VAR = 'open sources vary'; // figures differ by a useful margin
-const EST = 'estimate'; // nobody publishes this
+/* Source labels. Deliberately worded so a tooltip in the app cannot be mistaken
+   for a citation — because none of these are one. */
+const PUB = 'recalled — widely published, not verified here';
+const VAR = 'recalled — sources vary, not verified here';
+const EST = 'model placeholder — no published figure exists';
 
 /**
  * Builds provenance for a system from three lists of field paths, so the tables
@@ -56,8 +63,27 @@ const weaponProv = (index, { rangeConfidence = 'medium' } = {}) => ({
   [`weapons.${index}.salvo`]: { source: EST, confidence: 'low' },
 });
 
+/** Resolves 'weapons.0.rangeKm' against a spec. */
+const resolvePath = (spec, path) => {
+  let node = spec;
+  for (const step of path.split('.')) {
+    if (node === null || node === undefined) return undefined;
+    node = Array.isArray(node) ? node[Number(step)] : node[step];
+  }
+  return node;
+};
+
 const systems = [];
 const add = (spec) => {
+  // The builders below attach provenance for every field their family *might*
+  // have; a carrier has no VLS and an oiler has no radar. A key pointing at an
+  // absent field is dead weight that would survive into the researched file, so
+  // it is dropped here rather than tolerated.
+  if (spec.provenance) {
+    for (const path of Object.keys(spec.provenance)) {
+      if (resolvePath(spec, path) === undefined) delete spec.provenance[path];
+    }
+  }
   systems.push(spec);
   return spec;
 };

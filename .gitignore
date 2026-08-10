@@ -25,6 +25,9 @@ tsconfig.tsbuildinfo
 # half-written store documents; the real ones are committed
 data/*.json.tmp
 
+# merged research output; the batches themselves are worth keeping
+research/systems.merged.json
+
 # testing
 coverage
 *.lcov

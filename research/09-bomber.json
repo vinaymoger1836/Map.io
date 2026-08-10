@@ -1,0 +1,345 @@
+[
+  {
+    "id": "b-2a",
+    "name": "B-2A Spirit",
+    "typeId": "bomber",
+    "origin": "United States",
+    "note": "USAF flying-wing stealth heavy bomber; nuclear and conventional. 60,000 lb payload, crew of two. Combat radius is not published (estimated ~half the unrefuelled range). The fact sheet's range figure is internally inconsistent (6,000 nmi stated as 9,600 km).",
+    "platform": {
+      "combatRadiusKm": 5300,
+      "ferryRangeKm": 9600,
+      "speedKmh": 1010,
+      "payloadKg": 27216,
+      "crew": 2
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on the USAF fact sheet",
+          "note": "Combat radius not published; estimated ~5,300 km (roughly half the unrefuelled range, which itself extends with tanker support). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "government",
+          "title": "B-2 Spirit | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104482/b-2-spirit/",
+          "note": "'Its unrefueled range is approximately 6,000 nautical miles (9,600 kilometers).' The nmi and km figures are inconsistent (6,000 nmi is ~11,100 km); 9,600 km recorded as stated."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not numerically on the USAF fact sheet",
+          "note": "Fact sheet gives 'high subsonic'; ~1,010 km/h (~Mach 0.85) taken as an estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "government",
+          "title": "B-2 Spirit | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104482/b-2-spirit/",
+          "note": "'Payload: 60,000 pounds (27,216 kilograms).'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "B-2 Spirit | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104482/b-2-spirit/",
+          "note": "'Crew: two pilots.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "b-1b",
+    "name": "B-1B Lancer",
+    "typeId": "bomber",
+    "origin": "United States",
+    "note": "USAF variable-geometry supersonic heavy bomber; carries the largest conventional payload in the USAF (75,000 lb), including AGM-158 JASSM. Conventional-only since 2011. Range is 'intercontinental' with no figure on the fact sheet; radius/ferry values here are estimates.",
+    "platform": {
+      "combatRadiusKm": 5500,
+      "speedKmh": 1448,
+      "payloadKg": 34019,
+      "crew": 4
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on the USAF fact sheet",
+          "note": "Range given only as 'intercontinental'; combat radius commonly cited ~5,500 km. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "government",
+          "title": "B-1B Lancer | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104500/b-1b-lancer/",
+          "note": "'Speed: 900-plus mph (Mach 1.2 at sea level)' = ~1,448 km/h."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "government",
+          "title": "B-1B Lancer | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104500/b-1b-lancer/",
+          "note": "'Payload: 75,000 pounds (34,019 kilograms)' - largest conventional payload in the USAF."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "B-1B Lancer | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104500/b-1b-lancer/",
+          "note": "'Crew: Four (aircraft commander, copilot, and two combat systems officers).'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "b-52h",
+    "name": "B-52H Stratofortress",
+    "typeId": "bomber",
+    "origin": "United States",
+    "note": "USAF subsonic strategic heavy bomber, in service since 1961 and planned to ~2050. Carries up to 20 air-launched cruise missiles plus a wide mix of bombs and missiles (70,000 lb). Unrefuelled combat range over 8,800 miles; combat radius here is an estimate.",
+    "platform": {
+      "combatRadiusKm": 7000,
+      "ferryRangeKm": 14080,
+      "speedKmh": 1046,
+      "payloadKg": 31500,
+      "crew": 5
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on the USAF fact sheet",
+          "note": "Combat radius not published; estimated ~7,000 km (roughly half the ~14,000 km unrefuelled range). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "government",
+          "title": "B-52H Stratofortress | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104465/b-52h-stratofortress/",
+          "note": "'unrefueled combat range in excess of 8,800 miles (14,080 kilometers)'; range with refuelling limited only by crew endurance."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "government",
+          "title": "B-52H Stratofortress | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104465/b-52h-stratofortress/",
+          "note": "'Speed: 650 miles per hour (Mach 0.84)' = ~1,046 km/h."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "government",
+          "title": "B-52H Stratofortress | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104465/b-52h-stratofortress/",
+          "note": "'Payload: 70,000 pounds (31,500 kilograms).'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "B-52H Stratofortress | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104465/b-52h-stratofortress/",
+          "note": "'Crew: Five (aircraft commander, pilot, radar navigator, navigator and electronic warfare officer).'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "tu-160",
+    "name": "Tu-160 Blackjack",
+    "typeId": "bomber",
+    "origin": "Russia",
+    "note": "Russian supersonic variable-geometry strategic bomber. Two internal bays (combined 45,000 kg) each with a rotary launcher for six Kh-55/Kh-101/Kh-555/Kh-BD cruise missiles or twelve Kh-15. Non-stealth. Combat radius is an estimate; the 12,300 km figure is operational range.",
+    "platform": {
+      "combatRadiusKm": 6000,
+      "ferryRangeKm": 12300,
+      "speedKmh": 2220,
+      "payloadKg": 45000,
+      "crew": 4
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Combat radius not published; estimated ~6,000 km (roughly half the 12,300 km operational range). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tu-160 Blackjack | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-160-blackjack/",
+          "note": "'Operational range 12,300 km'; endurance 15 hours."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Tu-160 Blackjack | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-160-blackjack/",
+          "note": "'Maximum speed 2220 km/h'; the article text cites Mach 2.05."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Tu-160 Blackjack | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-160-blackjack/",
+          "note": "'two internal weapon bays with a combined capacity of 45,000 kg.'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Tu-160 Blackjack | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-160-blackjack/",
+          "note": "Crew: 4."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "tu-95ms",
+    "name": "Tu-95MS Bear",
+    "typeId": "bomber",
+    "origin": "Russia",
+    "note": "Russian turboprop strategic bomber (Tu-95MS Bear-H); extreme range and endurance (~21 hours). Carries Kh-55 and Kh-101/Kh-102 air-launched cruise missiles on internal rotary launcher and wing pylons. Non-stealth, very large. Combat radius and exact payload are estimates.",
+    "platform": {
+      "combatRadiusKm": 6400,
+      "ferryRangeKm": 15000,
+      "speedKmh": 920,
+      "payloadKg": 15000,
+      "crew": 8
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Combat radius not published; estimated ~6,400 km (roughly half the 15,000 km operational range). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tupolev Tu-95 Bear | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-95-bear/",
+          "note": "Tu-95MS: 'Operational range 15,000 km'; endurance 21 hours."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Tupolev Tu-95 Bear | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-95-bear/",
+          "note": "'Maximum speed 920 km/h' (contra-rotating turboprop)."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated for the MS variant on the retrieved page",
+          "note": "The page cites the Tu-95M at 9,000 kg; the Tu-95MS missile-carrier is usually quoted ~15,000-20,000 kg. 15,000 kg taken as a mid estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Tupolev Tu-95 Bear | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tu-95-bear/",
+          "note": "Tu-95MS Bear-H crew: 8."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "h-6k",
+    "name": "H-6K",
+    "typeId": "bomber",
+    "origin": "China",
+    "note": "PLAAF Xi'an H-6K ('God of War'), a heavily modernised Tu-16 derivative and China's primary strategic bomber. Six underwing hardpoints for CJ-10A land-attack cruise missiles or up to six YJ-12 supersonic anti-ship missiles; nuclear-capable. Non-stealth. Subsonic speed and payload are estimates.",
+    "platform": {
+      "combatRadiusKm": 3500,
+      "speedKmh": 1050,
+      "payloadKg": 12000,
+      "crew": 4
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Xian H-6 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Xian_H-6",
+          "note": "H-6K has a 'claimed combat radius of 3,500 kilometres (2,200 mi)'."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Subsonic; max speed ~1,050 km/h (Tu-16 lineage). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Max ordnance commonly cited ~12,000 kg (the H-6K can carry a ~10-tonne bomb filling the bay). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Xian H-6 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Xian_H-6",
+          "note": "'H-6 aircrews consist of four personnel': pilot, co-pilot, EW/communications officer, navigator/bombardier."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

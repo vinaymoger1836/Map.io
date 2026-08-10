@@ -1,0 +1,217 @@
+[
+  {
+    "id": "iskander-m",
+    "name": "Iskander-M",
+    "typeId": "missile",
+    "origin": "Russia",
+    "note": "Road-mobile SRBM system (9K720, NATO SS-26 'Stone'). The 9P78 TEL carries two 9M723 ballistic missiles and can also fire 9M728/9M729 ground-launched cruise missiles. Depressed, manoeuvring (up to 30 g) trajectory; 10-50 m CEP with the optical seeker. Figures are for the Russian 9M723 (Iskander-M); the export 9M720 is limited to 280 km.",
+    "weapons": [
+      {
+        "name": "9M723",
+        "rangeKm": 500,
+        "magazine": 2,
+        "engages": ["ground"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "9K720 Iskander (SS-26) | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/ss-26-2/",
+          "note": "9M723 maximum range 500 km (quoted 400-500 km), payload 480-700 kg. The export 9M720 is reduced to 280 km."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "9K720 Iskander (SS-26) | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/ss-26-2/",
+          "note": "Each 9P78 TEL carries two missiles; a brigade fields 12 TELs (reportedly moving to 16)."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "atacms",
+    "name": "ATACMS",
+    "typeId": "missile",
+    "origin": "United States",
+    "note": "MGM-140 Army Tactical Missile System, a road-mobile SRBM fired from the M270 MLRS (2 rounds) or M142 HIMARS (1 round). Figures are for the in-service Block 1A / unitary (300 km); the older Block 1 reached only 165 km. Being replaced by the PrSM (Precision Strike Missile).",
+    "weapons": [
+      {
+        "name": "MGM-140 Block 1A",
+        "rangeKm": 300,
+        "minRangeKm": 100,
+        "magazine": 2,
+        "engages": ["ground"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "MGM-140 Army Tactical Missile System (ATACMS) | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/atacms/",
+          "note": "Block 1A maximum range 300 km with the submunition warhead (270 km unitary). Block 1 was 165 km."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.minRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "MGM-140 Army Tactical Missile System (ATACMS) | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/atacms/",
+          "note": "'The Block 1A has a minimum range of 100 km.'"
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "MGM-140 Army Tactical Missile System (ATACMS) | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/atacms/",
+          "note": "An M270 MLRS carries two ATACMS (in place of 12 rockets); a HIMARS carries one."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "df-21d",
+    "name": "DF-21D",
+    "typeId": "missile",
+    "origin": "China",
+    "note": "Anti-ship variant of the DF-21 (CSS-5) MRBM, the 'carrier-killer'. Road-mobile TEL. Uses a manoeuvring reentry vehicle with a terminal seeker to hit moving ships; ~20 m CEP. The land-attack DF-21C and nuclear DF-21A share the airframe (base DF-21 reaches ~2,150 km).",
+    "weapons": [
+      {
+        "name": "DF-21D",
+        "rangeKm": 1500,
+        "engages": ["surface"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "DF-21 (CSS-5) | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/df-21/",
+          "note": "'U.S. reports suggest a range of 1,450 to 1,550 km' for the DF-21D anti-ship variant; ~20 m CEP maneuverable warhead. This is a US estimate; the land-attack DF-21C reaches ~2,150 km."
+        },
+        "confidence": "medium"
+      }
+    }
+  },
+  {
+    "id": "df-26",
+    "name": "DF-26",
+    "typeId": "missile",
+    "origin": "China",
+    "note": "Road-mobile IRBM ('Guam killer'), China's first conventional ballistic missile able to strike Guam. Hot-swappable nuclear or conventional warhead; the DF-26B anti-ship variant carries a terminal seeker for moving ships. ~150-450 m CEP. A brigade fields 12-18 TELs.",
+    "weapons": [
+      {
+        "name": "DF-26",
+        "rangeKm": 4000,
+        "engages": ["ground", "surface"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "DF-26 | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/dong-feng-26-df-26/",
+          "note": "Two-stage solid IRBM, range 4,000 km (NASIC), payload 1,200-1,800 kg. The DF-26B anti-ship variant engages moving ships at intermediate range."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "tomahawk-tel",
+    "name": "Typhon / Tomahawk (land)",
+    "typeId": "missile",
+    "origin": "United States",
+    "note": "Land-based Typhon (Mid-Range Capability) ground launcher firing the Tomahawk Block IV/V subsonic cruise missile (the same launcher also fires the SM-6). Figures are for the Block IV TLAM-E land-attack Tomahawk; the Maritime Strike Tomahawk (Block Va) adds an anti-ship seeker. The retired nuclear TLAM-N reached 2,500 km.",
+    "weapons": [
+      {
+        "name": "Tomahawk Block IV (TLAM-E)",
+        "rangeKm": 1600,
+        "engages": ["ground", "surface"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tomahawk | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/tomahawk/",
+          "note": "'The Block IV TLAM-E has a range of 900 nautical miles or 1,600 km'; subsonic, low-altitude, <10 m CEP, 1,000 lb unitary warhead. Anti-ship reach is restored by the Maritime Strike Tomahawk."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "bastion-p",
+    "name": "K-300P Bastion-P",
+    "typeId": "missile",
+    "origin": "Russia",
+    "note": "Mobile coastal-defence system (NATO SS-C-5 'Stooge') firing the P-800 Oniks/Yakhont (SS-N-26) supersonic (Mach 2.5) anti-ship / land-attack cruise missile. A battery has four launcher vehicles of two missiles each. Sea-skimming terminal phase; fire-and-forget active/passive radar seeker.",
+    "weapons": [
+      {
+        "name": "P-800 Oniks",
+        "rangeKm": 450,
+        "magazine": 2,
+        "engages": ["surface", "ground"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "K-300P Bastion-P 'SS-C-5 Stooge' | Weapons Parade",
+          "url": "https://weaponsparade.com/weapon/k-300p-bastion-p-ss-c-5-stooge-mobile-coastal-defence-missile/",
+          "note": "'Maximum range about 450 km against land targets, 350 km against naval targets'; Mach 2.5. A low-low sea-skimming profile shortens this to roughly 120-300 km."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "K-300P Bastion-P 'SS-C-5 Stooge' | Weapons Parade",
+          "url": "https://weaponsparade.com/weapon/k-300p-bastion-p-ss-c-5-stooge-mobile-coastal-defence-missile/",
+          "note": "'4 launchers with 2 missiles each' per battery."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "brahmos-land",
+    "name": "BrahMos (land)",
+    "typeId": "missile",
+    "origin": "India",
+    "note": "Ground-launched BrahMos (PJ-10), an Indo-Russian supersonic (Mach 2.0-2.8) anti-ship / land-attack cruise missile derived from the P-800 Oniks. Ramp or vertical launcher. Baseline range 290-450 km; extended-range variants reach further. The export version is capped at 290 km under the MTCR.",
+    "weapons": [
+      {
+        "name": "BrahMos PJ-10",
+        "rangeKm": 400,
+        "engages": ["surface", "ground"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "BrahMos | Missile Threat (CSIS)",
+          "url": "https://missilethreat.csis.org/missile/brahmos/",
+          "note": "'Range of between 300-500 km depending on which variant and launch platform is used'; export capped at 290 km (MTCR). 400 km taken as a mid figure for the current land variant; extended-range versions go further."
+        },
+        "confidence": "medium"
+      }
+    }
+  }
+]

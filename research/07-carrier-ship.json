@@ -1,0 +1,357 @@
+[
+  {
+    "id": "nimitz",
+    "name": "Nimitz class",
+    "typeId": "carrier-ship",
+    "origin": "United States",
+    "note": "US Navy nuclear-powered CATOBAR supercarrier (CVN-68 to CVN-77), two A4W reactors (effectively unlimited propulsion endurance, ~20 years between refuels). Air wing of around 64 aircraft (capacity ~90), primarily F/A-18E/F. Ship's company ~3,532; total complement with air wing ~5,700-6,000. Full-load displacement has grown past 100,000 tons on later hulls.",
+    "platform": {
+      "displacementT": 100000,
+      "speedKmh": 56,
+      "crew": 3532,
+      "aircraft": 64
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Nimitz-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+          "note": "'full-load displacement of over 100,000 long tons'; later ships heavier (e.g. USS Abraham Lincoln 104,112 long tons full load)."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Nimitz-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+          "note": "'maximum speed of over 30 knots (56 km/h; 35 mph).'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Nimitz-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+          "note": "Infobox: ship's company 3,532; air wing adds ~2,480, plus ~500 other, for a total complement near 5,700-6,000."
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Nimitz-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+          "note": "'An embarked carrier air wing comprising around 64 aircraft is normally deployed'; maximum capacity is ~90."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "gerald-ford",
+    "name": "Gerald R. Ford class",
+    "typeId": "carrier-ship",
+    "origin": "United States",
+    "note": "US Navy nuclear-powered CATOBAR supercarrier replacing the Nimitz class; EMALS electromagnetic catapults, Advanced Arresting Gear, two A1B reactors (25%+ more power), reduced crew, and reduced radar signature. Dual Band Radar on CVN-78 / SPY-6 EASR from CVN-79. Full-load displacement and top speed are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 100000,
+      "speedKmh": 56,
+      "crew": 4297,
+      "aircraft": 90
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Ford-class full-load displacement is ~100,000 tonnes (commonly ~100,000-101,600 t); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Top speed 'in excess of 30 knots' (>56 km/h) as with the Nimitz class; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
+          "note": "Infobox: 508 officers + 3,789 enlisted = 4,297 total complement; automation allows 'several hundred fewer than the Nimitz class'."
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
+          "note": "'The ability to carry up to 90 aircraft'; a typical embarked air wing is nearer ~65-75."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "queen-elizabeth",
+    "name": "Queen Elizabeth class",
+    "typeId": "carrier-ship",
+    "origin": "United Kingdom",
+    "note": "Royal Navy STOVL carrier (conventionally powered, integrated electric propulsion; built 'for but not with' catapults). Ski-jump flight deck operating the F-35B; Artisan Type 997 and S1850M radars. Air group 40 aircraft in peacetime (up to 72 in wartime; ~12-36 F-35B). Ship's company 679, ~1,600 with the air group. Range 10,000 nmi. Top speed not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 80600,
+      "speedKmh": 46,
+      "crew": 679,
+      "aircraft": 40
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
+          "note": "'full load displacement of an estimated 80,600 tonnes' (empty ~65,000 t on delivery)."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "QE-class top speed ~25 knots (~46 km/h); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
+          "note": "'The ships' company is 679, rising to 1,600 when the air crew is added.'"
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
+          "note": "'40 aircraft in peacetime, 72 aircraft in wartime'; F-35B (12-36, up to 48 in extreme cases) plus Merlin/Chinook/Wildcat/Apache."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "liaoning",
+    "name": "Liaoning / Shandong",
+    "typeId": "carrier-ship",
+    "origin": "China",
+    "note": "PLAN Type 001 Liaoning, rebuilt from the ex-Soviet Kuznetsov-class hull Varyag; STOBAR ski-jump (no catapults), Type 346 S-band AESA radar, ~24 J-15 fighters plus helicopters. The near-sister Type 002 Shandong is a modified indigenous build with broadly similar figures. Displacement, air-wing size and speed are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 60000,
+      "speedKmh": 59,
+      "crew": 1960,
+      "aircraft": 36
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Full-load displacement commonly cited ~60,000-66,000 tonnes; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Top speed ~32 knots (~59 km/h); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Chinese aircraft carrier Liaoning | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Liaoning",
+          "note": "Infobox: 1,960 crew, plus 626 air group and 40 flag staff (~2,626 total)."
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Air wing typically ~24 J-15 fighters plus ~12 helicopters (~36 total); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      }
+    }
+  },
+  {
+    "id": "fujian",
+    "name": "Fujian",
+    "typeId": "carrier-ship",
+    "origin": "China",
+    "note": "PLAN Type 003 Fujian, China's first indigenous CATOBAR carrier and the second in the world (after Gerald R. Ford) with electromagnetic catapults (MVDC integrated power). Conventionally powered. Air wing of J-15T, J-35 stealth fighters, KJ-600 AEW&C and Z-20 helicopters. Commissioned November 2025.",
+    "platform": {
+      "displacementT": 82000,
+      "speedKmh": 56,
+      "crew": 3000,
+      "aircraft": 50
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Chinese aircraft carrier Fujian | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+          "note": "'full load displacement of 80,000 to 85,000 tons'; 82,000 taken as a mid figure."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Chinese aircraft carrier Fujian | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+          "note": "'a top speed of 30 knots and a range of 8,000 to 10,000 nautical miles.'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Chinese aircraft carrier Fujian | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+          "note": "'Its crew consists of 2,000 sailors and 1,000 airmen' (3,000 total)."
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Chinese aircraft carrier Fujian | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+          "note": "'50+ aircraft'; estimated at least 40 fixed-wing plus 12 helicopters."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "vikrant",
+    "name": "INS Vikrant",
+    "typeId": "carrier-ship",
+    "origin": "India",
+    "note": "Indian Navy Vikrant-class (IAC-1), India's first indigenously built carrier; STOBAR ski-jump, MF-STAR AESA radar, two 32-cell Barak-8 VLS. Air wing of MiG-29K (Rafale M on order), Ka-31, MH-60R. Range 8,000 nmi. Commissioned 2022.",
+    "platform": {
+      "displacementT": 45000,
+      "speedKmh": 56,
+      "crew": 1645,
+      "aircraft": 36
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "INS Vikrant (2013) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+          "note": "'45,000 tonnes of loaded displacement.'"
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "INS Vikrant (2013) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+          "note": "Infobox: 30 knots (56 km/h); the article body cites a top speed of 28 knots (52 km/h)."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "INS Vikrant (2013) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+          "note": "'196 officers, 1,449 sailors (including air crew)' = 1,645; the article body cites ~1,700."
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "INS Vikrant (2013) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+          "note": "'Aircraft carried: 36 aircraft' (MiG-29K, Ka-31, MH-60R); hangar capacity 20."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "charles-de-gaulle",
+    "name": "Charles de Gaulle",
+    "typeId": "carrier-ship",
+    "origin": "France",
+    "note": "French Navy Charles de Gaulle (R91), France's only carrier and the only nuclear-powered CATOBAR carrier outside the US. Rafale M fighters and E-2C Hawkeye AEW aircraft; 32 Aster 15 SAM cells (4x8 Sylver) plus Mistral. Displacement, air-wing size and speed are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 42500,
+      "speedKmh": 50,
+      "crew": 1350,
+      "aircraft": 30
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Full-load displacement commonly cited ~42,500 tonnes; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Top speed ~27 knots (~50 km/h); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "French aircraft carrier Charles de Gaulle | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/French_aircraft_carrier_Charles_de_Gaulle",
+          "note": "Infobox: ship's company 1,350, plus 600 air wing (~1,950 total)."
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Air group typically ~30 (up to ~40): Rafale M and E-2C Hawkeye; not numerically stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      }
+    }
+  }
+]

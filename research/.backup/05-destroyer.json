@@ -1,0 +1,294 @@
+[
+  {
+    "id": "arleigh-burke",
+    "name": "Arleigh Burke class (Flight IIA)",
+    "typeId": "destroyer",
+    "origin": "United States",
+    "note": "DDG-51 Flight IIA Aegis guided-missile destroyer with the SPY-1D(V) phased-array radar and 96 Mk-41 VLS cells (32 forward + 64 aft) firing SM-2/SM-6, ESSM, VLA and Tomahawk. Two MH-60R helicopters. Figures are for Flight IIA (DDG-79 onward); the newer Flight III adds the SPY-6 AMDR. VLS count and radar range are not on the Navy fact file.",
+    "platform": {
+      "displacementT": 9700,
+      "vls": 96,
+      "speedKmh": 56,
+      "crew": 329,
+      "aircraft": 2
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "government",
+          "title": "Destroyers (DDG 51) | U.S. Navy Fact File",
+          "url": "https://www.navy.mil/Resources/Fact-Files/Display-FactFiles/Article/2169871/destroyers-ddg/",
+          "note": "'Displacement: 8,230 - 9,700 Ltons'; 9,700 long tons full load ~= 9,850 tonnes for Flight IIA."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not numerically stated on the Navy fact file",
+          "note": "Flight IIA carries 96 Mk-41 VLS cells (32 forward + 64 aft) - a well-established figure, but the Navy fact file only names the Mk-41 VLS without a count."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "government",
+          "title": "Destroyers (DDG 51) | U.S. Navy Fact File",
+          "url": "https://www.navy.mil/Resources/Fact-Files/Display-FactFiles/Article/2169871/destroyers-ddg/",
+          "note": "'Speed: In excess of 30 knots' (>30 kn = >56 km/h)."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "Destroyers (DDG 51) | U.S. Navy Fact File",
+          "url": "https://www.navy.mil/Resources/Fact-Files/Display-FactFiles/Article/2169871/destroyers-ddg/",
+          "note": "'Crew: Flight IIA: 329 Total (32 Officer, 27 CPO, 270 Enlisted).'"
+        },
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "government",
+          "title": "Destroyers (DDG 51) | U.S. Navy Fact File",
+          "url": "https://www.navy.mil/Resources/Fact-Files/Display-FactFiles/Article/2169871/destroyers-ddg/",
+          "note": "'Aircraft (Flight IIA and III): Two LAMPS MK III MH-60 R helicopters.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "type-052d",
+    "name": "Type 052D (Luyang III)",
+    "typeId": "destroyer",
+    "origin": "China",
+    "note": "PLAN Luyang III guided-missile destroyer, China's most numerous modern DDG ('Chinese Aegis'). Type 346A four-panel AESA radar and 64 universal VLS cells (32 fwd + 32 aft) firing HHQ-9 SAM, YJ-18 anti-ship and CJ-10 land-attack missiles. Carries a Harbin Z-9 helicopter (Z-20 on the stretched 052DL). Displacement and crew are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 7500,
+      "vls": 64,
+      "speedKmh": 56,
+      "crew": 280,
+      "aircraft": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Full-load displacement widely cited at ~7,500 tonnes; not stated in the retrieved portion of the Wikipedia page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 052D destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_052D_destroyer",
+          "note": "'64 cells are carried, 32 forward and 32 aft' - canister-type universal VLS (HHQ-9, YJ-18, CJ-10, CY-5)."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 052D destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_052D_destroyer",
+          "note": "'maximum speed of 30 knots (56 km/h; 35 mph).'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement commonly cited ~280; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 052D destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_052D_destroyer",
+          "note": "'normally carries a Harbin Z-9 helicopter' (Z-20 on the 052DL variant)."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "type-45",
+    "name": "Type 45 (Daring class)",
+    "typeId": "destroyer",
+    "origin": "United Kingdom",
+    "note": "Royal Navy Daring-class air-defence destroyer built around the Sea Viper (PAAMS) system with the SAMPSON multi-function AESA and S1850M long-range radars. 48 Sylver A50 VLS cells for Aster 15/30 (24 Sea Ceptor silos being added from 2026). Heavily reduced radar signature. Crew and speed are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 7350,
+      "vls": 48,
+      "speedKmh": 56,
+      "crew": 191,
+      "aircraft": 1
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 45 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_45_destroyer",
+          "note": "'a displacement of approximately 7,350 tonnes (7,230 long tons)'."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 45 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_45_destroyer",
+          "note": "'48 x Sylver vertical launching system A50' for Aster 15 (1.7-30 km) and Aster 30 (3-120 km). A separate 24-cell Sea Ceptor fit is being added from 2026."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Type 45 top speed is quoted 'in excess of 30 knots' (>56 km/h); not in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Ship's company ~191 (accommodation up to ~235); not in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 45 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_45_destroyer",
+          "note": "Hangar for one Merlin HM2 or up to two Wildcat HMA2; one taken as the routine embarkation."
+        },
+        "confidence": "medium"
+      }
+    }
+  },
+  {
+    "id": "kolkata",
+    "name": "Kolkata class",
+    "typeId": "destroyer",
+    "origin": "India",
+    "note": "Indian Navy Kolkata class (Project 15A), India's first stealth destroyers. EL/M-2248 MF-STAR AESA plus Thales LW-08 radar. Air defence uses four 8-cell VLS (32 Barak-8/MRSAM cells); the primary offensive load is 16 BrahMos in a Universal Vertical Launcher Module. Enclosed hangar for two helicopters. Crew is not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 7400,
+      "vls": 48,
+      "speedKmh": 56,
+      "crew": 300,
+      "aircraft": 2
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Kolkata-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kolkata-class_destroyer",
+          "note": "Full-load displacement 7,400 t (standard 6,800 t); some media report 7,500 t full load."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Kolkata-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kolkata-class_destroyer",
+          "note": "'four eight-cell vertical launching systems... up to thirty-two Barak 8' (32 SAM cells) plus a 16-cell BrahMos Universal Vertical Launcher Module = 48 cells total."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Kolkata-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kolkata-class_destroyer",
+          "note": "'speeds in excess of 30 knots (56 km/h; 35 mph).'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement commonly cited ~300 (about 325 with air group); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Kolkata-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kolkata-class_destroyer",
+          "note": "'an enclosed hangar for up to two maritime helicopters.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "maya",
+    "name": "Maya class",
+    "typeId": "destroyer",
+    "origin": "Japan",
+    "note": "JMSDF Maya class, an enlarged Atago derivative with Aegis Baseline 9C, Cooperative Engagement Capability and ballistic-missile defence (SM-3 Block IIA). AN/SPY-1D(V) radar and 96 Mk-41 VLS cells (one 64-cell + one 32-cell group) for SM-2/SM-3/SM-6 and VLA. Type 17 anti-ship missiles in deck canisters. Helicopter landing deck but no embarked hangar; speed and crew are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 10250,
+      "vls": 96,
+      "speedKmh": 56,
+      "crew": 300
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Maya-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Maya-class_destroyer",
+          "note": "'10,250 tons full load' (8,200 tons standard)."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Maya-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Maya-class_destroyer",
+          "note": "'1 x 64-cell, 1 x 32-cell (96 total cells) Mk 41 Vertical Launching System.'"
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Maya-class top speed ~30 knots (56 km/h), as with the Atago class; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement commonly cited ~300; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      }
+    }
+  }
+]

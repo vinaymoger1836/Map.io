@@ -1,0 +1,248 @@
+[
+  {
+    "id": "virginia",
+    "name": "Virginia class",
+    "typeId": "submarine",
+    "origin": "United States",
+    "note": "US Navy nuclear-powered attack submarine (SSN). Very quiet. Armament is 12 Tomahawk VLS tubes plus 4 x 21-inch torpedo tubes (Mk-48, Harpoon); ~25 torpedo-tube weapons. Figures are for Block I-IV (submerged 7,900 t); Block V adds the Virginia Payload Module (submerged 10,200 t, ~40 Tomahawk). Submerged speed and crew are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 7900,
+      "vls": 12,
+      "speedKmh": 46,
+      "crew": 132
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Virginia-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Virginia-class_submarine",
+          "note": "Submerged: Block I-IV 7,900 t; Block V 10,200 t."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Virginia-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Virginia-class_submarine",
+          "note": "'12 x VLS tubes (for Tomahawk cruise missiles)' on Block I-II; plus 4 torpedo tubes. Block V's Virginia Payload Module adds 28 more Tomahawk tubes (~40 total)."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt / not disclosed",
+          "note": "US Navy does not publish the figure; submerged speed is officially 'greater than 25 knots' (>46 km/h). Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement ~132 (15 officers + 117 enlisted); not in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      }
+    }
+  },
+  {
+    "id": "astute",
+    "name": "Astute class",
+    "typeId": "submarine",
+    "origin": "United Kingdom",
+    "note": "Royal Navy nuclear-powered attack submarine (SSN); very quiet. Six 21-inch torpedo tubes firing Spearfish torpedoes and Tomahawk cruise missiles (no dedicated VLS - Tomahawk launched from the torpedo tubes). Nuclear propulsion gives unlimited range; endurance ~90 days limited by food. Crew is not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 7800,
+      "speedKmh": 56,
+      "crew": 98,
+      "enduranceDays": 90
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Astute-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Astute-class_submarine",
+          "note": "'Submerged: 7,400 to 7,800 t.'"
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Astute-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Astute-class_submarine",
+          "note": "'Speed: 30 knots (56 km/h; 35 mph), submerged.'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement ~98; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.enduranceDays": {
+        "source": {
+          "kind": "reference",
+          "title": "Astute-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Astute-class_submarine",
+          "note": "'Unlimited in terms of propulsion, air and water, but otherwise typically 90 days, based on the amount of food carried.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "yasen-m",
+    "name": "Yasen-M class",
+    "typeId": "submarine",
+    "origin": "Russia",
+    "note": "Russian Project 885M nuclear-powered guided-missile/attack submarine (SSGN/SSN); quiet. Eight silos of four VLS = 32 cells for Zircon hypersonic, Oniks and Kalibr cruise missiles, plus 10 x 533 mm torpedo tubes. Displacement here is the class (Severodvinsk, Project 885); the upgraded Yasen-M is broadly similar.",
+    "platform": {
+      "displacementT": 13800,
+      "vls": 32,
+      "speedKmh": 65,
+      "crew": 64
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Yasen-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Yasen-class_submarine",
+          "note": "'Submerged: 13,800 tons' (surfaced 8,600 t). This is the Project 885 figure; Yasen-M is slightly shorter and similar or somewhat lighter."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Yasen-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Yasen-class_submarine",
+          "note": "'Eight missile silos each equipped with four VLS to carry 32 (8x4) missiles' - Zircon, Oniks, Kalibr."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Yasen-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Yasen-class_submarine",
+          "note": "'Submerged (max): 35 kn (65 km/h)'; silent running ~28 kn (52 km/h)."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Yasen-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Yasen-class_submarine",
+          "note": "'Yasen-M: 64' crew."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "kilo",
+    "name": "Kilo class (Project 636)",
+    "typeId": "submarine",
+    "origin": "Russia",
+    "note": "Russian Project 636.3 (Improved Kilo II) diesel-electric attack submarine (SSK); exceptionally quiet (the 'black hole') with anechoic tiles. Six 533 mm torpedo tubes with 18 torpedoes; the 636/636.3 also fire 4 Kalibr cruise missiles through the torpedo tubes (no dedicated VLS). Snorkel range 6,000-7,500 nmi. Crew is not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 4000,
+      "speedKmh": 37,
+      "crew": 52
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Kilo-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kilo-class_submarine",
+          "note": "Project 636.3 'submerged displacement is around 4,000 tons'; the older Project 877 is ~3,000-3,100 t submerged."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Kilo-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kilo-class_submarine",
+          "note": "'Submerged: 20 knots (37 km/h; 23 mph)' (surfaced 17 kn)."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement ~52; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      }
+    }
+  },
+  {
+    "id": "type-093",
+    "name": "Type 093 (Shang class)",
+    "typeId": "submarine",
+    "origin": "China",
+    "note": "PLAN Shang-class nuclear-powered attack submarine (SSN). Six 533 mm torpedo tubes with Yu-series torpedoes and YJ-18 anti-ship missiles. The latest Type 093B (Shang III) adds pump-jet propulsion and a 24-cell VLS, and is classed by the US as a cruise-missile submarine (SSGN); the base Type 093/093A have no VLS. Acoustically noisier than Western SSNs (Victor I-III class).",
+    "platform": {
+      "displacementT": 6675,
+      "vls": 24,
+      "speedKmh": 56,
+      "crew": 100
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 093 submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_093_submarine",
+          "note": "'Type 093/A 6,675 tons (submerged)'; Type 093B 6,700-7,000 t submerged."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 093 submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_093_submarine",
+          "note": "'24-cell vertical launching system (VLS)' - Type 093B (Shang III) only; the base Type 093/093A have no VLS and fire YJ-18 from the torpedo tubes."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 093 submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_093_submarine",
+          "note": "'Type 093A/B 30 knots (56 km/h)'; the original Type 093 was 28 kn."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 093 submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_093_submarine",
+          "note": "'Complement: 100.'"
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

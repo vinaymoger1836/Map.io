@@ -34,10 +34,35 @@ export const TARGET_CLASSES: { id: TargetClass; label: string }[] = [
 
 export type Confidence = 'high' | 'medium' | 'low';
 
+/**
+ * Where a figure came from.
+ *
+ * `placeholder` is the important one: a kill probability nobody publishes is not
+ * a weak source, it is an absent one, and the interface should say so rather
+ * than dressing an estimate up as a reference.
+ */
+export interface SourceRef {
+  kind: 'manufacturer' | 'government' | 'reference' | 'press' | 'placeholder';
+  title: string;
+  url?: string;
+  /** What the figure assumes, or how much sources disagree. */
+  note?: string;
+}
+
 export interface Provenance {
-  source: string;
+  /** A bare string is a legacy entry: a category, not a citation. */
+  source: string | SourceRef;
   confidence: Confidence;
 }
+
+export const sourceRef = (p: Provenance): SourceRef =>
+  typeof p.source === 'string'
+    ? { kind: 'placeholder', title: p.source }
+    : p.source;
+
+/** True when the figure can actually be traced back to something. */
+export const isCited = (p: Provenance): boolean =>
+  typeof p.source !== 'string' && Boolean(p.source.url);
 
 /** Anything that looks — a radar, a sonar, an AEW&C aircraft. */
 export interface SensorFacet {
@@ -148,9 +173,23 @@ export interface Envelope {
   kind: EnvelopeKind;
   radiusKm: number;
   label: string;
+  /** The munition this reach belongs to, where one does. */
+  weapon?: string;
   /** Which target classes this reach applies to, where the spec says. */
   engages?: TargetClass[];
 }
+
+export const TARGET_LABEL: Record<TargetClass, string> = {
+  air: 'aircraft',
+  ballistic: 'ballistic',
+  surface: 'ships',
+  ground: 'ground',
+  subsurface: 'submarines',
+};
+
+/** 'aircraft, ballistic' — for a tooltip. */
+export const describeTargets = (classes: TargetClass[] | undefined): string =>
+  classes?.length ? classes.map((c) => TARGET_LABEL[c]).join(', ') : 'unspecified targets';
 
 export const ENVELOPE_LABELS: Record<EnvelopeKind, string> = {
   detection: 'Detection',
@@ -160,8 +199,14 @@ export const ENVELOPE_LABELS: Record<EnvelopeKind, string> = {
 };
 
 /**
- * Every reach a single system has. A system with no facets has none, which is
- * the correct answer for a supply truck.
+ * Every reach a single system has.
+ *
+ * Engagement is split by what the weapon can shoot at, because one ring per
+ * system is actively misleading: an Arleigh Burke's longest weapon is a
+ * land-attack Tomahawk at 1,600 km, and drawing that as *the* envelope implies
+ * an air-defence reach seven times what it has. One ring per target class,
+ * taking the longest weapon that engages that class, and weapons that cover
+ * several classes produce one ring rather than three identical ones.
  */
 export function envelopesFor(spec: SystemSpec | undefined): Envelope[] {
   if (!spec) return [];
@@ -176,18 +221,43 @@ export function envelopesFor(spec: SystemSpec | undefined): Envelope[] {
     });
   }
 
-  // The longest-reaching weapon defines the envelope. Shorter ones sit inside
-  // it and would only add rings nobody can read.
-  const longest = (spec.weapons ?? []).reduce<WeaponFacet | null>(
-    (best, w) => (!best || w.rangeKm > best.rangeKm ? w : best),
-    null
-  );
-  if (longest) {
+  const weapons = spec.weapons ?? [];
+  const longestFor = new Map<TargetClass, WeaponFacet>();
+  const unclassed: WeaponFacet[] = [];
+
+  for (const weapon of weapons) {
+    if (!weapon.engages?.length) {
+      unclassed.push(weapon);
+      continue;
+    }
+    for (const target of weapon.engages) {
+      const held = longestFor.get(target);
+      if (!held || weapon.rangeKm > held.rangeKm) longestFor.set(target, weapon);
+    }
+  }
+
+  // Several classes often resolve to the same weapon — an SM-6 answers both
+  // aircraft and ballistic — and that is one envelope, not two.
+  const grouped = new Map<WeaponFacet, TargetClass[]>();
+  for (const [target, weapon] of longestFor) {
+    const classes = grouped.get(weapon) ?? [];
+    classes.push(target);
+    grouped.set(weapon, classes);
+  }
+
+  // A weapon that never says what it shoots at still deserves a ring, once.
+  if (unclassed.length) {
+    const longest = unclassed.reduce((best, w) => (w.rangeKm > best.rangeKm ? w : best));
+    if (!grouped.has(longest)) grouped.set(longest, []);
+  }
+
+  for (const [weapon, classes] of grouped) {
     out.push({
       kind: 'engagement',
-      radiusKm: longest.rangeKm,
-      label: `${longest.name ?? ENVELOPE_LABELS.engagement} · ${longest.rangeKm} km`,
-      engages: longest.engages,
+      radiusKm: weapon.rangeKm,
+      weapon: weapon.name,
+      label: `${weapon.name ?? ENVELOPE_LABELS.engagement} · ${weapon.rangeKm} km`,
+      engages: classes.length ? classes : undefined,
     });
   }
 
@@ -215,11 +285,14 @@ export function envelopesFor(spec: SystemSpec | undefined): Envelope[] {
  * is its escorts' umbrella; nobody types it in.
  */
 export function combineEnvelopes(specs: (SystemSpec | undefined)[]): Envelope[] {
-  const widest = new Map<EnvelopeKind, Envelope>();
+  const widest = new Map<string, Envelope>();
   for (const spec of specs) {
     for (const env of envelopesFor(spec)) {
-      const held = widest.get(env.kind);
-      if (!held || env.radiusKm > held.radiusKm) widest.set(env.kind, env);
+      // Keyed by what the reach is *for*, so an escort's air-defence umbrella
+      // does not get overwritten by a longer land-attack missile.
+      const key = `${env.kind}|${[...(env.engages ?? [])].sort().join(',')}`;
+      const held = widest.get(key);
+      if (!held || env.radiusKm > held.radiusKm) widest.set(key, env);
     }
   }
   return [...widest.values()];

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "ticonderoga",
+    "name": "Ticonderoga class",
+    "typeId": "cruiser",
+    "origin": "United States",
+    "note": "US Navy Aegis guided-missile cruiser (CG-47), SPY-1A/B phased-array radar. Figures are for the VLS ships (CG-52 onward) with two 61-cell Mk-41 launchers = 122 cells firing SM-2/SM-6, SM-3, ESSM, Tomahawk and VL-ASROC, plus 8 Harpoon in separate launchers. Two SH-60 (LAMPS III) helicopters. The class is being progressively retired by ~2027. Crew and speed are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 9600,
+      "vls": 122,
+      "speedKmh": 60,
+      "crew": 330,
+      "aircraft": 2
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Ticonderoga-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ticonderoga-class_cruiser",
+          "note": "'...9,600 tons of displacement for the heavier cruisers.' (full load)."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Ticonderoga-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ticonderoga-class_cruiser",
+          "note": "Ships from CG-52 have 'two Mark 41 Vertical Launching Systems... 122 missile storage and launching tubes'. The original five (CG-47-51) used Mk-26 twin-arm launchers (88 missiles)."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Ticonderoga top speed ~32.5 knots (~60 km/h); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement ~330; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Ticonderoga-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ticonderoga-class_cruiser",
+          "note": "Carries LAMPS III (SH-60) helicopters; hangar for two."
+        },
+        "confidence": "medium"
+      }
+    }
+  },
+  {
+    "id": "type-055",
+    "name": "Type 055 (Renhai)",
+    "typeId": "cruiser",
+    "origin": "China",
+    "note": "PLAN Type 055 (NATO/US: Renhai), a large stealth multi-mission combatant the US classifies as a cruiser; primary escort for Chinese carriers. Dual-band radar with four Type 346B AESA panels. 112 universal VLS cells (64 fwd + 48 aft) firing HHQ-9 SAM, YJ-18 anti-ship, CJ-10 land-attack and (tested) YJ-20/YJ-21 anti-ship ballistic missiles; hangar for two helicopters. Full-load displacement and crew are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 13000,
+      "vls": 112,
+      "speedKmh": 56,
+      "crew": 300,
+      "aircraft": 2
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Full-load displacement widely cited ~12,000-13,000 tonnes ('bigger than a US AEGIS cruiser'); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 055 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_055_destroyer",
+          "note": "'112 vertical launching system (VLS) cells, 64 cells forward and 48 cells aft' (GJB 5860-2006 universal VLS)."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 055 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_055_destroyer",
+          "note": "'maximum flank speed is estimated to be 30 knots (56 km/h; 35 mph).'"
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement commonly cited ~300; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 055 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_055_destroyer",
+          "note": "'There is hangar space for two helicopters.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "slava",
+    "name": "Slava class",
+    "typeId": "cruiser",
+    "origin": "Russia",
+    "note": "Soviet/Russian Project 1164 Atlant guided-missile cruiser. Long-range S-300F (SA-N-6) SAM system with 64 missiles in below-deck rotary launchers; the primary offensive load is 16 P-1000 Vulkan (SS-N-12) supersonic anti-ship missiles in fixed deck launchers, plus 40 SA-N-4 short-range SAMs. MR-800 Voskhod (Top Pair) long-range air-search radar; one Ka-27 helicopter. Three built; Moskva sank in 2022. Crew and speed are not in the retrieved excerpt.",
+    "platform": {
+      "displacementT": 11490,
+      "vls": 64,
+      "speedKmh": 59,
+      "crew": 476,
+      "aircraft": 1
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {
+          "kind": "reference",
+          "title": "Slava-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Slava-class_cruiser",
+          "note": "'11,490 tons full load' (9,380 tons standard)."
+        },
+        "confidence": "high"
+      },
+      "platform.vls": {
+        "source": {
+          "kind": "reference",
+          "title": "Slava-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Slava-class_cruiser",
+          "note": "'64 (8 x 8) S-300F Fort (SA-N-6 Grumble) long-range surface-to-air missiles' in rotary below-deck launchers. Also 16 P-1000 Vulkan anti-ship (fixed launchers, no reloads) and 40 SA-N-4 - not part of the 64-cell SAM magazine."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Slava top speed ~32 knots (~59 km/h); not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not in the retrieved excerpt",
+          "note": "Complement commonly cited ~476; not stated in the retrieved portion. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.aircraft": {
+        "source": {
+          "kind": "reference",
+          "title": "Slava-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Slava-class_cruiser",
+          "note": "'The helicopter hangar deck is located a half deck below the landing pad' - one Ka-27 embarked."
+        },
+        "confidence": "medium"
+      }
+    }
+  }
+]

@@ -1,0 +1,729 @@
+[
+  {
+    "id": "f-35a",
+    "name": "F-35A Lightning II",
+    "typeId": "fighter",
+    "origin": "United States",
+    "note": "USAF conventional-takeoff fifth-generation multirole stealth fighter. Combat radius is the Lockheed Martin internal-fuel figure (not on the USAF fact sheet); the fact sheet's '1,350 mile' figure is total range on internal fuel, recorded here as ferry range.",
+    "platform": {
+      "combatRadiusKm": 1093,
+      "ferryRangeKm": 2173,
+      "speedKmh": 1931,
+      "payloadKg": 8160,
+      "crew": 1
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on the USAF fact sheet",
+          "note": "Lockheed Martin publishes a combat radius of >590 nmi (~1,093 km) on internal fuel for the F-35A; the USAF fact sheet gives only total range. Widely cited but not verified against a primary page in this session."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "government",
+          "title": "F-35A Lightning II | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/478441/f-35a-lightning-ii/",
+          "note": "'Range: More than 1,350 miles with internal fuel (1,200+ nautical miles)' = ~2,173 km, one way on internal fuel; unlimited with aerial refuelling."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "government",
+          "title": "F-35A Lightning II | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/478441/f-35a-lightning-ii/",
+          "note": "'Speed: Mach 1.6 (~1,200 mph)' = ~1,931 km/h."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "government",
+          "title": "F-35A Lightning II | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/478441/f-35a-lightning-ii/",
+          "note": "'Payload: 18,000 pounds (8,160 kilograms)', internal + external. Internal-only carriage (to preserve stealth) is far less."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "F-35A Lightning II | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/478441/f-35a-lightning-ii/",
+          "note": "Crew: one."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "f-22a",
+    "name": "F-22A Raptor",
+    "typeId": "fighter",
+    "origin": "United States",
+    "note": "USAF fifth-generation air-dominance stealth fighter with supercruise (>Mach 1.5 without afterburner). Combat radius is not published on the fact sheet; the ~850 km value is a commonly cited estimate. Ferry range and speed are from the USAF fact sheet.",
+    "platform": {
+      "combatRadiusKm": 850,
+      "ferryRangeKm": 2963,
+      "speedKmh": 2410,
+      "crew": 1
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on the USAF fact sheet",
+          "note": "Commonly cited combat radius ~460 nmi (~850 km) clean; the USAF fact sheet gives only ferry range. Estimate, not verified against a primary page."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "government",
+          "title": "F-22 Raptor | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104506/f-22-raptor/",
+          "note": "'Range: more than 1,850 miles ferry range with two external wing fuel tanks (1,600 nautical miles)' = ~2,963 km."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "government",
+          "title": "F-22 Raptor | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104506/f-22-raptor/",
+          "note": "'Speed: mach two class with supercruise capability' (>Mach 1.5 without afterburner). ~2,410 km/h taken as Mach 2 at altitude."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "F-22 Raptor | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104506/f-22-raptor/",
+          "note": "Crew: one."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "f-16c",
+    "name": "F-16C Fighting Falcon",
+    "typeId": "fighter",
+    "origin": "United States",
+    "note": "USAF single-seat multirole fighter (non-stealth, so high radar signature). Figures for the F-16C/D from the USAF fact sheet. The combat-radius figure is the fact sheet's air-to-surface statement and is on the optimistic side; loaded air-to-air radius is typically less.",
+    "platform": {
+      "combatRadiusKm": 860,
+      "ferryRangeKm": 3222,
+      "speedKmh": 2414,
+      "crew": 1
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "government",
+          "title": "F-16 Fighting Falcon | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104505/f-16-fighting-falcon/",
+          "note": "'In an air-to-surface role, the F-16 can fly more than 500 miles (860 kilometers), deliver its weapons... and return to its starting point.' An optimistic radius; a loaded combat radius is often quoted nearer 500-550 km."
+        },
+        "confidence": "medium"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "government",
+          "title": "F-16 Fighting Falcon | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104505/f-16-fighting-falcon/",
+          "note": "'Range: more than 2,002 miles ferry range (1,740 nautical miles)' = ~3,222 km."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "government",
+          "title": "F-16 Fighting Falcon | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104505/f-16-fighting-falcon/",
+          "note": "'Speed: 1,500 mph (Mach 2 at altitude)' = ~2,414 km/h."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "government",
+          "title": "F-16 Fighting Falcon | U.S. Air Force Fact Sheet",
+          "url": "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104505/f-16-fighting-falcon/",
+          "note": "'Crew: F-16C, one; F-16D, one or two.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "su-35s",
+    "name": "Su-35S",
+    "typeId": "fighter",
+    "origin": "Russia",
+    "note": "Sukhoi Su-35S (Flanker-E), 4++ generation heavy multirole fighter with thrust-vectoring and the Irbis-E PESA radar. Non-stealth (high signature) but with a very long detection radar. Combat radius is not published; estimated at roughly half the 3,600 km internal-fuel range.",
+    "sensor": {
+      "detectionKm": 400,
+      "tracks": 30,
+      "sees": ["air"],
+      "horizonLimited": false
+    },
+    "platform": {
+      "combatRadiusKm": 1600,
+      "ferryRangeKm": 4200,
+      "speedKmh": 2390,
+      "payloadKg": 8000,
+      "crew": 1
+    },
+    "signature": "high",
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-35 Flanker-E Multirole Fighter | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/su-35/",
+          "note": "Irbis-E can 'detect and track up to 30 airborne targets with a radar cross section of 3 m2 at ranges of 400 km' (track-while-scan); against a 0.01 m2 stealth target the range falls to ~90 km."
+        },
+        "confidence": "medium"
+      },
+      "sensor.tracks": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-35 Flanker-E Multirole Fighter | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/su-35/",
+          "note": "'detect and track up to 30 airborne targets... in track-while-scan mode.'"
+        },
+        "confidence": "medium"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Combat radius not published; commonly cited ~1,500-1,600 km, roughly half the 3,600 km internal-fuel range. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-35 Flanker-E Multirole Fighter | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/su-35/",
+          "note": "'The normal and ferry ranges of the aircraft are 3,600 km and 4,200 km respectively'; 4,500 km with two PTB-2000 external tanks."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-35 Flanker-E Multirole Fighter | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/su-35/",
+          "note": "'Maximum Level Speed 2,390 km/h, Mach 2.25.'"
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-35 Flanker-E Multirole Fighter | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/su-35/",
+          "note": "'Weapons Payload 8,000 kg' across 12 hardpoints."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-35 Flanker-E Multirole Fighter | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/su-35/",
+          "note": "Crew: one."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "su-57",
+    "name": "Su-57 Felon",
+    "typeId": "fighter",
+    "origin": "Russia",
+    "note": "Sukhoi Su-57 (Felon), Russia's fifth-generation stealth multirole fighter; in limited service. Frontal stealth emphasis. Combat radius is unpublished (estimate); the 3,500 km figure is operational range, recorded here as ferry range. Max external payload (non-stealthy configuration) ~7,500 kg.",
+    "platform": {
+      "combatRadiusKm": 1500,
+      "ferryRangeKm": 3500,
+      "speedKmh": 2135,
+      "payloadKg": 7500,
+      "crew": 1
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Combat radius not published; commonly cited ~1,500 km. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-57 Felon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-57-felon/",
+          "note": "'Operational range 3,500 km'. This is a range, not a pure clean-ferry figure; recorded as ferry range for the schema."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-57 Felon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-57-felon/",
+          "note": "'Maximum speed 2135 km/h (Mach 2.13)' at high altitude; supercruise ~Mach 1.3."
+        },
+        "confidence": "medium"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-57 Felon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-57-felon/",
+          "note": "'...six external hardpoints to carry... up to a maximum payload of 7,500 kg' in the non-stealth configuration. Internal-only carriage is far less."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-57 Felon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-57-felon/",
+          "note": "Crew: one."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "mig-31bm",
+    "name": "MiG-31BM",
+    "typeId": "fighter",
+    "origin": "Russia",
+    "note": "MiG-31BM, the modernised Foxhound long-range supersonic interceptor (Zaslon-AM radar, tracks 24 / engages 10). Its defining feature for an engagement model is the very-long-range R-37M air-to-air missile. Combat radius here is the Mach 2.35 supersonic-dash figure; subsonic radius on a cruise profile is roughly double (~1,400 km).",
+    "platform": {
+      "combatRadiusKm": 720,
+      "ferryRangeKm": 3000,
+      "speedKmh": 3000,
+      "crew": 2
+    },
+    "weapons": [
+      {
+        "name": "R-37M",
+        "rangeKm": 300,
+        "engages": ["air"]
+      }
+    ],
+    "signature": "high",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "reference",
+          "title": "MiG-31 Foxhound | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/mig-31-foxhound/",
+          "note": "'At Mach 2.35, a MiG-31 has a combat radius of nearly 720 kilometers.' On a subsonic cruise profile with tanks the radius roughly doubles (~1,400 km per other sources)."
+        },
+        "confidence": "medium"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "MiG-31 Foxhound | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/mig-31-foxhound/",
+          "note": "Spec table 'Operational range 3,000 km'; the article text elsewhere cites a maximum range of 2,200 km, so treat as 2,200-3,000 km."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "MiG-31 Foxhound | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/mig-31-foxhound/",
+          "note": "'Maximum speed 3000 km/h' (~Mach 2.83; sustained max in practice ~Mach 2.8)."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "MiG-31 Foxhound | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/mig-31-foxhound/",
+          "note": "'Crew: 1 pilot + 1 WSO.'"
+        },
+        "confidence": "high"
+      },
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not quantified on the retrieved page",
+          "note": "The page lists the R-37 (AA-13 Arrow) as the MiG-31BM's long-range AAM but does not give its range; the older R-33 is stated at 120 km. The R-37M is widely reported at ~200-300 km; 300 km is the optimistic end. Estimate."
+        },
+        "confidence": "low"
+      }
+    }
+  },
+  {
+    "id": "rafale",
+    "name": "Rafale",
+    "typeId": "fighter",
+    "origin": "France",
+    "note": "Dassault Rafale 'omnirole' twin-engine multirole fighter with reduced (not full-stealth) signature, RBE2 AESA radar and the long-range Meteor AAM. The 1,850 km figure the source labels 'operational range' matches Dassault's published penetration combat radius with three drop tanks, so it is recorded here as combat radius.",
+    "sensor": {
+      "detectionKm": 200,
+      "sees": ["air"],
+      "horizonLimited": false
+    },
+    "platform": {
+      "combatRadiusKm": 1850,
+      "speedKmh": 1912,
+      "payloadKg": 9500,
+      "crew": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Dassault Rafale | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/rafale/",
+          "note": "'the Thales RBE2 AA active electronically scanned array (AESA) radar, with a reported detection range of 200 km.' Target size/conditions not stated."
+        },
+        "confidence": "medium"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Dassault Rafale | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/rafale/",
+          "note": "Source gives 'Operational range 1,850 km'; this matches Dassault's published air-to-ground penetration combat radius with three external tanks, so recorded as combat radius. Ferry range with tanks is ~3,700 km."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Dassault Rafale | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/rafale/",
+          "note": "'Maximum speed 1912 km/h (Mach 1.5)'; supercruise ~Mach 1.4."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Dassault Rafale | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/rafale/",
+          "note": "'14 hardpoints... with a maximum external load of 9,500 kg.'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Dassault Rafale | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/rafale/",
+          "note": "Rafale C/M single-seat; Rafale B two-seat. One taken as the baseline."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "typhoon",
+    "name": "Eurofighter Typhoon",
+    "typeId": "fighter",
+    "origin": "Europe",
+    "note": "Eurofighter Typhoon (figures for the FGR.4 / Tranche standard), a canard-delta multirole fighter with supercruise (~Mach 1.5), Captor/ECRS radar and the Meteor AAM. Reduced but not stealthy signature. Combat radius is the Eurofighter-published air-defence figure (not on the retrieved page); the 2,900 km value is operational range, recorded as ferry range.",
+    "platform": {
+      "combatRadiusKm": 1390,
+      "ferryRangeKm": 2900,
+      "speedKmh": 2495,
+      "payloadKg": 9000,
+      "crew": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on the retrieved page",
+          "note": "Eurofighter publishes an air-defence combat radius of ~1,389 km (~750 km ground-attack lo-lo-lo) with external tanks; the retrieved page gives only operational range. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Eurofighter Typhoon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/typhoon/",
+          "note": "'Operational range 2,900 km'; recorded as ferry range (it is a range figure, not a combat radius)."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Eurofighter Typhoon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/typhoon/",
+          "note": "'Maximum speed 2495 km/h (Mach 2.5)' at altitude; supercruise ~Mach 1.5."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Eurofighter Typhoon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/typhoon/",
+          "note": "'13 hardpoints carrying over 9,000 kg of payload.'"
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Eurofighter Typhoon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/typhoon/",
+          "note": "Single-seat (two-seat trainer variant exists)."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "j-20",
+    "name": "J-20 Mighty Dragon",
+    "typeId": "fighter",
+    "origin": "China",
+    "note": "Chengdu J-20A, China's fifth-generation stealth air-superiority fighter with an AESA radar (~2,000+ T/R modules) and the long-range PL-15 AAM. Combat radius is unpublished; open-source estimates span ~1,100-2,000 km. The 5,500 km figure is operational range, recorded as ferry range. A twin-seat J-20S exists.",
+    "platform": {
+      "combatRadiusKm": 1500,
+      "ferryRangeKm": 5500,
+      "speedKmh": 2130,
+      "payloadKg": 11000,
+      "crew": 1
+    },
+    "signature": "low",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not published",
+          "note": "Open-source estimates of J-20 combat radius range from ~1,100 km to ~2,000 km; 1,500 km taken as a mid value. Not an official figure."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "J-20 Mighty Dragon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/j20-mighty-dragon/",
+          "note": "'Operational range 5,500 km'; recorded as ferry range (a total-range figure)."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "J-20 Mighty Dragon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/j20-mighty-dragon/",
+          "note": "'Maximum speed 2130 km/h (Mach 2.13)'; WS-10C engines reportedly enable limited supercruise."
+        },
+        "confidence": "medium"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "J-20 Mighty Dragon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/j20-mighty-dragon/",
+          "note": "'The maximum weapon payload capacity is stated as 11,000 kg' (with external stores; internal-only carriage is far less)."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "J-20 Mighty Dragon | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/j20-mighty-dragon/",
+          "note": "J-20/J-20A single-seat; twin-seat J-20S revealed 2024."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "gripen-e",
+    "name": "JAS 39E Gripen",
+    "typeId": "fighter",
+    "origin": "Sweden",
+    "note": "Saab JAS 39E Gripen (Gripen NG), the redesigned single-engine light multirole fighter with the F414G engine, 40% more internal fuel than the C, the Leonardo Raven ES-05 AESA radar, 10 hardpoints and the Meteor AAM. The retrieved page's numeric spec table is for the older JAS 39C; E-specific figures are taken from the page text where available and combat radius is a Saab-published estimate.",
+    "platform": {
+      "combatRadiusKm": 1300,
+      "speedKmh": 2100,
+      "payloadKg": 7200,
+      "crew": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated for the E on the retrieved page",
+          "note": "The retrieved spec table's 805 km 'operational range' is for the JAS 39C on internal fuel. Saab cites a Gripen E combat radius of roughly 1,300 km with the enlarged fuel load; estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "JAS 39 Gripen | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/jas-39-gripen/",
+          "note": "Spec table 'Maximum speed 2100 km/h (Mach 2.1)' is for the JAS 39C; the Gripen E is broadly similar (~Mach 2)."
+        },
+        "confidence": "medium"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "JAS 39 Gripen | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/jas-39-gripen/",
+          "note": "'...up to 5,300 kg of external stores (7,200 kg on Gripen E).'"
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "JAS 39 Gripen | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/jas-39-gripen/",
+          "note": "Gripen E single-seat; Gripen F two-seat."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "su-30mki",
+    "name": "Su-30MKI",
+    "typeId": "fighter",
+    "origin": "India / Russia",
+    "note": "Su-30MKI, the Indian Air Force's canard/thrust-vectoring heavy twin-seat multirole Flanker (N011M Bars PESA radar; nuclear-capable, BrahMos-A carrier). Figures are from the GlobalMilitary Su-30 Flanker-C entry, which covers the family; the MKI is the specific Indian variant. Non-stealth (high signature).",
+    "platform": {
+      "combatRadiusKm": 1500,
+      "ferryRangeKm": 3000,
+      "speedKmh": 2125,
+      "payloadKg": 8000,
+      "crew": 2
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Su-30MKI combat radius commonly cited ~1,500 km on internal fuel (far greater with in-flight refuelling); the page gives only a 3,000 km operational range. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-30 Flanker-C | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-30-flanker-c/",
+          "note": "'Operational range 3,000 km'; the MKI is designed for in-flight refuelling, extending this substantially."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-30 Flanker-C | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-30-flanker-c/",
+          "note": "'Maximum speed 2125 km/h (Mach 2.12).'"
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Su-30MKI carries ~8,000 kg of stores across 12 hardpoints; the page lists the hardpoints but not a payload weight. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Su-30 Flanker-C | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/su-30-flanker-c/",
+          "note": "'Crew: 1 pilot + 1 WSO.'"
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "tejas",
+    "name": "HAL Tejas Mk1A",
+    "typeId": "fighter",
+    "origin": "India",
+    "note": "HAL Tejas Mk-1A, India's indigenous 4.5-generation single-engine light multirole fighter (EL/M-2052 AESA radar, Astra BVR AAM). A short-legged light fighter that relies on drop tanks and refuelling for reach. Combat radius is an estimate; the retrieved page's 739 km 'operational range' is itself low.",
+    "platform": {
+      "combatRadiusKm": 500,
+      "speedKmh": 2220,
+      "payloadKg": 5300,
+      "crew": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on the retrieved page",
+          "note": "Tejas combat radius is commonly cited ~300-500 km on internal fuel; the retrieved page gives a 739 km 'operational range'. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "HAL Tejas | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tejas/",
+          "note": "'Maximum speed 2220 km/h (Mach 2.22).'"
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "HAL Tejas | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tejas/",
+          "note": "'Up to nine external hardpoints carry between 4,500 kg and 5,300 kg of stores.'"
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "HAL Tejas | GlobalMilitary.net",
+          "url": "https://www.globalmilitary.net/aircraft/tejas/",
+          "note": "Mk-1A single-seat (a two-seat trainer variant exists)."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

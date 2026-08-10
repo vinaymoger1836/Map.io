@@ -207,17 +207,36 @@ The **Systems** tab browses the shipped library, and duplicating an entry is how
 you disagree with a figure: library entries are read-only, your copy is yours,
 and a copy with the same id replaces the original everywhere.
 
-**About the numbers.** Open sources disagree about the same system, and some
-figures are estimates of things nobody publishes. Every field can carry a source
-and a confidence, shown as a dot beside the value: filled green where published
-and broadly agreed, amber where sources vary, hollow where it is an estimate.
-Kill probabilities and reaction times are marked as estimates without exception —
-they exist so an engagement model has something to work with, not because anyone
-knows them. Regenerate the library with:
+**About the numbers — the shipped library is not sourced.** Every figure in
+`public/data/systems.json` today was written from memory: recalled, not looked
+up, and citing nothing. Treat it as scaffolding. Three tiers, recorded per field
+as `confidence` and shown as a dot beside the value:
+
+- **high** — recalled and widely published: hull displacement, VLS cells, crew.
+- **medium** — recalled but conditional or contested: every radar and missile
+  range. A range is meaningless without the target it assumes; the S-400's
+  "600 km" is against a large, high, non-manoeuvring target.
+- **low** — invented. Kill probability, reaction time and salvo size are not
+  published by anyone; they exist so the engagement model has something to
+  multiply.
+
+To replace them with figures that carry real citations, hand
+`scripts/systems-research-prompt.md` to a Claude with web search, then check what
+comes back. `scripts/systems-topup-prompt.md` fills gaps in files already
+researched without discarding the citations they already carry.
 
 ```bash
-node scripts/generate-systems.mjs   # -> public/data/systems.json
+# one request per family; save each response into research/
+node scripts/merge-systems.mjs                      # combine, and see what is left
+node scripts/validate-systems.mjs research/systems.merged.json
+node scripts/merge-systems.mjs --write              # install as the library
+
+node scripts/generate-systems.mjs                   # or regenerate the placeholders
 ```
+
+The validator reports how many figures carry a source URL — the number that says
+whether the library is research or recollection. It also rejects a URL attached
+to a `placeholder` source, which is an estimate wearing a citation's clothes.
 
 ### Where things are saved
 
