@@ -573,7 +573,7 @@ async function buildWorld() {
     if (!iso || !name) continue;
 
     const ne = byIso.get(iso) ?? byName.get(normalise(name));
-    const geometry = neGeomByIso.get(iso) ?? (ne ? null : null);
+    const geometry = neGeomByIso.get(iso);
 
     let lon = ne && Number.isFinite(ne.LABEL_X) ? ne.LABEL_X : null;
     let lat = ne && Number.isFinite(ne.LABEL_Y) ? ne.LABEL_Y : null;
