@@ -126,12 +126,52 @@ Three tools, in the order you use them:
 | **Select** | Click a unit to select, drag to reposition, `Delete` to remove |
 
 A nation's colour is its units' colour, so recolouring a country recolours
-everything it has on the board. Around 50 unit types across five domains —
-ground, air, naval, subsurface and fixed installations — each with the echelons
-that make sense for it, from a special forces team to a carrier strike group.
+everything it has on the board.
 
-The board (nations, colours, units) is kept in `localStorage` and survives a
-reload. **Clear units** and **Clear colours** at the foot of the console empty it.
+The board (nations, colours, units, and any special units you invented) is kept
+in `localStorage` and survives a reload. **Clear units** and **Clear colours** at
+the foot of the console empty it.
+
+### Units and special units
+
+The palette has two catalogues, because there are two kinds of thing on a board.
+
+**Units** are one class of thing — a destroyer, a fighter squadron, a radar. Around
+50 of them across five domains (ground, air, naval, subsurface, installations),
+each with the echelons that make sense for it, from a special forces team to a
+tank division. Pick the type, pick the quantity, deploy.
+
+**Special units** are formations *of* units: a carrier strike group is a carrier
+plus the escorts that make it a group; an air defence system is a radar plus the
+launchers it cues and the post that commands them. Selecting one opens its
+composition, which you set before deploying — how many destroyers screen a
+carrier is exactly the sort of thing a board is for arguing about. Seven come
+built in:
+
+| Special unit | Typical composition |
+| --- | --- |
+| Carrier strike group | Carrier, 3 destroyers, 2 frigates, submarine, replenishment |
+| Amphibious ready group | Assault ship, destroyer, frigate, marines, replenishment |
+| Surface action group | Cruiser, 2 destroyers, frigate |
+| Hunter-killer group | 2 submarines, maritime patrol, frigate |
+| Air defence system | Radar, 4 launchers, command post |
+| Air strike package | 4 strike, 2 fighters, AEW&C, tanker |
+| Combined arms battlegroup | 2 armour, 2 mech infantry, artillery, air defence, engineers, logistics |
+
+The catalogue composition is a starting point, never a rule: editing it changes
+what the *next* deployment contains, and units already on the board keep the
+composition they were placed with. **Save these counts** turns the edit into a
+special unit of your own.
+
+**Your own special units.** *New special unit* takes a name and a composition —
+"Air strike package: 3 strike fighters, 1 bomber, 1 AEW&C, 1 tanker" — and adds
+it to the palette. It is marked on the map with the initials of its name and
+drawn as whatever it has most of, so that package flies a strike fighter in an
+air frame. Deleting a special unit also removes what was deployed from it, since
+those pins would otherwise lose their name and symbol.
+
+Selecting a deployed special unit shows its composition first, with **Edit**
+below for renaming it or changing what is inside that one.
 
 ### How the symbols are drawn
 
@@ -149,15 +189,23 @@ dots and bars for ground echelons, a short word for naval and air groupings.
 ### Where the pieces live
 
 ```
-lib/warGames.ts    unit catalogue, echelons, nation colours, board persistence
+lib/warGames.ts    unit and formation catalogues, echelons, nation colours,
+                   board state and its persistence
 lib/unitIcons.ts   the canvas icon factory
 lib/warLayers.ts   MapLibre sources and layers for the board
 lib/useWarGames.ts board state and the map wiring
 components/WarGamesPanel.tsx   the console
 ```
 
-Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`. The
-panel and the map both render from that catalogue.
+Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`; adding a
+built-in special unit is one entry in `FORMATIONS`. The panel and the map both
+render from those catalogues.
+
+A deployed thing is a discriminated union — `kind: 'unit'` carries a type and an
+echelon, `kind: 'formation'` carries a composition — rather than one shape with
+optional fields, so nothing can quietly treat a strike group as if it had an
+echelon. Boards saved before special units existed are migrated on load: the old
+`carrier`, `amphibious` and `sam` types are read as the formations they became.
 
 ---
 

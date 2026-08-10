@@ -18,15 +18,20 @@ import type { Map as MLMap, MapMouseEvent } from 'maplibre-gl';
 import { loadWorldData, type WorldData } from './data';
 import { detectFont } from './mapLayers';
 import {
-  ECHELON_BY_ID,
   EMPTY_BOARD,
   NATION_COLORS,
   UNIT_BY_ID,
+  allFormations,
+  deriveAbbr,
+  findFormation,
   loadBoard,
   nextUnitId,
   saveBoard,
+  unitLook,
   type BoardState,
+  type Component,
   type DeployedUnit,
+  type Formation,
   type Nation,
 } from './warGames';
 import { ensureIcons, type IconSpec } from './unitIcons';
@@ -41,6 +46,13 @@ import {
 } from './warLayers';
 
 export type Tool = 'select' | 'paint' | 'deploy';
+
+/**
+ * What the Deploy tool is holding: one class of unit at an echelon, or a
+ * special unit with a composition. Keeping the two in one tagged value means
+ * the panel and the deploy handler cannot disagree about which is armed.
+ */
+export type Pick = { kind: 'unit'; typeId: string } | { kind: 'formation'; formationId: string };
 
 export interface CountryOption {
   iso: string;
@@ -67,14 +79,26 @@ export interface WarGames {
   setColor: (hex: string) => void;
   applyColor: (iso: string, hex: string) => void;
 
-  typeId: string;
-  setTypeId: (id: string) => void;
+  /** Which catalogue the palette is showing, and what is picked in it. */
+  pick: Pick;
+  chooseUnit: (typeId: string) => void;
+  chooseFormation: (formationId: string) => void;
   echelonId: string;
   setEchelonId: (id: string) => void;
 
+  /** Composition the next special unit will be deployed with. */
+  pendingComposition: Component[];
+  setPendingComposition: (composition: Component[]) => void;
+
+  formations: Formation[];
+  createFormation: (name: string, composition: Component[]) => void;
+  deleteFormation: (id: string) => void;
+
   selectedUnit: DeployedUnit | null;
   selectUnit: (id: string | null) => void;
-  updateUnit: (id: string, patch: Partial<DeployedUnit>) => void;
+  renameUnit: (id: string, name: string | undefined) => void;
+  setUnitEchelon: (id: string, echelonId: string) => void;
+  setUnitComposition: (id: string, composition: Component[]) => void;
   removeUnit: (id: string) => void;
   flyToUnit: (id: string) => void;
 
@@ -108,16 +132,18 @@ export function useWarGames({
   const [tool, setTool] = useState<Tool>('paint');
   const [activeIso, setActiveIso] = useState<string | null>(null);
   const [color, setColor] = useState<string>(NATION_COLORS[0]);
-  const [typeId, setTypeIdState] = useState('infantry');
+  const [pick, setPick] = useState<Pick>({ kind: 'unit', typeId: 'infantry' });
   const [echelonId, setEchelonId] = useState('battalion');
+  const [pendingComposition, setPendingComposition] = useState<Component[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const boardRef = useRef(board);
   const toolRef = useRef(tool);
   const activeIsoRef = useRef(activeIso);
   const colorRef = useRef(color);
-  const typeRef = useRef(typeId);
+  const pickRef = useRef(pick);
   const echelonRef = useRef(echelonId);
+  const compositionRef = useRef(pendingComposition);
   const countriesRef = useRef<Map<string, CountryOption>>(new Map());
   const hydratedRef = useRef(false);
 
@@ -125,8 +151,9 @@ export function useWarGames({
   toolRef.current = tool;
   activeIsoRef.current = activeIso;
   colorRef.current = color;
-  typeRef.current = typeId;
+  pickRef.current = pick;
   echelonRef.current = echelonId;
+  compositionRef.current = pendingComposition;
 
   /* ---------------- persistence ---------------- */
 
@@ -182,22 +209,21 @@ export function useWarGames({
 
   /* ---------------- map sync ---------------- */
 
-  /** Every (type, echelon mark, colour) combination the board currently shows. */
+  /** Every (symbol, mark, colour) combination the board currently shows. */
   const iconSpecs = useMemo<IconSpec[]>(() => {
     const specs = new Map<string, IconSpec>();
     for (const u of board.units) {
-      const type = UNIT_BY_ID.get(u.typeId);
-      if (!type) continue;
-      const mark = ECHELON_BY_ID.get(u.echelonId)?.mark ?? { kind: 'none' as const };
-      const nationColor = board.nations[u.iso]?.color ?? '#9AA7B4';
-      const key = `${u.typeId}|${u.echelonId}|${nationColor}`;
+      const look = unitLook(u, board.formations);
+      if (!look) continue;
+      const color = board.nations[u.iso]?.color ?? '#9AA7B4';
+      const key = `${look.key}|${JSON.stringify(look.mark)}|${color}`;
       if (!specs.has(key)) {
         specs.set(key, {
-          typeId: u.typeId,
-          glyph: type.glyph,
-          domain: type.domain,
-          color: nationColor,
-          mark,
+          typeId: look.key,
+          glyph: look.glyph,
+          domain: look.domain,
+          color,
+          mark: look.mark,
         });
       }
     }
@@ -210,7 +236,7 @@ export function useWarGames({
       installWarLayers(map, world, detectFont(map), darkBasemap);
       ensureIcons(map, iconSpecs);
       paintNations(map, boardRef.current.nations);
-      setUnits(map, boardRef.current.units, boardRef.current.nations);
+      setUnits(map, boardRef.current.units, boardRef.current.nations, boardRef.current.formations);
       highlightUnit(map, selectedId);
       setWarVisible(map, active);
       if (active) hideBasemapSymbols(map);
@@ -248,7 +274,7 @@ export function useWarGames({
     if (!map || !hydratedRef.current) return;
     ensureIcons(map, iconSpecs);
     paintNations(map, board.nations);
-    setUnits(map, board.units, board.nations);
+    setUnits(map, board.units, board.nations, board.formations);
   }, [board, iconSpecs, mapRef]);
 
   useEffect(() => {
@@ -280,34 +306,116 @@ export function useWarGames({
     [applyColor]
   );
 
-  const setTypeId = useCallback((id: string) => {
-    setTypeIdState(id);
-    const type = UNIT_BY_ID.get(id);
+  const chooseUnit = useCallback((typeId: string) => {
+    const type = UNIT_BY_ID.get(typeId);
     if (!type) return;
+    setPick({ kind: 'unit', typeId });
     // Keep the current echelon when the new type supports it, so switching
     // between, say, armour and infantry does not reset you to battalion.
     setEchelonId((prev) => (type.echelons.includes(prev) ? prev : type.defaultEchelon));
   }, []);
 
+  const chooseFormation = useCallback((formationId: string) => {
+    const formation = findFormation(formationId, boardRef.current.formations);
+    if (!formation) return;
+    setPick({ kind: 'formation', formationId });
+    // The catalogue composition is a starting point, not a rule: it is copied
+    // into the pending one so edits before deploying never write back to it.
+    setPendingComposition(formation.composition.map((part) => ({ ...part })));
+  }, []);
+
   const deploy = useCallback((lngLat: [number, number]) => {
     const iso = activeIsoRef.current;
     if (!iso) return;
-    const unit: DeployedUnit = {
-      id: nextUnitId(),
-      typeId: typeRef.current,
-      echelonId: echelonRef.current,
-      iso,
-      lngLat,
-    };
+    const current = pickRef.current;
+
+    const unit: DeployedUnit =
+      current.kind === 'formation'
+        ? {
+            kind: 'formation',
+            id: nextUnitId(),
+            iso,
+            lngLat,
+            formationId: current.formationId,
+            composition: compositionRef.current
+              .filter((part) => part.count > 0)
+              .map((part) => ({ ...part })),
+          }
+        : {
+            kind: 'unit',
+            id: nextUnitId(),
+            iso,
+            lngLat,
+            typeId: current.typeId,
+            echelonId: echelonRef.current,
+          };
+
     setBoard((prev) => ({ ...prev, units: [...prev.units, unit] }));
   }, []);
 
-  const updateUnit = useCallback((id: string, patch: Partial<DeployedUnit>) => {
+  /* ---------------- special units ---------------- */
+
+  const createFormation = useCallback(
+    (name: string, composition: Component[]) => {
+      const clean = composition.filter((part) => part.count > 0 && UNIT_BY_ID.has(part.typeId));
+      const label = name.trim();
+      if (!label || !clean.length) return;
+      const formation: Formation = {
+        id: `custom-${nextUnitId()}`,
+        label,
+        abbr: deriveAbbr(label),
+        composition: clean.map((part) => ({ ...part })),
+        custom: true,
+      };
+      setBoard((prev) => ({ ...prev, formations: [...prev.formations, formation] }));
+      setPick({ kind: 'formation', formationId: formation.id });
+      setPendingComposition(formation.composition.map((part) => ({ ...part })));
+    },
+    []
+  );
+
+  const deleteFormation = useCallback((id: string) => {
+    // Units already on the board keep their own composition, so deleting the
+    // template does not disband what it was used to deploy — but they would
+    // lose their name and icon, so they go with it.
     setBoard((prev) => ({
       ...prev,
-      units: prev.units.map((u) => (u.id === id ? { ...u, ...patch } : u)),
+      formations: prev.formations.filter((f) => f.id !== id),
+      units: prev.units.filter((u) => !(u.kind === 'formation' && u.formationId === id)),
+    }));
+    setPick((prev) => (prev.kind === 'formation' && prev.formationId === id ? { kind: 'unit', typeId: 'infantry' } : prev));
+  }, []);
+
+  const patchUnit = useCallback((id: string, patch: (u: DeployedUnit) => DeployedUnit) => {
+    setBoard((prev) => ({
+      ...prev,
+      units: prev.units.map((u) => (u.id === id ? patch(u) : u)),
     }));
   }, []);
+
+  const moveUnit = useCallback(
+    (id: string, lngLat: [number, number]) => patchUnit(id, (u) => ({ ...u, lngLat })),
+    [patchUnit]
+  );
+
+  const renameUnit = useCallback(
+    (id: string, name: string | undefined) => patchUnit(id, (u) => ({ ...u, name })),
+    [patchUnit]
+  );
+
+  const setUnitEchelon = useCallback(
+    (id: string, echelonId: string) =>
+      patchUnit(id, (u) => (u.kind === 'unit' ? { ...u, echelonId } : u)),
+    [patchUnit]
+  );
+
+  const setUnitComposition = useCallback(
+    (id: string, composition: Component[]) =>
+      patchUnit(id, (u) =>
+        u.kind === 'formation' ? { ...u, composition: composition.filter((p) => p.count > 0) } : u
+      ),
+    [patchUnit]
+  );
 
   const removeUnit = useCallback((id: string) => {
     setBoard((prev) => ({ ...prev, units: prev.units.filter((u) => u.id !== id) }));
@@ -402,7 +510,7 @@ export function useWarGames({
       const units = boardRef.current.units.map((u) =>
         u.id === dragging?.id ? { ...u, lngLat: next } : u
       );
-      setUnits(map, units, boardRef.current.nations);
+      setUnits(map, units, boardRef.current.nations, boardRef.current.formations);
     };
 
     const onUp = (e: MapMouseEvent) => {
@@ -410,7 +518,7 @@ export function useWarGames({
       const { id, moved } = dragging;
       map.dragPan.enable();
       canvas.style.cursor = '';
-      if (moved) updateUnit(id, { lngLat: [e.lngLat.lng, e.lngLat.lat] });
+      if (moved) moveUnit(id, [e.lngLat.lng, e.lngLat.lat]);
       // Let the click handler see the drag before it is cleared.
       const finished = dragging;
       setTimeout(() => {
@@ -443,7 +551,7 @@ export function useWarGames({
       map.dragPan.enable();
       canvas.style.cursor = '';
     };
-  }, [active, mapReady, mapRef, deploy, applyColor, updateUnit, removeUnit, selectedId]);
+  }, [active, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId]);
 
   // The cursor is the clearest statement of which tool is armed.
   useEffect(() => {
@@ -471,13 +579,21 @@ export function useWarGames({
     color,
     setColor,
     applyColor,
-    typeId,
-    setTypeId,
+    pick,
+    chooseUnit,
+    chooseFormation,
     echelonId,
     setEchelonId,
+    pendingComposition,
+    setPendingComposition,
+    formations: allFormations(board.formations),
+    createFormation,
+    deleteFormation,
     selectedUnit,
     selectUnit: setSelectedId,
-    updateUnit,
+    renameUnit,
+    setUnitEchelon,
+    setUnitComposition,
     removeUnit,
     flyToUnit,
     clearUnits,

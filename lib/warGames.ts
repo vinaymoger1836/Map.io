@@ -73,8 +73,6 @@ export const ECHELONS: Echelon[] = [
   { id: 'pair', label: 'Pair', abbr: 'PAIR', mark: { kind: 'text', text: '••' }, strength: '2 hulls' },
   { id: 'flotilla', label: 'Flotilla', abbr: 'FLOT', mark: { kind: 'text', text: 'FLOT' }, strength: '4–8 hulls' },
   { id: 'squadron-nav', label: 'Squadron', abbr: 'SQN', mark: { kind: 'text', text: 'SQN' }, strength: '6–12 hulls' },
-  { id: 'strike-group', label: 'Strike group', abbr: 'CSG', mark: { kind: 'text', text: 'CSG' }, strength: 'Carrier + escorts' },
-  { id: 'task-force', label: 'Task force', abbr: 'TF', mark: { kind: 'text', text: 'TF' }, strength: 'Mixed group' },
 
   { id: 'site', label: 'Site', abbr: 'SITE', mark: { kind: 'none' }, strength: '1 site' },
   { id: 'complex', label: 'Complex', abbr: 'CPLX', mark: { kind: 'text', text: '••' }, strength: 'Several sites' },
@@ -95,7 +93,7 @@ const GROUND_ECHELONS = [
   'corps',
 ];
 const AIR_ECHELONS = ['aircraft', 'flight', 'squadron', 'wing'];
-const SHIP_ECHELONS = ['ship', 'pair', 'flotilla', 'squadron-nav', 'task-force'];
+const SHIP_ECHELONS = ['ship', 'pair', 'flotilla', 'squadron-nav'];
 const SITE_ECHELONS = ['site', 'battery', 'battalion', 'regiment', 'complex'];
 
 /* ------------------------------------------------------------------ */
@@ -154,8 +152,8 @@ export const UNIT_TYPES: UnitType[] = [
   unit('transport-heli', 'Transport helicopters', 'air', 'heli', AIR_ECHELONS, 'squadron'),
 
   /* ---- naval ---- */
-  unit('carrier', 'Carrier strike group', 'sea', 'carrier', ['strike-group', 'ship', 'task-force'], 'strike-group'),
-  unit('amphibious', 'Amphibious ready group', 'sea', 'amphib', ['task-force', 'ship', 'flotilla'], 'task-force'),
+  unit('carrier-ship', 'Aircraft carrier', 'sea', 'carrier', SHIP_ECHELONS, 'ship'),
+  unit('amphib-ship', 'Amphibious assault ship', 'sea', 'amphib', SHIP_ECHELONS, 'ship'),
   unit('cruiser', 'Cruiser', 'sea', 'cruiser', SHIP_ECHELONS, 'ship'),
   unit('destroyer', 'Destroyer', 'sea', 'destroyer', SHIP_ECHELONS, 'ship'),
   unit('frigate', 'Frigate', 'sea', 'frigate', SHIP_ECHELONS, 'ship'),
@@ -173,7 +171,7 @@ export const UNIT_TYPES: UnitType[] = [
 
   /* ---- installations ---- */
   unit('radar', 'Radar installation', 'site', 'radar', SITE_ECHELONS, 'site'),
-  unit('sam', 'Air defence site', 'site', 'sam', SITE_ECHELONS, 'battalion'),
+  unit('sam-launcher', 'SAM launcher', 'site', 'sam', SITE_ECHELONS, 'battery'),
   unit('silo', 'Missile silo', 'site', 'silo', SITE_ECHELONS, 'site'),
   unit('airbase', 'Air base', 'site', 'airbase', SITE_ECHELONS, 'site'),
   unit('navalbase', 'Naval base', 'site', 'navalbase', SITE_ECHELONS, 'site'),
@@ -192,6 +190,160 @@ export function echelonsFor(type: UnitType): Echelon[] {
   return type.echelons
     .map((id) => ECHELON_BY_ID.get(id))
     .filter((e): e is Echelon => Boolean(e));
+}
+
+/* ------------------------------------------------------------------ */
+/* Special units                                                       */
+/*                                                                     */
+/* A unit is one class of thing. A special unit is a formation of      */
+/* them: a carrier strike group is a carrier plus the escorts that     */
+/* make it a group, and an air defence system is a radar plus the      */
+/* launchers it cues and the post that commands them. The catalogue    */
+/* below carries a *typical* composition; the player sets the real one */
+/* before deploying, because how many destroyers screen a carrier is   */
+/* exactly the sort of thing a board is for arguing about.             */
+/* ------------------------------------------------------------------ */
+
+export interface Component {
+  typeId: string;
+  count: number;
+}
+
+export interface Formation {
+  id: string;
+  label: string;
+  /** Two to five characters, drawn above the icon frame. */
+  abbr: string;
+  composition: Component[];
+  /** Built-ins fix their own look; custom ones derive it from what is in them. */
+  domain?: Domain;
+  glyph?: string;
+  /** Set on formations the player invented, which live on the board. */
+  custom?: boolean;
+}
+
+const c = (typeId: string, count: number): Component => ({ typeId, count });
+
+export const FORMATIONS: Formation[] = [
+  {
+    id: 'csg',
+    label: 'Carrier strike group',
+    abbr: 'CSG',
+    domain: 'sea',
+    glyph: 'carrier',
+    composition: [
+      c('carrier-ship', 1),
+      c('destroyer', 3),
+      c('frigate', 2),
+      c('submarine', 1),
+      c('logistics-ship', 1),
+    ],
+  },
+  {
+    id: 'arg',
+    label: 'Amphibious ready group',
+    abbr: 'ARG',
+    domain: 'sea',
+    glyph: 'amphib',
+    composition: [c('amphib-ship', 1), c('destroyer', 1), c('frigate', 1), c('marines', 1), c('logistics-ship', 1)],
+  },
+  {
+    id: 'sag',
+    label: 'Surface action group',
+    abbr: 'SAG',
+    domain: 'sea',
+    glyph: 'cruiser',
+    composition: [c('cruiser', 1), c('destroyer', 2), c('frigate', 1)],
+  },
+  {
+    id: 'hunter-killer',
+    label: 'Hunter-killer group',
+    abbr: 'HKG',
+    domain: 'sub',
+    glyph: 'sub',
+    composition: [c('submarine', 2), c('mpa', 1), c('frigate', 1)],
+  },
+  {
+    id: 'ads',
+    label: 'Air defence system',
+    abbr: 'ADS',
+    domain: 'site',
+    glyph: 'sam',
+    composition: [c('radar', 1), c('sam-launcher', 4), c('command', 1)],
+  },
+  {
+    id: 'strike-package',
+    label: 'Air strike package',
+    abbr: 'PKG',
+    domain: 'air',
+    glyph: 'strike',
+    composition: [c('strike', 4), c('fighter', 2), c('awacs', 1), c('tanker', 1)],
+  },
+  {
+    id: 'battlegroup',
+    label: 'Combined arms battlegroup',
+    abbr: 'BG',
+    domain: 'ground',
+    glyph: 'armour',
+    composition: [
+      c('armour', 2),
+      c('mech-infantry', 2),
+      c('artillery', 1),
+      c('mobile-ad', 1),
+      c('engineer', 1),
+      c('logistics', 1),
+    ],
+  },
+];
+
+export const FORMATION_BY_ID = new Map(FORMATIONS.map((f) => [f.id, f]));
+
+/** Built-ins plus whatever the player has invented. */
+export function allFormations(custom: Formation[]): Formation[] {
+  return [...FORMATIONS, ...custom];
+}
+
+export function findFormation(id: string, custom: Formation[]): Formation | undefined {
+  return FORMATION_BY_ID.get(id) ?? custom.find((f) => f.id === id);
+}
+
+/**
+ * How a formation looks on the map. Built-ins say so outright; a custom one
+ * takes the look of whatever it has most of, which is usually the thing the
+ * player would have picked anyway — an air strike package of four strike
+ * fighters gets a strike fighter in an air frame.
+ */
+export function formationLook(f: Formation): { domain: Domain; glyph: string } {
+  if (f.domain && f.glyph) return { domain: f.domain, glyph: f.glyph };
+  let best: UnitType | undefined;
+  let bestCount = 0;
+  for (const part of f.composition) {
+    const type = UNIT_BY_ID.get(part.typeId);
+    if (type && part.count > bestCount) {
+      best = type;
+      bestCount = part.count;
+    }
+  }
+  return { domain: f.domain ?? best?.domain ?? 'ground', glyph: f.glyph ?? best?.glyph ?? 'hq' };
+}
+
+/** Initials, for the mark above a custom formation's frame. */
+export function deriveAbbr(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return 'SP';
+  const initials = words.map((w) => w[0]).join('').toUpperCase();
+  return (initials.length > 1 ? initials : name.toUpperCase()).slice(0, 4);
+}
+
+export const totalStrength = (composition: Component[]): number =>
+  composition.reduce((sum, part) => sum + Math.max(0, part.count), 0);
+
+/** A one-line composition, for places too small to list it: "3 × Destroyer, …". */
+export function describeComposition(composition: Component[]): string {
+  return composition
+    .filter((part) => part.count > 0)
+    .map((part) => `${part.count} × ${UNIT_BY_ID.get(part.typeId)?.label ?? part.typeId}`)
+    .join(', ');
 }
 
 /* ------------------------------------------------------------------ */
@@ -253,16 +405,35 @@ export function contrastInk(hex: string): string {
 /* Board state                                                         */
 /* ------------------------------------------------------------------ */
 
-export interface DeployedUnit {
+/**
+ * Something on the board: either one class of unit at a given echelon, or a
+ * formation with a composition the player set. The two are a discriminated
+ * union rather than one shape with optional fields, so nothing can quietly
+ * treat a strike group as if it had an echelon.
+ */
+interface DeployedBase {
   id: string;
-  typeId: string;
-  echelonId: string;
   /** Owner, keyed by the same country id the map paints with. */
   iso: string;
   lngLat: [number, number];
-  /** Optional name — falls back to the type label. */
+  /** Optional name — falls back to the type or formation label. */
   name?: string;
 }
+
+export interface DeployedGeneric extends DeployedBase {
+  kind: 'unit';
+  typeId: string;
+  echelonId: string;
+}
+
+export interface DeployedFormation extends DeployedBase {
+  kind: 'formation';
+  formationId: string;
+  /** This deployment's own composition, not the catalogue's. */
+  composition: Component[];
+}
+
+export type DeployedUnit = DeployedGeneric | DeployedFormation;
 
 export interface Nation {
   iso: string;
@@ -273,11 +444,76 @@ export interface Nation {
 export interface BoardState {
   nations: Record<string, Nation>;
   units: DeployedUnit[];
+  /** Special units the player invented. Built-ins are in FORMATIONS. */
+  formations: Formation[];
 }
 
-export const EMPTY_BOARD: BoardState = { nations: {}, units: [] };
+export const EMPTY_BOARD: BoardState = { nations: {}, units: [], formations: [] };
 
 const STORAGE_KEY = 'mapio.wargames.v1';
+
+/**
+ * Boards written before special units existed have no `kind`, and three of
+ * their unit types have since become formations. Rather than drop those pins
+ * on the floor, they are read as the formation they always meant.
+ */
+const RETIRED_TYPES: Record<string, string> = {
+  carrier: 'csg',
+  amphibious: 'arg',
+  sam: 'ads',
+};
+
+function reviveUnit(raw: unknown, custom: Formation[]): DeployedUnit | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const u = raw as Record<string, unknown>;
+  const id = typeof u.id === 'string' ? u.id : null;
+  const iso = typeof u.iso === 'string' ? u.iso : null;
+  const lngLat = Array.isArray(u.lngLat) && u.lngLat.length === 2 ? (u.lngLat as [number, number]) : null;
+  if (!id || !iso || !lngLat) return null;
+  const name = typeof u.name === 'string' ? u.name : undefined;
+
+  const formationId =
+    typeof u.formationId === 'string'
+      ? u.formationId
+      : typeof u.typeId === 'string'
+        ? RETIRED_TYPES[u.typeId]
+        : undefined;
+
+  if (u.kind === 'formation' || formationId) {
+    const formation = formationId ? findFormation(formationId, custom) : undefined;
+    if (!formation) return null;
+    const composition = Array.isArray(u.composition)
+      ? (u.composition as Component[]).filter((p) => p && UNIT_BY_ID.has(p.typeId))
+      : formation.composition;
+    return { kind: 'formation', id, iso, lngLat, name, formationId: formation.id, composition };
+  }
+
+  const typeId = typeof u.typeId === 'string' ? u.typeId : null;
+  if (!typeId || !UNIT_BY_ID.has(typeId)) return null;
+  const type = UNIT_BY_ID.get(typeId)!;
+  const echelonId =
+    typeof u.echelonId === 'string' && type.echelons.includes(u.echelonId)
+      ? u.echelonId
+      : type.defaultEchelon;
+  return { kind: 'unit', id, iso, lngLat, name, typeId, echelonId };
+}
+
+function reviveFormation(raw: unknown): Formation | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const f = raw as Record<string, unknown>;
+  if (typeof f.id !== 'string' || typeof f.label !== 'string') return null;
+  const composition = Array.isArray(f.composition)
+    ? (f.composition as Component[]).filter((p) => p && UNIT_BY_ID.has(p.typeId) && p.count > 0)
+    : [];
+  if (!composition.length) return null;
+  return {
+    id: f.id,
+    label: f.label,
+    abbr: typeof f.abbr === 'string' ? f.abbr : deriveAbbr(f.label),
+    composition,
+    custom: true,
+  };
+}
 
 /** A board survives a reload — losing an hour of pin-placing to F5 is not a game. */
 export function loadBoard(): BoardState {
@@ -285,18 +521,20 @@ export function loadBoard(): BoardState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return EMPTY_BOARD;
-    const parsed = JSON.parse(raw) as Partial<BoardState>;
-    const units = Array.isArray(parsed.units)
-      ? parsed.units.filter(
-          (u): u is DeployedUnit =>
-            !!u &&
-            typeof u.id === 'string' &&
-            UNIT_BY_ID.has(u.typeId) &&
-            Array.isArray(u.lngLat) &&
-            u.lngLat.length === 2
-        )
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+
+    const formations = Array.isArray(parsed.formations)
+      ? parsed.formations.map(reviveFormation).filter((f): f is Formation => Boolean(f))
       : [];
-    return { nations: parsed.nations ?? {}, units };
+    const units = Array.isArray(parsed.units)
+      ? parsed.units.map((u) => reviveUnit(u, formations)).filter((u): u is DeployedUnit => Boolean(u))
+      : [];
+
+    return {
+      nations: (parsed.nations as BoardState['nations']) ?? {},
+      units,
+      formations,
+    };
   } catch (err) {
     console.error('[wargames] saved board could not be read — starting empty.', err);
     return EMPTY_BOARD;
@@ -323,8 +561,11 @@ export function iconId(typeId: string, color: string): string {
   return `wg:${typeId}:${color.replace('#', '')}`;
 }
 
-export function unitLabel(u: DeployedUnit): string {
+export function unitLabel(u: DeployedUnit, custom: Formation[] = []): string {
   if (u.name) return u.name;
+  if (u.kind === 'formation') {
+    return findFormation(u.formationId, custom)?.label ?? 'Special unit';
+  }
   const type = UNIT_BY_ID.get(u.typeId);
   const ech = ECHELON_BY_ID.get(u.echelonId);
   const name = type?.label ?? '';
@@ -333,4 +574,30 @@ export function unitLabel(u: DeployedUnit): string {
   // own size, the prefix is noise.
   if (name.toLowerCase().includes(ech.label.toLowerCase())) return name;
   return `${ech.abbr} ${name}`.trim();
+}
+
+/** The icon a deployed thing draws, whichever kind it is. */
+export function unitLook(
+  u: DeployedUnit,
+  custom: Formation[]
+): { key: string; domain: Domain; glyph: string; mark: EchelonMark } | null {
+  if (u.kind === 'formation') {
+    const formation = findFormation(u.formationId, custom);
+    if (!formation) return null;
+    const look = formationLook(formation);
+    return {
+      key: `f:${formation.id}`,
+      domain: look.domain,
+      glyph: look.glyph,
+      mark: { kind: 'text', text: formation.abbr },
+    };
+  }
+  const type = UNIT_BY_ID.get(u.typeId);
+  if (!type) return null;
+  return {
+    key: u.typeId,
+    domain: type.domain,
+    glyph: type.glyph,
+    mark: ECHELON_BY_ID.get(u.echelonId)?.mark ?? { kind: 'none' },
+  };
 }

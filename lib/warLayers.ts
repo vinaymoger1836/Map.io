@@ -11,10 +11,13 @@ import type { ExpressionSpecification, Map as MLMap } from 'maplibre-gl';
 import type { WorldData } from './data';
 import { CHROME } from './theme';
 import {
-  ECHELON_BY_ID,
-  UNIT_BY_ID,
+  describeComposition,
+  findFormation,
+  totalStrength,
   unitLabel,
+  unitLook,
   type DeployedUnit,
+  type Formation,
   type Nation,
 } from './warGames';
 import { unitIconId } from './unitIcons';
@@ -361,33 +364,50 @@ function emptyCollection() {
 }
 
 /** Turns the board's units into the GeoJSON the unit layers read. */
-function unitsToGeoJSON(units: DeployedUnit[], nations: Record<string, Nation>) {
+function unitsToGeoJSON(
+  units: DeployedUnit[],
+  nations: Record<string, Nation>,
+  formations: Formation[]
+) {
   return {
     type: 'FeatureCollection',
-    features: units.map((u) => {
-      const type = UNIT_BY_ID.get(u.typeId);
-      const echelon = ECHELON_BY_ID.get(u.echelonId);
+    features: units.flatMap((u) => {
+      const look = unitLook(u, formations);
+      if (!look) return [];
       const color = nations[u.iso]?.color ?? '#9AA7B4';
-      return {
-        type: 'Feature',
-        id: u.id,
-        properties: {
+      const isFormation = u.kind === 'formation';
+      const formation = isFormation ? findFormation(u.formationId, formations) : undefined;
+      return [
+        {
+          type: 'Feature',
           id: u.id,
-          icon: unitIconId(u.typeId, echelon?.mark ?? { kind: 'none' }, color),
-          label: unitLabel(u),
-          nation: nations[u.iso]?.name ?? '',
-          type: type?.label ?? u.typeId,
-          echelon: echelon?.label ?? '',
+          properties: {
+            id: u.id,
+            icon: unitIconId(look.key, look.mark, color),
+            // A strike group's label carries its size, because the whole point
+            // of a special unit is that it is more than one thing.
+            label: isFormation
+              ? `${unitLabel(u, formations)} · ${totalStrength(u.composition)}`
+              : unitLabel(u, formations),
+            nation: nations[u.iso]?.name ?? '',
+            type: isFormation ? (formation?.label ?? 'Special unit') : (u.typeId ?? ''),
+            detail: isFormation ? describeComposition(u.composition) : '',
+          },
+          geometry: { type: 'Point', coordinates: u.lngLat },
         },
-        geometry: { type: 'Point', coordinates: u.lngLat },
-      };
+      ];
     }),
   };
 }
 
-export function setUnits(map: MLMap, units: DeployedUnit[], nations: Record<string, Nation>) {
+export function setUnits(
+  map: MLMap,
+  units: DeployedUnit[],
+  nations: Record<string, Nation>,
+  formations: Formation[]
+) {
   const src = map.getSource('wg-units') as { setData?: (d: unknown) => void } | undefined;
-  src?.setData?.(unitsToGeoJSON(units, nations));
+  src?.setData?.(unitsToGeoJSON(units, nations, formations));
 }
 
 export function highlightUnit(map: MLMap, id: string | null) {
