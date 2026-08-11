@@ -250,8 +250,9 @@
     "name": "S-350 Vityaz",
     "typeId": "sam-launcher",
     "origin": "Russia",
-    "note": "Medium-range replacement for the S-300PS. Uses the 50N6A X-band AESA multifunction radar with 9M96-series (medium) and 9M100 (short) missiles; IOC 2020, combat-used in Ukraine. Detection range not stated on the retrieved radar page, so omitted.",
+    "note": "Medium-range replacement for the S-300PS. Uses the 50N6A X-band AESA multifunction radar with 9M96-series (medium) and 9M100 (short) missiles; IOC 2020, combat-used in Ukraine. The research found no published 50N6A detection range; the figure below is a declared model estimate, not a sourced one.",
     "sensor": {
+      "detectionKm": 180,
       "tracks": 40,
       "engagements": 8,
       "sees": [
@@ -273,6 +274,14 @@
       }
     ],
     "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "model estimate — no published 50N6A detection range found",
+          "note": "The research could not source a figure for the 50N6A. Set to 1.5x the 120 km reach of the 9M96E2, the ratio the S-400 and S-300PMU2 show between search range and longest missile, on the reasoning that an acquisition radar must out-range the missile it cues. Replace this the moment a real figure turns up."
+        },
+        "confidence": "low"
+      },
       "sensor.tracks": {
         "source": {
           "kind": "reference",
@@ -1007,8 +1016,9 @@
     "name": "SAMP/T",
     "typeId": "sam-launcher",
     "origin": "France / Italy",
-    "note": "Eurosam (MBDA/Thales) SAMP/T, French designation MAMBA. Figures are for the current in-service Aster 30 / Arabel-radar variant: an Arabel 360-degree phased-array radar and up to six TELs of eight Aster interceptors per battery. The upgraded SAMP/T NG (Thales Ground Fire 300 radar, Aster 30 B1NT) is in development. Arabel detection (~100 km per other sources) omitted as the retrieved CSIS page does not state it.",
+    "note": "Eurosam (MBDA/Thales) SAMP/T, French designation MAMBA. Figures are for the current in-service Aster 30 / Arabel-radar variant: an Arabel 360-degree phased-array radar and up to six TELs of eight Aster interceptors per battery. The upgraded SAMP/T NG (Thales Ground Fire 300 radar, Aster 30 B1NT) is in development. The Arabel detection range below is recorded as unverified: it is the figure commonly quoted, but the page the research retrieved did not state it.",
     "sensor": {
+      "detectionKm": 100,
       "tracks": 100,
       "engagements": 10,
       "sees": [
@@ -1032,6 +1042,14 @@
       }
     ],
     "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "unverified — Arabel range commonly quoted at 100 km, not confirmed here",
+          "note": "The research noted this figure but declined to record it, because the CSIS page it retrieved does not state it. Kept so the battery draws a detection ring at all, and marked low until someone opens a page that says it."
+        },
+        "confidence": "low"
+      },
       "sensor.tracks": {
         "source": {
           "kind": "reference",
