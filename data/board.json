@@ -128,6 +128,38 @@
       "echelonId": "battalion",
       "systemId": "s-400",
       "count": 1
+    },
+    {
+      "kind": "unit",
+      "id": "umsomxfty1",
+      "iso": "392",
+      "lngLat": [
+        61.331466161078225,
+        32.24891881098934
+      ],
+      "typeId": "fighter",
+      "echelonId": "squadron",
+      "systemId": "f-35a",
+      "count": 1,
+      "loadout": [
+        "gbu-12"
+      ]
+    },
+    {
+      "kind": "unit",
+      "id": "umsomxgon2",
+      "iso": "392",
+      "lngLat": [
+        99.01100195337023,
+        -3.5768958357937066
+      ],
+      "typeId": "fighter",
+      "echelonId": "squadron",
+      "systemId": "f-35a",
+      "count": 1,
+      "loadout": [
+        "aim-120d-amraam"
+      ]
     }
   ],
   "formations": [
