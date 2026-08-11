@@ -1,0 +1,151 @@
+[
+  {
+    "id": "p-8a",
+    "name": "P-8A Poseidon",
+    "typeId": "mpa",
+    "origin": "United States",
+    "note": "Boeing P-8A Poseidon maritime patrol / anti-submarine aircraft, based on the 737-800. Crew of 2 flight + 7 mission. AN/APY-10 maritime surveillance radar, MAD, and acoustic sonobuoys. Primary weapons: Mk 54 lightweight torpedo (ASW) and AGM-84 Harpoon (anti-ship); also mines.",
+    "sensor": {
+      "detectionKm": 370,
+      "sees": ["surface"],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "mk-54",
+        "name": "Mk 54 lightweight torpedo",
+        "rangeKm": 9,
+        "massKg": 276,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 30,
+        "engages": ["subsurface"]
+      },
+      {
+        "id": "harpoon",
+        "name": "Harpoon (AGM-84)",
+        "rangeKm": 124,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": ["surface"]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 2225,
+      "ferryRangeKm": 8300,
+      "crew": 9
+    },
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "APY-10 radar range not published",
+          "note": "AN/APY-10 maritime surveillance radar; no published detection range. ~370 km is an estimate for a large surface-search radar against a ship. Subsurface targets are found by MAD and acoustic sonobuoys, not radar."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Mk 54 range not published",
+          "note": "Mk 54 lightweight torpedo; effective run commonly cited ~9 km. Not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing P-8 Poseidon | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon",
+          "note": "Carries 'Mark 54 Lightweight Torpedoes'; Mk 54 all-up-round ~276 kg."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Torpedoes committed per attack is doctrine-dependent; modelling default of 1."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; estimate for a homing lightweight torpedo against a submarine."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-release not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "Block IC 124 km (unclassified); family 90-240 km. Air-launched AGM-84 carried by the P-8. Figures kept identical to the shared 'harpoon' catalogue entry."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default, matched to the shared harpoon entry."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; matched to the shared harpoon entry."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; matched to the shared harpoon entry."
+        },
+        "confidence": "low"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing P-8 Poseidon | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon",
+          "note": "'Combat range: 1,200 nmi (2,225 km) radius with 4 hours on station for anti-submarine warfare'."
+        },
+        "confidence": "high"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing P-8 Poseidon | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon",
+          "note": "'Ferry range: 4,500 nmi (8,300 km)'."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing P-8 Poseidon | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon",
+          "note": "'Flight crew: 2; Mission crew: 7'."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

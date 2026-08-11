@@ -1,0 +1,62 @@
+[
+  {
+    "id": "c-17a",
+    "name": "C-17A Globemaster III",
+    "typeId": "airlift",
+    "origin": "United States",
+    "note": "USAF strategic/tactical heavy airlifter (Boeing). Unarmed. Crew of 3 (two pilots + loadmaster). No 'combat radius' is published for a transport; combatRadiusKm here is an estimate at roughly half the 4,480 km one-way range carrying a 71 t payload.",
+    "platform": {
+      "combatRadiusKm": 2240,
+      "ferryRangeKm": 11540,
+      "speedKmh": 830,
+      "payloadKg": 77519,
+      "crew": 3
+    },
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No published combat radius (transport aircraft)",
+          "note": "The C-17 has no published combat radius. Estimated as ~half the 4,480 km one-way range carrying a 157,000 lb (71 t) payload; far greater with a light load or aerial refuelling."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing C-17 Globemaster III | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III",
+          "note": "'Ferry range: 6,230 nmi (11,540 km)', clean. Range with a 71 t payload is ~4,480 km; unlimited with aerial refuelling."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing C-17 Globemaster III | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III",
+          "note": "'Cruise speed: 450 kn (830 km/h) (Mach 0.74-0.79)'."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing C-17 Globemaster III | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III",
+          "note": "'Capacity: 170,900 lb (77,519 kg) of cargo'; airdrops up to 102 paratroopers."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing C-17 Globemaster III | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III",
+          "note": "Crew of 3: two pilots and one loadmaster."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

@@ -12,8 +12,96 @@
       "payloadKg": 8160,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "AIM-120D AMRAAM",
+        "rangeKm": 160,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "AIM-9X Sidewinder",
+        "rangeKm": 35,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AIM-120 AMRAAM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AIM-120_AMRAAM",
+          "note": "'AIM-120D 70-86 nmi (130-160 km)'; the D range is classified but thought to reach ~160-180 km. Active-radar BVR."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AIM-9 Sidewinder | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AIM-9_Sidewinder",
+          "note": "AIM-9X Block II short-range IR WVR; commonly cited ~35 km maximum aerodynamic range."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -72,8 +160,96 @@
       "speedKmh": 2410,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "AIM-120D AMRAAM",
+        "rangeKm": 160,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "AIM-9X Sidewinder",
+        "rangeKm": 35,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AIM-120 AMRAAM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AIM-120_AMRAAM",
+          "note": "'AIM-120D 70-86 nmi (130-160 km)'; the D range is classified but thought to reach ~160-180 km. Active-radar BVR."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AIM-9 Sidewinder | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AIM-9_Sidewinder",
+          "note": "AIM-9X Block II short-range IR WVR; commonly cited ~35 km maximum aerodynamic range."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -123,8 +299,96 @@
       "speedKmh": 2414,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "AIM-120C AMRAAM",
+        "rangeKm": 105,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "AIM-9X Sidewinder",
+        "rangeKm": 35,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AIM-120 AMRAAM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AIM-120_AMRAAM",
+          "note": "'AIM-120C 49 nmi (90 km)'; the later C-5/C-7/C-8 extend this to ~105 km+. Value taken as the common C-5/C-7 figure."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AIM-9 Sidewinder | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AIM-9_Sidewinder",
+          "note": "AIM-9X Block II short-range IR WVR; commonly cited ~35 km maximum aerodynamic range."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "government",
@@ -172,7 +436,9 @@
     "sensor": {
       "detectionKm": 400,
       "tracks": 30,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": false
     },
     "platform": {
@@ -182,8 +448,107 @@
       "payloadKg": 8000,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "R-77 (RVV-SD)",
+        "rangeKm": 110,
+        "massKg": 190,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "R-73 (AA-11 Archer)",
+        "rangeKm": 30,
+        "minRangeKm": 0.3,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "R-77 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/R-77",
+          "note": "R-77-1 / RVV-SD 110 km; base R-77 / RVV-AE 80 km; R-77M 190 km. Active-radar BVR."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "R-77 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/R-77",
+          "note": "'190 kg (R-77-1)'."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Vympel R-73 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Vympel_R-73",
+          "note": "'R-73E maximum range 30 km'; R-74/RVV-MD 40 km. Minimum ~300 m. High off-boresight IR WVR."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "sensor.detectionKm": {
         "source": {
           "kind": "reference",
@@ -261,8 +626,97 @@
       "payloadKg": 7500,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "R-77M (izdeliye 180)",
+        "rangeKm": 190,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "R-73 (AA-11 Archer)",
+        "rangeKm": 30,
+        "minRangeKm": 0.3,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "R-77 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/R-77",
+          "note": "R-77M (izdeliye 180): 190 km; dual-pulse motor and AESA seeker; the primary medium-range AAM of the Su-57."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Vympel R-73 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Vympel_R-73",
+          "note": "'R-73E maximum range 30 km'; R-74/RVV-MD 40 km. Minimum ~300 m. High off-boresight IR WVR."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -325,7 +779,9 @@
       {
         "name": "R-37M",
         "rangeKm": 300,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "signature": "high",
@@ -384,7 +840,9 @@
     "note": "Dassault Rafale 'omnirole' twin-engine multirole fighter with reduced (not full-stealth) signature, RBE2 AESA radar and the long-range Meteor AAM. The 1,850 km figure the source labels 'operational range' matches Dassault's published penetration combat radius with three drop tanks, so it is recorded here as combat radius.",
     "sensor": {
       "detectionKm": 200,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": false
     },
     "platform": {
@@ -393,8 +851,97 @@
       "payloadKg": 9500,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "Meteor",
+        "rangeKm": 200,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "MICA",
+        "rangeKm": 80,
+        "minRangeKm": 0.5,
+        "salvo": 1,
+        "pk": 0.55,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Meteor (missile) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Meteor_(missile)",
+          "note": "'a range in excess of 200 kilometres'; no-escape zone 60 km+. Ramjet BVR, >Mach 4."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "MBDA MICA | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/MBDA_MICA",
+          "note": "Air-launched MICA-EM/IR is a short-to-medium range AAM, ~80 km; MICA NG adds up to 40%. (VL-MICA surface variant is shorter, ~20 km.)"
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "sensor.detectionKm": {
         "source": {
           "kind": "reference",
@@ -455,8 +1002,96 @@
       "payloadKg": 9000,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "Meteor",
+        "rangeKm": 200,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "IRIS-T",
+        "rangeKm": 25,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Meteor (missile) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Meteor_(missile)",
+          "note": "'a range in excess of 200 kilometres'; no-escape zone 60 km+. Ramjet BVR, >Mach 4."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "IRIS-T | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/IRIS-T",
+          "note": "'The initial IRIS-T air to air missile with 25 km range.' IR imaging WVR with thrust vectoring."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -516,8 +1151,96 @@
       "payloadKg": 11000,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "PL-15",
+        "rangeKm": 250,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "PL-10",
+        "rangeKm": 20,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "PL-15 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/PL-15",
+          "note": "PLAAF domestic PL-15 200-300 km; export PL-15E 145 km. Dual-pulse motor, AESA seeker, ~Mach 5."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "PL-10 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/PL-10",
+          "note": "Latest-generation Chinese short-range IIR WVR AAM; commonly cited ~20 km (exact range not given in the article body)."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -576,8 +1299,96 @@
       "payloadKg": 7200,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "Meteor",
+        "rangeKm": 200,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "IRIS-T",
+        "rangeKm": 25,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Meteor (missile) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Meteor_(missile)",
+          "note": "'a range in excess of 200 kilometres'; no-escape zone 60 km+. Ramjet BVR, >Mach 4."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "IRIS-T | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/IRIS-T",
+          "note": "'The initial IRIS-T air to air missile with 25 km range.' IR imaging WVR with thrust vectoring."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -628,8 +1439,97 @@
       "payloadKg": 8000,
       "crew": 2
     },
+    "weapons": [
+      {
+        "name": "Astra Mk-1",
+        "rangeKm": 110,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "R-73 (AA-11 Archer)",
+        "rangeKm": 30,
+        "minRangeKm": 0.3,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Astra (missile) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Astra_(missile)",
+          "note": "'Astra Mk-1: ...range of 110 km'; Mk-2 in excess of 160-200 km. Indigenous Indian active-radar BVR."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Vympel R-73 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Vympel_R-73",
+          "note": "'R-73E maximum range 30 km'; R-74/RVV-MD 40 km. Minimum ~300 m. High off-boresight IR WVR."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -687,8 +1587,97 @@
       "payloadKg": 5300,
       "crew": 1
     },
+    "weapons": [
+      {
+        "name": "Astra Mk-1",
+        "rangeKm": 110,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "name": "R-73 (AA-11 Archer)",
+        "rangeKm": 30,
+        "minRangeKm": 0.3,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 2,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Astra (missile) | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Astra_(missile)",
+          "note": "'Astra Mk-1: ...range of 110 km'; Mk-2 in excess of 160-200 km. Indigenous Indian active-radar BVR."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Vympel R-73 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Vympel_R-73",
+          "note": "'R-73E maximum range 30 km'; R-74/RVV-MD 40 km. Minimum ~300 m. High off-boresight IR WVR."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default (1 per target), not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default for the war-game, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",

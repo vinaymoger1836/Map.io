@@ -1,0 +1,213 @@
+[
+  {
+    "id": "m1a2-abrams",
+    "name": "M1A2 Abrams (SEPv3)",
+    "typeId": "armour",
+    "origin": "United States",
+    "note": "General Dynamics Land Systems M1A2 Abrams main battle tank (current US build is the SEPv3). Crew of 4. Main gun is the 120 mm M256 smoothbore; no gun-launched ATGM. Weight ~69.5 t. Road cruising range ~426 km. Gun direct-fire range is an estimate (not published).",
+    "weapons": [
+      {
+        "id": "m256",
+        "name": "120 mm M256 smoothbore gun",
+        "rangeKm": 4,
+        "magazine": 42,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 6,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "speedKmh": 68,
+      "ferryRangeKm": 426,
+      "crew": 4
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Gun range not published",
+          "note": "120 mm M256 smoothbore; direct-fire APFSDS effective range commonly ~3-4 km. Not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on retrieved page",
+          "note": "The M1A2 stows ~42 main-gun rounds; not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {
+        "source": {"kind": "placeholder", "title": "No public figure", "note": "One round per engagement for a tank main gun (modelling default)."},
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a stabilised 120 mm gun against an armoured target at typical range."},
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-fire not published; modelling estimate."},
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "M1A1/2 Abrams Main Battle Tank | Army Technology",
+          "url": "https://www.army-technology.com/projects/m1a1-2-abrams-main-battle-tank/",
+          "note": "'Maximum Governed Speed 42mph' (~68 km/h)."
+        },
+        "confidence": "high"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "M1A1/2 Abrams Main Battle Tank | Army Technology",
+          "url": "https://www.army-technology.com/projects/m1a1-2-abrams-main-battle-tank/",
+          "note": "'Range 265 miles cruising' (~426 km) on internal fuel - a road range, not a combat radius."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "M1A1/2 Abrams Main Battle Tank | Army Technology",
+          "url": "https://www.army-technology.com/projects/m1a1-2-abrams-main-battle-tank/",
+          "note": "'Crew 4 (driver, commander, gunner, loader)'."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "t-90m",
+    "name": "T-90M",
+    "typeId": "armour",
+    "origin": "Russia",
+    "note": "Uralvagonzavod T-90M, the modernised T-90 main battle tank. Crew of 3 (autoloader). Figures are largely from the T-90S export entry (the T-90M has a more powerful engine and improved fire control). Main gun 125 mm 2A46M, which also fires the 9M119 Refleks gun-launched ATGM.",
+    "weapons": [
+      {
+        "id": "2a46",
+        "name": "125 mm 2A46M smoothbore gun",
+        "rangeKm": 4,
+        "magazine": 43,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 7,
+        "engages": ["ground"]
+      },
+      {
+        "id": "9m119",
+        "name": "9M119 Refleks (AT-11 Sniper)",
+        "rangeKm": 5,
+        "minRangeKm": 0.1,
+        "massKg": 23.4,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 12,
+        "engages": ["ground", "air"]
+      }
+    ],
+    "platform": {
+      "speedKmh": 60,
+      "ferryRangeKm": 650,
+      "crew": 3
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {"kind": "placeholder", "title": "Gun range not published", "note": "125 mm 2A46M smoothbore; direct-fire APFSDS effective ~3-4 km. Not stated on the retrieved page. Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.magazine": {
+        "source": {"kind": "placeholder", "title": "Not on retrieved page", "note": "T-90 stows ~43 rounds (22 in the autoloader carousel). Not stated on the retrieved page. Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One round per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a stabilised 125 mm gun."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-fire not published; modelling estimate."}, "confidence": "low"},
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "T-90S Main Battle Tank | Army Technology",
+          "url": "https://www.army-technology.com/projects/t90/",
+          "note": "9M119 Refleks: 'The range of the missile is 100m to 4,000m'; engages low-flying air targets such as helicopters 'at a range of up to 5km'. 5 km taken as the maximum."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "T-90S Main Battle Tank | Army Technology",
+          "url": "https://www.army-technology.com/projects/t90/",
+          "note": "'The missile weight is 23.4kg'."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One missile per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.1.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a laser-beam-riding gun-launched ATGM."}, "confidence": "low"},
+      "weapons.1.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-launch not published; the missile takes ~11.7 s to reach 4,000 m. Estimate."}, "confidence": "low"},
+      "platform.speedKmh": {
+        "source": {"kind": "reference", "title": "T-90S Main Battle Tank | Army Technology", "url": "https://www.army-technology.com/projects/t90/", "note": "'Speed 60km/h'."},
+        "confidence": "high"
+      },
+      "platform.ferryRangeKm": {
+        "source": {"kind": "reference", "title": "T-90S Main Battle Tank | Army Technology", "url": "https://www.army-technology.com/projects/t90/", "note": "'Maximum Range 650km' - a road range, not a combat radius."},
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {"kind": "reference", "title": "T-90S Main Battle Tank | Army Technology", "url": "https://www.army-technology.com/projects/t90/", "note": "'Crew Three'."},
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "leopard-2a7",
+    "name": "Leopard 2A7",
+    "typeId": "armour",
+    "origin": "Germany",
+    "note": "KNDS (Krauss-Maffei Wegmann) Leopard 2A7 main battle tank. Crew of 4. Main gun is the 120 mm Rheinmetall Rh-120 L/55 smoothbore. Platform crew/speed/range figures below are commonly-cited estimates because the retrieved specifications table was truncated.",
+    "weapons": [
+      {
+        "id": "rh-120",
+        "name": "120 mm Rheinmetall Rh-120 L/55 gun",
+        "rangeKm": 4,
+        "magazine": 42,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 6,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "speedKmh": 68,
+      "ferryRangeKm": 450,
+      "crew": 4
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {"kind": "placeholder", "title": "Gun range not published", "note": "120 mm Rh-120 L/55 smoothbore; direct-fire APFSDS effective ~4 km (further with programmable/LAHAT rounds). Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.magazine": {
+        "source": {"kind": "placeholder", "title": "Not on retrieved page", "note": "Leopard 2 stows ~42 main-gun rounds. Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One round per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a stabilised 120 mm L/55 gun."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-fire not published; modelling estimate."}, "confidence": "low"},
+      "platform.speedKmh": {
+        "source": {"kind": "placeholder", "title": "Specifications table truncated on fetch", "note": "Leopard 2A7 top speed commonly cited ~68 km/h. Not captured from the retrieved page. Estimate."},
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {"kind": "placeholder", "title": "Specifications table truncated on fetch", "note": "Leopard 2 road range commonly cited ~450 km. Not captured from the retrieved page. Estimate."},
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {"kind": "placeholder", "title": "Specifications table truncated on fetch", "note": "Leopard 2 crew of 4 (undisputed), but not captured from the retrieved page. Estimate."},
+        "confidence": "low"
+      }
+    }
+  }
+]

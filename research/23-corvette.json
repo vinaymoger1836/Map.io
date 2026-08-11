@@ -1,0 +1,52 @@
+[
+  {
+    "id": "visby",
+    "name": "Visby class",
+    "typeId": "corvette",
+    "origin": "Sweden",
+    "note": "Saab Kockums Visby-class stealth corvette. Primary armament is 8 RBS15 anti-ship missiles plus a 57 mm gun and Torped 45 lightweight torpedoes; a CAMM (Sea Ceptor) air-defence fit is being added from 2026. Sea Giraffe AMB 3D surveillance radar and hull/towed sonar. Displacement/speed/crew below are estimates (specifications table not captured on fetch).",
+    "sensor": {
+      "detectionKm": 100,
+      "sees": ["air", "surface"],
+      "horizonLimited": true
+    },
+    "weapons": [
+      {
+        "id": "rbs-15",
+        "name": "RBS15 Mk2",
+        "rangeKm": 200,
+        "magazine": 8,
+        "salvo": 2,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": ["surface"]
+      }
+    ],
+    "platform": {
+      "displacementT": 640,
+      "speedKmh": 65,
+      "crew": 43
+    },
+    "signature": "low",
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {"kind": "placeholder", "title": "Radar range not published", "note": "Saab Sea Giraffe AMB 3D PESA surveillance radar; detection range not stated on the page. ~100 km against an aircraft is an estimate. The ship also has hull-mounted and towed-array sonar for subsurface targets."},
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": {"kind": "placeholder", "title": "Range not on retrieved page", "note": "RBS15 Mk2 anti-ship missile; commonly cited ~200 km (Mk3/Mk4 reach further). The page confirms '8 x RBS15 Mk2 anti-ship missiles' but not the range. Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.magazine": {
+        "source": {"kind": "reference", "title": "Visby-class corvette | Wikipedia", "url": "https://en.wikipedia.org/wiki/Visby-class_corvette", "note": "'8 x RBS15 Mk2 anti-ship missiles'."},
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Two missiles per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a subsonic sea-skimming anti-ship missile."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-launch not published; modelling estimate."}, "confidence": "low"},
+      "platform.displacementT": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Visby full-load displacement commonly cited ~640 t. Estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Top speed commonly cited ~35 kn (~65 km/h). Estimate."}, "confidence": "low"},
+      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Complement commonly cited ~43. Estimate."}, "confidence": "low"}
+    }
+  }
+]

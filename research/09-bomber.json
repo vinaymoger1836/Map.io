@@ -12,8 +12,53 @@
       "payloadKg": 27216,
       "crew": 2
     },
+    "weapons": [
+      {
+        "name": "AGM-158 JASSM-ER",
+        "rangeKm": 925,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AGM-158 JASSM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AGM-158_JASSM",
+          "note": "AGM-158B JASSM-ER '925 km'; baseline AGM-158A ~370 km; JASSM-XR ~1,900 km. Low-observable land-attack ALCM."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -71,8 +116,53 @@
       "payloadKg": 34019,
       "crew": 4
     },
+    "weapons": [
+      {
+        "name": "AGM-158 JASSM-ER",
+        "rangeKm": 925,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AGM-158 JASSM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AGM-158_JASSM",
+          "note": "AGM-158B JASSM-ER '925 km'; baseline AGM-158A ~370 km; JASSM-XR ~1,900 km. Low-observable land-attack ALCM."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -123,8 +213,96 @@
       "payloadKg": 31500,
       "crew": 5
     },
+    "weapons": [
+      {
+        "name": "AGM-86 ALCM",
+        "rangeKm": 2400,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "name": "AGM-158 JASSM-ER",
+        "rangeKm": 925,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AGM-86 ALCM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AGM-86_ALCM",
+          "note": "AGM-86B nuclear ALCM ~2,400 km (Extended Range Version requirement 1,500 nmi / 2,800 km); conventional AGM-86C CALCM nominal ~1,100 km (retired 2019). B-52H carries up to 20."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AGM-158 JASSM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AGM-158_JASSM",
+          "note": "AGM-158B JASSM-ER '925 km'; baseline AGM-158A ~370 km; JASSM-XR ~1,900 km. Low-observable land-attack ALCM."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -184,8 +362,63 @@
       "payloadKg": 45000,
       "crew": 4
     },
+    "weapons": [
+      {
+        "name": "Kh-101",
+        "rangeKm": 3500,
+        "massKg": 2400,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Kh-101 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kh-101",
+          "note": "'range of around 3,500 km'; 400 kg warhead (2024 dual-warhead variant ~800 kg with reduced range). Kh-102 is the nuclear variant. Low-observable land-attack ALCM."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Kh-101 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kh-101",
+          "note": "'Mass: 2,400 kg (Kh-101)'."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -245,8 +478,63 @@
       "payloadKg": 15000,
       "crew": 8
     },
+    "weapons": [
+      {
+        "name": "Kh-101",
+        "rangeKm": 3500,
+        "massKg": 2400,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Kh-101 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kh-101",
+          "note": "'range of around 3,500 km'; 400 kg warhead (2024 dual-warhead variant ~800 kg with reduced range). Kh-102 is the nuclear variant. Low-observable land-attack ALCM."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Kh-101 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kh-101",
+          "note": "'Mass: 2,400 kg (Kh-101)'."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "placeholder",
@@ -304,8 +592,53 @@
       "payloadKg": 12000,
       "crew": 4
     },
+    "weapons": [
+      {
+        "name": "CJ-20 (KD-20)",
+        "rangeKm": 2000,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "CJ-10 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/CJ-10",
+          "note": "CJ-20 air-launched land-attack cruise missile derived from the CJ-10, 'estimated range of more than 2,000 km'; each H-6 may carry four externally."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.combatRadiusKm": {
         "source": {
           "kind": "reference",

@@ -81,9 +81,17 @@ export interface SensorFacet {
 
 /** Anything that shoots. A destroyer has several; a fighter carries a loadout. */
 export interface WeaponFacet {
+  /**
+   * Slug of the munition itself, shared across every platform carrying it:
+   * an SM-6 is `sm-6` on a Burke and on a Ticonderoga. This is what will let
+   * armament be swapped from a catalogue rather than retyped per system.
+   */
+  id?: string;
   name?: string;
   rangeKm: number;
   minRangeKm?: number;
+  /** Launch mass of one round. */
+  massKg?: number;
   /** Rounds committed per engagement. */
   salvo?: number;
   /** Ready rounds before reloading — VLS cells, launcher rails, hardpoints. */

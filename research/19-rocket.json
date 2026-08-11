@@ -1,0 +1,113 @@
+[
+  {
+    "id": "himars",
+    "name": "M142 HIMARS",
+    "typeId": "rocket",
+    "origin": "United States",
+    "note": "Lockheed Martin M142 HIMARS wheeled multiple rocket launcher. Crew of 3. Fires a single pod of six GMLRS guided rockets or one ATACMS / PrSM ballistic missile. GMLRS range recorded as the in-service M31 figure; ATACMS as the MGM-140.",
+    "weapons": [
+      {
+        "id": "gmlrs",
+        "name": "GMLRS (M31 guided rocket)",
+        "rangeKm": 90,
+        "magazine": 6,
+        "salvo": 6,
+        "pk": 0.5,
+        "reactionSec": 45,
+        "engages": ["ground"]
+      },
+      {
+        "id": "atacms",
+        "name": "ATACMS (MGM-140)",
+        "rangeKm": 300,
+        "magazine": 1,
+        "salvo": 1,
+        "pk": 0.6,
+        "reactionSec": 45,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "speedKmh": 94,
+      "ferryRangeKm": 480,
+      "crew": 3
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "M142 HIMARS | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/M142_HIMARS",
+          "note": "Infobox lists GMLRS 150 km (extended-range GMLRS); the in-service M31 GMLRS is commonly cited ~70-90 km. 90 km taken as the base figure."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {
+        "source": {"kind": "reference", "title": "M142 HIMARS | Wikipedia", "url": "https://en.wikipedia.org/wiki/M142_HIMARS", "note": "One pod of 'six GMLRS rockets'."},
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Up to a full 6-rocket ripple per fire mission; modelling default."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-rocket kill probability against a point target not published; estimate for a GPS-guided rocket."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-fire not published; modelling estimate."}, "confidence": "low"},
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "M142 HIMARS | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/M142_HIMARS",
+          "note": "One MGM-140 ATACMS per launcher; ~300 km (the older M39 ATACMS spans 25-165 km per the infobox). PrSM extends to ~499 km."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.magazine": {"source": {"kind": "reference", "title": "M142 HIMARS | Wikipedia", "url": "https://en.wikipedia.org/wiki/M142_HIMARS", "note": "'one MGM-140 ATACMS missile' per pod."}, "confidence": "high"},
+      "weapons.1.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One ATACMS per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.1.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a guided ballistic missile against a point target."}, "confidence": "low"},
+      "weapons.1.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-launch not published; modelling estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "reference", "title": "M142 HIMARS | Wikipedia", "url": "https://en.wikipedia.org/wiki/M142_HIMARS", "note": "'Maximum speed: 94 km/h'."}, "confidence": "high"},
+      "platform.ferryRangeKm": {"source": {"kind": "reference", "title": "M142 HIMARS | Wikipedia", "url": "https://en.wikipedia.org/wiki/M142_HIMARS", "note": "'Operational range: 480 km' - the carrier vehicle's road range."}, "confidence": "medium"},
+      "platform.crew": {"source": {"kind": "reference", "title": "M142 HIMARS | Wikipedia", "url": "https://en.wikipedia.org/wiki/M142_HIMARS", "note": "'Crew: 3 (commander, second in command, driver)'."}, "confidence": "high"}
+    }
+  },
+  {
+    "id": "bm-30-smerch",
+    "name": "BM-30 Smerch",
+    "typeId": "rocket",
+    "origin": "Russia",
+    "note": "BM-30 Smerch (9K58) 300 mm heavy multiple rocket launcher, 12 barrels. Crew of 3. Range depends on the rocket: 9M55K ~70 km, 9M528 ~90 km, guided 9M542 ~120 km, 9M544 ~200 km. Value below is the 9M528 HE-fragmentation figure.",
+    "weapons": [
+      {
+        "id": "9m55",
+        "name": "9M55 / 9M528 300 mm rocket",
+        "rangeKm": 90,
+        "minRangeKm": 20,
+        "magazine": 12,
+        "salvo": 12,
+        "pk": 0.4,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "speedKmh": 60,
+      "ferryRangeKm": 850,
+      "crew": 3
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "BM-30 Smerch | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/BM-30_Smerch",
+          "note": "Rocket table: 9M55K max 70 km, 9M528 max 90 km, guided 9M542 max 120 km, 9M544 max 200 km. 90 km is the 9M528 HE-fragmentation figure."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {"source": {"kind": "reference", "title": "BM-30 Smerch | Wikipedia", "url": "https://en.wikipedia.org/wiki/BM-30_Smerch", "note": "'Barrels: 12'; fires a full load of 12 rockets."}, "confidence": "high"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Up to a full 12-rocket salvo per fire mission; modelling default."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Per-rocket kill probability against a point target is low for an area weapon; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Emplacement-to-fire not published; modelling estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "reference", "title": "BM-30 Smerch | Wikipedia", "url": "https://en.wikipedia.org/wiki/BM-30_Smerch", "note": "'Maximum speed: 60 km/h'."}, "confidence": "high"},
+      "platform.ferryRangeKm": {"source": {"kind": "reference", "title": "BM-30 Smerch | Wikipedia", "url": "https://en.wikipedia.org/wiki/BM-30_Smerch", "note": "'Operational range: 850 km' - the carrier vehicle's road range."}, "confidence": "medium"},
+      "platform.crew": {"source": {"kind": "reference", "title": "BM-30 Smerch | Wikipedia", "url": "https://en.wikipedia.org/wiki/BM-30_Smerch", "note": "'Crew: 3'."}, "confidence": "high"}
+    }
+  }
+]

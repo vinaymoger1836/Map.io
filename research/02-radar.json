@@ -7,7 +7,10 @@
     "note": "55Zh6M Nebo-M mobile multiband counter-stealth radar complex: a VHF-band RLM-M, L-band RLM-D and S-band RLM-S AESA, networked through the RLM-KU command post on BAZ-6909 8x8 chassis. Designed to detect low-observable, hypersonic and ballistic targets and cue SAM batteries (S-400 etc.).",
     "sensor": {
       "detectionKm": 1800,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "provenance": {
@@ -31,7 +34,9 @@
     "sensor": {
       "detectionKm": 3000,
       "tracks": 180,
-      "sees": ["ballistic"],
+      "sees": [
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "provenance": {
@@ -63,7 +68,10 @@
     "note": "CETC JY-27A, a mobile VHF-band 3D long-range air-surveillance and guidance radar using an active phased array, marketed as a counter-stealth / early-warning sensor.",
     "sensor": {
       "detectionKm": 500,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "provenance": {
@@ -87,7 +95,10 @@
     "sensor": {
       "detectionKm": 350,
       "tracks": 150,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true,
       "antennaM": 10
     },
@@ -126,7 +137,10 @@
     "note": "Generic placeholder for a skywave over-the-horizon (OTH) radar (in the class of Australia's JORN, Russia's Container/29B6, or the US ROTHR). Uses ionospheric refraction to see far beyond the geometric horizon, so it is NOT horizon-limited, but resolution is coarse (tens of km) and it has a large skip-zone dead area near the site. Figures are representative estimates only.",
     "sensor": {
       "detectionKm": 2500,
-      "sees": ["air", "surface"],
+      "sees": [
+        "air",
+        "surface"
+      ],
       "horizonLimited": false
     },
     "provenance": {

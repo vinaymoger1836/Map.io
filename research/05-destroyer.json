@@ -5,6 +5,51 @@
     "typeId": "destroyer",
     "origin": "United States",
     "note": "DDG-51 Flight IIA Aegis guided-missile destroyer with the SPY-1D(V) phased-array radar and 96 Mk-41 VLS cells (32 forward + 64 aft) firing SM-2/SM-6, ESSM, VLA and Tomahawk. Two MH-60R helicopters. Figures are for Flight IIA (DDG-79 onward); the newer Flight III adds the SPY-6 AMDR. VLS count and radar range are not on the Navy fact file.",
+    "sensor": {
+      "detectionKm": 320,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "sm-6",
+        "name": "SM-6 (RIM-174)",
+        "rangeKm": 370,
+        "salvo": 2,
+        "pk": 0.75,
+        "reactionSec": 10,
+        "engages": [
+          "air",
+          "ballistic",
+          "surface"
+        ]
+      },
+      {
+        "id": "tomahawk",
+        "name": "Tomahawk (BGM-109)",
+        "rangeKm": 1600,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "id": "harpoon",
+        "name": "Harpoon (RGM-84)",
+        "rangeKm": 124,
+        "massKg": 691,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 9700,
       "vls": 96,
@@ -14,6 +59,122 @@
     },
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Standard Missile-6 (SM-6) | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/defsys/sm-6/",
+          "note": "'Range 370 km.' Multi-mission: anti-air, terminal ballistic-missile defence, and anti-ship."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tomahawk | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/tomahawk/",
+          "note": "Land-attack ~1,600 km (Block IV/V). Maritime Strike Tomahawk adds an anti-ship mode."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "Block IC 124 km (unclassified); the family spans 90-240 km across variants. Subsonic sea-skimming anti-ship; SLAM/SLAM-ER variants add land attack."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "'Launch weight 690.8 kg (surface- & sub-launched)'; 224 kg HE warhead."
+        },
+        "confidence": "high"
+      },
+      "weapons.2.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. AN/SPY-1D(V) passive phased array; ~320 km against a fighter-size target is the commonly-cited estimate (Flight III uses the more capable SPY-6)."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "government",
@@ -66,6 +227,48 @@
     "typeId": "destroyer",
     "origin": "China",
     "note": "PLAN Luyang III guided-missile destroyer, China's most numerous modern DDG ('Chinese Aegis'). Type 346A four-panel AESA radar and 64 universal VLS cells (32 fwd + 32 aft) firing HHQ-9 SAM, YJ-18 anti-ship and CJ-10 land-attack missiles. Carries a Harbin Z-9 helicopter (Z-20 on the stretched 052DL). Displacement and crew are not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 300,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "hhq-9",
+        "name": "HHQ-9",
+        "rangeKm": 200,
+        "salvo": 2,
+        "pk": 0.7,
+        "reactionSec": 10,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "id": "yj-18",
+        "name": "YJ-18",
+        "rangeKm": 540,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      },
+      {
+        "id": "cj-10",
+        "name": "CJ-10 (naval land-attack)",
+        "rangeKm": 1500,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 7500,
       "vls": 64,
@@ -75,6 +278,113 @@
     },
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "HQ-9 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/HQ-9",
+          "note": "HQ-9B land-based up to 260 km; the naval HHQ-9 range is not officially published, commonly cited ~100-200 km. Value is the commonly-cited naval figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "YJ-18 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/YJ-18",
+          "note": "US DoD estimate ~540 km; JFQ: subsonic cruise ~180 km + supersonic terminal sprint ~40 km at Mach 2.5-3.0; 300 kg warhead."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "CJ-10 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/CJ-10",
+          "note": "Land-attack cruise missile, range exceeding 1,500 km with a 500 kg payload (US DoD / Joint Forces Quarterly). Ship-launched from Type 052D/055 universal VLS."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. Type 346A AESA (H/LJG-346A); ~300 km estimate."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "placeholder",
@@ -126,6 +436,39 @@
     "typeId": "destroyer",
     "origin": "United Kingdom",
     "note": "Royal Navy Daring-class air-defence destroyer built around the Sea Viper (PAAMS) system with the SAMPSON multi-function AESA and S1850M long-range radars. 48 Sylver A50 VLS cells for Aster 15/30 (24 Sea Ceptor silos being added from 2026). Heavily reduced radar signature. Crew and speed are not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 400,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "aster-30",
+        "name": "Aster 30",
+        "rangeKm": 120,
+        "salvo": 2,
+        "pk": 0.75,
+        "reactionSec": 10,
+        "engages": [
+          "air",
+          "ballistic"
+        ]
+      },
+      {
+        "id": "aster-15",
+        "name": "Aster 15",
+        "rangeKm": 30,
+        "minRangeKm": 1.7,
+        "salvo": 2,
+        "pk": 0.75,
+        "reactionSec": 8,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 7350,
       "vls": 48,
@@ -135,6 +478,80 @@
     },
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 45 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_45_destroyer",
+          "note": "'Aster 30 (3-120 km).' Long-range anti-air; Block 1NT adds anti-ballistic capability."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 45 destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_45_destroyer",
+          "note": "'Aster 15 (1.7-30 km).' Short/medium-range anti-air point defence."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. SAMPSON multi-function AESA; ~400 km against aircraft is the commonly-cited estimate (S1850M long-range radar ~400 km)."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -186,6 +603,41 @@
     "typeId": "destroyer",
     "origin": "India",
     "note": "Indian Navy Kolkata class (Project 15A), India's first stealth destroyers. EL/M-2248 MF-STAR AESA plus Thales LW-08 radar. Air defence uses four 8-cell VLS (32 Barak-8/MRSAM cells); the primary offensive load is 16 BrahMos in a Universal Vertical Launcher Module. Enclosed hangar for two helicopters. Crew is not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 250,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "barak-8",
+        "name": "Barak 8 (LR-SAM/MRSAM)",
+        "rangeKm": 100,
+        "magazine": 32,
+        "salvo": 2,
+        "pk": 0.7,
+        "reactionSec": 10,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "id": "brahmos",
+        "name": "BrahMos (ship-launched)",
+        "rangeKm": 400,
+        "massKg": 3000,
+        "magazine": 16,
+        "salvo": 4,
+        "pk": 0.65,
+        "reactionSec": 20,
+        "engages": [
+          "surface",
+          "ground"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 7400,
       "vls": 48,
@@ -195,6 +647,107 @@
     },
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Barak 8 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Barak_8",
+          "note": "Naval LR-SAM; commonly cited ~70-100 km, extended-range variants to 150 km. Value is the commonly-cited figure."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Kolkata-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kolkata-class_destroyer",
+          "note": "'four eight-cell vertical launching systems... up to thirty-two Barak 8' (32 SAM cells)."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "BrahMos | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/brahmos/",
+          "note": "290 km export limit; ~400-500 km for Indian Block variants. Supersonic (~Mach 3) anti-ship and land-attack."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "BrahMos | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/brahmos/",
+          "note": "~3,000 kg launch weight (ship-/land-launched)."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Kolkata-class destroyer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Kolkata-class_destroyer",
+          "note": "16-cell BrahMos Universal Vertical Launcher Module."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. EL/M-2248 MF-STAR AESA; ~250 km estimate."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -247,6 +800,52 @@
     "typeId": "destroyer",
     "origin": "Japan",
     "note": "JMSDF Maya class, an enlarged Atago derivative with Aegis Baseline 9C, Cooperative Engagement Capability and ballistic-missile defence (SM-3 Block IIA). AN/SPY-1D(V) radar and 96 Mk-41 VLS cells (one 64-cell + one 32-cell group) for SM-2/SM-3/SM-6 and VLA. Type 17 anti-ship missiles in deck canisters. Helicopter landing deck but no embarked hangar; speed and crew are not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 320,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "sm-6",
+        "name": "SM-6 (RIM-174)",
+        "rangeKm": 370,
+        "salvo": 2,
+        "pk": 0.75,
+        "reactionSec": 10,
+        "engages": [
+          "air",
+          "ballistic",
+          "surface"
+        ]
+      },
+      {
+        "id": "sm-3",
+        "name": "SM-3 (RIM-161)",
+        "rangeKm": 1200,
+        "salvo": 2,
+        "pk": 0.6,
+        "reactionSec": 10,
+        "engages": [
+          "ballistic"
+        ]
+      },
+      {
+        "id": "type-17",
+        "name": "Type 17 SSM (SSM-2)",
+        "rangeKm": 400,
+        "massKg": 700,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface",
+          "ground"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 10250,
       "vls": 96,
@@ -255,6 +854,122 @@
     },
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Standard Missile-6 (SM-6) | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/defsys/sm-6/",
+          "note": "'Range 370 km.' Multi-mission: anti-air, terminal ballistic-missile defence, and anti-ship."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "RIM-161 Standard Missile 3 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/RIM-161_Standard_Missile_3",
+          "note": "'Block IIA: 1,200 km range.' Exo-atmospheric ballistic-missile interceptor; also demonstrated anti-satellite."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 12 surface-to-ship missile | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_12_surface-to-ship_missile",
+          "note": "Ship-launched Type 17 (SSM-2): 'The range has doubled to 400 kilometers' vs the 200 km Type 12. Anti-ship with land-attack capability; deploying from the Maya class."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Type 12 surface-to-ship missile | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Type_12_surface-to-ship_missile",
+          "note": "'Mass: 700 kg' (Type 12 family)."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. AN/SPY-1D(V); ~320 km against a fighter-size target is the commonly-cited estimate."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",

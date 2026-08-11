@@ -1,0 +1,60 @@
+[
+  {
+    "id": "minuteman-iii",
+    "name": "LGM-30G Minuteman III",
+    "typeId": "silo",
+    "origin": "United States",
+    "note": "USAF LGM-30G Minuteman III silo-based intercontinental ballistic missile (W87 or W78 warhead), one missile per hardened silo. Range commonly cited ~13,000 km; some sources give ~10,000 km.",
+    "weapons": [
+      {
+        "id": "lgm-30",
+        "name": "LGM-30G Minuteman III",
+        "rangeKm": 13000,
+        "magazine": 1,
+        "salvo": 1,
+        "pk": 0.85,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {"kind": "reference", "title": "LGM-30 Minuteman | Wikipedia", "url": "https://en.wikipedia.org/wiki/LGM-30_Minuteman", "note": "Minuteman III is a full-range ICBM; commonly cited ~13,000 km. The page notes an early-variant 'operational range of 5,500 nmi (10,200 km)', so sources span ~10,000-13,000 km."},
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {"source": {"kind": "placeholder", "title": "One per silo", "note": "One missile per hardened launch facility. Modelling value."}, "confidence": "low"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One missile per launch (modelling default)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability against a soft strategic target is high but not published; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Launch timeline is classified; ~60 s modelling estimate."}, "confidence": "low"}
+    }
+  },
+  {
+    "id": "rs-24-yars",
+    "name": "RS-24 Yars",
+    "typeId": "silo",
+    "origin": "Russia",
+    "note": "Russian RS-24 Yars intercontinental ballistic missile (SS-27 Mod 2 / SS-29), MIRV with up to ~4 warheads, deployed in both road-mobile and silo variants. A 2007 test flew ~5,750 km to the Kura range; the full ICBM range is commonly cited ~11,000-12,000 km.",
+    "weapons": [
+      {
+        "id": "rs-24",
+        "name": "RS-24 Yars",
+        "rangeKm": 11000,
+        "magazine": 1,
+        "salvo": 1,
+        "pk": 0.85,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {"kind": "reference", "title": "RS-24 Yars | Wikipedia", "url": "https://en.wikipedia.org/wiki/RS-24_Yars", "note": "MIRV-equipped ICBM; a 2007 test 'landed on target about 5,750 km away' at the Kura range. Full range is commonly cited ~11,000-12,000 km; the infobox figure was not captured on fetch."},
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {"source": {"kind": "placeholder", "title": "One per launcher", "note": "One missile per silo or road-mobile TEL. Modelling value."}, "confidence": "low"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One missile per launch (modelling default)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability against a soft strategic target is high but not published; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Launch timeline is classified; ~60 s modelling estimate."}, "confidence": "low"}
+    }
+  }
+]

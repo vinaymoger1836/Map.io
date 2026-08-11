@@ -5,6 +5,52 @@
     "typeId": "cruiser",
     "origin": "United States",
     "note": "US Navy Aegis guided-missile cruiser (CG-47), SPY-1A/B phased-array radar. Figures are for the VLS ships (CG-52 onward) with two 61-cell Mk-41 launchers = 122 cells firing SM-2/SM-6, SM-3, ESSM, Tomahawk and VL-ASROC, plus 8 Harpoon in separate launchers. Two SH-60 (LAMPS III) helicopters. The class is being progressively retired by ~2027. Crew and speed are not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 320,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "sm-6",
+        "name": "SM-6 (RIM-174)",
+        "rangeKm": 370,
+        "salvo": 2,
+        "pk": 0.75,
+        "reactionSec": 10,
+        "engages": [
+          "air",
+          "ballistic",
+          "surface"
+        ]
+      },
+      {
+        "id": "tomahawk",
+        "name": "Tomahawk (BGM-109)",
+        "rangeKm": 1600,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "id": "harpoon",
+        "name": "Harpoon (RGM-84)",
+        "rangeKm": 124,
+        "massKg": 691,
+        "magazine": 8,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 9600,
       "vls": 122,
@@ -14,6 +60,131 @@
     },
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Standard Missile-6 (SM-6) | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/defsys/sm-6/",
+          "note": "'Range 370 km.' Multi-mission: anti-air, terminal ballistic-missile defence, and anti-ship."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tomahawk | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/tomahawk/",
+          "note": "Land-attack ~1,600 km (Block IV/V). Maritime Strike Tomahawk adds an anti-ship mode."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "Block IC 124 km (unclassified); the family spans 90-240 km across variants. Subsonic sea-skimming anti-ship; SLAM/SLAM-ER variants add land attack."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "'Launch weight 690.8 kg (surface- & sub-launched)'; 224 kg HE warhead."
+        },
+        "confidence": "high"
+      },
+      "weapons.2.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Ticonderoga-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ticonderoga-class_cruiser",
+          "note": "8 Harpoon carried in two quad launchers, separate from the 122 VLS cells."
+        },
+        "confidence": "high"
+      },
+      "weapons.2.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. AN/SPY-1A/B passive phased array; ~320 km against a fighter-size target is the commonly-cited estimate."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -65,6 +236,48 @@
     "typeId": "cruiser",
     "origin": "China",
     "note": "PLAN Type 055 (NATO/US: Renhai), a large stealth multi-mission combatant the US classifies as a cruiser; primary escort for Chinese carriers. Dual-band radar with four Type 346B AESA panels. 112 universal VLS cells (64 fwd + 48 aft) firing HHQ-9 SAM, YJ-18 anti-ship, CJ-10 land-attack and (tested) YJ-20/YJ-21 anti-ship ballistic missiles; hangar for two helicopters. Full-load displacement and crew are not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 300,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "hhq-9",
+        "name": "HHQ-9",
+        "rangeKm": 200,
+        "salvo": 2,
+        "pk": 0.7,
+        "reactionSec": 10,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "id": "yj-18",
+        "name": "YJ-18",
+        "rangeKm": 540,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      },
+      {
+        "id": "cj-10",
+        "name": "CJ-10 (naval land-attack)",
+        "rangeKm": 1500,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 13000,
       "vls": 112,
@@ -74,6 +287,113 @@
     },
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "HQ-9 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/HQ-9",
+          "note": "HQ-9B land-based up to 260 km; the naval HHQ-9 range is not officially published, commonly cited ~100-200 km. Value is the commonly-cited naval figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "YJ-18 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/YJ-18",
+          "note": "US DoD estimate ~540 km; JFQ: subsonic cruise ~180 km + supersonic terminal sprint ~40 km at Mach 2.5-3.0; 300 kg warhead."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "CJ-10 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/CJ-10",
+          "note": "Land-attack cruise missile, range exceeding 1,500 km with a 500 kg payload (US DoD / Joint Forces Quarterly). Ship-launched from Type 052D/055 universal VLS."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. Type 346B dual-band AESA; ~300 km estimate."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "placeholder",
@@ -125,6 +445,39 @@
     "typeId": "cruiser",
     "origin": "Russia",
     "note": "Soviet/Russian Project 1164 Atlant guided-missile cruiser. Long-range S-300F (SA-N-6) SAM system with 64 missiles in below-deck rotary launchers; the primary offensive load is 16 P-1000 Vulkan (SS-N-12) supersonic anti-ship missiles in fixed deck launchers, plus 40 SA-N-4 short-range SAMs. MR-800 Voskhod (Top Pair) long-range air-search radar; one Ka-27 helicopter. Three built; Moskva sank in 2022. Crew and speed are not in the retrieved excerpt.",
+    "sensor": {
+      "detectionKm": 300,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "s-300f",
+        "name": "S-300F Fort (SA-N-6)",
+        "rangeKm": 90,
+        "magazine": 64,
+        "salvo": 2,
+        "pk": 0.7,
+        "reactionSec": 10,
+        "engages": [
+          "air"
+        ]
+      },
+      {
+        "id": "p-1000",
+        "name": "P-1000 Vulkan (SS-N-12)",
+        "rangeKm": 800,
+        "magazine": 16,
+        "salvo": 8,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      }
+    ],
     "platform": {
       "displacementT": 11490,
       "vls": 64,
@@ -134,6 +487,98 @@
     },
     "signature": "high",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "S-300 missile system | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/S-300_missile_system",
+          "note": "S-300F Fort naval variant, 5V55RM missile with range extended to 7-90 km. The upgraded Fort-M (Kirov only) reaches 5-150 km with the 48N6."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Slava-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Slava-class_cruiser",
+          "note": "'64 (8 x 8) S-300F Fort (SA-N-6 Grumble)' in below-deck rotary launchers."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "P-500 Bazalt / P-1000 Vulkan | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/P-500_Bazalt",
+          "note": "P-1000 Vulkan (upgraded P-500) ~800 km; 1,000 kg payload / 950 kg semi-AP HE warhead. Base P-500 Bazalt 550 km. Supersonic anti-ship, fired in salvos."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Slava-class cruiser | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Slava-class_cruiser",
+          "note": "16 P-1000 Vulkan (SS-N-12) in eight twin fixed deck launchers, no reloads."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine- and scenario-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; this is a modeling default for the war-game, not a sourced figure."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Reaction/time-of-flight-to-launch is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Radar detection range not officially published. MR-800 Voskhod (Top Pair) long-range air-search radar; ~300 km estimate."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",

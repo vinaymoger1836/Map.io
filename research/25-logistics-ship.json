@@ -1,0 +1,21 @@
+[
+  {
+    "id": "supply-oiler",
+    "name": "Fleet replenishment oiler",
+    "typeId": "logistics-ship",
+    "origin": "—",
+    "note": "Generic fleet replenishment oiler - a representative stand-in (in the class of the US John Lewis (T-AO-205) or Supply-class), not a specific ship. Unarmed auxiliary that carries fuel, ammunition and stores for underway replenishment; typically operates one or two helicopters. All figures are estimates.",
+    "platform": {
+      "displacementT": 49000,
+      "aircraft": 2,
+      "speedKmh": 37,
+      "crew": 120
+    },
+    "provenance": {
+      "platform.displacementT": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative full-load displacement for a fleet oiler (~49,000 t, in the class of a T-AO). Estimate."}, "confidence": "low"},
+      "platform.aircraft": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Fleet oilers typically operate 1-2 utility/vertical-replenishment helicopters. Estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative sustained speed ~20 kn (~37 km/h) for a fleet oiler. Estimate."}, "confidence": "low"},
+      "platform.crew": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative civilian/naval crew of ~120 for a fleet oiler. Estimate."}, "confidence": "low"}
+    }
+  }
+]

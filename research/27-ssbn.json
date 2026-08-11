@@ -1,0 +1,119 @@
+[
+  {
+    "id": "ohio-ssbn",
+    "name": "Ohio class SSBN",
+    "typeId": "ssbn",
+    "origin": "United States",
+    "note": "US Navy Ohio-class ballistic-missile submarine. Each SSBN carries 20 Trident II D5 SLBMs (reduced from 24 tubes under New START). Trident II range commonly cited ~12,000 km. Displacement 18,750 t submerged; two alternating crews fly ~70-90 day patrols.",
+    "weapons": [
+      {
+        "id": "trident-ii",
+        "name": "Trident II (UGM-133) D5",
+        "rangeKm": 12000,
+        "magazine": 20,
+        "salvo": 1,
+        "pk": 0.85,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "displacementT": 18750,
+      "vls": 20,
+      "speedKmh": 37,
+      "crew": 155,
+      "enduranceDays": 77
+    },
+    "signature": "low",
+    "provenance": {
+      "weapons.0.rangeKm": {"source": {"kind": "placeholder", "title": "Range not on retrieved page", "note": "Trident II D5 SLBM; commonly cited ~12,000 km. The Ohio page confirms the missile but not its range. Estimate."}, "confidence": "low"},
+      "weapons.0.magazine": {"source": {"kind": "reference", "title": "Ohio-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Ohio-class_submarine", "note": "'four tubes on each SSBN were deactivated in 2017, reducing the number of missiles to 20 per boat' (originally 24 Trident II)."}, "confidence": "high"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling default of 1 per launch."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability against a soft strategic target is high but not published; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Launch timeline classified; ~60 s modelling estimate."}, "confidence": "low"},
+      "platform.displacementT": {"source": {"kind": "reference", "title": "Ohio-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Ohio-class_submarine", "note": "'displacing 18,750 tons submerged'."}, "confidence": "high"},
+      "platform.vls": {"source": {"kind": "reference", "title": "Ohio-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Ohio-class_submarine", "note": "20 Trident II missile tubes (24 originally; 4 deactivated under New START)."}, "confidence": "high"},
+      "platform.speedKmh": {"source": {"kind": "reference", "title": "Ohio-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Ohio-class_submarine", "note": "'cruising speed of 20 knots (37 km/h) or more'; top submerged speed is classified."}, "confidence": "medium"},
+      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Complement commonly cited ~155 per crew (two crews per boat). Estimate."}, "confidence": "low"},
+      "platform.enduranceDays": {"source": {"kind": "reference", "title": "Ohio-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Ohio-class_submarine", "note": "'70-to-90-day deterrent patrols'; 77 taken as a representative value (limited by food/stores, not propulsion)."}, "confidence": "medium"}
+    }
+  },
+  {
+    "id": "borei",
+    "name": "Borei class SSBN",
+    "typeId": "ssbn",
+    "origin": "Russia",
+    "note": "Russian Project 955/955A Borei-class ballistic-missile submarine. Each carries 16 RSM-56 Bulava SLBMs (6 MIRV warheads each). Bulava range commonly cited ~9,300 km. Displacement 24,000 t submerged.",
+    "weapons": [
+      {
+        "id": "bulava",
+        "name": "RSM-56 Bulava",
+        "rangeKm": 9300,
+        "magazine": 16,
+        "salvo": 1,
+        "pk": 0.85,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "displacementT": 24000,
+      "vls": 16,
+      "speedKmh": 54,
+      "crew": 107,
+      "enduranceDays": 90
+    },
+    "signature": "low",
+    "provenance": {
+      "weapons.0.rangeKm": {"source": {"kind": "placeholder", "title": "Range not on retrieved page", "note": "RSM-56 Bulava SLBM; commonly cited ~9,300 km. The Borei page confirms the missile but not its range. Estimate."}, "confidence": "low"},
+      "weapons.0.magazine": {"source": {"kind": "reference", "title": "Borei-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Borei-class_submarine", "note": "'16 x RSM-56 Bulava SLBMs with 6 MIRV warheads'."}, "confidence": "high"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling default of 1 per launch."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability against a soft strategic target is high but not published; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Launch timeline classified; ~60 s modelling estimate."}, "confidence": "low"},
+      "platform.displacementT": {"source": {"kind": "reference", "title": "Borei-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Borei-class_submarine", "note": "'24,000 t submerged' (14,720 t surfaced)."}, "confidence": "high"},
+      "platform.vls": {"source": {"kind": "reference", "title": "Borei-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Borei-class_submarine", "note": "16 Bulava missile tubes."}, "confidence": "high"},
+      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Submerged top speed commonly cited ~29 kn (~54 km/h). Estimate."}, "confidence": "low"},
+      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Complement commonly cited ~107. Estimate."}, "confidence": "low"},
+      "platform.enduranceDays": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "SSBN patrol endurance ~90 days, limited by stores. Estimate."}, "confidence": "low"}
+    }
+  },
+  {
+    "id": "arihant",
+    "name": "Arihant class SSBN",
+    "typeId": "ssbn",
+    "origin": "India",
+    "note": "Indian Navy Arihant-class ballistic-missile submarine. The Arihant subclass has 4 SLBM tubes; each can hold the K-4 (3,500 km) or three K-15 (~750 km) missiles. Displacement ~6,000 t; complement 95.",
+    "weapons": [
+      {
+        "id": "k-4",
+        "name": "K-4 SLBM",
+        "rangeKm": 3500,
+        "magazine": 4,
+        "salvo": 1,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "displacementT": 6000,
+      "vls": 4,
+      "speedKmh": 44,
+      "crew": 95,
+      "enduranceDays": 60
+    },
+    "signature": "medium",
+    "provenance": {
+      "weapons.0.rangeKm": {"source": {"kind": "reference", "title": "Arihant-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Arihant-class_submarine", "note": "'K-4: 3,500 km range'; each tube alternatively holds three ~750 km K-15 missiles."}, "confidence": "medium"},
+      "weapons.0.magazine": {"source": {"kind": "reference", "title": "Arihant-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Arihant-class_submarine", "note": "'4 x SLBM tubes for Arihant subclass' (one K-4 per tube; the Aridhaman subclass has 8)."}, "confidence": "high"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling default of 1 per launch."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability against a soft strategic target is high but not published; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Launch timeline classified; ~60 s modelling estimate."}, "confidence": "low"},
+      "platform.displacementT": {"source": {"kind": "reference", "title": "Arihant-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Arihant-class_submarine", "note": "'Arihant & Arighaat: 6,000 t' (submerged ~6,600 t)."}, "confidence": "high"},
+      "platform.vls": {"source": {"kind": "reference", "title": "Arihant-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Arihant-class_submarine", "note": "'4 x SLBM tubes for Arihant subclass'."}, "confidence": "high"},
+      "platform.speedKmh": {"source": {"kind": "reference", "title": "Arihant-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Arihant-class_submarine", "note": "'Submerged: 24 kn (44 km/h)'."}, "confidence": "high"},
+      "platform.crew": {"source": {"kind": "reference", "title": "Arihant-class submarine | Wikipedia", "url": "https://en.wikipedia.org/wiki/Arihant-class_submarine", "note": "'Complement: 95'."}, "confidence": "high"},
+      "platform.enduranceDays": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "SSBN patrol endurance ~60 days, limited by stores. Estimate."}, "confidence": "low"}
+    }
+  }
+]

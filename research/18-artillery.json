@@ -1,0 +1,105 @@
+[
+  {
+    "id": "m109a7",
+    "name": "M109A7 Paladin",
+    "typeId": "artillery",
+    "origin": "United States",
+    "note": "BAE Systems M109A7 Paladin 155 mm self-propelled howitzer (155 mm/39-calibre M284 cannon). Crew of four. Firing range up to ~36 km with rocket-assisted projectiles (~24 km unassisted; ~40+ km with Excalibur precision rounds).",
+    "weapons": [
+      {
+        "id": "m109-howitzer",
+        "name": "155 mm M284 howitzer",
+        "rangeKm": 36,
+        "magazine": 39,
+        "salvo": 3,
+        "pk": 0.3,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "speedKmh": 61,
+      "crew": 4
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "M109 howitzer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/M109_howitzer",
+          "note": "'firing range of up to 36 km' with assisted projectiles; ~24 km unassisted; Excalibur precision rounds reach ~40+ km."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {
+        "source": {"kind": "placeholder", "title": "Not on retrieved page", "note": "M109A7 stows ~39 complete rounds; not stated on the retrieved page. Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Rounds per fire mission vary; ~3 (a typical burst) as a modelling default."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Per-round kill probability against a point target is low for unguided 155 mm; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Emplacement-to-fire time not published for this figure; modelling estimate."}, "confidence": "low"},
+      "platform.speedKmh": {
+        "source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "M109A7 top road speed commonly cited ~61 km/h. Estimate."},
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "M109 howitzer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/M109_howitzer",
+          "note": "'crew of four: the section chief/commander, the driver, the gunner' (plus loader)."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "caesar",
+    "name": "CAESAR 155 mm",
+    "typeId": "artillery",
+    "origin": "France",
+    "note": "Nexter CAESAR 155 mm/52-calibre truck-mounted self-propelled howitzer. Crew of five (can be operated by fewer). Carries 18 rounds. Range ~42 km with extended-range base-bleed shells, up to ~55 km with V-LAP; the exact infobox range was not captured on fetch.",
+    "weapons": [
+      {
+        "id": "caesar-howitzer",
+        "name": "155 mm/52 CAESAR howitzer",
+        "rangeKm": 42,
+        "magazine": 18,
+        "salvo": 3,
+        "pk": 0.3,
+        "reactionSec": 60,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "crew": 5
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {"kind": "placeholder", "title": "Range not captured from retrieved page", "note": "155 mm/52 calibre; ~42 km with ERFB base-bleed shells, up to ~55 km with V-LAP. The infobox range was not captured on fetch. Estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "CAESAR self-propelled howitzer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/CAESAR_self-propelled_howitzer",
+          "note": "'carries a crew and 18 rounds of ammunition'."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "CAESAR can fire 3-round bursts; ~3 as a modelling default."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Per-round kill probability against a point target is low for unguided 155 mm; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "The CAESAR is quoted at ~1 min to be ready to fire and 40 s to displace; ~60 s used as detection-to-fire estimate."}, "confidence": "low"},
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "CAESAR self-propelled howitzer | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/CAESAR_self-propelled_howitzer",
+          "note": "'a crew of five, though if necessary the CAESAR can be operated by a crew of' fewer."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

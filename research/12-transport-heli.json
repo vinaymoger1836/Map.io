@@ -1,0 +1,63 @@
+[
+  {
+    "id": "ch-47f",
+    "name": "CH-47F Chinook",
+    "typeId": "transport-heli",
+    "origin": "United States",
+    "note": "Boeing CH-47F tandem-rotor heavy-lift transport helicopter. Normally unarmed (door guns only, not modelled). Crew of 3 (two pilots + flight engineer). Carries 33-55 troops or ~10 t of external load.",
+    "platform": {
+      "combatRadiusKm": 306,
+      "ferryRangeKm": 2252,
+      "speedKmh": 310,
+      "payloadKg": 10886,
+      "crew": 3
+    },
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing CH-47 Chinook | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+          "note": "'Combat range: 165 nmi (306 km) (combat radius)'."
+        },
+        "confidence": "medium"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing CH-47 Chinook | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+          "note": "'Ferry range: 1,216 nmi (2,252 km)'."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing CH-47 Chinook | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+          "note": "'Maximum speed: 170 kn (310 km/h)'; cruise 157 kn (291 km/h)."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing CH-47 Chinook | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+          "note": "Sources cite a payload of 21,000-22,000 lb (~9,500-10,000 kg); maximum external load ~24,000 lb (10,886 kg)."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing CH-47 Chinook | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+          "note": "Crew of 3 (two pilots + flight engineer); capacity up to 33-55 troops."
+        },
+        "confidence": "medium"
+      }
+    }
+  }
+]

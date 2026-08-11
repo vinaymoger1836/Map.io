@@ -1,0 +1,122 @@
+[
+  {
+    "id": "kc-46a",
+    "name": "KC-46A Pegasus",
+    "typeId": "tanker",
+    "origin": "United States",
+    "note": "USAF aerial-refuelling tanker/transport based on the Boeing 767-2C. Unarmed. Flight crew of 3 (two pilots + boom operator). Total fuel capacity ~96 t (~212,000 lb), of which ~94,200 lb is transferable. No published combat radius; combatRadiusKm is an on-station estimate.",
+    "platform": {
+      "combatRadiusKm": 4300,
+      "ferryRangeKm": 11830,
+      "speedKmh": 851,
+      "payloadKg": 29500,
+      "crew": 3
+    },
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No published combat radius (tanker)",
+          "note": "No published radius for a tanker; estimated on-station operating radius ~4,300 km, roughly half the unrefuelled range. Actual radius trades against fuel offloaded."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing KC-46 Pegasus | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus",
+          "note": "'Range: 6,385 nmi (11,830 km) - global with in-flight refuelling'."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing KC-46 Pegasus | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus",
+          "note": "'Cruise speed: 460 kn (851 km/h)'; maximum 500 kn (914 km/h)."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing KC-46 Pegasus | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus",
+          "note": "'Capacity: 65,000 lb (29,500 kg)' cargo. Separately, total fuel ~96,297 kg / 31,220 US gal."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Boeing KC-46 Pegasus | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus",
+          "note": "Flight crew of 3 (two pilots + boom operator); additional aircrew/aeromedical seats."
+        },
+        "confidence": "medium"
+      }
+    }
+  },
+  {
+    "id": "il-78",
+    "name": "Il-78 Midas",
+    "typeId": "tanker",
+    "origin": "Russia",
+    "note": "Ilyushin Il-78M aerial-refuelling tanker based on the Il-76MD airlifter. Unarmed. Crew of 6. Il-78M transfers up to 105.7 t of fuel (74 t at 1,000 km; 40 t at 3,000 km). No published combat radius; combatRadiusKm is an estimate.",
+    "platform": {
+      "combatRadiusKm": 3650,
+      "ferryRangeKm": 7300,
+      "speedKmh": 850,
+      "payloadKg": 100000,
+      "crew": 6
+    },
+    "provenance": {
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No published combat radius (tanker)",
+          "note": "No published radius; estimated ~half the 7,300 km range. On-station offload for the Il-78M is 74 t at 1,000 km and 40 t at 3,000 km."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Ilyushin Il-78 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ilyushin_Il-78",
+          "note": "'Range: 7,300 km (3,900 nmi)'."
+        },
+        "confidence": "high"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Ilyushin Il-78 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ilyushin_Il-78",
+          "note": "'Maximum speed: 850 km/h (460 kn)'."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Ilyushin Il-78 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ilyushin_Il-78",
+          "note": "'Capacity: Max 100,000 kg payload (fuel)'. The Il-78M can transfer up to 105.7 t total."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Ilyushin Il-78 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Ilyushin_Il-78",
+          "note": "'Crew: 6'."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

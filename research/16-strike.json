@@ -1,0 +1,747 @@
+[
+  {
+    "id": "f-15e",
+    "name": "F-15E Strike Eagle",
+    "typeId": "strike",
+    "origin": "United States",
+    "note": "Boeing F-15E Strike Eagle, twin-seat long-range interdiction / strike fighter. AESA radar (APG-82(V)1 on current USAF jets). Defining strike load: AGM-158 JASSM stand-off missile and AGM-65 Maverick; also JDAM, SDB and AIM-120 for self-defence.",
+    "sensor": {
+      "detectionKm": 150,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "jassm",
+        "name": "AGM-158 JASSM-ER",
+        "rangeKm": 925,
+        "salvo": 2,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "id": "agm-65",
+        "name": "AGM-65 Maverick",
+        "rangeKm": 25,
+        "salvo": 1,
+        "pk": 0.8,
+        "reactionSec": 15,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 1270,
+      "ferryRangeKm": 5630,
+      "speedKmh": 2660,
+      "payloadKg": 10400,
+      "crew": 2
+    },
+    "signature": "high",
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Fighter radar range classified",
+          "note": "APG-82(V)1 AESA; detection range not published. ~150 km against a fighter-sized target is an estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AGM-158 JASSM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AGM-158_JASSM",
+          "note": "AGM-158B JASSM-ER '925 km'; baseline AGM-158A ~370 km. Low-observable stand-off land-attack missile. Figures kept identical to the shared 'jassm' catalogue entry."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "F-15E 'Strike' Eagle | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/f15/",
+          "note": "'Maverick's range is 25km.' IR/laser-guided air-to-surface anti-armour missile."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on retrieved page",
+          "note": "F-15E interdiction radius commonly cited ~1,270 km with conformal fuel tanks; not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "F-15E 'Strike' Eagle | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/f15/",
+          "note": "'F-15E has a ferry range of more than 3,500 miles' (~5,630 km)."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "F-15E 'Strike' Eagle | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/f15/",
+          "note": "'Maximum Level Speed Over Mach 2.5 (2,660km/h)'."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "F-15E 'Strike' Eagle | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/f15/",
+          "note": "'can carry payloads up to 23,000lb' (~10,400 kg)."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "F-15E 'Strike' Eagle | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/f15/",
+          "note": "'crewed by the pilot and the weapon systems officer (WSO)'."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "f-18ef",
+    "name": "F/A-18E/F Super Hornet",
+    "typeId": "strike",
+    "origin": "United States",
+    "note": "Boeing F/A-18E/F Super Hornet, carrier-borne multirole strike fighter (E single-seat, F twin-seat). APG-79 AESA radar. Defining strike load: AGM-84 Harpoon (anti-ship) and AGM-158 JASSM (land attack); also SLAM-ER, JSOW, HARM. Note: the retrieved specifications table was truncated, so speed/radius are commonly-cited estimates.",
+    "sensor": {
+      "detectionKm": 150,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "harpoon",
+        "name": "Harpoon (AGM-84)",
+        "rangeKm": 124,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      },
+      {
+        "id": "jassm",
+        "name": "AGM-158 JASSM-ER",
+        "rangeKm": 925,
+        "salvo": 2,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 722,
+      "speedKmh": 1915,
+      "crew": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Fighter radar range classified",
+          "note": "APG-79 AESA; detection range not published. ~150 km against a fighter-sized target is an estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "Block IC 124 km (unclassified); family 90-240 km. Air-launched AGM-84. Figures kept identical to the shared 'harpoon' catalogue entry."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "AGM-158 JASSM | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/AGM-158_JASSM",
+          "note": "AGM-158B JASSM-ER '925 km'; baseline AGM-158A ~370 km. Low-observable stand-off land-attack missile. Figures kept identical to the shared 'jassm' catalogue entry."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Retrieved page truncated",
+          "note": "Super Hornet interdiction radius commonly cited ~722 km; the retrieved page gave only that conformal tanks add ~480 km. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Retrieved page truncated",
+          "note": "Maximum speed commonly cited Mach 1.8 (~1,915 km/h); not captured from the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Retrieved page truncated",
+          "note": "F/A-18E single-seat (F is twin-seat); taken as 1. Not captured from the retrieved page."
+        },
+        "confidence": "low"
+      }
+    }
+  },
+  {
+    "id": "su-34",
+    "name": "Su-34 Fullback",
+    "typeId": "strike",
+    "origin": "Russia",
+    "note": "Sukhoi Su-34 Fullback, twin-seat (side-by-side) strike/fighter-bomber. Defining strike load: Kh-59 stand-off land-attack missile and Kh-31 anti-ship/anti-radiation missile; also Kh-29, KAB guided bombs and a GSh-30-1 30 mm cannon.",
+    "weapons": [
+      {
+        "id": "kh-59",
+        "name": "Kh-59",
+        "rangeKm": 285,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 45,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "id": "kh-31",
+        "name": "Kh-31",
+        "rangeKm": 110,
+        "salvo": 2,
+        "pk": 0.6,
+        "reactionSec": 20,
+        "engages": [
+          "surface"
+        ]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 1100,
+      "speedKmh": 1900,
+      "payloadKg": 13000,
+      "crew": 2
+    },
+    "signature": "medium",
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Range not on retrieved page",
+          "note": "Kh-59MK2 stand-off land-attack missile; commonly cited ~285 km (Kh-59 base ~115 km). Su-34 carriage is the type's standard fit; range not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Range not on retrieved page",
+          "note": "Kh-31A anti-ship / Kh-31P anti-radiation missile; commonly cited ~110-160 km. Su-34 carriage is the type's standard fit; range not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Sukhoi Su-34 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sukhoi_Su-34",
+          "note": "'Combat range: 1,100 km (590 nmi) (radius of action with standard load)'."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Sukhoi Su-34 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sukhoi_Su-34",
+          "note": "'Maximum speed: 1,900 km/h (Mach 1.8)'."
+        },
+        "confidence": "high"
+      },
+      "platform.payloadKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Sukhoi Su-34 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sukhoi_Su-34",
+          "note": "'12 hardpoints with a capacity of 12,000-14,000 kg'; ~13,000 kg taken as a mid value."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Sukhoi Su-34 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sukhoi_Su-34",
+          "note": "'Crew: 2 (side by side seating)'."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "j-16",
+    "name": "J-16",
+    "typeId": "strike",
+    "origin": "China",
+    "note": "Shenyang J-16, twin-seat 4.5-generation multirole strike fighter derived from the J-11/Su-30MKK. AESA radar. Defining load: YJ-83K anti-ship missile and PL-15 long-range air-to-air missile; also PL-17, land-attack munitions and a GSh-30-1 30 mm cannon. Range figures are total range, not combat radius.",
+    "sensor": {
+      "detectionKm": 200,
+      "sees": [
+        "air"
+      ],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "yj-83",
+        "name": "YJ-83K",
+        "rangeKm": 180,
+        "salvo": 2,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      },
+      {
+        "id": "pl-15",
+        "name": "PL-15",
+        "rangeKm": 250,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 3,
+        "engages": [
+          "air"
+        ]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 1500,
+      "ferryRangeKm": 4000,
+      "speedKmh": 2120,
+      "crew": 2
+    },
+    "signature": "medium",
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Fighter radar range classified",
+          "note": "J-16 AESA radar; detection range not published. ~200 km against a fighter-sized target is an estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Range not on retrieved page",
+          "note": "YJ-83K air-launched anti-ship missile; the J-16 page confirms carriage but does not give a range. ~180 km commonly cited. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "PL-15 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/PL-15",
+          "note": "PLAAF domestic PL-15 200-300 km; export PL-15E 145 km. Figures kept identical to the shared 'pl-15' catalogue entry."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not stated on retrieved page",
+          "note": "No published combat radius; estimated ~1,500 km, roughly half the 3,000 km range. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.ferryRangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Shenyang J-16 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Shenyang_J-16",
+          "note": "'Ferry range: 4,000 km (2,200 nmi)'; normal range 3,000 km."
+        },
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Shenyang J-16 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Shenyang_J-16",
+          "note": "'Maximum speed: 2,120 km/h (Mach 2)'."
+        },
+        "confidence": "high"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Shenyang J-16 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Shenyang_J-16",
+          "note": "'Crew: 2'."
+        },
+        "confidence": "high"
+      }
+    }
+  },
+  {
+    "id": "a-10c",
+    "name": "A-10C Thunderbolt II",
+    "typeId": "strike",
+    "origin": "United States",
+    "note": "Fairchild Republic A-10C Thunderbolt II, single-seat close-air-support attack aircraft. No air-search radar (targeting by Sniper/Litening EO/IR pod). Defining load: AGM-65 Maverick and the GAU-8/A 30 mm rotary cannon.",
+    "weapons": [
+      {
+        "id": "agm-65",
+        "name": "AGM-65 Maverick",
+        "rangeKm": 25,
+        "salvo": 1,
+        "pk": 0.8,
+        "reactionSec": 15,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "id": "gau-8",
+        "name": "GAU-8/A Avenger 30 mm",
+        "rangeKm": 3.6,
+        "magazine": 1174,
+        "salvo": 100,
+        "pk": 0.3,
+        "reactionSec": 3,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 460,
+      "speedKmh": 740,
+      "crew": 1
+    },
+    "signature": "medium",
+    "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "F-15E 'Strike' Eagle | Airforce Technology",
+          "url": "https://www.airforce-technology.com/projects/f15/",
+          "note": "'Maverick's range is 25km.' IR/laser-guided air-to-surface anti-armour missile."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Range not on retrieved page",
+          "note": "GAU-8/A 30 mm rotary cannon; effective range ~1.2 km point, up to ~3.6 km. Not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Fairchild Republic A-10 Thunderbolt II | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Fairchild_Republic_A-10_Thunderbolt_II",
+          "note": "'1,174 rounds' of 30 mm ammunition."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Rounds committed per engagement is doctrine-dependent; modelling default."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Single-shot kill probability not published; professional estimate."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "No public figure",
+          "note": "Detection-to-launch not published; modelling estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.combatRadiusKm": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Not on retrieved page",
+          "note": "A-10C CAS combat radius commonly cited ~460 km (~250 nmi); not stated on the retrieved page. Estimate."
+        },
+        "confidence": "low"
+      },
+      "platform.speedKmh": {
+        "source": {
+          "kind": "reference",
+          "title": "Fairchild Republic A-10 Thunderbolt II | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Fairchild_Republic_A-10_Thunderbolt_II",
+          "note": "'maximum speed of 460 mph (740 km/h)'."
+        },
+        "confidence": "medium"
+      },
+      "platform.crew": {
+        "source": {
+          "kind": "reference",
+          "title": "Fairchild Republic A-10 Thunderbolt II | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Fairchild_Republic_A-10_Thunderbolt_II",
+          "note": "Single-seat (crew 1)."
+        },
+        "confidence": "high"
+      }
+    }
+  }
+]

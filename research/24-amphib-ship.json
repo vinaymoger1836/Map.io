@@ -1,0 +1,54 @@
+[
+  {
+    "id": "america-class",
+    "name": "America class",
+    "typeId": "amphib-ship",
+    "origin": "United States",
+    "note": "US Navy America-class landing helicopter assault (LHA) ship. Its striking power is the embarked air group (F-35B / AV-8B jets, MV-22 Osprey, and attack/transport helicopters), not ship-launched missiles; the only armament is self-defence (RAM, ESSM, Phalanx CIWS), which is not modelled as offensive weapons. Crew/speed below are estimates.",
+    "platform": {
+      "displacementT": 46000,
+      "aircraft": 20,
+      "speedKmh": 40,
+      "crew": 1060
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {
+        "source": {"kind": "reference", "title": "America-class amphibious assault ship | Wikipedia", "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship", "note": "'a displacement of about 45,000 long tons (46,000 t)'."},
+        "confidence": "high"
+      },
+      "platform.aircraft": {
+        "source": {"kind": "reference", "title": "America-class amphibious assault ship | Wikipedia", "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship", "note": "'They can carry about 20 AV-8Bs or F-35Bs' in the sea-control configuration; a mixed amphibious air group of ~20-25 aircraft is typical."},
+        "confidence": "medium"
+      },
+      "platform.speedKmh": {
+        "source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "America-class top speed commonly cited ~22 kn (~40 km/h). Estimate."},
+        "confidence": "low"
+      },
+      "platform.crew": {
+        "source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Ship's company commonly cited ~1,060 (plus a Marine Expeditionary Unit of ~1,700). Estimate."},
+        "confidence": "low"
+      }
+    }
+  },
+  {
+    "id": "mistral",
+    "name": "Mistral class",
+    "typeId": "amphib-ship",
+    "origin": "France",
+    "note": "French Navy Mistral-class amphibious assault ship (LHD / helicopter carrier). Capability is the embarked helicopter group and landing force; armament is self-defence only (Simbad RAM launchers, small guns), not modelled as offensive weapons. All platform figures below are commonly-cited estimates (specifications table not captured on fetch).",
+    "platform": {
+      "displacementT": 21300,
+      "aircraft": 16,
+      "speedKmh": 35,
+      "crew": 180
+    },
+    "signature": "high",
+    "provenance": {
+      "platform.displacementT": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Mistral full-load displacement commonly cited ~21,300 t. Estimate."}, "confidence": "low"},
+      "platform.aircraft": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Mistral carries up to 16 heavy helicopters (or ~35 light). Estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Top speed commonly cited ~19 kn (~35 km/h). Estimate."}, "confidence": "low"},
+      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Ship's company ~180 (plus ~450-900 embarked troops). Estimate."}, "confidence": "low"}
+    }
+  }
+]

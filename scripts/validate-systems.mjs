@@ -22,7 +22,11 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const target = process.argv[2] ?? join(ROOT, 'public', 'data', 'systems.json');
+const args = process.argv.slice(2);
+/* A fresh batch of research fails in bulk and in patterns, so the default
+   truncation hides exactly what you need to see. --all prints the lot. */
+const showAll = args.includes('--all');
+const target = args.find((a) => !a.startsWith('--')) ?? join(ROOT, 'public', 'data', 'systems.json');
 
 /* The unit-type vocabulary is read from the catalogue itself rather than copied,
    so adding a unit type cannot leave this file quietly out of date. */
@@ -35,7 +39,7 @@ const CONFIDENCE = new Set(['high', 'medium', 'low']);
 const SIGNATURES = new Set(['low', 'medium', 'high']);
 
 const SENSOR_KEYS = new Set(['detectionKm', 'tracks', 'engagements', 'sees', 'horizonLimited', 'antennaM']);
-const WEAPON_KEYS = new Set(['name', 'rangeKm', 'minRangeKm', 'salvo', 'magazine', 'pk', 'reactionSec', 'engages']);
+const WEAPON_KEYS = new Set(['id', 'name', 'rangeKm', 'minRangeKm', 'massKg', 'salvo', 'magazine', 'pk', 'reactionSec', 'engages']);
 const PLATFORM_KEYS = new Set([
   'combatRadiusKm', 'refuelledRadiusKm', 'ferryRangeKm', 'speedKmh', 'payloadKg',
   'crew', 'displacementT', 'aircraft', 'vls', 'enduranceDays',
@@ -86,6 +90,8 @@ if (!Array.isArray(raw)) {
 
 const seen = new Set();
 const stats = { figures: 0, cited: 0, placeholder: 0, legacy: 0, byConfidence: { high: 0, medium: 0, low: 0 } };
+/** Every use of a shared munition id, so the same round can be checked platform to platform. */
+const munitions = new Map();
 
 for (const [index, spec] of raw.entries()) {
   const where = `#${index} ${spec?.id ?? spec?.name ?? '(unnamed)'}`;
@@ -125,6 +131,16 @@ for (const [index, spec] of raw.entries()) {
     if (typeof weapon.rangeKm !== 'number' || weapon.rangeKm <= 0) fail(w, 'rangeKm is required and must be > 0');
     if (weapon.pk !== undefined && (weapon.pk < 0 || weapon.pk > 1)) fail(w, `pk must be 0–1 (got ${weapon.pk})`);
     for (const t of weapon.engages ?? []) if (!TARGETS.has(t)) fail(w, `engages unknown class "${t}"`);
+    if (weapon.id !== undefined) {
+      if (typeof weapon.id !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(weapon.id)) {
+        fail(w, `weapon id must be lowercase letters, digits and dashes (got "${weapon.id}")`);
+      } else {
+        if (!munitions.has(weapon.id)) munitions.set(weapon.id, []);
+        munitions.get(weapon.id).push({ system: spec.id, weapon });
+      }
+    } else {
+      warn(w, `"${weapon.name ?? 'unnamed'}" has no id — it cannot be matched to the same round on another platform`);
+    }
   }
 
   if (spec.platform) {
@@ -182,23 +198,46 @@ for (const [index, spec] of raw.entries()) {
   if (unsourced.length) warn(where, `${unsourced.length} figures carry no provenance: ${unsourced.slice(0, 4).join(', ')}${unsourced.length > 4 ? '…' : ''}`);
 }
 
+/* A munition is one object in the world, so an SM-6 must not reach 240 km from a
+   Burke and 370 km from a Ticonderoga. The research is done a family at a time,
+   which is exactly the arrangement that lets a round drift between batches. */
+let shared = 0;
+for (const [id, uses] of munitions) {
+  if (uses.length < 2) continue;
+  shared++;
+  for (const field of ['rangeKm', 'massKg', 'minRangeKm']) {
+    const values = [...new Set(uses.map((u) => u.weapon[field]).filter((v) => v !== undefined))];
+    if (values.length > 1) {
+      const spread = uses
+        .filter((u) => u.weapon[field] !== undefined)
+        .map((u) => `${u.system} ${u.weapon[field]}`)
+        .join(', ');
+      fail(`munition "${id}"`, `${field} disagrees across platforms — ${spread}`);
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ */
 
 console.log(`${target}`);
 console.log(`  ${raw.length} systems, ${stats.figures} figures with provenance`);
+console.log(`  ${munitions.size} distinct munitions, ${shared} carried by more than one platform`);
 console.log(`  confidence: ${stats.byConfidence.high} high, ${stats.byConfidence.medium} medium, ${stats.byConfidence.low} low`);
 console.log(`  ${stats.cited} carry a source URL, ${stats.placeholder} are declared placeholders, ${stats.legacy} are bare labels`);
 
+const WARN_SHOWN = showAll ? Infinity : 25;
+const ERROR_SHOWN = showAll ? Infinity : 40;
+
 if (warnings.length) {
   console.log(`\n${warnings.length} warnings`);
-  for (const line of warnings.slice(0, 25)) console.log(`  ! ${line}`);
-  if (warnings.length > 25) console.log(`  … and ${warnings.length - 25} more`);
+  for (const line of warnings.slice(0, WARN_SHOWN)) console.log(`  ! ${line}`);
+  if (warnings.length > WARN_SHOWN) console.log(`  … and ${warnings.length - WARN_SHOWN} more (--all shows every one)`);
 }
 
 if (errors.length) {
   console.error(`\n${errors.length} errors`);
-  for (const line of errors.slice(0, 40)) console.error(`  ✗ ${line}`);
-  if (errors.length > 40) console.error(`  … and ${errors.length - 40} more`);
+  for (const line of errors.slice(0, ERROR_SHOWN)) console.error(`  ✗ ${line}`);
+  if (errors.length > ERROR_SHOWN) console.error(`  … and ${errors.length - ERROR_SHOWN} more (--all shows every one)`);
   process.exit(1);
 }
 

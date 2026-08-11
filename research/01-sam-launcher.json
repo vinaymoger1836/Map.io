@@ -9,7 +9,10 @@
       "detectionKm": 600,
       "tracks": 300,
       "engagements": 36,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -20,18 +23,25 @@
         "salvo": 2,
         "pk": 0.75,
         "reactionSec": 10,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       },
       {
         "name": "48N6 series",
         "rangeKm": 250,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       },
       {
         "name": "9M96E2",
         "rangeKm": 120,
         "magazine": 16,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -143,7 +153,10 @@
       "detectionKm": 300,
       "tracks": 100,
       "engagements": 36,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -154,7 +167,10 @@
         "salvo": 2,
         "pk": 0.85,
         "reactionSec": 10,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -238,7 +254,10 @@
     "sensor": {
       "tracks": 40,
       "engagements": 8,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -248,7 +267,9 @@
         "salvo": 2,
         "pk": 0.75,
         "reactionSec": 8,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -316,7 +337,9 @@
       "detectionKm": 36,
       "tracks": 20,
       "engagements": 4,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -328,12 +351,16 @@
         "salvo": 2,
         "pk": 0.7,
         "reactionSec": 6,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       },
       {
         "name": "2A38M 30mm cannon",
         "rangeKm": 4,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -436,7 +463,10 @@
       "detectionKm": 160,
       "tracks": 36,
       "engagements": 36,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true,
       "antennaM": 22
     },
@@ -449,7 +479,10 @@
         "salvo": 2,
         "pk": 0.75,
         "reactionSec": 10,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -552,7 +585,9 @@
       "detectionKm": 32,
       "tracks": 48,
       "engagements": 4,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -563,7 +598,9 @@
         "salvo": 2,
         "pk": 0.7,
         "reactionSec": 6,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -647,7 +684,10 @@
     "sensor": {
       "detectionKm": 100,
       "tracks": 100,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -658,7 +698,10 @@
         "salvo": 2,
         "pk": 0.7,
         "reactionSec": 9,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -733,7 +776,9 @@
     "note": "Terminal High Altitude Area Defense: US terminal-phase ballistic missile defence. Uses the AN/TPY-2 X-band radar; a battery has six launchers of eight interceptors (48 rounds). Hit-to-kill, effective both inside and outside the atmosphere. Engages ballistic missiles, not aircraft.",
     "sensor": {
       "detectionKm": 3000,
-      "sees": ["ballistic"],
+      "sees": [
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -744,7 +789,9 @@
         "salvo": 2,
         "pk": 0.8,
         "reactionSec": 15,
-        "engages": ["ballistic"]
+        "engages": [
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -810,7 +857,9 @@
     "sensor": {
       "detectionKm": 75,
       "engagements": 72,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -821,7 +870,9 @@
         "salvo": 2,
         "pk": 0.7,
         "reactionSec": 10,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -901,7 +952,9 @@
         "salvo": 2,
         "pk": 0.75,
         "reactionSec": 8,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -958,7 +1011,10 @@
     "sensor": {
       "tracks": 100,
       "engagements": 10,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -969,7 +1025,10 @@
         "salvo": 2,
         "pk": 0.7,
         "reactionSec": 10,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -1045,7 +1104,10 @@
       "detectionKm": 120,
       "tracks": 100,
       "engagements": 50,
-      "sees": ["air", "ballistic"],
+      "sees": [
+        "air",
+        "ballistic"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -1056,7 +1118,10 @@
         "salvo": 2,
         "pk": 0.9,
         "reactionSec": 10,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -1142,7 +1207,9 @@
       "detectionKm": 140,
       "tracks": 144,
       "engagements": 4,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -1154,7 +1221,9 @@
         "salvo": 2,
         "pk": 0.85,
         "reactionSec": 10,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -1254,7 +1323,10 @@
         "salvo": 2,
         "pk": 0.75,
         "reactionSec": 8,
-        "engages": ["air", "ballistic"]
+        "engages": [
+          "air",
+          "ballistic"
+        ]
       }
     ],
     "provenance": {
@@ -1311,7 +1383,9 @@
     "sensor": {
       "detectionKm": 100,
       "tracks": 64,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -1322,7 +1396,9 @@
         "salvo": 2,
         "pk": 0.88,
         "reactionSec": 8,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {
@@ -1399,7 +1475,9 @@
     "sensor": {
       "detectionKm": 70,
       "tracks": 1100,
-      "sees": ["air"],
+      "sees": [
+        "air"
+      ],
       "horizonLimited": true
     },
     "weapons": [
@@ -1410,7 +1488,9 @@
         "salvo": 2,
         "pk": 0.85,
         "reactionSec": 15,
-        "engages": ["air"]
+        "engages": [
+          "air"
+        ]
       }
     ],
     "provenance": {

@@ -1,0 +1,139 @@
+[
+  {
+    "id": "mq-9",
+    "name": "MQ-9A Reaper",
+    "typeId": "uav",
+    "origin": "United States",
+    "note": "General Atomics MQ-9A Reaper hunter-killer UAV (remotely piloted; 2-person ground crew). Endurance ~14 h fully armed, up to ~27 h clean. Primary weapons: AGM-114 Hellfire and GBU-12 Paveway II laser-guided bomb. Platform speed/radius/payload below are estimates (specifications table not captured on fetch).",
+    "sensor": {
+      "detectionKm": 40,
+      "sees": ["ground", "surface"],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "agm-114",
+        "name": "AGM-114 Hellfire",
+        "rangeKm": 10,
+        "magazine": 4,
+        "salvo": 1,
+        "pk": 0.8,
+        "reactionSec": 8,
+        "engages": ["ground"]
+      },
+      {
+        "id": "gbu-12",
+        "name": "GBU-12 Paveway II",
+        "rangeKm": 15,
+        "magazine": 2,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 20,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 1850,
+      "speedKmh": 480,
+      "payloadKg": 1700
+    },
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {"kind": "placeholder", "title": "EO/IR + SAR range not published", "note": "MTS-B electro-optical/infrared turret and Lynx SAR/GMTI radar; detection range against a vehicle is not published. ~40 km estimate."},
+        "confidence": "low"
+      },
+      "weapons.0.rangeKm": {
+        "source": {"kind": "reference", "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology", "url": "https://www.army-technology.com/projects/apache/", "note": "AGM-114 Hellfire 'range is 8km to 12km'; 10 km taken as a mid value. Figures kept identical to the shared 'agm-114' catalogue entry."},
+        "confidence": "medium"
+      },
+      "weapons.0.magazine": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "The MQ-9 typically carries up to 4 Hellfire (with 2 GBU-12). Estimate."}, "confidence": "low"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One missile per engagement (modelling default, matched to the shared agm-114 entry)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; matched to the shared agm-114 entry."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-launch not published; matched to the shared agm-114 entry."}, "confidence": "low"},
+      "weapons.1.rangeKm": {"source": {"kind": "placeholder", "title": "Glide range not published", "note": "GBU-12 Paveway II 227 kg laser-guided bomb; stand-off glide range depends on release altitude, up to ~15 km. Estimate."}, "confidence": "low"},
+      "weapons.1.magazine": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "MQ-9 typically carries up to 2 GBU-12. Estimate."}, "confidence": "low"},
+      "weapons.1.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One bomb per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.1.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a laser-guided bomb against a point target."}, "confidence": "low"},
+      "weapons.1.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-release not published; modelling estimate."}, "confidence": "low"},
+      "platform.combatRadiusKm": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "MQ-9 mission radius commonly cited ~1,850 km (endurance ~27 h clean). Estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "MQ-9 maximum speed commonly cited ~480 km/h; cruise ~310 km/h. Estimate."}, "confidence": "low"},
+      "platform.payloadKg": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "MQ-9 external payload commonly cited ~1,700 lb-class on the wings (~770 kg) up to ~1,400 kg total. Estimate."}, "confidence": "low"}
+    }
+  },
+  {
+    "id": "bayraktar-tb2",
+    "name": "Bayraktar TB2",
+    "typeId": "uav",
+    "origin": "Türkiye",
+    "note": "Baykar Bayraktar TB2 medium-altitude long-endurance armed UAV. Endurance >20 h. Four hardpoints carrying MAM-L / MAM-C laser-guided smart munitions. Combat radius is limited by the line-of-sight datalink (~150 km) unless relayed.",
+    "sensor": {
+      "detectionKm": 30,
+      "sees": ["ground", "surface"],
+      "horizonLimited": false
+    },
+    "weapons": [
+      {
+        "id": "mam-l",
+        "name": "MAM-L",
+        "rangeKm": 14,
+        "magazine": 4,
+        "salvo": 1,
+        "pk": 0.7,
+        "reactionSec": 15,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 150,
+      "speedKmh": 222,
+      "payloadKg": 150
+    },
+    "provenance": {
+      "sensor.detectionKm": {
+        "source": {"kind": "placeholder", "title": "EO/IR turret range not published", "note": "Wescam MX-15D EO/IR targeting turret; detection range against a vehicle is not published. ~30 km estimate."}, "confidence": "low"
+      },
+      "weapons.0.rangeKm": {"source": {"kind": "placeholder", "title": "Range not on retrieved page", "note": "Roketsan MAM-L laser-guided glide munition; commonly cited ~8 km (up to ~14 km from altitude). The page confirms carriage but not the range. Estimate."}, "confidence": "low"},
+      "weapons.0.magazine": {"source": {"kind": "reference", "title": "Bayraktar TB2 | Wikipedia", "url": "https://en.wikipedia.org/wiki/Bayraktar_TB2", "note": "'four hardpoints' - up to 4 MAM-family munitions."}, "confidence": "medium"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "One munition per engagement (modelling default)."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a laser-guided munition against a point target."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-release not published; modelling estimate."}, "confidence": "low"},
+      "platform.combatRadiusKm": {"source": {"kind": "placeholder", "title": "Datalink-limited", "note": "TB2 line-of-sight control radius ~150 km; greater only with a relay/satcom link. Estimate."}, "confidence": "low"},
+      "platform.speedKmh": {"source": {"kind": "reference", "title": "Bayraktar TB2 | Wikipedia", "url": "https://en.wikipedia.org/wiki/Bayraktar_TB2", "note": "'Maximum speed: 120 knots (222 km/h)'; cruise 130 km/h."}, "confidence": "high"},
+      "platform.payloadKg": {"source": {"kind": "reference", "title": "Bayraktar TB2 | Wikipedia", "url": "https://en.wikipedia.org/wiki/Bayraktar_TB2", "note": "'Payload: 150 kg'."}, "confidence": "high"}
+    }
+  },
+  {
+    "id": "shahed-136",
+    "name": "Shahed-136",
+    "typeId": "uav",
+    "origin": "Iran",
+    "note": "HESA Shahed-136 loitering munition (one-way attack drone; Russian designation Geran-2). The airframe is the weapon: a ~40-50 kg warhead delivered to ~2,500 km one-way. combatRadiusKm records the one-way reach, not a round trip.",
+    "weapons": [
+      {
+        "id": "shahed-136-warhead",
+        "name": "Shahed-136 warhead",
+        "rangeKm": 2500,
+        "massKg": 50,
+        "salvo": 1,
+        "pk": 0.5,
+        "reactionSec": 0,
+        "engages": ["ground"]
+      }
+    ],
+    "platform": {
+      "combatRadiusKm": 2500,
+      "speedKmh": 185,
+      "payloadKg": 50
+    },
+    "provenance": {
+      "weapons.0.rangeKm": {"source": {"kind": "reference", "title": "HESA Shahed 136 | Wikipedia", "url": "https://en.wikipedia.org/wiki/HESA_Shahed_136", "note": "'Operational range: 2,500 km' - the one-way reach of the loitering munition."}, "confidence": "medium"},
+      "weapons.0.massKg": {"source": {"kind": "reference", "title": "HESA Shahed 136 | Wikipedia", "url": "https://en.wikipedia.org/wiki/HESA_Shahed_136", "note": "'Warhead weight: 50 kilograms' (estimated 30-50 kg; a 90 kg variant is reported)."}, "confidence": "medium"},
+      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Launched in swarms; one warhead per airframe. Modelling default of 1."}, "confidence": "low"},
+      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-drone kill probability against a point target not published; estimate."}, "confidence": "low"},
+      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "A pre-programmed one-way munition; no in-flight launch decision. 0 as a modelling placeholder."}, "confidence": "low"},
+      "platform.combatRadiusKm": {"source": {"kind": "reference", "title": "HESA Shahed 136 | Wikipedia", "url": "https://en.wikipedia.org/wiki/HESA_Shahed_136", "note": "'Operational range: 2,500 km'; recorded as the one-way reach (this is a one-way attack drone, not a returning platform)."}, "confidence": "medium"},
+      "platform.speedKmh": {"source": {"kind": "reference", "title": "HESA Shahed 136 | Wikipedia", "url": "https://en.wikipedia.org/wiki/HESA_Shahed_136", "note": "'Maximum speed: Around 185 km/h'."}, "confidence": "high"},
+      "platform.payloadKg": {"source": {"kind": "reference", "title": "HESA Shahed 136 | Wikipedia", "url": "https://en.wikipedia.org/wiki/HESA_Shahed_136", "note": "Warhead ~50 kg (the payload is the warhead)."}, "confidence": "medium"}
+    }
+  }
+]

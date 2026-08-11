@@ -11,8 +11,118 @@
       "speedKmh": 46,
       "crew": 132
     },
+    "weapons": [
+      {
+        "id": "tomahawk",
+        "name": "Tomahawk (BGM-109)",
+        "rangeKm": 1600,
+        "magazine": 12,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      },
+      {
+        "id": "harpoon",
+        "name": "Harpoon (UGM-84)",
+        "rangeKm": 124,
+        "massKg": 691,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tomahawk | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/tomahawk/",
+          "note": "Land-attack ~1,600 km (Block IV/V); sub-launched from VLS/torpedo tubes. Maritime Strike Tomahawk adds anti-ship."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.magazine": {
+        "source": {
+          "kind": "reference",
+          "title": "Virginia-class submarine | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Virginia-class_submarine",
+          "note": "'12 x VLS tubes (for Tomahawk cruise missiles)' on Block I-IV; Block V's Virginia Payload Module adds 28 more (~40 total)."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "Block IC 124 km (unclassified); family 90-240 km. Sub-launched UGM-84 fired encapsulated from torpedo tubes."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "Harpoon | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/harpoon/",
+          "note": "'Launch weight 690.8 kg (surface- & sub-launched)'; 224 kg warhead."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -61,8 +171,54 @@
       "crew": 98,
       "enduranceDays": 90
     },
+    "weapons": [
+      {
+        "id": "tomahawk",
+        "name": "Tomahawk (BGM-109)",
+        "rangeKm": 1600,
+        "salvo": 4,
+        "pk": 0.8,
+        "reactionSec": 60,
+        "engages": [
+          "ground"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "Tomahawk | CSIS Missile Threat",
+          "url": "https://missilethreat.csis.org/missile/tomahawk/",
+          "note": "Land-attack ~1,600 km (Block IV/V); sub-launched from VLS/torpedo tubes. Maritime Strike Tomahawk adds anti-ship."
+        },
+        "confidence": "high"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -112,8 +268,154 @@
       "speedKmh": 65,
       "crew": 64
     },
+    "weapons": [
+      {
+        "id": "zircon",
+        "name": "3M22 Zircon",
+        "rangeKm": 1000,
+        "salvo": 4,
+        "pk": 0.7,
+        "reactionSec": 20,
+        "engages": [
+          "surface",
+          "ground"
+        ]
+      },
+      {
+        "id": "oniks",
+        "name": "P-800 Oniks",
+        "rangeKm": 600,
+        "massKg": 3100,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      },
+      {
+        "id": "kalibr",
+        "name": "Kalibr (3M14/3M54)",
+        "rangeKm": 1500,
+        "salvo": 4,
+        "pk": 0.75,
+        "reactionSec": 60,
+        "engages": [
+          "ground",
+          "surface"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "3M22 Zircon | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/3M22_Zircon",
+          "note": "Putin (2019): up to 1,000 km at Mach 9 against sea and land targets; averaged estimates ~400-450 km. Scramjet hypersonic, fired from Yasen VLS."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "P-800 Oniks | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/P-800_Oniks",
+          "note": "'600 km for Russian ship/sub deployed non-export model'; Oniks-M up to 800 km; export Yakhont 120-300 km by profile. 3,100 kg, 300 kg warhead. Supersonic anti-ship."
+        },
+        "confidence": "medium"
+      },
+      "weapons.1.massKg": {
+        "source": {
+          "kind": "reference",
+          "title": "P-800 Oniks | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/P-800_Oniks",
+          "note": "'Weight: 3,100 kg'."
+        },
+        "confidence": "high"
+      },
+      "weapons.1.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.1.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "3M-54 Kalibr | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/3M-54_Kalibr",
+          "note": "3M14 land-attack ~1,400-2,500 km (US DoD ~1,400-1,500 km; ONI 1,500-2,500 km); 3M54 anti-ship 550-660 km. 500 kg warhead. Sub-launched (Kalibr-PL) from torpedo tubes."
+        },
+        "confidence": "medium"
+      },
+      "weapons.2.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.2.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -163,8 +465,55 @@
       "speedKmh": 37,
       "crew": 52
     },
+    "weapons": [
+      {
+        "id": "kalibr",
+        "name": "Kalibr (3M14/3M54)",
+        "rangeKm": 1500,
+        "salvo": 4,
+        "pk": 0.75,
+        "reactionSec": 60,
+        "engages": [
+          "ground",
+          "surface"
+        ]
+      }
+    ],
     "signature": "low",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "3M-54 Kalibr | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/3M-54_Kalibr",
+          "note": "3M14 land-attack ~1,400-2,500 km (US DoD ~1,400-1,500 km; ONI 1,500-2,500 km); 3M54 anti-ship 550-660 km. 500 kg warhead. Sub-launched (Kalibr-PL) from torpedo tubes."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
@@ -205,8 +554,54 @@
       "speedKmh": 56,
       "crew": 100
     },
+    "weapons": [
+      {
+        "id": "yj-18",
+        "name": "YJ-18",
+        "rangeKm": 540,
+        "salvo": 4,
+        "pk": 0.6,
+        "reactionSec": 30,
+        "engages": [
+          "surface"
+        ]
+      }
+    ],
     "signature": "medium",
     "provenance": {
+      "weapons.0.rangeKm": {
+        "source": {
+          "kind": "reference",
+          "title": "YJ-18 | Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/YJ-18",
+          "note": "US DoD estimate ~540 km; subsonic cruise ~180 km + supersonic sprint ~40 km; 300 kg warhead. Fired from Type 093 torpedo tubes / VLS."
+        },
+        "confidence": "medium"
+      },
+      "weapons.0.salvo": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Salvo size is doctrine-dependent and not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.pk": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Kill probability is not published by any source; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
+      "weapons.0.reactionSec": {
+        "source": {
+          "kind": "placeholder",
+          "title": "Modeling placeholder - not publicly disclosed",
+          "note": "Launch reaction time is not published; modeling default, not sourced."
+        },
+        "confidence": "low"
+      },
       "platform.displacementT": {
         "source": {
           "kind": "reference",
