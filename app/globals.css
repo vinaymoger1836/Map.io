@@ -955,6 +955,55 @@ button {
   border-bottom: 0;
 }
 
+/* Rows in the nation summary select whose inventory is being edited. */
+.wg-table tr.wg-clickable {
+  cursor: pointer;
+}
+
+.wg-table tr.wg-clickable:hover td {
+  background: var(--ink-raised);
+}
+
+.wg-table tr.wg-clickable.on td {
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  color: var(--paper);
+}
+
+/* More deployed than held — never hidden, because the alternative is a nation
+   quietly fielding what it does not own. */
+.wg-table tr.over td {
+  color: #e4572e;
+}
+
+.wg-forces td {
+  vertical-align: middle;
+}
+
+.wg-forces .wg-stepper {
+  display: inline-flex;
+}
+
+.wg-warn {
+  color: #e4572e;
+}
+
+/* "6 left" beside the count heading. */
+.wg-stock {
+  margin-left: 8px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.wg-stock.out {
+  border-color: #e4572e;
+  color: #e4572e;
+}
+
 /* Ring tooltip — what the circle under the pointer is for.
    Pointer-events off throughout: the card follows the cursor, and a card that
    could catch the cursor would flicker itself out of existence. */

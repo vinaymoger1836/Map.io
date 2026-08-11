@@ -1,6 +1,8 @@
 import type { FeatureCollection, Geometry } from 'geojson';
 import { feature } from 'topojson-client';
 
+import { splitAntimeridian } from './antimeridian';
+
 /**
  * Country geometry comes from world-atlas (Natural Earth, TopoJSON). It is
  * fetched rather than bundled so the app stays small; swap COUNTRIES_URL for a
@@ -50,11 +52,15 @@ async function loadCountries(): Promise<{ fc: FC; failed: boolean }> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const topo: any = await getJSON(COUNTRIES_URL);
-    const fc = feature(topo, topo.objects.countries) as unknown as FC;
+    const raw = feature(topo, topo.objects.countries) as unknown as FC;
     // Lift the TopoJSON id into properties so MapLibre filters can reach it.
-    for (const f of fc.features) {
+    for (const f of raw.features) {
       f.properties = { ...(f.properties ?? {}), iso: String(f.id ?? '') };
     }
+    // Russia, Fiji and Antarctica cross the date line, and a filled ring that
+    // crosses it is drawn the long way round — painting Russia would smear its
+    // colour across the Atlantic. Split before anything sees the geometry.
+    const fc = splitAntimeridian(raw);
     return { fc, failed: false };
   } catch (err) {
     console.error('Country geometry failed to load — bloc and border layers will be empty.', err);

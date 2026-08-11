@@ -111,7 +111,14 @@ export function Palette({ wg, color }: { wg: WarGames; color: string }) {
               </select>
               {pickedSystem && <p className="wg-note">{summarise(pickedSystem) || 'No figures recorded yet.'}</p>}
 
-              <h4 className="wg-sub">How many</h4>
+              <h4 className="wg-sub">
+                How many
+                {wg.stockLeft !== null && (
+                  <span className={`wg-stock${wg.stockLeft <= 0 ? ' out' : ''}`}>
+                    {wg.stockLeft <= 0 ? 'none left' : `${wg.stockLeft} left`}
+                  </span>
+                )}
+              </h4>
               <div className="wg-count-row">
                 <div className="wg-stepper">
                   <button onClick={() => setDeployCount(deployCount - 1)} aria-label="One fewer">
@@ -132,12 +139,19 @@ export function Palette({ wg, color }: { wg: WarGames; color: string }) {
                   <button
                     key={n}
                     className={`wg-quick${deployCount === n ? ' on' : ''}`}
+                    disabled={wg.stockLeft !== null && n > wg.stockLeft}
                     onClick={() => setDeployCount(n)}
                   >
                     {n}
                   </button>
                 ))}
               </div>
+              {wg.stockLeft !== null && wg.stockLeft <= 0 && (
+                <p className="wg-note wg-warn">
+                  {wg.activeNation?.name ?? 'This nation'} has none of these left. Raise the holding
+                  in <b>Forces</b>, or take one off the map.
+                </p>
+              )}
 
               <h4 className="wg-sub">Echelon</h4>
               <div className="wg-echelons">

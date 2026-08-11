@@ -264,6 +264,7 @@ and backed up, and is worth committing:
 | --- | --- |
 | `data/board.json` | the working board — nations, units, your special units |
 | `data/systems.json` | systems you authored or edited |
+| `data/forces.json` | what each nation owns, keyed by country id |
 
 `lib/store.ts` is the only file that knows this. It falls back to `localStorage`
 if the route is unavailable — a static export, say — and the console says which
@@ -375,6 +376,7 @@ lib/specs.ts       system specifications, facets, envelopes, provenance
 lib/geo.ts         geodesic circles and distance — no dependency
 lib/store.ts       the document store — the only thing that knows about storage
 lib/munitions.ts   the munitions catalogue, derived from the systems
+lib/forces.ts      national holdings, and what the board has committed
 lib/unitIcons.ts   the canvas icon factory
 lib/warLayers.ts   MapLibre sources and layers for the board
 lib/useWarGames.ts board state and the map wiring
@@ -400,13 +402,45 @@ jobs, so they are three places:
 | --- | --- |
 | **Map** | Arranging the board. Tool, the selected unit and its editors, the deploy palette, what coverage draws — and painting at the foot, because you choose a nation's colour once and then deploy under it for an hour. |
 | **Armaments** | What every system *is*. Search and filter the catalogue, read a spec sheet with its sources, duplicate a library entry to disagree with it, or author a new one in a dialog with the whole schema. |
-| **Forces** | What each nation has. Strength by nation and the order of battle today; national inventory — stock that deploying draws down — is the Phase 3 addition, and it lands here. |
+| **Forces** | What each nation has, and what it owns. Strength by nation, a per-nation inventory that deploying draws down, and the order of battle. |
 
 The system form is a dialog rather than a column, because thirty-odd fields in a
 384 px panel is a scroll inside a scroll. It is portalled to `<body>`: the console
 carries a `backdrop-filter`, and **any filtered ancestor becomes the containing
 block for `position: fixed` descendants**, so an overlay declared inside it is
 silently clipped to the panel's width.
+
+### National inventory
+
+What a country owns, against what it has put on the board. This is
+configuration rather than board state — it lives beside the systems library, so
+switching boards does not make a country forget its army.
+
+**Opt-in by nation.** A country with no holdings recorded deploys without limit,
+exactly as every board did before this existed. Writing an inventory down is a
+decision, not a chore imposed on every nation you paint. Once one exists,
+everything already on the board counts against it immediately — otherwise the
+numbers would be wrong the moment you started.
+
+**Stock blocks at zero.** The palette shows `1 LEFT` beside the count, greys out
+the quick counts that no longer fit, caps the stepper at what remains, and
+refuses the deployment outright at zero. A special unit is checked as a basket:
+every component must fit, because deploying half a carrier group is not a thing
+the board can represent.
+
+**A generic holding and a specific one are different stock.** Twelve unspecified
+fighters do not come out of the forty Su-30MKI; a deployment draws from whichever
+it was made with. Holdings are keyed the same way a deployment records itself —
+by system where there is one, by unit type otherwise.
+
+**More deployed than held is shown, never hidden.** Write an inventory after the
+fact and the shortfall appears in red rather than being quietly absorbed; nothing
+is removed from the board on your behalf. Before a nation is tracked at all,
+though, its deployments are *not* drawn as shortfalls — red means a real
+discrepancy, not "we have not started counting".
+
+Deliberate limit: this is national bookkeeping, not logistics. Nothing models
+basing, readiness or transit.
 
 ### Changing what a deployed unit carries
 
@@ -499,6 +533,21 @@ scripts/        data generation
   and alliance layers come up empty and the panel says so. Drop
   `countries-50m.json` into `public/data/` and repoint `COUNTRIES_URL` for an
   offline build.
+- **Country geometry is repaired on arrival**, by `lib/antimeridian.ts`. Two
+  faults in the source would otherwise show as soon as you paint a country:
+  - *Polygons that cross the date line.* Russia, Fiji and Antarctica are stored
+    with a jump from 179.87 to -180, which says nothing about which way the shape
+    continues; a fill takes the 359.9° path back and smears the colour across the
+    Atlantic. Each crossing ring is unwrapped into one continuous path, then cut
+    into 360°-wide bands and shifted back into range. The split is idempotent,
+    and an edge lying along the ±180 seam is exempt so a legitimately full-width
+    shape is not re-cut on every load.
+  - *Rings that enclose nothing.* Antarctica's first ring is 257 points all at
+    latitude -90 — a line, not an outline. Since GeoJSON reads the first ring as
+    the exterior, the real coastline that follows was treated as a *hole*, and
+    painting the continent filled a band across the middle and left the lobes
+    hollow. Zero-area rings are dropped, which promotes the coastline to
+    exterior. Well-formed polygons pass through untouched, by identity.
 - **Sea ice extent is illustrative**, hand-fitted to typical modern maxima and
   minima. Use NSIDC data for anything quantitative.
 - **War Games units are markers, not a model.** Nothing moves, shoots, spots or

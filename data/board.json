@@ -9,6 +9,11 @@
       "iso": "392",
       "name": "Japan",
       "color": "#8B6FD6"
+    },
+    "643": {
+      "iso": "643",
+      "name": "Russia",
+      "color": "#D9534F"
     }
   },
   "units": [
@@ -186,7 +191,6 @@
       "typeId": "destroyer",
       "echelonId": "ship",
       "systemId": "arleigh-burke",
-      "count": 1,
       "loadout": [
         {
           "id": "harpoon",
@@ -202,7 +206,8 @@
         {
           "id": "cj-10"
         }
-      ]
+      ],
+      "count": 1
     }
   ],
   "formations": [

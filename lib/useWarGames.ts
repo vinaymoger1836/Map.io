@@ -45,6 +45,19 @@ import {
   type TargetClass,
 } from './specs';
 import { buildMunitions, type MunitionCatalogue } from './munitions';
+import {
+  EMPTY_FORCES,
+  canAfford,
+  costOf,
+  holdingKey,
+  keyOf,
+  remaining,
+  reviveForces,
+  tally,
+  type Forces,
+  type Holding,
+  type Tally,
+} from './forces';
 import { getStore, readDoc, readWithLegacyFallback, writeDoc } from './store';
 import { ensureIcons, type IconSpec } from './unitIcons';
 import {
@@ -113,6 +126,15 @@ export interface WarGames {
   deployCount: number;
   setDeployCount: (n: number) => void;
 
+  /** What each nation owns. Empty for a nation means no limit. */
+  forces: Forces;
+  /** Held, deployed and remaining for one nation, board included. */
+  nationTally: (iso: string) => Tally[];
+  setHolding: (iso: string, holding: Holding) => void;
+  removeHolding: (iso: string, key: string) => void;
+  /** How many of the current pick the active nation can still deploy; null = untracked. */
+  stockLeft: number | null;
+
   /** The library plus the player's own, merged. */
   systems: SystemSpec[];
   /** Every munition any system carries, keyed by id — the re-arming list. */
@@ -166,6 +188,7 @@ export interface WarGames {
 
 const BOARD_DOC = 'board';
 const SYSTEMS_DOC = 'systems';
+const FORCES_DOC = 'forces';
 /** How many board states undo remembers. Enough for a session's mistakes. */
 const HISTORY_LIMIT = 50;
 
@@ -223,6 +246,7 @@ export function useWarGames({
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
+  const [forces, setForces] = useState<Forces>(EMPTY_FORCES);
   const [storageKind, setStorageKind] = useState<'files' | 'browser' | 'unknown'>('unknown');
 
   const boardRef = useRef(board);
@@ -234,6 +258,7 @@ export function useWarGames({
   const countRef = useRef(deployCount);
   const compositionRef = useRef(pendingComposition);
   const coverageRef = useRef(coverage);
+  const forcesRef = useRef(forces);
   const countriesRef = useRef<Map<string, CountryOption>>(new Map());
   const hydratedRef = useRef(false);
 
@@ -246,6 +271,7 @@ export function useWarGames({
   countRef.current = deployCount;
   compositionRef.current = pendingComposition;
   coverageRef.current = coverage;
+  forcesRef.current = forces;
 
   /* ---------------- persistence and history ---------------- */
 
@@ -324,9 +350,10 @@ export function useWarGames({
     let cancelled = false;
     (async () => {
       const store = await getStore();
-      const [saved, custom, shipped] = await Promise.all([
+      const [saved, custom, heldForces, shipped] = await Promise.all([
         readWithLegacyFallback<unknown>(BOARD_DOC, LEGACY_BOARD_KEY),
         readDoc<SystemSpec[]>(SYSTEMS_DOC),
+        readDoc<unknown>(FORCES_DOC),
         fetch('/data/systems.json')
           .then((r) => (r.ok ? r.json() : []))
           .catch(() => []),
@@ -337,6 +364,7 @@ export function useWarGames({
       boardRef.current = revived;
       setBoard(revived);
       setCustomSystems(Array.isArray(custom) ? custom : []);
+      setForces(reviveForces(heldForces));
       setLibrary(Array.isArray(shipped) ? shipped : []);
       setStorageKind(store.kind);
       loadedRef.current = true;
@@ -359,6 +387,66 @@ export function useWarGames({
     const timer = setTimeout(() => void writeDoc(SYSTEMS_DOC, customSystems), 400);
     return () => clearTimeout(timer);
   }, [customSystems]);
+
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    const timer = setTimeout(() => void writeDoc(FORCES_DOC, forces), 400);
+    return () => clearTimeout(timer);
+  }, [forces]);
+
+  /* ---------------- national forces ---------------- */
+
+  /** Writes one holding, replacing the line for that item or adding it. */
+  const setHolding = useCallback((iso: string, holding: Holding) => {
+    const key = keyOf(holding);
+    const count = Math.max(0, Math.round(holding.count) || 0);
+    setForces((prev) => {
+      const held = prev[iso] ?? [];
+      const next = held.some((h) => keyOf(h) === key)
+        ? held.map((h) => (keyOf(h) === key ? { ...holding, count } : h))
+        : [...held, { ...holding, count }];
+      return { ...prev, [iso]: next };
+    });
+  }, []);
+
+  const removeHolding = useCallback((iso: string, key: string) => {
+    setForces((prev) => {
+      const held = prev[iso];
+      if (!held) return prev;
+      const next = held.filter((h) => keyOf(h) !== key);
+      // A nation with no holdings left keeps no inventory at all, which is
+      // meaningfully different from one holding zero of everything: it goes back
+      // to deploying without limit.
+      if (!next.length) {
+        const { [iso]: _dropped, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [iso]: next };
+    });
+  }, []);
+
+  const nationTally = useCallback(
+    (iso: string): Tally[] => tally(forces, board, iso),
+    [forces, board]
+  );
+
+  /** What the palette can still place of whatever is picked. */
+  const stockLeft = useMemo(() => {
+    if (pick.kind === 'formation') {
+      // A special unit is only as available as its scarcest component.
+      const formation = findFormation(pick.formationId, board.formations);
+      if (!formation || !activeIso) return null;
+      const limits = pendingComposition
+        .filter((part) => part.count > 0)
+        .map((part) => {
+          const left = remaining(forces, board, activeIso, part.typeId, part.systemId);
+          return left === null ? null : Math.floor(left / part.count);
+        })
+        .filter((n): n is number => n !== null);
+      return limits.length ? Math.max(0, Math.min(...limits)) : null;
+    }
+    return remaining(forces, board, activeIso, pick.typeId, pick.systemId);
+  }, [forces, board, activeIso, pick, pendingComposition]);
 
   const systems = useMemo(() => mergeSystems(library, customSystems), [library, customSystems]);
   /* Derived from the systems rather than authored, so a weapon added in the
@@ -555,9 +643,15 @@ export function useWarGames({
     );
   }, []);
 
-  const setDeployCount = useCallback((n: number) => {
-    setDeployCountState(Number.isFinite(n) ? Math.max(1, Math.round(n)) : 1);
-  }, []);
+  const setDeployCount = useCallback(
+    (n: number) => {
+      const wanted = Number.isFinite(n) ? Math.max(1, Math.round(n)) : 1;
+      // Never let the box ask for more than the nation holds; typing 50 when
+      // there are 6 should land on 6, not be silently refused on the map.
+      setDeployCountState(stockLeft === null ? wanted : Math.max(1, Math.min(wanted, stockLeft)));
+    },
+    [stockLeft]
+  );
 
   const chooseFormation = useCallback((formationId: string) => {
     const formation = findFormation(formationId, boardRef.current.formations);
@@ -595,6 +689,19 @@ export function useWarGames({
             systemId: current.systemId,
             count: countRef.current,
           };
+
+    // A nation cannot field what it does not own. Nations keeping no inventory
+    // are unaffected: canAfford returns ok for anything it is not tracking.
+    const afford = canAfford(forcesRef.current, boardRef.current, iso, costOf(unit));
+    if (!afford.ok) {
+      setError(
+        unit.kind === 'formation'
+          ? 'Not enough in stock for every part of that special unit — check Forces.'
+          : 'None of those left in stock — check Forces.'
+      );
+      return;
+    }
+    setError(null);
 
     commit((prev) => ({ ...prev, units: [...prev.units, unit] }));
   }, [commit]);
@@ -672,9 +779,15 @@ export function useWarGames({
 
   const setUnitCount = useCallback(
     (id: string, count: number) =>
-      patchUnit(id, (u) =>
-        u.kind === 'unit' ? { ...u, count: Math.max(1, Math.round(count) || 1) } : u
-      ),
+      patchUnit(id, (u) => {
+        if (u.kind !== 'unit') return u;
+        const wanted = Math.max(1, Math.round(count) || 1);
+        // Raising the count spends stock the same way deploying does, so the
+        // ceiling is what is left plus what this unit already holds.
+        const left = remaining(forcesRef.current, boardRef.current, u.iso, u.typeId, u.systemId);
+        const cap = left === null ? wanted : u.count + left;
+        return { ...u, count: Math.max(1, Math.min(wanted, cap)) };
+      }),
     [patchUnit]
   );
 
@@ -938,6 +1051,11 @@ export function useWarGames({
     setEchelonId,
     deployCount,
     setDeployCount,
+    forces,
+    nationTally,
+    setHolding,
+    removeHolding,
+    stockLeft,
     systems,
     munitions,
     saveSystem,
