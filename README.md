@@ -374,15 +374,59 @@ lib/warGames.ts    unit and formation catalogues, echelons, nation colours,
 lib/specs.ts       system specifications, facets, envelopes, provenance
 lib/geo.ts         geodesic circles and distance — no dependency
 lib/store.ts       the document store — the only thing that knows about storage
+lib/munitions.ts   the munitions catalogue, derived from the systems
 lib/unitIcons.ts   the canvas icon factory
 lib/warLayers.ts   MapLibre sources and layers for the board
 lib/useWarGames.ts board state and the map wiring
 app/api/store/[doc]/route.ts   reads and writes data/*.json
-components/WarGamesPanel.tsx   the console, composition only
-components/wargames/           its blocks: NationBlock, Palette, SelectedUnit,
-                               SystemsEditor, CompositionEditor, SpecSheet,
-                               Coverage, OrderOfBattle, EnvelopeTip
+components/WarGamesPanel.tsx   the console: section nav, composition only
+components/wargames/           MapSection      tool, selection, palette,
+                                               coverage, then paint at the foot
+                               ArmamentsSection the systems catalogue + editor
+                               ForcesSection    per-nation strength
+                               and the parts they use: NationBlock, Palette,
+                               SelectedUnit, LoadoutEditor, CompositionEditor,
+                               SpecSheet, Coverage, OrderOfBattle, EnvelopeTip,
+                               SectionNav, Modal
 ```
+
+### The console's three sections
+
+One long scroll put the colour picker above whatever you were actually doing and
+buried the systems catalogue under the deploy controls. They are three different
+jobs, so they are three places:
+
+| Section | For |
+| --- | --- |
+| **Map** | Arranging the board. Tool, the selected unit and its editors, the deploy palette, what coverage draws — and painting at the foot, because you choose a nation's colour once and then deploy under it for an hour. |
+| **Armaments** | What every system *is*. Search and filter the catalogue, read a spec sheet with its sources, duplicate a library entry to disagree with it, or author a new one in a dialog with the whole schema. |
+| **Forces** | What each nation has. Strength by nation and the order of battle today; national inventory — stock that deploying draws down — is the Phase 3 addition, and it lands here. |
+
+The system form is a dialog rather than a column, because thirty-odd fields in a
+384 px panel is a scroll inside a scroll. It is portalled to `<body>`: the console
+carries a `backdrop-filter`, and **any filtered ancestor becomes the containing
+block for `position: fixed` descendants**, so an overlay declared inside it is
+silently clipped to the panel's width.
+
+### Changing what a deployed unit carries
+
+Select a unit, open **Edit**, and its armament is a list you can add to and take
+from. The change is local to that deployment: re-arming one flight of Su-30s
+changes that flight's rings and nothing else — not the system, not the library,
+not the other Su-30s on the board. `lib/munitions.ts` resolves the loadout
+against the catalogue and hands everything downstream an *effective* spec, so
+rings, tooltips and the spec sheet all redraw without any of them knowing that
+loadouts exist.
+
+**The catalogue is derived, never authored.** Every weapon on every system is a
+row in it, keyed by the munition's own id — which is why the research prompt
+insists the same round gets the same id everywhere. What a system may carry is
+answered in two steps: if it declares `compatible`, that list is exact; otherwise
+it is inferred from what other systems in the same domain carry. The inferred
+answer is right at the domain level and costs nothing — it will not put a
+Tomahawk on a MiG or a Meteor in a VLS cell — but it will offer a Rafale an
+R-37M it cannot carry. Declaring `compatible` on that airframe is the fix, and
+the interface says which of the two you are looking at.
 
 Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`; adding a
 built-in special unit is one entry in `FORMATIONS`. The panel and the map both

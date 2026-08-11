@@ -562,7 +562,350 @@ button {
 }
 
 .panel.panel-wide {
-  width: 348px;
+  width: 384px;
+}
+
+/* ---------- War Games section nav ---------- */
+
+/* Sticky, because it is the one control that must stay reachable however far
+   down a section you have scrolled. */
+.wg-nav {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  background: var(--ink-panel);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wg-nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 6px 10px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-nav-tab:hover {
+  color: var(--paper);
+}
+
+.wg-nav-tab.on {
+  color: var(--brass);
+  border-bottom-color: var(--brass);
+  background: color-mix(in srgb, var(--brass) 7%, transparent);
+}
+
+.wg-nav-count {
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--paper-dim);
+}
+
+.wg-nav-tab.on .wg-nav-count {
+  border-color: color-mix(in srgb, var(--brass) 50%, transparent);
+  color: var(--brass);
+}
+
+/* ---------- modal ---------- */
+
+.wg-modal-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(4 8 12 / 62%);
+  backdrop-filter: blur(3px);
+}
+
+.wg-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: 100%;
+  background: var(--ink-panel);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--brass);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
+}
+
+.wg-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wg-modal-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.wg-modal-x {
+  padding: 0 6px;
+  background: none;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--paper-dim);
+}
+
+.wg-modal-x:hover {
+  color: var(--paper);
+}
+
+.wg-modal-body {
+  overflow-y: auto;
+  padding: 14px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.wg-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.wg-modal-foot .wg-row {
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+
+.wg-modal-hint {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--paper-dim);
+}
+
+/* The form has room to breathe in a dialog that it never had in the column. */
+.wg-form-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.wg-form-top .wg-field.wide {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.wg-form-top textarea {
+  padding: 5px 6px;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  resize: vertical;
+}
+
+.wg-form-top textarea:focus {
+  outline: none;
+  border-color: var(--brass);
+}
+
+.wg-form .wg-fields {
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+}
+
+.wg-field-label {
+  display: block;
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-btn.accent {
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 45%, var(--rule));
+}
+
+.wg-btn.accent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--brass) 12%, transparent);
+}
+
+/* ---------- loadout ---------- */
+
+.wg-loadout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wg-loadout-head .wg-field-label {
+  margin-top: 0;
+}
+
+.wg-carried {
+  margin: 5px 0 8px;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--rule);
+}
+
+.wg-carried li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px 5px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 55%, transparent);
+}
+
+.wg-carried li:last-child {
+  border-bottom: 0;
+}
+
+.wg-carried-name {
+  flex: 1;
+  font-size: 11.5px;
+  color: var(--paper);
+}
+
+.wg-carried-range {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--brass);
+  font-variant-numeric: tabular-nums;
+}
+
+.wg-munitions {
+  max-height: 190px;
+  overflow-y: auto;
+  margin-top: 5px;
+  border: 1px solid var(--rule);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.wg-munition {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 45%, transparent);
+  text-align: left;
+}
+
+.wg-munition:last-child {
+  border-bottom: 0;
+}
+
+.wg-munition:hover {
+  background: var(--ink-raised);
+}
+
+.wg-munition.on {
+  background: color-mix(in srgb, var(--brass) 13%, transparent);
+}
+
+.wg-munition-name {
+  flex: 1;
+  font-size: 11.5px;
+  color: var(--paper-dim);
+}
+
+.wg-munition.on .wg-munition-name {
+  color: var(--paper);
+}
+
+.wg-munition-name em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.wg-munition-range {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "re-armed" beside the system name, so the card admits it is not standard. */
+.wg-tag {
+  margin-left: 7px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--brass) 50%, transparent);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+/* ---------- forces table ---------- */
+
+.wg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.wg-table th {
+  padding: 0 0 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--paper-dim);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wg-table td {
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 55%, transparent);
+  color: var(--paper);
+}
+
+.wg-table .num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.wg-table tr:last-child td {
+  border-bottom: 0;
 }
 
 /* Ring tooltip — what the circle under the pointer is for.

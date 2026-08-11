@@ -18,7 +18,9 @@ import {
   type DeployedUnit,
 } from '@/lib/warGames';
 import { systemById, systemsForType } from '@/lib/specs';
+import { effectiveSpec, isRearmed } from '@/lib/munitions';
 import { CompositionEditor, CompositionList } from './CompositionEditor';
+import { LoadoutEditor } from './LoadoutEditor';
 import { SpecSheet } from './SpecSheet';
 import { NEUTRAL, deployedPreview } from './icons';
 
@@ -26,7 +28,11 @@ export function SelectedUnit({ wg, unit }: { wg: WarGames; unit: DeployedUnit })
   const [editing, setEditing] = useState(false);
   const { board, systems } = wg;
   const color = board.nations[unit.iso]?.color ?? NEUTRAL;
-  const spec = unit.kind === 'unit' ? systemById(systems, unit.systemId) : undefined;
+  const stored = unit.kind === 'unit' ? systemById(systems, unit.systemId) : undefined;
+  // What it is actually carrying, which is what the map is drawing — showing the
+  // stored fit here while the rings come from another would be a quiet lie.
+  const spec = unit.kind === 'unit' ? effectiveSpec(stored, unit.loadout, wg.munitions) : undefined;
+  const rearmed = unit.kind === 'unit' && isRearmed(stored, unit.loadout);
   const type = unit.kind === 'unit' ? UNIT_BY_ID.get(unit.typeId) : undefined;
 
   return (
@@ -54,7 +60,10 @@ export function SelectedUnit({ wg, unit }: { wg: WarGames; unit: DeployedUnit })
       ) : (
         spec && (
           <>
-            <h4 className="wg-sub">{spec.name}</h4>
+            <h4 className="wg-sub">
+              {spec.name}
+              {rearmed && <span className="wg-tag">re-armed</span>}
+            </h4>
             <SpecSheet spec={spec} compact />
           </>
         )
@@ -130,6 +139,9 @@ export function SelectedUnit({ wg, unit }: { wg: WarGames; unit: DeployedUnit })
                       </button>
                     ))}
                   </div>
+
+                  <h4 className="wg-sub">Armament</h4>
+                  <LoadoutEditor wg={wg} unit={unit} />
                 </>
               )}
             </>

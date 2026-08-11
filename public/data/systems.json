@@ -1304,7 +1304,8 @@
     "reactionSec": 60,
     "engages": [
      "ground"
-    ]
+    ],
+    "id": "jassm"
    }
   ],
   "signature": "medium",
@@ -1401,7 +1402,8 @@
     "reactionSec": 60,
     "engages": [
      "ground"
-    ]
+    ],
+    "id": "jassm"
    }
   ],
   "signature": "low",
@@ -1516,7 +1518,8 @@
     "reactionSec": 60,
     "engages": [
      "ground"
-    ]
+    ],
+    "id": "jassm"
    }
   ],
   "signature": "high",
@@ -1641,7 +1644,7 @@
   "note": "Land MR-SAM configuration of the IAI/DRDO Barak 8. Manufacturer range 70 km (some reporting ~90-100 km); the naval LR-SAM reaches 100 km and the Barak-8ER 150 km. A land firing unit has three mobile launchers of eight missiles each (24 ready) plus a long-range radar of the MF-STAR family. Radar detection range omitted: the retrieved page states it only for the naval MF-STAR, not the land radar.",
   "weapons": [
    {
-    "name": "Barak 8",
+    "name": "Barak 8 (MR-SAM, land)",
     "rangeKm": 70,
     "magazine": 8,
     "salvo": 2,
@@ -1650,7 +1653,8 @@
     "engages": [
      "air",
      "ballistic-short"
-    ]
+    ],
+    "id": "barak-8-mrsam"
    }
   ],
   "provenance": {
@@ -5065,13 +5069,14 @@
   "note": "Mobile coastal-defence system (NATO SS-C-5 'Stooge') firing the P-800 Oniks/Yakhont (SS-N-26) supersonic (Mach 2.5) anti-ship / land-attack cruise missile. A battery has four launcher vehicles of two missiles each. Sea-skimming terminal phase; fire-and-forget active/passive radar seeker.",
   "weapons": [
    {
-    "name": "P-800 Oniks",
+    "name": "P-800 Oniks (coastal)",
     "rangeKm": 450,
     "magazine": 2,
     "engages": [
      "surface",
      "ground"
-    ]
+    ],
+    "id": "oniks-coastal"
    }
   ],
   "provenance": {

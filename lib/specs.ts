@@ -164,6 +164,13 @@ export interface SystemSpec {
   weapons?: WeaponFacet[];
   platform?: PlatformFacet;
   signature?: 'low' | 'medium' | 'high';
+  /**
+   * Munition ids this system can be armed with, where the exact answer is known.
+   * Omitted, compatibility is inferred from what other systems in the same
+   * domain carry — right at the domain level, and free. Declare this on the
+   * airframes where that is not good enough.
+   */
+  compatible?: string[];
   /** Keyed by dotted field path: 'sensor.detectionKm', 'weapons.0.rangeKm'. */
   provenance?: Record<string, Provenance>;
   /** Authored by the player. Overrides a library entry of the same id. */

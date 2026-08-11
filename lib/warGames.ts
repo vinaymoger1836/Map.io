@@ -433,6 +433,15 @@ export interface DeployedGeneric extends DeployedBase {
   echelonId: string;
   /** The specific system deployed, where one was chosen. */
   systemId?: string;
+  /**
+   * Munition ids this deployment is carrying, when it has been re-armed.
+   *
+   * Local to the unit on purpose: swapping a Su-30's air-to-air missiles for
+   * anti-ship ones changes that one flight's reach and nothing else — not the
+   * system, not the library, not the eleven other Su-30s on the board. Absent
+   * means it carries whatever its system carries as standard.
+   */
+  loadout?: string[];
   /** How many. This is the number national stock is drawn down by. */
   count: number;
 }
@@ -512,7 +521,12 @@ function reviveUnit(raw: unknown, custom: Formation[]): DeployedUnit | null {
   // Boards written before counts existed are one of whatever they were.
   const count = typeof u.count === 'number' && u.count > 0 ? Math.round(u.count) : 1;
   const systemId = typeof u.systemId === 'string' ? u.systemId : undefined;
-  return { kind: 'unit', id, iso, lngLat, name, typeId, echelonId, systemId, count };
+  // An empty array is a real state — a unit deliberately carrying nothing — and
+  // must survive the round trip distinctly from "never re-armed".
+  const loadout = Array.isArray(u.loadout)
+    ? u.loadout.filter((m): m is string => typeof m === 'string')
+    : undefined;
+  return { kind: 'unit', id, iso, lngLat, name, typeId, echelonId, systemId, loadout, count };
 }
 
 function reviveFormation(raw: unknown): Formation | null {

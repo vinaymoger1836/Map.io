@@ -33,6 +33,7 @@ import {
   type SystemSpec,
   type TargetClass,
 } from './specs';
+import { buildMunitions, effectiveSpec } from './munitions';
 import { distanceKm, geodesicCircle } from './geo';
 import { unitIconId } from './unitIcons';
 
@@ -557,6 +558,7 @@ export function envelopesToGeoJSON(
   targetAltM: number
 ) {
   const features: unknown[] = [];
+  const munitions = buildMunitions(systems);
 
   for (const unit of units) {
     const color = nations[unit.iso]?.color ?? '#9AA7B4';
@@ -568,7 +570,9 @@ export function envelopesToGeoJSON(
       specs = unit.composition.filter((p) => p.count > 0).map((p) => systemById(systems, p.systemId));
       envelopes = combineEnvelopes(specs);
     } else {
-      const spec = systemById(systems, unit.systemId);
+      // Whatever this deployment is actually carrying, which is not necessarily
+      // what its system carries as standard.
+      const spec = effectiveSpec(systemById(systems, unit.systemId), unit.loadout, munitions);
       specs = [spec];
       envelopes = envelopesFor(spec);
     }

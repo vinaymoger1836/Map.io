@@ -104,6 +104,13 @@ const stats = { figures: 0, cited: 0, placeholder: 0, legacy: 0, byConfidence: {
 /** Every use of a shared munition id, so the same round can be checked platform to platform. */
 const munitions = new Map();
 
+/** The same fallback key lib/munitions.ts uses when a weapon declares no id. */
+const slug = (name) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
 for (const [index, spec] of raw.entries()) {
   const where = `#${index} ${spec?.id ?? spec?.name ?? '(unnamed)'}`;
 
@@ -142,15 +149,20 @@ for (const [index, spec] of raw.entries()) {
     if (typeof weapon.rangeKm !== 'number' || weapon.rangeKm <= 0) fail(w, 'rangeKm is required and must be > 0');
     if (weapon.pk !== undefined && (weapon.pk < 0 || weapon.pk > 1)) fail(w, `pk must be 0–1 (got ${weapon.pk})`);
     for (const t of weapon.engages ?? []) if (!TARGETS.has(t)) fail(w, `engages unknown class "${t}"`);
-    if (weapon.id !== undefined) {
-      if (typeof weapon.id !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(weapon.id)) {
-        fail(w, `weapon id must be lowercase letters, digits and dashes (got "${weapon.id}")`);
-      } else {
-        if (!munitions.has(weapon.id)) munitions.set(weapon.id, []);
-        munitions.get(weapon.id).push({ system: spec.id, weapon });
-      }
+    if (weapon.id !== undefined && (typeof weapon.id !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(weapon.id))) {
+      fail(w, `weapon id must be lowercase letters, digits and dashes (got "${weapon.id}")`);
     } else {
-      warn(w, `"${weapon.name ?? 'unnamed'}" has no id — it cannot be matched to the same round on another platform`);
+      // Keyed exactly as lib/munitions.ts keys it, slug fallback included — a
+      // catalogue the validator checks differently from the one the app builds
+      // is a check of nothing.
+      const key = weapon.id ?? (weapon.name ? slug(weapon.name) : undefined);
+      if (key) {
+        if (!munitions.has(key)) munitions.set(key, []);
+        munitions.get(key).push({ system: spec.id, weapon });
+      }
+      if (weapon.id === undefined) {
+        warn(w, `"${weapon.name ?? 'unnamed'}" has no id — matched by name, which is fragile`);
+      }
     }
   }
 
@@ -212,6 +224,26 @@ for (const [index, spec] of raw.entries()) {
 /* A munition is one object in the world, so an SM-6 must not reach 240 km from a
    Burke and 370 km from a Ticonderoga. The research is done a family at a time,
    which is exactly the arrangement that lets a round drift between batches. */
+/* The catalogue keys on the declared id, falling back to a slug of the name —
+   which means an entry that omits its id can hash to a different key and carry
+   different figures without the check below ever comparing them. Two keys
+   wearing one name is the visible symptom: the re-arming list shows the round
+   twice. Either they are the same round (unify the id) or they are not (say so
+   in the name). */
+const namesToKeys = new Map();
+for (const [id, uses] of munitions) {
+  for (const { weapon } of uses) {
+    if (!weapon.name) continue;
+    if (!namesToKeys.has(weapon.name)) namesToKeys.set(weapon.name, new Set());
+    namesToKeys.get(weapon.name).add(id);
+  }
+}
+for (const [name, keys] of namesToKeys) {
+  if (keys.size > 1) {
+    fail(`munition "${name}"`, `appears under ${keys.size} ids (${[...keys].join(', ')}) — it will be listed twice when re-arming`);
+  }
+}
+
 let shared = 0;
 for (const [id, uses] of munitions) {
   if (uses.length < 2) continue;

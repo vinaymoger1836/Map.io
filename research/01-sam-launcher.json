@@ -1339,7 +1339,7 @@
   "note": "Land MR-SAM configuration of the IAI/DRDO Barak 8. Manufacturer range 70 km (some reporting ~90-100 km); the naval LR-SAM reaches 100 km and the Barak-8ER 150 km. A land firing unit has three mobile launchers of eight missiles each (24 ready) plus a long-range radar of the MF-STAR family. Radar detection range omitted: the retrieved page states it only for the naval MF-STAR, not the land radar.",
   "weapons": [
    {
-    "name": "Barak 8",
+    "name": "Barak 8 (MR-SAM, land)",
     "rangeKm": 70,
     "magazine": 8,
     "salvo": 2,
@@ -1348,7 +1348,8 @@
     "engages": [
      "air",
      "ballistic-short"
-    ]
+    ],
+    "id": "barak-8-mrsam"
    }
   ],
   "provenance": {

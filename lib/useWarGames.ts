@@ -43,6 +43,7 @@ import {
   type SystemSpec,
   type TargetClass,
 } from './specs';
+import { buildMunitions, type MunitionCatalogue } from './munitions';
 import { getStore, readDoc, readWithLegacyFallback, writeDoc } from './store';
 import { ensureIcons, type IconSpec } from './unitIcons';
 import {
@@ -113,6 +114,8 @@ export interface WarGames {
 
   /** The library plus the player's own, merged. */
   systems: SystemSpec[];
+  /** Every munition any system carries, keyed by id — the re-arming list. */
+  munitions: MunitionCatalogue;
   saveSystem: (spec: SystemSpec) => void;
   deleteSystem: (id: string) => void;
   /** Where configuration is being kept, so the interface can say so. */
@@ -131,6 +134,8 @@ export interface WarGames {
   renameUnit: (id: string, name: string | undefined) => void;
   setUnitEchelon: (id: string, echelonId: string) => void;
   setUnitSystem: (id: string, systemId: string | undefined) => void;
+  /** Re-arm one deployment. `undefined` puts it back on its system's own fit. */
+  setUnitLoadout: (id: string, loadout: string[] | undefined) => void;
   setUnitCount: (id: string, count: number) => void;
   setUnitComposition: (id: string, composition: Component[]) => void;
   removeUnit: (id: string) => void;
@@ -355,6 +360,9 @@ export function useWarGames({
   }, [customSystems]);
 
   const systems = useMemo(() => mergeSystems(library, customSystems), [library, customSystems]);
+  /* Derived from the systems rather than authored, so a weapon added in the
+     editor is immediately available to arm a deployed unit with. */
+  const munitions = useMemo(() => buildMunitions(systems), [systems]);
   const systemsRef = useRef(systems);
   systemsRef.current = systems;
 
@@ -655,6 +663,12 @@ export function useWarGames({
     [patchUnit]
   );
 
+  const setUnitLoadout = useCallback(
+    (id: string, loadout: string[] | undefined) =>
+      patchUnit(id, (u) => (u.kind === 'unit' ? { ...u, loadout } : u)),
+    [patchUnit]
+  );
+
   const setUnitCount = useCallback(
     (id: string, count: number) =>
       patchUnit(id, (u) =>
@@ -924,6 +938,7 @@ export function useWarGames({
     deployCount,
     setDeployCount,
     systems,
+    munitions,
     saveSystem,
     deleteSystem,
     storageKind,
@@ -937,6 +952,7 @@ export function useWarGames({
     renameUnit,
     setUnitEchelon,
     setUnitSystem,
+    setUnitLoadout,
     setUnitCount,
     setUnitComposition,
     removeUnit,

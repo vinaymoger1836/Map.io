@@ -83,6 +83,11 @@
       "typeId": "fighter",
       "echelonId": "squadron",
       "systemId": "f-16c",
+      "loadout": [
+        "aim-120c-amraam",
+        "aim-9x-sidewinder",
+        "harpoon"
+      ],
       "count": 12
     },
     {

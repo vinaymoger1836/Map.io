@@ -1,10 +1,7 @@
 'use client';
 
 /**
- * What you are about to put on the board.
- *
- * Three catalogues behind one set of tabs: single units, formations of them,
- * and the systems that give either one its specifications.
+ * What you are about to put on the board: a single unit, or a formation of them.
  */
 
 import { useState } from 'react';
@@ -24,10 +21,12 @@ import {
 } from '@/lib/warGames';
 import { summarise, systemById, systemsForType } from '@/lib/specs';
 import { CompositionEditor } from './CompositionEditor';
-import { SystemsEditor } from './SystemsEditor';
 import { formationPreview, unitPreview } from './icons';
 
-type Catalogue = 'unit' | 'formation' | 'system';
+/* Systems used to be a third tab here. It is a catalogue you browse and edit,
+   not a thing you place, so it moved to the Armaments section — this palette is
+   only what you are about to put on the board. */
+type Catalogue = 'unit' | 'formation';
 
 export function Palette({ wg, color }: { wg: WarGames; color: string }) {
   const [catalogue, setCatalogue] = useState<Catalogue>('unit');
@@ -49,7 +48,6 @@ export function Palette({ wg, color }: { wg: WarGames; color: string }) {
           [
             ['unit', 'Units'],
             ['formation', 'Special units'],
-            ['system', 'Systems'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -287,8 +285,6 @@ export function Palette({ wg, color }: { wg: WarGames; color: string }) {
           )}
         </>
       )}
-
-      {catalogue === 'system' && <SystemsEditor wg={wg} color={color} />}
     </section>
   );
 }
