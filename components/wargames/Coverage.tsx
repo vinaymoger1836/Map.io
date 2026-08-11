@@ -9,7 +9,7 @@
  */
 
 import type { WarGames } from '@/lib/useWarGames';
-import type { EnvelopeKind } from '@/lib/specs';
+import { TARGET_CLASSES, type EnvelopeKind } from '@/lib/specs';
 
 const MODES = [
   ['off', 'Off', 'No coverage drawn'],
@@ -35,6 +35,7 @@ const ALTITUDES: [number, string][] = [
 export function Coverage({ wg }: { wg: WarGames }) {
   const { coverage } = wg;
   const horizonMatters = coverage.kinds.detection && coverage.mode !== 'off';
+  const allTargets = TARGET_CLASSES.every(({ id }) => coverage.targets[id]);
 
   return (
     <section className="wg-block">
@@ -68,6 +69,32 @@ export function Coverage({ wg }: { wg: WarGames }) {
           </button>
         ))}
       </div>
+
+      {coverage.mode !== 'off' && (
+        <>
+          <h4 className="wg-sub">Against</h4>
+          <div className="wg-kinds">
+            {TARGET_CLASSES.map(({ id, label }) => (
+              <button
+                key={id}
+                className={`wg-kind${coverage.targets[id] ? ' on' : ''}`}
+                aria-pressed={coverage.targets[id]}
+                onClick={() => wg.toggleCoverageTarget(id)}
+                title={`Reaches that apply to ${label.toLowerCase()}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {!allTargets && (
+            <p className="wg-note">
+              A destroyer’s 1,600 km land-attack reach and its 240 km air-defence reach are different
+              answers to different questions. Turn off <b>Ground</b> and the first stops crowding out
+              the second. Rings whose spec never said what they were for stay on either way.
+            </p>
+          )}
+        </>
+      )}
 
       {horizonMatters && (
         <>

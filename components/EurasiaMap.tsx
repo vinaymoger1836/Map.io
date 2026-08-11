@@ -9,6 +9,7 @@ import ControlPanel from './ControlPanel';
 import DetailPanel, { type Selection } from './DetailPanel';
 import ReadoutRail from './ReadoutRail';
 import WarGamesPanel from './WarGamesPanel';
+import { EnvelopeTip } from './wargames/EnvelopeTip';
 
 import { loadMapData, type MapData } from '@/lib/data';
 import {
@@ -91,6 +92,7 @@ export default function EurasiaMap() {
   const [errorBurst, setErrorBurst] = useState<string | null>(null);
   const [zoom, setZoom] = useState(HOME.zoom);
   const [cursor, setCursor] = useState<[number, number] | null>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [mode, setMode] = useState<Mode>('situation');
@@ -189,6 +191,8 @@ export default function EurasiaMap() {
     map.on('zoom', () => setZoom(map.getZoom()));
     map.on('mousemove', (e) => setCursor([e.lngLat.lng, e.lngLat.lat]));
     map.on('mouseout', () => setCursor(null));
+    // Only so a tooltip near the right edge knows to sit on the other side.
+    map.on('resize', () => setCanvasWidth(map.getCanvas().clientWidth));
 
     let disposed = false;
     disposeRef.current = () => {
@@ -208,6 +212,7 @@ export default function EurasiaMap() {
     const startWhenReady = () => {
       if (disposed || !styleLoaded || !data) return;
       dataRef.current = data;
+      setCanvasWidth(map.getCanvas().clientWidth);
       hydrate(map);
       if (!globeIsUsable(map)) {
         setGlobeSupported(false);
@@ -491,6 +496,10 @@ export default function EurasiaMap() {
         )}
 
         {mode === 'wargames' && war.loading && <div className="wg-loading">Loading world roster…</div>}
+
+        {mode === 'wargames' && war.hoveredEnvelope && (
+          <EnvelopeTip hover={war.hoveredEnvelope} width={canvasWidth} />
+        )}
 
         {selection && <DetailPanel selection={selection} onClose={() => setSelection(null)} />}
       </div>

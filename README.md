@@ -207,23 +207,35 @@ The **Systems** tab browses the shipped library, and duplicating an entry is how
 you disagree with a figure: library entries are read-only, your copy is yours,
 and a copy with the same id replaces the original everywhere.
 
-**About the numbers — the shipped library is not sourced.** Every figure in
-`public/data/systems.json` today was written from memory: recalled, not looked
-up, and citing nothing. Treat it as scaffolding. Three tiers, recorded per field
-as `confidence` and shown as a dot beside the value:
+**About the numbers.** `public/data/systems.json` holds 104 researched systems:
+917 figures carry provenance, and **425 of them carry the URL of a page someone
+actually opened**. The rest are declared estimates, and the distinction is
+recorded in the data rather than implied — `source.kind: "placeholder"` may not
+carry a URL, and the validator fails the file if one does. Confidence is per
+field, shown as a dot beside the value:
 
-- **high** — recalled and widely published: hull displacement, VLS cells, crew.
-- **medium** — recalled but conditional or contested: every radar and missile
-  range. A range is meaningless without the target it assumes; the S-400's
-  "600 km" is against a large, high, non-manoeuvring target.
-- **low** — invented. Kill probability, reaction time and salvo size are not
-  published by anyone; they exist so the engagement model has something to
-  multiply.
+- **high** (223) — sourced and unambiguous: hull displacement, VLS cells, crew.
+- **medium** (197) — sourced but conditional or contested. A range means nothing
+  without the target it assumes; the S-400's "600 km" is against a large, high,
+  non-manoeuvring target, and each figure's `source.note` records that condition.
+- **low** (497) — mostly kill probability, reaction time and salvo size, which
+  nobody publishes. They exist so the engagement model has something to multiply,
+  and they say so.
 
-To replace them with figures that carry real citations, hand
-`scripts/systems-research-prompt.md` to a Claude with web search, then check what
-comes back. `scripts/systems-topup-prompt.md` fills gaps in files already
-researched without discarding the citations they already carry.
+Two detection ranges (S-350, SAMP/T) are model estimates rather than citations:
+the research declined to record a figure its retrieved page did not state, which
+was correct but left those batteries with no detection ring at all. Both are
+marked `placeholder` with the reasoning in the note.
+
+Known gap: the seven carriers and two amphibious ships carry no sensor or
+armament, so they draw no ring of their own — their reach is currently the air
+wing and escorts around them. That family is worth one more pass with
+`scripts/systems-topup-prompt.md`.
+
+To research further systems, hand `scripts/systems-research-prompt.md` to a
+Claude with web search, then check what comes back.
+`scripts/systems-topup-prompt.md` fills gaps in files already researched without
+discarding the citations they already carry.
 
 ```bash
 # one request per family; save each response into research/
@@ -231,12 +243,16 @@ node scripts/merge-systems.mjs                      # combine, and see what is l
 node scripts/validate-systems.mjs research/systems.merged.json
 node scripts/merge-systems.mjs --write              # install as the library
 
+node scripts/validate-systems.mjs --all             # every warning, not the first 25
 node scripts/generate-systems.mjs                   # or regenerate the placeholders
 ```
 
 The validator reports how many figures carry a source URL — the number that says
 whether the library is research or recollection. It also rejects a URL attached
-to a `placeholder` source, which is an estimate wearing a citation's clothes.
+to a `placeholder` source, which is an estimate wearing a citation's clothes, and
+checks that a munition shared between platforms carries the same figures on both,
+since the research arrives one family at a time and that is exactly the
+arrangement in which an SM-6 grows a hundred kilometres between batches.
 
 ### Where things are saved
 
@@ -276,6 +292,24 @@ Four modes, because the useful views are narrow ones:
 | **Selected** | Only the unit you have selected |
 | **Nation** | Everything the active nation has on the board — this is where a hole in a defence belt becomes visible |
 | **All** | Every unit; overlaps compound, so layered defence reads darker |
+
+**One ring per target class, not one per system.** An Arleigh Burke's longest
+weapon is a land-attack Tomahawk at 1,600 km, and drawing that as *the* envelope
+implies an air-defence reach seven times what it has. Each engagement ring is the
+longest weapon that answers a given class of threat, and weapons covering several
+classes draw once rather than three times. The **Against** row subtracts classes
+from the picture: turn off *Ground* and the Tomahawk ring stops crowding out the
+240 km one that matters to an aircraft. Rings whose spec never said what they were
+for are never filtered out, because hiding them would claim knowledge the data
+does not have.
+
+**Hovering a ring's circumference says what it is** — which unit, which munition,
+how far, and against what. A circle can only ever say *how far*; until you can ask
+what for, an S-400's 400 km and 250 km rings look like one of them is a mistake.
+They are its 40N6 against aircraft and its 48N6 against ballistic missiles. The
+hit target is a 14 px invisible line rather than the 1 px drawn one, and where
+rings overlap the tooltip picks the circumference the pointer is actually nearest,
+so two rings 10 px apart still resolve to the right one.
 
 **Rings are ground distance, not pixels.** A 400 km reach is not a circle on Web
 Mercator, and a fixed-pixel circle would flatter a system at 68°N and understate
@@ -318,7 +352,7 @@ app/api/store/[doc]/route.ts   reads and writes data/*.json
 components/WarGamesPanel.tsx   the console, composition only
 components/wargames/           its blocks: NationBlock, Palette, SelectedUnit,
                                SystemsEditor, CompositionEditor, SpecSheet,
-                               Coverage, OrderOfBattle
+                               Coverage, OrderOfBattle, EnvelopeTip
 ```
 
 Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`; adding a

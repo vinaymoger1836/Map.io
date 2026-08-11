@@ -565,6 +565,73 @@ button {
   width: 348px;
 }
 
+/* Ring tooltip — what the circle under the pointer is for.
+   Pointer-events off throughout: the card follows the cursor, and a card that
+   could catch the cursor would flicker itself out of existence. */
+.wg-tip {
+  position: absolute;
+  z-index: 7;
+  pointer-events: none;
+  max-width: 230px;
+  padding: 7px 10px 8px;
+  background: color-mix(in srgb, var(--ink-panel) 94%, transparent);
+  border: 1px solid var(--rule);
+  /* The nation's colour, so the card is visibly the same object as the ring. */
+  border-left: 3px solid var(--brass);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 45%);
+}
+
+.wg-tip-unit {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  margin-bottom: 3px;
+}
+
+.wg-tip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.wg-tip-kind {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+}
+
+.wg-tip-range {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.wg-tip-sub,
+.wg-tip-vs,
+.wg-tip-cut {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--paper-dim);
+  margin-top: 2px;
+}
+
+.wg-tip-vs {
+  color: var(--paper);
+}
+
+.wg-tip-cut {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--rule);
+  font-style: italic;
+}
+
 .wg-loading {
   position: absolute;
   top: 92px;

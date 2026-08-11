@@ -22,14 +22,18 @@ import {
 } from './warGames';
 import {
   combineEnvelopes,
+  describeTargets,
   effectiveDetectionKm,
   envelopesFor,
   systemById,
+  ENVELOPE_LABELS,
+  TARGET_CLASSES,
   type Envelope,
   type EnvelopeKind,
   type SystemSpec,
+  type TargetClass,
 } from './specs';
-import { geodesicCircle } from './geo';
+import { distanceKm, geodesicCircle } from './geo';
 import { unitIconId } from './unitIcons';
 
 export const WAR_LAYERS = [
@@ -37,6 +41,8 @@ export const WAR_LAYERS = [
   'wg-nation-line',
   'wg-envelope-fill',
   'wg-envelope-line',
+  'wg-envelope-hover',
+  'wg-envelope-hit',
   'wg-country-label',
   'wg-city-dot',
   'wg-city-label',
@@ -197,6 +203,39 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
           ['literal', [1, 2]],
         ],
       },
+    },
+    firstSymbol
+  );
+
+  // The ring the pointer is on, brightened. Drawn over the others so a ring
+  // buried under three overlapping neighbours still lifts out when you find it.
+  add(
+    {
+      id: 'wg-envelope-hover',
+      type: 'line',
+      source: 'wg-envelopes',
+      filter: HIDE_ALL,
+      layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-opacity': 1,
+        'line-width': 3,
+      },
+    },
+    firstSymbol
+  );
+
+  // Invisible, and much fatter than the line it shadows. A 1 px circumference is
+  // an unhittable target with a mouse and a hopeless one with a finger; this
+  // gives the pointer something to find without thickening what you see.
+  add(
+    {
+      id: 'wg-envelope-hit',
+      type: 'line',
+      source: 'wg-envelopes',
+      filter: HIDE_ALL,
+      layout: { visibility: 'none', 'line-join': 'round' },
+      paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 14 },
     },
     firstSymbol
   );
@@ -493,6 +532,12 @@ export function setUnits(
 export interface CoverageState {
   mode: 'off' | 'selected' | 'nation' | 'all';
   kinds: Record<EnvelopeKind, boolean>;
+  /**
+   * Which threats to draw the reach against. 'What can reach my aircraft' is a
+   * different picture from 'what can reach my ships', and a board that draws
+   * both at once answers neither.
+   */
+  targets: Record<TargetClass, boolean>;
   /** Altitude of the target the sensors are being judged against, in metres. */
   targetAltM: number;
 }
@@ -507,6 +552,7 @@ export interface CoverageState {
 export function envelopesToGeoJSON(
   units: DeployedUnit[],
   nations: Record<string, Nation>,
+  formations: Formation[],
   systems: SystemSpec[],
   targetAltM: number
 ) {
@@ -514,6 +560,7 @@ export function envelopesToGeoJSON(
 
   for (const unit of units) {
     const color = nations[unit.iso]?.color ?? '#9AA7B4';
+    const unitName = unitLabel(unit, formations, systems);
     let envelopes: Envelope[];
     let specs: (SystemSpec | undefined)[];
 
@@ -539,15 +586,29 @@ export function envelopesToGeoJSON(
       }
       if (radiusKm <= 0) continue;
 
+      const targets = envelope.engages ?? [];
       features.push({
         type: 'Feature',
         properties: {
+          // Identifies this one ring, so hovering it can highlight it alone.
+          key: `${unit.id}|${envelope.kind}|${[...targets].sort().join(',')}`,
           unitId: unit.id,
+          unitName,
           iso: unit.iso,
           kind: envelope.kind,
+          kindLabel: ENVELOPE_LABELS[envelope.kind],
           color,
           radiusKm: Math.round(radiusKm),
           label: envelope.label,
+          weapon: envelope.weapon ?? '',
+          // Delimited so a filter can ask 'does this ring cover air' with a
+          // substring test — '|air|' cannot match inside '|airborne|'.
+          targetKey: targets.length ? `|${[...targets].sort().join('|')}|` : '',
+          targetText: targets.length ? describeTargets(targets) : '',
+          // Whether the radius drawn is the brochure figure or what the earth's
+          // curve leaves of it, which is the first thing you ask of a short ring.
+          horizonCut: envelope.kind === 'detection' && Math.round(radiusKm) < Math.round(envelope.radiusKm),
+          nominalKm: Math.round(envelope.radiusKm),
         },
         geometry: geodesicCircle(unit.lngLat, radiusKm),
       });
@@ -561,11 +622,86 @@ export function setEnvelopes(
   map: MLMap,
   units: DeployedUnit[],
   nations: Record<string, Nation>,
+  formations: Formation[],
   systems: SystemSpec[],
   targetAltM: number
 ) {
   const src = map.getSource('wg-envelopes') as { setData?: (d: unknown) => void } | undefined;
-  src?.setData?.(envelopesToGeoJSON(units, nations, systems, targetAltM));
+  src?.setData?.(envelopesToGeoJSON(units, nations, formations, systems, targetAltM));
+}
+
+/** What a hovered ring says for itself. */
+export interface EnvelopeHover {
+  key: string;
+  unitName: string;
+  kindLabel: string;
+  weapon: string;
+  radiusKm: number;
+  targetText: string;
+  horizonCut: boolean;
+  nominalKm: number;
+  color: string;
+  /** Where to put the tooltip, in screen pixels. */
+  point: [number, number];
+}
+
+/** Mean of a polygon's vertices — the centre a geodesic ring was drawn about. */
+function ringCentre(geometry: GeoJSON.Geometry): [number, number] | null {
+  if (geometry.type !== 'Polygon' || !geometry.coordinates[0]?.length) return null;
+  const ring = geometry.coordinates[0];
+  let lng = 0;
+  let lat = 0;
+  for (const [x, y] of ring) {
+    lng += x;
+    lat += y;
+  }
+  return [lng / ring.length, lat / ring.length];
+}
+
+/** The ring under the pointer, or null. Reads only the invisible hit layer. */
+export function envelopeAt(map: MLMap, point: { x: number; y: number }): EnvelopeHover | null {
+  if (!map.getLayer('wg-envelope-hit')) return null;
+  if (map.getLayoutProperty('wg-envelope-hit', 'visibility') === 'none') return null;
+  const hits = map.queryRenderedFeatures([point.x, point.y] as never, { layers: ['wg-envelope-hit'] });
+  if (!hits.length) return null;
+
+  // Overlapping rings are the normal case — a battery's detection ring sits
+  // outside its engagement ring, and two batteries interlock — so the pointer
+  // lands on several at once. Take the one whose circumference it is nearest,
+  // which is the one it looks like you are pointing at.
+  const here = map.unproject([point.x, point.y] as never);
+  const cursor: [number, number] = [here.lng, here.lat];
+  let best = hits[0];
+  let bestGap = Infinity;
+  for (const hit of hits) {
+    const centre = ringCentre(hit.geometry);
+    const radius = Number((hit.properties ?? {}).radiusKm);
+    if (!centre || !Number.isFinite(radius)) continue;
+    const gap = Math.abs(distanceKm(cursor, centre) - radius);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = hit;
+    }
+  }
+
+  const props = (best.properties ?? {}) as Record<string, unknown>;
+  return {
+    key: String(props.key ?? ''),
+    unitName: String(props.unitName ?? ''),
+    kindLabel: String(props.kindLabel ?? ''),
+    weapon: String(props.weapon ?? ''),
+    radiusKm: Number(props.radiusKm ?? 0),
+    targetText: String(props.targetText ?? ''),
+    horizonCut: props.horizonCut === true || props.horizonCut === 'true',
+    nominalKm: Number(props.nominalKm ?? 0),
+    color: String(props.color ?? '#9AA7B4'),
+    point: [point.x, point.y],
+  };
+}
+
+export function highlightEnvelope(map: MLMap, key: string | null) {
+  if (!map.getLayer('wg-envelope-hover')) return;
+  map.setFilter('wg-envelope-hover', ['==', ['get', 'key'], key ?? '__none__'] as ExpressionSpecification);
 }
 
 /**
@@ -584,15 +720,32 @@ export function applyCoverage(
   let filter: unknown = HIDE_ALL;
 
   if (kinds.length && state.mode !== 'off') {
-    const ofKind = ['in', ['get', 'kind'], ['literal', kinds]];
+    const clauses: unknown[] = ['in', ['get', 'kind'], ['literal', kinds]];
+    const ofKind: unknown[] = ['all', clauses];
+
+    // A ring that never said what it was for — a combat radius, a weapon with
+    // no stated targets — is not filtered by target, because filtering it out
+    // would be claiming knowledge the spec does not have.
+    const targets = (Object.keys(state.targets) as TargetClass[]).filter((t) => state.targets[t]);
+    if (targets.length < TARGET_CLASSES.length) {
+      ofKind.push([
+        'any',
+        ['==', ['get', 'targetKey'], ''],
+        ...targets.map((t) => ['in', `|${t}|`, ['get', 'targetKey']]),
+      ]);
+    }
+
     if (state.mode === 'all') filter = ofKind;
     else if (state.mode === 'nation')
-      filter = ['all', ofKind, ['==', ['get', 'iso'], activeIso ?? '__none__']];
-    else filter = ['all', ofKind, ['==', ['get', 'unitId'], selectedId ?? '__none__']];
+      filter = [...ofKind, ['==', ['get', 'iso'], activeIso ?? '__none__']];
+    else filter = [...ofKind, ['==', ['get', 'unitId'], selectedId ?? '__none__']];
   }
 
   map.setFilter('wg-envelope-fill', filter as ExpressionSpecification);
   map.setFilter('wg-envelope-line', filter as ExpressionSpecification);
+  // The hit target must agree with what is drawn, or the pointer finds rings
+  // that are not on screen.
+  if (map.getLayer('wg-envelope-hit')) map.setFilter('wg-envelope-hit', filter as ExpressionSpecification);
 }
 
 export function highlightUnit(map: MLMap, id: string | null) {

@@ -34,12 +34,21 @@ import {
   type Formation,
   type Nation,
 } from './warGames';
-import { mergeSystems, nextSystemId, tidySpec, type EnvelopeKind, type SystemSpec } from './specs';
+import {
+  mergeSystems,
+  nextSystemId,
+  tidySpec,
+  type EnvelopeKind,
+  type SystemSpec,
+  type TargetClass,
+} from './specs';
 import { getStore, readDoc, readWithLegacyFallback, writeDoc } from './store';
 import { ensureIcons, type IconSpec } from './unitIcons';
 import {
   applyCoverage,
+  envelopeAt,
   hideBasemapSymbols,
+  highlightEnvelope,
   highlightUnit,
   installWarLayers,
   paintNations,
@@ -48,6 +57,7 @@ import {
   setUnits,
   setWarVisible,
   type CoverageState,
+  type EnvelopeHover,
 } from './warLayers';
 
 export type Tool = 'select' | 'paint' | 'deploy';
@@ -132,7 +142,10 @@ export interface WarGames {
   coverage: CoverageState;
   setCoverageMode: (mode: CoverageState['mode']) => void;
   toggleCoverageKind: (kind: EnvelopeKind) => void;
+  toggleCoverageTarget: (target: TargetClass) => void;
   setTargetAltitude: (metres: number) => void;
+  /** The ring the pointer is on, for the tooltip the map draws. */
+  hoveredEnvelope: EnvelopeHover | null;
 
   undo: () => void;
   redo: () => void;
@@ -181,8 +194,12 @@ export function useWarGames({
     // Off by default: forty units with three rings each is a picture of nothing.
     mode: 'off',
     kinds: { engagement: true, detection: true, strike: true, 'strike-refuelled': false },
+    // All threats on: the pills subtract from the full picture rather than
+    // requiring you to build one before anything appears.
+    targets: { air: true, ballistic: true, surface: true, ground: true, subsurface: true },
     targetAltM: 10_000,
   });
+  const [hoveredEnvelope, setHoveredEnvelope] = useState<EnvelopeHover | null>(null);
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
@@ -239,6 +256,12 @@ export function useWarGames({
   const toggleCoverageKind = useCallback(
     (kind: EnvelopeKind) =>
       setCoverage((prev) => ({ ...prev, kinds: { ...prev.kinds, [kind]: !prev.kinds[kind] } })),
+    []
+  );
+
+  const toggleCoverageTarget = useCallback(
+    (target: TargetClass) =>
+      setCoverage((prev) => ({ ...prev, targets: { ...prev.targets, [target]: !prev.targets[target] } })),
     []
   );
 
@@ -394,6 +417,7 @@ export function useWarGames({
         map,
         boardRef.current.units,
         boardRef.current.nations,
+        boardRef.current.formations,
         systemsRef.current,
         coverageRef.current.targetAltM
       );
@@ -436,7 +460,7 @@ export function useWarGames({
     ensureIcons(map, iconSpecs);
     paintNations(map, board.nations);
     setUnits(map, board.units, board.nations, board.formations, systems);
-    setEnvelopes(map, board.units, board.nations, systems, coverage.targetAltM);
+    setEnvelopes(map, board.units, board.nations, board.formations, systems, coverage.targetAltM);
   }, [board, iconSpecs, systems, coverage.targetAltM, mapRef]);
 
   // Showing or hiding a category is a filter, not a rebuild.
@@ -707,10 +731,18 @@ export function useWarGames({
       setSelectedId(null);
     };
 
+    const clearHover = () => {
+      setHoveredEnvelope(null);
+      highlightEnvelope(map, null);
+    };
+
     const beginDrag = (e: PointerLike) => {
       if (toolRef.current === 'deploy') return;
       const hit = unitAt(e);
       if (!hit) return;
+      // The rings are about to move with the unit; a tooltip pinned to where one
+      // used to be is worse than none.
+      clearHover();
       // Grabbing the edge of a unit must not teleport its centre under the
       // pointer: the unit keeps the offset it was picked up by.
       const held = boardRef.current.units.find((u) => u.id === hit);
@@ -731,6 +763,18 @@ export function useWarGames({
         const over = toolRef.current === 'deploy' ? null : unitAt(e);
         canvas.style.cursor =
           toolRef.current === 'deploy' ? 'crosshair' : over ? 'grab' : toolRef.current === 'paint' ? 'copy' : '';
+
+        // A unit under the pointer wins: you are reaching for the unit, not for
+        // whichever of its own rings happens to pass under it.
+        const ring = over ? null : envelopeAt(map, e.point);
+        setHoveredEnvelope((prev) => {
+          if (!ring) return prev ? null : prev;
+          // Same ring, new pointer position — replace, so the tooltip follows.
+          return prev && prev.key === ring.key && prev.point[0] === ring.point[0] && prev.point[1] === ring.point[1]
+            ? prev
+            : ring;
+        });
+        highlightEnvelope(map, ring?.key ?? null);
         return;
       }
       drag.moved = true;
@@ -792,11 +836,13 @@ export function useWarGames({
     map.on('touchmove', continueDrag);
     map.on('touchend', endDrag);
     map.on('touchcancel', endDrag);
+    map.on('mouseout', clearHover);
     window.addEventListener('mouseup', endDrag);
     window.addEventListener('touchend', endDrag);
     window.addEventListener('keydown', onKey);
 
     return () => {
+      clearHover();
       map.off('click', onClick);
       map.off('mousedown', beginDrag);
       map.off('mousemove', continueDrag);
@@ -805,6 +851,7 @@ export function useWarGames({
       map.off('touchmove', continueDrag);
       map.off('touchend', endDrag);
       map.off('touchcancel', endDrag);
+      map.off('mouseout', clearHover);
       window.removeEventListener('mouseup', endDrag);
       window.removeEventListener('touchend', endDrag);
       window.removeEventListener('keydown', onKey);
@@ -875,7 +922,9 @@ export function useWarGames({
     coverage,
     setCoverageMode,
     toggleCoverageKind,
+    toggleCoverageTarget,
     setTargetAltitude,
+    hoveredEnvelope,
     undo,
     redo,
     canUndo,
