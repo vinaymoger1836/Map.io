@@ -1,157 +1,162 @@
 [
-  {
-    "id": "nebo-m",
-    "name": "Nebo-M",
-    "typeId": "radar",
-    "origin": "Russia",
-    "note": "55Zh6M Nebo-M mobile multiband counter-stealth radar complex: a VHF-band RLM-M, L-band RLM-D and S-band RLM-S AESA, networked through the RLM-KU command post on BAZ-6909 8x8 chassis. Designed to detect low-observable, hypersonic and ballistic targets and cue SAM batteries (S-400 etc.).",
-    "sensor": {
-      "detectionKm": 1800,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "55Zh6M Nebo-M TALL RACK mobile multi-band radar complex | GlobalSecurity.org",
-          "url": "https://www.globalsecurity.org/military/world/russia/nebo-m.htm",
-          "note": "Complex 'scans airspace at a range of 1,800 km and an altitude of 1,200 km'. That is the instrumented ceiling against large/high targets; export figures are quoted 600-1,800 km. Against a stealth fighter the VHF RLM-M module is claimed by Almaz-Antey to detect 5th-gen aircraft at only ~100-200 km (unverified)."
-        },
-        "confidence": "medium"
-      }
-    }
+ {
+  "id": "nebo-m",
+  "name": "Nebo-M",
+  "typeId": "radar",
+  "origin": "Russia",
+  "note": "55Zh6M Nebo-M mobile multiband counter-stealth radar complex: a VHF-band RLM-M, L-band RLM-D and S-band RLM-S AESA, networked through the RLM-KU command post on BAZ-6909 8x8 chassis. Designed to detect low-observable, hypersonic and ballistic targets and cue SAM batteries (S-400 etc.).",
+  "sensor": {
+   "detectionKm": 1800,
+   "sees": [
+    "air",
+    "ballistic-short",
+    "ballistic-medium",
+    "ballistic-imrbm"
+   ],
+   "horizonLimited": true
   },
-  {
-    "id": "an-tpy-2",
-    "name": "AN/TPY-2",
-    "typeId": "radar",
-    "origin": "United States",
-    "note": "Army-Navy Transportable Radar Surveillance, an X-band missile-defence radar developed with THAAD. Runs in Forward-Based Mode (early ascent-phase cueing) or Terminal Mode (co-located with a THAAD battery). Aperture 9.2 m2 with 25,344 T/R modules. A ballistic-missile sensor, not an aircraft surveillance radar.",
-    "sensor": {
-      "detectionKm": 3000,
-      "tracks": 180,
-      "sees": [
-        "ballistic"
-      ],
-      "horizonLimited": true
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "55Zh6M Nebo-M TALL RACK mobile multi-band radar complex | GlobalSecurity.org",
+     "url": "https://www.globalsecurity.org/military/world/russia/nebo-m.htm",
+     "note": "Complex 'scans airspace at a range of 1,800 km and an altitude of 1,200 km'. That is the instrumented ceiling against large/high targets; export figures are quoted 600-1,800 km. Against a stealth fighter the VHF RLM-M module is claimed by Almaz-Antey to detect 5th-gen aircraft at only ~100-200 km (unverified)."
     },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "AN/TPY-2 Radar | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tpy-2/",
-          "note": "'Reportedly capable of tracking objects at ranges 870 to 3,000 km depending on target and mode.' 3,000 km applies to forward-based cueing of large ballistic objects; ~870 km-class in terminal mode. Surface-based but points high, so the horizon limit does not bite for exo-atmospheric targets."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "AN/TPY-2 Radar | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tpy-2/",
-          "note": "In a 1998 test the radar accurately tracked 'over 180 separate objects and debris'. Used here as an indicative simultaneous-track figure; the true capacity is classified."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "jy-27a",
-    "name": "JY-27A",
-    "typeId": "radar",
-    "origin": "China",
-    "note": "CETC JY-27A, a mobile VHF-band 3D long-range air-surveillance and guidance radar using an active phased array, marketed as a counter-stealth / early-warning sensor.",
-    "sensor": {
-      "detectionKm": 500,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "JY-27A | Radartutorial",
-          "url": "https://www.radartutorial.eu/19.kartei/02.surv/karte029.en.html",
-          "note": "Instrumented range 310 NM (500 km); 'able to detect stealth aircraft like the F-22 at a distance of up to 500 km'. Against a conventional target this is the instrumented limit; against genuine low-observables the effective range is lower (~350 km per vendor material)."
-        },
-        "confidence": "medium"
-      }
-    }
-  },
-  {
-    "id": "ground-radar",
-    "name": "Air surveillance radar (generic)",
-    "typeId": "radar",
-    "origin": "—",
-    "note": "Generic placeholder representing a modern medium/high-altitude 3D air-surveillance radar (in the class of Ground Master 400, 36D6, TRML-3D). Not a specific fielded system; figures are representative estimates for map-modelling only.",
-    "sensor": {
-      "detectionKm": 350,
-      "tracks": 150,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true,
-      "antennaM": 10
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Generic / representative figure",
-          "note": "Typical instrumented range of a modern 3D air-surveillance radar against a fighter-sized (~1-5 m2) target at altitude. Not a specific system; substitute a real radar's figure where one is known."
-        },
-        "confidence": "low"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Generic / representative figure",
-          "note": "Representative simultaneous-track capacity for a modern surveillance radar; not a measured value."
-        },
-        "confidence": "low"
-      },
-      "sensor.antennaM": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Generic / representative figure",
-          "note": "Assumed antenna height ~10 m (typical mast/vehicle mount) for the radar-horizon calculation; adjust to the real emplacement."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "oth-radar",
-    "name": "Over-the-horizon radar",
-    "typeId": "radar",
-    "origin": "—",
-    "note": "Generic placeholder for a skywave over-the-horizon (OTH) radar (in the class of Australia's JORN, Russia's Container/29B6, or the US ROTHR). Uses ionospheric refraction to see far beyond the geometric horizon, so it is NOT horizon-limited, but resolution is coarse (tens of km) and it has a large skip-zone dead area near the site. Figures are representative estimates only.",
-    "sensor": {
-      "detectionKm": 2500,
-      "sees": [
-        "air",
-        "surface"
-      ],
-      "horizonLimited": false
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Generic / representative figure",
-          "note": "Skywave OTH radars typically cover ~1,000-3,000 km (beyond a near-site skip zone of several hundred km); 2,500 km taken as a mid figure. Not a specific system, and coverage varies strongly with ionospheric conditions and time of day."
-        },
-        "confidence": "low"
-      }
-    }
+    "confidence": "medium"
+   }
   }
+ },
+ {
+  "id": "an-tpy-2",
+  "name": "AN/TPY-2",
+  "typeId": "radar",
+  "origin": "United States",
+  "note": "Army-Navy Transportable Radar Surveillance, an X-band missile-defence radar developed with THAAD. Runs in Forward-Based Mode (early ascent-phase cueing) or Terminal Mode (co-located with a THAAD battery). Aperture 9.2 m2 with 25,344 T/R modules. A ballistic-missile sensor, not an aircraft surveillance radar.",
+  "sensor": {
+   "detectionKm": 3000,
+   "tracks": 180,
+   "sees": [
+    "ballistic-short",
+    "ballistic-medium",
+    "ballistic-imrbm"
+   ],
+   "horizonLimited": true
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "AN/TPY-2 Radar | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tpy-2/",
+     "note": "'Reportedly capable of tracking objects at ranges 870 to 3,000 km depending on target and mode.' 3,000 km applies to forward-based cueing of large ballistic objects; ~870 km-class in terminal mode. Surface-based but points high, so the horizon limit does not bite for exo-atmospheric targets."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "AN/TPY-2 Radar | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tpy-2/",
+     "note": "In a 1998 test the radar accurately tracked 'over 180 separate objects and debris'. Used here as an indicative simultaneous-track figure; the true capacity is classified."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "jy-27a",
+  "name": "JY-27A",
+  "typeId": "radar",
+  "origin": "China",
+  "note": "CETC JY-27A, a mobile VHF-band 3D long-range air-surveillance and guidance radar using an active phased array, marketed as a counter-stealth / early-warning sensor.",
+  "sensor": {
+   "detectionKm": 500,
+   "sees": [
+    "air",
+    "ballistic-short",
+    "ballistic-medium"
+   ],
+   "horizonLimited": true
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "JY-27A | Radartutorial",
+     "url": "https://www.radartutorial.eu/19.kartei/02.surv/karte029.en.html",
+     "note": "Instrumented range 310 NM (500 km); 'able to detect stealth aircraft like the F-22 at a distance of up to 500 km'. Against a conventional target this is the instrumented limit; against genuine low-observables the effective range is lower (~350 km per vendor material)."
+    },
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "ground-radar",
+  "name": "Air surveillance radar (generic)",
+  "typeId": "radar",
+  "origin": "—",
+  "note": "Generic placeholder representing a modern medium/high-altitude 3D air-surveillance radar (in the class of Ground Master 400, 36D6, TRML-3D). Not a specific fielded system; figures are representative estimates for map-modelling only.",
+  "sensor": {
+   "detectionKm": 350,
+   "tracks": 150,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true,
+   "antennaM": 10
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic / representative figure",
+     "note": "Typical instrumented range of a modern 3D air-surveillance radar against a fighter-sized (~1-5 m2) target at altitude. Not a specific system; substitute a real radar's figure where one is known."
+    },
+    "confidence": "low"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic / representative figure",
+     "note": "Representative simultaneous-track capacity for a modern surveillance radar; not a measured value."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic / representative figure",
+     "note": "Assumed antenna height ~10 m (typical mast/vehicle mount) for the radar-horizon calculation; adjust to the real emplacement."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "oth-radar",
+  "name": "Over-the-horizon radar",
+  "typeId": "radar",
+  "origin": "—",
+  "note": "Generic placeholder for a skywave over-the-horizon (OTH) radar (in the class of Australia's JORN, Russia's Container/29B6, or the US ROTHR). Uses ionospheric refraction to see far beyond the geometric horizon, so it is NOT horizon-limited, but resolution is coarse (tens of km) and it has a large skip-zone dead area near the site. Figures are representative estimates only.",
+  "sensor": {
+   "detectionKm": 2500,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": false
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic / representative figure",
+     "note": "Skywave OTH radars typically cover ~1,000-3,000 km (beyond a near-site skip zone of several hundred km); 2,500 km taken as a mid figure. Not a specific system, and coverage varies strongly with ionospheric conditions and time of day."
+    },
+    "confidence": "low"
+   }
+  }
+ }
 ]

@@ -140,8 +140,24 @@ myself.
 
 ## Schema
 
+**On target classes.** `air` covers anything flying aerodynamically — aircraft,
+cruise missiles and drones alike — because they are one engagement problem.
+Ballistic is separate, and tiered, because a Patriot PAC-3 and an SM-3 are not
+answering the same question. Tag a system with **every tier it covers, not just
+its highest**: something credited against medium-range missiles can certainly
+handle short-range ones. Where an operator's claim is contested — and Russian
+and Chinese ballistic-defence claims usually are — take the narrower reading and
+say so in the `note`.
+
 ```ts
-type TargetClass = 'air' | 'ballistic' | 'surface' | 'ground' | 'subsurface';
+type TargetClass =
+  | 'air'               // aircraft, cruise missiles, drones — anything on wings
+  | 'ballistic-short'   // battlefield rockets and SRBMs, terminal phase
+  | 'ballistic-medium'  // theatre / medium-range ballistic missiles
+  | 'ballistic-imrbm'   // intermediate-range and above, exo-atmospheric
+  | 'surface'
+  | 'ground'
+  | 'subsurface';
 
 interface Source {
   kind: 'manufacturer' | 'government' | 'reference' | 'press' | 'placeholder';
@@ -234,7 +250,7 @@ interface System {
       "detectionKm": 400,
       "tracks": 100,
       "engagements": 12,
-      "sees": ["air", "ballistic"],
+      "sees": ["air", "ballistic-short"],
       "horizonLimited": true,
       "antennaM": 25
     },

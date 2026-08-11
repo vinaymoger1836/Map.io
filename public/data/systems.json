@@ -589,7 +589,7 @@
    "tracks": 150,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true,
    "antennaM": 10
@@ -773,7 +773,9 @@
    "detectionKm": 3000,
    "tracks": 180,
    "sees": [
-    "ballistic"
+    "ballistic-short",
+    "ballistic-medium",
+    "ballistic-imrbm"
    ],
    "horizonLimited": true
   },
@@ -938,8 +940,8 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic",
-     "surface"
+     "surface",
+     "ballistic-short"
     ]
    },
    {
@@ -1647,7 +1649,7 @@
     "reactionSec": 8,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    }
   ],
@@ -2059,7 +2061,7 @@
    "engagements": 36,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true,
    "antennaM": 22
@@ -2075,7 +2077,7 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    }
   ],
@@ -3565,7 +3567,7 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    },
    {
@@ -4191,7 +4193,7 @@
    "engagements": 50,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true
   },
@@ -4205,7 +4207,7 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    }
   ],
@@ -5038,7 +5040,8 @@
    "detectionKm": 500,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short",
+    "ballistic-medium"
    ],
    "horizonLimited": true
   },
@@ -6230,8 +6233,8 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic",
-     "surface"
+     "surface",
+     "ballistic-short"
     ]
    },
    {
@@ -6242,7 +6245,8 @@
     "pk": 0.6,
     "reactionSec": 10,
     "engages": [
-     "ballistic"
+     "ballistic-medium",
+     "ballistic-imrbm"
     ]
    },
    {
@@ -6499,7 +6503,7 @@
    "tracks": 100,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true
   },
@@ -6513,7 +6517,7 @@
     "reactionSec": 9,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    }
   ],
@@ -7049,7 +7053,9 @@
    "detectionKm": 1800,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short",
+    "ballistic-medium",
+    "ballistic-imrbm"
    ],
    "horizonLimited": true
   },
@@ -7823,7 +7829,7 @@
    "engagements": 36,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true
   },
@@ -7837,7 +7843,7 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    }
   ],
@@ -7925,7 +7931,7 @@
    "engagements": 8,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true
   },
@@ -8016,7 +8022,8 @@
    "engagements": 36,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short",
+    "ballistic-medium"
    ],
    "horizonLimited": true
   },
@@ -8037,7 +8044,8 @@
     "rangeKm": 250,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short",
+     "ballistic-medium"
     ]
    },
    {
@@ -8160,7 +8168,7 @@
    "engagements": 10,
    "sees": [
     "air",
-    "ballistic"
+    "ballistic-short"
    ],
    "horizonLimited": true
   },
@@ -8174,7 +8182,7 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    }
   ],
@@ -9316,7 +9324,8 @@
   "sensor": {
    "detectionKm": 3000,
    "sees": [
-    "ballistic"
+    "ballistic-short",
+    "ballistic-medium"
    ],
    "horizonLimited": true
   },
@@ -9329,7 +9338,8 @@
     "pk": 0.8,
     "reactionSec": 15,
     "engages": [
-     "ballistic"
+     "ballistic-short",
+     "ballistic-medium"
     ]
    }
   ],
@@ -9410,8 +9420,8 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic",
-     "surface"
+     "surface",
+     "ballistic-short"
     ]
    },
    {
@@ -10488,7 +10498,7 @@
     "reactionSec": 10,
     "engages": [
      "air",
-     "ballistic"
+     "ballistic-short"
     ]
    },
    {

@@ -103,7 +103,7 @@ const sam = ({ id, name, origin, typeId = 'sam-launcher', detection, tracks, cha
       detectionKm: detection,
       tracks,
       engagements: channels,
-      sees: ['air', 'ballistic'],
+      sees: ['air', 'ballistic-short'],
       horizonLimited: true,
       antennaM: 25,
     },
@@ -122,7 +122,7 @@ sam({
   tracks: 80,
   channels: 36,
   weapons: [
-    { name: '40N6', rangeKm: 380, magazine: 8, salvo: 2, pk: 0.7, reactionSec: 10, engages: ['air', 'ballistic'] },
+    { name: '40N6', rangeKm: 380, magazine: 8, salvo: 2, pk: 0.7, reactionSec: 10, engages: ['air', 'ballistic-short', 'ballistic-medium'] },
     { name: '48N6DM', rangeKm: 250, magazine: 8, salvo: 2, pk: 0.75, reactionSec: 10, engages: ['air'] },
   ],
   note: 'Battalion of launchers with a 91N6E acquisition radar.',
@@ -135,7 +135,7 @@ sam({
   detection: 300,
   tracks: 36,
   channels: 12,
-  weapons: [{ name: '48N6E2', rangeKm: 200, magazine: 8, salvo: 2, pk: 0.7, reactionSec: 12, engages: ['air', 'ballistic'] }],
+  weapons: [{ name: '48N6E2', rangeKm: 200, magazine: 8, salvo: 2, pk: 0.7, reactionSec: 12, engages: ['air', 'ballistic-short'] }],
 });
 
 sam({
@@ -190,7 +190,7 @@ sam({
   tracks: 100,
   channels: 9,
   weapons: [
-    { name: 'PAC-3 MSE', rangeKm: 120, magazine: 12, salvo: 2, pk: 0.8, reactionSec: 10, engages: ['air', 'ballistic'] },
+    { name: 'PAC-3 MSE', rangeKm: 120, magazine: 12, salvo: 2, pk: 0.8, reactionSec: 10, engages: ['air', 'ballistic-short'] },
     { name: 'PAC-2 GEM-T', rangeKm: 160, magazine: 16, salvo: 2, pk: 0.7, reactionSec: 10, engages: ['air'] },
   ],
 });
@@ -202,7 +202,7 @@ sam({
   detection: 870,
   tracks: 60,
   channels: 6,
-  weapons: [{ name: 'THAAD interceptor', rangeKm: 200, magazine: 8, salvo: 2, pk: 0.8, reactionSec: 15, engages: ['ballistic'] }],
+  weapons: [{ name: 'THAAD interceptor', rangeKm: 200, magazine: 8, salvo: 2, pk: 0.8, reactionSec: 15, engages: ['ballistic-short', 'ballistic-medium'] }],
   note: 'AN/TPY-2 radar; exo-atmospheric intercept, no aircraft engagement.',
 });
 
@@ -233,7 +233,7 @@ sam({
   detection: 350,
   tracks: 100,
   channels: 10,
-  weapons: [{ name: 'Aster 30', rangeKm: 120, magazine: 8, salvo: 2, pk: 0.75, reactionSec: 10, engages: ['air', 'ballistic'] }],
+  weapons: [{ name: 'Aster 30', rangeKm: 120, magazine: 8, salvo: 2, pk: 0.75, reactionSec: 10, engages: ['air', 'ballistic-short'] }],
 });
 
 sam({
@@ -243,7 +243,7 @@ sam({
   detection: 300,
   tracks: 100,
   channels: 12,
-  weapons: [{ name: 'HQ-9B', rangeKm: 250, magazine: 8, salvo: 2, pk: 0.7, reactionSec: 12, engages: ['air', 'ballistic'] }],
+  weapons: [{ name: 'HQ-9B', rangeKm: 250, magazine: 8, salvo: 2, pk: 0.7, reactionSec: 12, engages: ['air', 'ballistic-short'] }],
 });
 
 sam({
@@ -283,7 +283,7 @@ sam({
   detection: 70,
   tracks: 200,
   channels: 20,
-  weapons: [{ name: 'Tamir', rangeKm: 70, magazine: 20, salvo: 2, pk: 0.85, reactionSec: 4, engages: ['ballistic'] }],
+  weapons: [{ name: 'Tamir', rangeKm: 70, magazine: 20, salvo: 2, pk: 0.85, reactionSec: 4, engages: ['ballistic-short'] }],
   note: 'Against rockets and artillery, not aircraft.',
 });
 
@@ -310,7 +310,7 @@ const radar = ({ id, name, origin, detection, tracks, note, typeId = 'radar', an
     typeId,
     origin,
     note,
-    sensor: { detectionKm: detection, tracks, sees: ['air', 'ballistic'], horizonLimited: true, antennaM },
+    sensor: { detectionKm: detection, tracks, sees: ['air', 'ballistic-short'], horizonLimited: true, antennaM },
     provenance: prov({ medium: ['sensor.detectionKm', 'sensor.tracks'] }),
   });
 
@@ -792,7 +792,7 @@ ship({
   vls: 96,
   detection: 320,
   weapons: [
-    { name: 'SM-6', rangeKm: 240, magazine: 32, salvo: 2, pk: 0.75, reactionSec: 15, engages: ['air', 'ballistic'] },
+    { name: 'SM-6', rangeKm: 240, magazine: 32, salvo: 2, pk: 0.75, reactionSec: 15, engages: ['air', 'ballistic-short'] },
     { name: 'SM-2MR', rangeKm: 170, magazine: 32, salvo: 2, pk: 0.7, reactionSec: 15, engages: ['air'] },
     { name: 'Tomahawk', rangeKm: 1600, magazine: 24, salvo: 4, pk: 0.8, reactionSec: 300, engages: ['ground'] },
   ],
@@ -806,7 +806,7 @@ ship({
   crew: 330,
   vls: 122,
   detection: 320,
-  weapons: [{ name: 'SM-6', rangeKm: 240, magazine: 40, salvo: 2, pk: 0.75, reactionSec: 15, engages: ['air', 'ballistic'] }],
+  weapons: [{ name: 'SM-6', rangeKm: 240, magazine: 40, salvo: 2, pk: 0.75, reactionSec: 15, engages: ['air', 'ballistic-short'] }],
 });
 ship({
   id: 'type-055',
@@ -903,7 +903,7 @@ ship({
   crew: 300,
   vls: 96,
   detection: 320,
-  weapons: [{ name: 'SM-6', rangeKm: 240, magazine: 32, salvo: 2, pk: 0.75, reactionSec: 15, engages: ['air', 'ballistic'] }],
+  weapons: [{ name: 'SM-6', rangeKm: 240, magazine: 32, salvo: 2, pk: 0.75, reactionSec: 15, engages: ['air', 'ballistic-short'] }],
 });
 ship({
   id: 'visby',

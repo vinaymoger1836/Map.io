@@ -9,7 +9,11 @@
  */
 
 import type { WarGames } from '@/lib/useWarGames';
-import { TARGET_CLASSES, type EnvelopeKind } from '@/lib/specs';
+import { BALLISTIC_CLASSES, TARGET_CLASSES, isBallistic, type EnvelopeKind } from '@/lib/specs';
+
+/** The non-ballistic classes stay one flat row; the tiers get their own. */
+const PLAIN_CLASSES = TARGET_CLASSES.filter((t) => !isBallistic(t.id));
+const TIERS = TARGET_CLASSES.filter((t) => isBallistic(t.id));
 
 const MODES = [
   ['off', 'Off', 'No coverage drawn'],
@@ -36,6 +40,7 @@ export function Coverage({ wg }: { wg: WarGames }) {
   const { coverage } = wg;
   const horizonMatters = coverage.kinds.detection && coverage.mode !== 'off';
   const allTargets = TARGET_CLASSES.every(({ id }) => coverage.targets[id]);
+  const anyBallistic = BALLISTIC_CLASSES.some((id) => coverage.targets[id]);
 
   return (
     <section className="wg-block">
@@ -74,21 +79,47 @@ export function Coverage({ wg }: { wg: WarGames }) {
         <>
           <h4 className="wg-sub">Against</h4>
           <div className="wg-kinds">
-            {TARGET_CLASSES.map(({ id, label }) => (
+            {PLAIN_CLASSES.map(({ id, label, hint }) => (
               <button
                 key={id}
                 className={`wg-kind${coverage.targets[id] ? ' on' : ''}`}
                 aria-pressed={coverage.targets[id]}
                 onClick={() => wg.toggleCoverageTarget(id)}
-                title={`Reaches that apply to ${label.toLowerCase()}`}
+                title={hint}
               >
                 {label}
               </button>
             ))}
           </div>
+
+          {/* Tiered on their own line, because they are one question asked at
+              three scales rather than three unrelated threats. */}
+          <div className="wg-tiers">
+            <span className="wg-tier-label">Ballistic</span>
+            <button
+              className={`wg-kind${anyBallistic ? ' on' : ''}`}
+              aria-pressed={anyBallistic}
+              onClick={() => wg.setBallisticTargets(!anyBallistic)}
+              title="All ballistic tiers at once"
+            >
+              All
+            </button>
+            {TIERS.map(({ id, label, hint }) => (
+              <button
+                key={id}
+                className={`wg-kind${coverage.targets[id] ? ' on' : ''}`}
+                aria-pressed={coverage.targets[id]}
+                onClick={() => wg.toggleCoverageTarget(id)}
+                title={hint}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {!allTargets && (
             <p className="wg-note">
-              A destroyer’s 1,600 km land-attack reach and its 240 km air-defence reach are different
+              A destroyer’s 1,600 km land-attack reach and its 370 km air-defence reach are different
               answers to different questions. Turn off <b>Ground</b> and the first stops crowding out
               the second. Rings whose spec never said what they were for stay on either way.
             </p>

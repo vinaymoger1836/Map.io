@@ -299,14 +299,43 @@ implies an air-defence reach seven times what it has. Each engagement ring is th
 longest weapon that answers a given class of threat, and weapons covering several
 classes draw once rather than three times. The **Against** row subtracts classes
 from the picture: turn off *Ground* and the Tomahawk ring stops crowding out the
-240 km one that matters to an aircraft. Rings whose spec never said what they were
+370 km one that matters to an aircraft. Rings whose spec never said what they were
 for are never filtered out, because hiding them would claim knowledge the data
 does not have.
+
+**The target classes are deliberately not the obvious ones.** `air` covers
+aircraft, cruise missiles and drones together, because they are one engagement
+problem — a cruise missile is a small aeroplane, not a ballistic threat, and a
+label saying "aircraft" understated what an S-400 is pointed at. Ballistic is
+split three ways instead, because a Patriot PAC-3 (45 km, terminal phase, against
+battlefield rockets) and an SM-3 (1,200 km, exo-atmospheric, against
+intermediate-range missiles) were both reading `vs ballistic`, which made the map
+assert they answer the same threat:
+
+| Tier | Against | Systems in the library |
+| --- | --- | --- |
+| `ballistic-short` | Battlefield rockets, SRBMs | PAC-3, Buk-M3, Barak 8, Aster 30, HQ-9B, 48N6E2, SM-6 |
+| `ballistic-medium` | Theatre / medium-range | S-400's 48N6, THAAD, SM-3 |
+| `ballistic-imrbm` | Intermediate-range and above | SM-3 |
+
+A system carries every tier it covers, not only its highest — something credited
+against an MRBM can certainly engage an SRBM.
+
+**That classification is a judgement, not a citation.** Unlike every figure in
+the library, the tiers carry no provenance, because they are not published
+numbers — they are a reading of each system's documented role. The reasoning for
+each one is written out per system in `scripts/retag-ballistic.mjs`, so it can be
+argued with and changed in one line. Where a claim is contested — Russian and
+Chinese ballistic-defence claims usually are — the narrower reading was taken.
+Run that script against `research/` whenever a new batch arrives; a stale plain
+`ballistic` tag fails validation rather than silently drawing an uninterpretable
+ring, and systems saved before the split are migrated on load by `reviveSpec`.
 
 **Hovering a ring's circumference says what it is** — which unit, which munition,
 how far, and against what. A circle can only ever say *how far*; until you can ask
 what for, an S-400's 400 km and 250 km rings look like one of them is a mistake.
-They are its 40N6 against aircraft and its 48N6 against ballistic missiles. The
+They are its 40N6 against aircraft and its 48N6 against ballistic missiles, which
+is what the card says when you point at either. The
 hit target is a 14 px invisible line rather than the 1 px drawn one, and where
 rings overlap the tooltip picks the circumference the pointer is actually nearest,
 so two rings 10 px apart still resolve to the right one.

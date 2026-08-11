@@ -35,6 +35,7 @@ import {
   type Nation,
 } from './warGames';
 import {
+  BALLISTIC_CLASSES,
   mergeSystems,
   nextSystemId,
   tidySpec,
@@ -143,6 +144,7 @@ export interface WarGames {
   setCoverageMode: (mode: CoverageState['mode']) => void;
   toggleCoverageKind: (kind: EnvelopeKind) => void;
   toggleCoverageTarget: (target: TargetClass) => void;
+  setBallisticTargets: (on: boolean) => void;
   setTargetAltitude: (metres: number) => void;
   /** The ring the pointer is on, for the tooltip the map draws. */
   hoveredEnvelope: EnvelopeHover | null;
@@ -191,13 +193,25 @@ export function useWarGames({
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [coverage, setCoverage] = useState<CoverageState>({
-    // Off by default: forty units with three rings each is a picture of nothing.
-    mode: 'off',
+    // One unit's reach is legible and forty units' is not, so the default is the
+    // selected unit rather than nothing at all — you see coverage the moment you
+    // click something, without having to know the control exists.
+    mode: 'selected',
     kinds: { engagement: true, detection: true, strike: true, 'strike-refuelled': false },
     // All threats on: the pills subtract from the full picture rather than
     // requiring you to build one before anything appears.
-    targets: { air: true, ballistic: true, surface: true, ground: true, subsurface: true },
-    targetAltM: 10_000,
+    targets: {
+      air: true,
+      'ballistic-short': true,
+      'ballistic-medium': true,
+      'ballistic-imrbm': true,
+      surface: true,
+      ground: true,
+      subsurface: true,
+    },
+    // Medium rather than high: 10,000 m flatters every ground radar by giving it
+    // most of its brochure range back, which is the least informative default.
+    targetAltM: 3_000,
   });
   const [hoveredEnvelope, setHoveredEnvelope] = useState<EnvelopeHover | null>(null);
 
@@ -262,6 +276,16 @@ export function useWarGames({
   const toggleCoverageTarget = useCallback(
     (target: TargetClass) =>
       setCoverage((prev) => ({ ...prev, targets: { ...prev.targets, [target]: !prev.targets[target] } })),
+    []
+  );
+
+  /** All ballistic tiers at once — the common case is on or off, not a tier. */
+  const setBallisticTargets = useCallback(
+    (on: boolean) =>
+      setCoverage((prev) => ({
+        ...prev,
+        targets: { ...prev.targets, ...Object.fromEntries(BALLISTIC_CLASSES.map((t) => [t, on])) },
+      })),
     []
   );
 
@@ -923,6 +947,7 @@ export function useWarGames({
     setCoverageMode,
     toggleCoverageKind,
     toggleCoverageTarget,
+    setBallisticTargets,
     setTargetAltitude,
     hoveredEnvelope,
     undo,

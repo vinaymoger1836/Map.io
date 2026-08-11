@@ -1,1577 +1,1581 @@
 [
-  {
-    "id": "s-400",
-    "name": "S-400 Triumf",
-    "typeId": "sam-launcher",
-    "origin": "Russia",
-    "note": "Battery figures for the mixed-missile S-400 (SA-21) using the 91N6E Big Bird acquisition radar and 92N6E fire-control radar. Fires 40N6 (long), 48N6 series (medium) and 9M96 (short/medium). 40N6 in-service status and whether the radar suite can exploit its full 400 km reach are both disputed.",
-    "sensor": {
-      "detectionKm": 600,
-      "tracks": 300,
-      "engagements": 36,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
+ {
+  "id": "s-400",
+  "name": "S-400 Triumf",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Battery figures for the mixed-missile S-400 (SA-21) using the 91N6E Big Bird acquisition radar and 92N6E fire-control radar. Fires 40N6 (long), 48N6 series (medium) and 9M96 (short/medium). 40N6 in-service status and whether the radar suite can exploit its full 400 km reach are both disputed.",
+  "sensor": {
+   "detectionKm": 600,
+   "tracks": 300,
+   "engagements": 36,
+   "sees": [
+    "air",
+    "ballistic-short",
+    "ballistic-medium"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "40N6",
+    "rangeKm": 400,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "48N6 series",
+    "rangeKm": 250,
+    "engages": [
+     "air",
+     "ballistic-short",
+     "ballistic-medium"
+    ]
+   },
+   {
+    "name": "9M96E2",
+    "rangeKm": 120,
+    "magazine": 16,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "91N6E Big Bird acquisition radar 'can detect and track... within the distance of 600km'. Target RCS/altitude not stated, so this is an optimistic ceiling; horizon-limited against low-altitude targets."
     },
-    "weapons": [
-      {
-        "name": "40N6",
-        "rangeKm": 400,
-        "magazine": 4,
-        "salvo": 2,
-        "pk": 0.75,
-        "reactionSec": 10,
-        "engages": [
-          "air"
-        ]
-      },
-      {
-        "name": "48N6 series",
-        "rangeKm": 250,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      },
-      {
-        "name": "9M96E2",
-        "rangeKm": 120,
-        "magazine": 16,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "91N6E Big Bird acquisition radar 'can detect and track... within the distance of 600km'. Target RCS/altitude not stated, so this is an optimistic ceiling; horizon-limited against low-altitude targets."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "91N6E 'can simultaneously track up to 300 targets'."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "'The system can simultaneously engage 36 targets.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumf | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/s-400-triumf/",
-          "note": "40N6 'can extend the air defense capabilities of the system to 400 km'; CSIS notes deployment status is unclear and questions whether the radar can exploit the full range. Army Technology cites the same 400 km as a manufacturer/claimed figure."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "TEL 'can carry up to four launch tubes'; one large 40N6/48N6 per tube = 4 ready rounds per launcher. A battery fields several TELs."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for a long-range active-radar-homing interceptor against a non-manoeuvring target. Not a published value."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch for an alerted battery; not published. System quoted as deployable within ~5 minutes but that is emplacement, not reaction."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Modern SAM doctrine typically commits two interceptors per high-value target; not a published figure for this system."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumf | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/s-400-triumf/",
-          "note": "48N6 series 'up to 250 km' against aerial targets, with a 60 km radius against ballistic missiles (143 kg HE-frag warhead)."
-        },
-        "confidence": "medium"
-      },
-      "weapons.2.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "'The maximum range of the 9M96 missile is 120km.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.2.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "Small 9M96 quad-packs four per launch tube; four tubes per TEL = 16 ready rounds."
-        },
-        "confidence": "medium"
-      }
-    }
-  },
-  {
-    "id": "s-300pmu2",
-    "name": "S-300PMU-2 Favorit",
-    "typeId": "sam-launcher",
-    "origin": "Russia",
-    "note": "Favorit (SA-20B) built around the 83M6E2 command post, 96L6 acquisition radar and 48N6E2 missile; can also quad-pack 9M96. In wide service.",
-    "sensor": {
-      "detectionKm": 300,
-      "tracks": 100,
-      "engagements": 36,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "91N6E 'can simultaneously track up to 300 targets'."
     },
-    "weapons": [
-      {
-        "name": "48N6E2",
-        "rangeKm": 200,
-        "magazine": 4,
-        "salvo": 2,
-        "pk": 0.85,
-        "reactionSec": 10,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
-          "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
-          "note": "96L6 acquisition radar range 300 km. Conditions/RCS not stated; horizon-limited against low-altitude targets."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
-          "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
-          "note": "System 'can simultaneously detect and track 100 targets'."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
-          "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
-          "note": "'...engage 36 of them while guiding 72 missiles.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
-          "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
-          "note": "48N6E2 range 200 km, 'versus the 150 km of previous versions'."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No stated figure on retrieved page",
-          "note": "Estimated 4 ready large missiles per 5P85 TEL, as with the S-300/S-400 family; a battery fields several launchers. Not stated on the cited page."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two interceptors per target is standard doctrine; not published for this system."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "reference",
-          "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
-          "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
-          "note": "Manufacturer-style claim: kill ratio 0.8-0.93 against aircraft and 0.8-0.98 against Tomahawk-class cruise missiles; 0.85 taken as a mid aircraft value. Optimistic vendor figure."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch for an alerted battery; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "s-350",
-    "name": "S-350 Vityaz",
-    "typeId": "sam-launcher",
-    "origin": "Russia",
-    "note": "Medium-range replacement for the S-300PS. Uses the 50N6A X-band AESA multifunction radar with 9M96-series (medium) and 9M100 (short) missiles; IOC 2020, combat-used in Ukraine. The research found no published 50N6A detection range; the figure below is a declared model estimate, not a sourced one.",
-    "sensor": {
-      "detectionKm": 180,
-      "tracks": 40,
-      "engagements": 8,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "'The system can simultaneously engage 36 targets.'"
     },
-    "weapons": [
-      {
-        "name": "9M96E2",
-        "rangeKm": 120,
-        "salvo": 2,
-        "pk": 0.75,
-        "reactionSec": 8,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "model estimate — no published 50N6A detection range found",
-          "note": "The research could not source a figure for the 50N6A. Set to 1.5x the 120 km reach of the 9M96E2, the ratio the S-400 and S-300PMU2 show between search range and longest missile, on the reasoning that an acquisition radar must out-range the missile it cues. Replace this the moment a real figure turns up."
-        },
-        "confidence": "low"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "50N6A Multi-Function Mobile Tracking Radar S-350 | Army Recognition",
-          "url": "https://www.armyrecognition.com/military-products/army/radars/air-defense-radars/50n6a-multi-function-mobile-tracking-radar-s-350",
-          "note": "50N6A X-band phased array 'can detect and track up to 40 targets simultaneously'."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "50N6A Multi-Function Mobile Tracking Radar S-350 | Army Recognition",
-          "url": "https://www.armyrecognition.com/military-products/army/radars/air-defense-radars/50n6a-multi-function-mobile-tracking-radar-s-350",
-          "note": "'...engage eight of them typically using two missiles per target.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "S-400 Triumph Air Defence Missile System | Army Technology",
-          "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
-          "note": "9M96 maximum range 120 km; same missile family as fielded on the S-350."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "reference",
-          "title": "50N6A Multi-Function Mobile Tracking Radar S-350 | Army Recognition",
-          "url": "https://www.armyrecognition.com/military-products/army/radars/air-defense-radars/50n6a-multi-function-mobile-tracking-radar-s-350",
-          "note": "Radar engages targets 'typically using two missiles per target'."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for the active-homing 9M96 against a non-manoeuvring target. Not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "pantsir-s1",
-    "name": "Pantsir-S1",
-    "typeId": "sam-launcher",
-    "origin": "Russia",
-    "note": "Baseline Pantsir-S1 (SA-22) gun/missile SPAAGM used, not the longer-range S1M/SM variants. Carries 12 57E6 missiles plus two twin 30 mm 2A38M cannons. Point/short-range defence, often escorting S-300/S-400 batteries.",
-    "sensor": {
-      "detectionKm": 36,
-      "tracks": 20,
-      "engagements": 4,
-      "sees": [
-        "air"
-      ],
-      "horizonLimited": true
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumf | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/s-400-triumf/",
+     "note": "40N6 'can extend the air defense capabilities of the system to 400 km'; CSIS notes deployment status is unclear and questions whether the radar can exploit the full range. Army Technology cites the same 400 km as a manufacturer/claimed figure."
     },
-    "weapons": [
-      {
-        "name": "57E6 missile",
-        "rangeKm": 20,
-        "minRangeKm": 1.5,
-        "magazine": 12,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 6,
-        "engages": [
-          "air"
-        ]
-      },
-      {
-        "name": "2A38M 30mm cannon",
-        "rangeKm": 4,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "Solid-state search radar tracks up to 20 tactical-aircraft-sized targets at 32-36 km; 36 km taken as the detection ceiling. Later S1M/SM raise this to 40-75 km."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "'...can track up to 20 tactical aircraft-sized targets at a range of 32-36 km.'"
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "CSIS: baseline 'engage up to four targets simultaneously'; other sources cite 2-3 simultaneous missile channels."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "57E6 max 20 km against tactical aircraft (12 km vs subsonic cruise missiles). Ranges roughly halve against targets perpendicular to the system's orientation."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.minRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "57E6 minimum engagement range 1.5 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "'...equipped with up to twelve 57E6 missiles.'"
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per engagement typical for command-guided short-range SAMs; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for radio-command point defence against a non-manoeuvring target; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Pantsir is quoted as fast-reacting (a few seconds); exact detection-to-launch not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Pantsir S-1 | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
-          "note": "Guns engage airborne targets to 4 km (max altitude 3 km); each gun ~40 rounds/second."
-        },
-        "confidence": "medium"
-      }
-    }
-  },
-  {
-    "id": "buk-m3",
-    "name": "Buk-M3",
-    "typeId": "sam-launcher",
-    "origin": "Russia",
-    "note": "Buk-M3 (9K317M, SA-27) adopted 2016, firing the 9M317M. Uses the 9S18M3 detection radar, 9A317M self-propelled fire units and 9S36M illuminators (22 m mast) plus 9A316M launchers holding 12 missiles. A full complex engages up to 36 targets.",
-    "sensor": {
-      "detectionKm": 160,
-      "tracks": 36,
-      "engagements": 36,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true,
-      "antennaM": 22
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "TEL 'can carry up to four launch tubes'; one large 40N6/48N6 per tube = 4 ready rounds per launcher. A battery fields several TELs."
     },
-    "weapons": [
-      {
-        "name": "9M317M",
-        "rangeKm": 70,
-        "minRangeKm": 2.5,
-        "magazine": 12,
-        "salvo": 2,
-        "pk": 0.75,
-        "reactionSec": 10,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "9S18M3 target-detection radar: azimuth 360 deg, range 160 km at RCS 1-2 m2. The 9S36M with its 22 m mast detects 5 m-altitude cruise missiles out to ~70 km."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "Command post issues up to 36 target designations; 36 target channels per division."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "'...the complex provides simultaneous firing of up to 36 air targets.' Each 9A317M fire unit handles up to 6."
-        },
-        "confidence": "medium"
-      },
-      "sensor.antennaM": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "9S36M illuminator antenna post rises to 22 m to extend the radio horizon against low-altitude targets."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "9M317M target range 2.5-70 km, kill altitude 0.015-35 km; intercept of high-speed targets to 30 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.minRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "Target range quoted as 2.5-70 km; 2.5 km is the near edge."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "9K317M Buk-M3 | Missilery.info",
-          "url": "https://en.missilery.info/missile/bukm3",
-          "note": "9A316M launcher carries 12 sealed missile canisters (two tiers of six); the 9A317M fire unit carries 6."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per target is standard doctrine; not published for this system."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No credible public figure",
-          "note": "The cited page repeats a vendor claim of 0.9999, which is not a plausible single-shot Pk. Estimated 0.75 against a non-manoeuvring target instead. Not a published value."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "tor-m2",
-    "name": "Tor-M2",
-    "typeId": "sam-launcher",
-    "origin": "Russia",
-    "note": "Tor-M2 family (SA-15 Gauntlet), the current tracked short-range/point-defence variant, VLS-launched 9M338-series missiles (up to 16). Detects at 32 km and engages four targets at once. Figures are for the land Tor-M2/M2E, not the naval Kinzhal or Arctic M2DT.",
-    "sensor": {
-      "detectionKm": 32,
-      "tracks": 48,
-      "engagements": 4,
-      "sees": [
-        "air"
-      ],
-      "horizonLimited": true
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for a long-range active-radar-homing interceptor against a non-manoeuvring target. Not a published value."
     },
-    "weapons": [
-      {
-        "name": "9M338K",
-        "rangeKm": 16,
-        "magazine": 16,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 6,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tor/",
-          "note": "'...the Tor-M2 family [can] detect targets at 32 km.' Tracking radar handles RCS as small as 0.1 m2."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tor/",
-          "note": "Surveillance radar 'can scan up to 48 targets' and track up to ten of them for engagement."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tor/",
-          "note": "Tor-M2 family 'engage up to four targets simultaneously'."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tor/",
-          "note": "Tor-M2 engagement range expanded to 16 km, ceiling 10 km, against targets under Mach 3."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/tor/",
-          "note": "Tor-M2 'can be armed with up to 8 9M331 or 16 9M338-series missiles'; 16 for the newer canisterised load."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per target typical for point defence; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for a command-guided point-defence SAM against a non-manoeuvring target; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Tor is marketed as very short reaction (a few seconds), able to fire on the move; exact figure not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "patriot-pac3",
-    "name": "MIM-104 Patriot PAC-3",
-    "typeId": "sam-launcher",
-    "origin": "United States",
-    "note": "PAC-3 MSE-equipped Patriot battery: AN/MPQ-65/65A sector-scanning radar, six to eight launching stations, ~90 crew. Fires the hit-to-kill PAC-3 MSE (aircraft + terminal ballistic defence) and typically mixes in longer-range PAC-2 GEM-T (~150-160 km against aircraft). A new 360-degree LTAMDS radar is replacing the MPQ-65 series.",
-    "sensor": {
-      "detectionKm": 100,
-      "tracks": 100,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch for an alerted battery; not published. System quoted as deployable within ~5 minutes but that is emplacement, not reaction."
     },
-    "weapons": [
-      {
-        "name": "PAC-3 MSE",
-        "rangeKm": 45,
-        "magazine": 12,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 9,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "AN/MPQ-53/65 Radar | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/defense-systems/anmpq-5365-radar/",
-          "note": "AN/MPQ-65 has 'a range of over 100 km'; the digitised MPQ-65A adds ~30%. Sector-scanning (not 360-degree) and horizon-limited at low altitude."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "AN/MPQ-53/65 Radar | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/defense-systems/anmpq-5365-radar/",
-          "note": "MPQ-65 'can track up to 100 targets at once'."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Patriot | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/system/patriot/",
-          "note": "Public figures vary widely: roughly 35-45 km against aerodynamic targets versus an 'extended MSE battlespace' out to ~120 km+ against ballistic targets. CSIS states the MSE 'nearly doubles' the PAC-3's range but gives no absolute value; 45 km taken as a mid aerodynamic estimate. Treat as contested."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Patriot | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/system/patriot/",
-          "note": "M903 launcher holds 12 single-packed PAC-3 MSE (or 16 PAC-3 CRI, four per canister). A battery fields six to eight launchers."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "reference",
-          "title": "Patriot | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/system/patriot/",
-          "note": "PAC-3 engagements throughout the CSIS test record are repeatedly '2 missiles fired' against a single target; two per target is the standard ripple."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for a hit-to-kill interceptor against a non-manoeuvring target; not a published single-shot value."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Patriot engagements are near-autonomous; exact detection-to-launch not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "thaad",
-    "name": "THAAD",
-    "typeId": "sam-launcher",
-    "origin": "United States",
-    "note": "Terminal High Altitude Area Defense: US terminal-phase ballistic missile defence. Uses the AN/TPY-2 X-band radar; a battery has six launchers of eight interceptors (48 rounds). Hit-to-kill, effective both inside and outside the atmosphere. Engages ballistic missiles, not aircraft.",
-    "sensor": {
-      "detectionKm": 3000,
-      "sees": [
-        "ballistic"
-      ],
-      "horizonLimited": true
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Modern SAM doctrine typically commits two interceptors per high-value target; not a published figure for this system."
     },
-    "weapons": [
-      {
-        "name": "THAAD interceptor",
-        "rangeKm": 200,
-        "magazine": 8,
-        "salvo": 2,
-        "pk": 0.8,
-        "reactionSec": 15,
-        "engages": [
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Terminal High Altitude Area Defense (THAAD) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/system/thaad/",
-          "note": "AN/TPY-2 detects missiles at 870-3,000 km: up to ~3,000 km in forward-based cueing mode, ~870 km-class in terminal mode. Strongly dependent on target RCS and radar mode; the 3,000 km figure is a cueing sensor range, not a THAAD engagement range."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Terminal High Altitude Area Defense (THAAD) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/system/thaad/",
-          "note": "'The THAAD system defend targets at ranges of 150-200 km'; 200 km taken as the outer figure. Intercept altitude up to ~150 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Terminal High Altitude Area Defense (THAAD) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/system/thaad/",
-          "note": "Each launcher carries up to eight interceptors; a typical battery has six launchers (48 rounds)."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "BMD doctrine is typically shoot-look-shoot, 1-2 interceptors per target; not a published figure."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "THAAD's production test record is strong, but a single-shot Pk against a real threat is not published. Estimated 0.8."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch for a cued terminal engagement; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "nasams",
-    "name": "NASAMS",
-    "typeId": "sam-launcher",
-    "origin": "Norway / United States",
-    "note": "National Advanced Surface-to-Air Missile System (Raytheon/Kongsberg). AN/MPQ-64 Sentinel radar, AIM-120 AMRAAM interceptor and Kongsberg Fire Distribution Center; a unit has three launchers of six missiles (18 ready), reloadable, radar and launchers can be dispersed >20 km apart. No ballistic-missile capability. Figures are for the AMRAAM/Sentinel baseline; the newer MPQ-64F1 radar (~120 km) and AMRAAM-ER extend the envelope.",
-    "sensor": {
-      "detectionKm": 75,
-      "engagements": 72,
-      "sees": [
-        "air"
-      ],
-      "horizonLimited": true
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumf | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/s-400-triumf/",
+     "note": "48N6 series 'up to 250 km' against aerial targets, with a 60 km radius against ballistic missiles (143 kg HE-frag warhead)."
     },
-    "weapons": [
-      {
-        "name": "AIM-120 AMRAAM",
-        "rangeKm": 40,
-        "magazine": 18,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 10,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "government",
-          "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
-          "url": "https://www.everycrsreport.com/reports/IF12230.html",
-          "note": "AN/MPQ-64 Sentinel: X-band, 360-degree phased array with a 75 km range to identify targets. Newer MPQ-64F1/A3 reportedly ~120 km."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "government",
-          "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
-          "url": "https://www.everycrsreport.com/reports/IF12230.html",
-          "note": "'The system can engage 72 targets simultaneously in active and passive modes.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "government",
-          "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
-          "url": "https://www.everycrsreport.com/reports/IF12230.html",
-          "note": "'AMRAAMs employed by NASAMS have a 40-kilometer... range, and longer-range missiles are currently under development.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "government",
-          "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
-          "url": "https://www.everycrsreport.com/reports/IF12230.html",
-          "note": "'The NASAMS is armed with three launchers, each carrying up to six missiles' = 18 ready rounds per unit."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per target typical; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for an active-radar-homing AMRAAM against a non-manoeuvring target; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "iris-t-slm",
-    "name": "IRIS-T SLM",
-    "typeId": "sam-launcher",
-    "origin": "Germany",
-    "note": "Diehl Defence medium-range SAM, a surface-launched derivative of the IRIS-T air-to-air missile and the medium tier of the European Sky Shield Initiative. Eight-canister vertical launcher on a MAN 8x8, 360-degree engagement, paired with the Hensoldt TRML-4D S-band AESA radar (instrumented range ~250 km, ~120 km against a fighter per Hensoldt). Combat-proven in Ukraine. Radar detection omitted here as the retrieved source does not state a figure.",
-    "weapons": [
-      {
-        "name": "IRIS-T SL",
-        "rangeKm": 40,
-        "magazine": 8,
-        "salvo": 2,
-        "pk": 0.75,
-        "reactionSec": 8,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Grosswald Systems: IRIS-T SLM",
-          "url": "https://www.grosswald.org/grosswald-systems-iris-t-slm-surface-to-air-missile-systems/",
-          "note": "IRIS-T SL (SLM) range up to 40 km, altitude 20 km, Mach 3+. The longer-range SLX interceptor (80 km / 30 km) fires from the same common launcher."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Grosswald Systems: IRIS-T SLM",
-          "url": "https://www.grosswald.org/grosswald-systems-iris-t-slm-surface-to-air-missile-systems/",
-          "note": "Launcher carries eight canisters in two banks of four; vertical launch, 360-degree engagement."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per target typical; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No single-shot figure",
-          "note": "Diehl and Ukrainian operators cite operational intercept rates near 99%, but that is a campaign statistic, not a single-shot Pk. Estimated 0.75."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "samp-t",
-    "name": "SAMP/T",
-    "typeId": "sam-launcher",
-    "origin": "France / Italy",
-    "note": "Eurosam (MBDA/Thales) SAMP/T, French designation MAMBA. Figures are for the current in-service Aster 30 / Arabel-radar variant: an Arabel 360-degree phased-array radar and up to six TELs of eight Aster interceptors per battery. The upgraded SAMP/T NG (Thales Ground Fire 300 radar, Aster 30 B1NT) is in development. The Arabel detection range below is recorded as unverified: it is the figure commonly quoted, but the page the research retrieved did not state it.",
-    "sensor": {
-      "detectionKm": 100,
-      "tracks": 100,
-      "engagements": 10,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
+    "confidence": "medium"
+   },
+   "weapons.2.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "'The maximum range of the 9M96 missile is 120km.'"
     },
-    "weapons": [
-      {
-        "name": "Aster 30",
-        "rangeKm": 120,
-        "magazine": 8,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 10,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "unverified — Arabel range commonly quoted at 100 km, not confirmed here",
-          "note": "The research noted this figure but declined to record it, because the CSIS page it retrieved does not state it. Kept so the battery draws a detection ring at all, and marked low until someone opens a page that says it."
-        },
-        "confidence": "low"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/samp-t/",
-          "note": "'The SAMP/T can track up to 100 targets and engage 10 simultaneously.'"
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/samp-t/",
-          "note": "'...engage 10 simultaneously.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/samp-t/",
-          "note": "Aster 30 ranges 120 km (Aster 15 covers ~30 km); Mach 4.5, 20 km altitude. Can engage TBMs fired from >600 km with external cueing."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/samp-t/",
-          "note": "Each TEL carries eight interceptors; a battery has up to six TELs plus a full set of reloads."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two interceptors per target typical; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for the Aster 30 against a non-manoeuvring target; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "hq-9b",
-    "name": "HQ-9B",
-    "typeId": "sam-launcher",
-    "origin": "China",
-    "note": "Long-range HQ-9B (300 km) variant with a dual semi-active + infrared seeker, from the S-300P-derived HQ-9 family. The HT-233 X-band engagement radar only reaches ~120 km, so the 300 km missile relies on cueing from separate long-range search radars (Type 305A/B). Launcher holds four missiles; a PLA battery fields ~48 launch vehicles and 192 missiles.",
-    "sensor": {
-      "detectionKm": 120,
-      "tracks": 100,
-      "engagements": 50,
-      "sees": [
-        "air",
-        "ballistic"
-      ],
-      "horizonLimited": true
+    "confidence": "medium"
+   },
+   "weapons.2.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "Small 9M96 quad-packs four per launch tube; four tubes per TEL = 16 ready rounds."
     },
-    "weapons": [
-      {
-        "name": "HQ-9B",
-        "rangeKm": 300,
-        "magazine": 4,
-        "salvo": 2,
-        "pk": 0.9,
-        "reactionSec": 10,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "HQ-9 | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
-          "note": "HT-233 X-band engagement radar: 120 km detection, 90 km tracking. A battery adds longer-range search radars (Type 305A/B) for earlier warning, so the system's effective detection exceeds the HT-233's own range."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "HQ-9 | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
-          "note": "'HQ-9's standard HT-233 engagement radar can track 100 targets and engage 50 of them at a range of 100 km.'"
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "HQ-9 | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
-          "note": "'...engage 50 of them at a range of 100 km.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "HQ-9 | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
-          "note": "HQ-9B 'longer 300 km range'; most earlier land HQ-9 variants ~200 km. Altitude to ~30 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "HQ-9 | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
-          "note": "'Each HQ-9 launcher contains four missiles stored in individual containers.'"
-        },
-        "confidence": "high"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "reference",
-          "title": "HQ-9 | Missile Defense Advocacy Alliance",
-          "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
-          "note": "'...single-shot kill probability is as high as 90 percent against airplanes,' but only ~30 percent against ballistic missiles. Vendor/analytic estimate, not a controlled figure."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per target typical; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "hq-16",
-    "name": "HQ-16A",
-    "typeId": "sam-launcher",
-    "origin": "China",
-    "note": "Land-based HQ-16A (export designation LY-80), a Buk-derived medium-range low-to-mid-altitude SAM. IBIS-150 S-band detection radar, separate L-band illumination/guidance radar; each launcher holds six canisters. Baseline HQ-16A figures used; the HQ-16B extends missile range to ~75 km.",
-    "sensor": {
-      "detectionKm": 140,
-      "tracks": 144,
-      "engagements": 4,
-      "sees": [
-        "air"
-      ],
-      "horizonLimited": true
-    },
-    "weapons": [
-      {
-        "name": "HQ-16 missile",
-        "rangeKm": 40,
-        "minRangeKm": 3.5,
-        "magazine": 6,
-        "salvo": 2,
-        "pk": 0.85,
-        "reactionSec": 10,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "IBIS-150 three-axis S-band passive phased array: air-target detection range 140 km."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "Detection radar 'capable of detecting up to 144 targets, the number of simultaneously accompanied targets is 48'."
-        },
-        "confidence": "medium"
-      },
-      "sensor.engagements": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "L-band illumination/guidance radar 'provides detection of six targets, escorting four of them and pointing at... up to 8 SURs' (missiles) - i.e. four simultaneous engagements."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "Range of fire against a fighter target 3.5-40 km (HQ-16A); 3.5-12 km against a low sea-skimming cruise missile. HQ-16B extends to ~75 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.minRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "Near edge of the fire zone 3.5 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "Launcher carries 'two bags of three transport and launch containers' = 6 ready missiles."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "'According to advertising materials, the probability of hitting a fighter-type target with one missile is about 85%, cruise missile 60%.' Optimistic vendor figure."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "reference",
-          "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
-          "url": "https://en.missilery.info/missile/hq16",
-          "note": "Guidance radar handles four targets while guiding up to eight missiles = two per target."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Full-system deployment quoted at 12 minutes, but detection-to-launch reaction is not published. Estimated."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "barak-8",
-    "name": "Barak 8 (MR-SAM, land)",
-    "typeId": "sam-launcher",
-    "origin": "Israel / India",
-    "note": "Land MR-SAM configuration of the IAI/DRDO Barak 8. Manufacturer range 70 km (some reporting ~90-100 km); the naval LR-SAM reaches 100 km and the Barak-8ER 150 km. A land firing unit has three mobile launchers of eight missiles each (24 ready) plus a long-range radar of the MF-STAR family. Radar detection range omitted: the retrieved page states it only for the naval MF-STAR, not the land radar.",
-    "weapons": [
-      {
-        "name": "Barak 8",
-        "rangeKm": 70,
-        "magazine": 8,
-        "salvo": 2,
-        "pk": 0.75,
-        "reactionSec": 8,
-        "engages": [
-          "air",
-          "ballistic"
-        ]
-      }
-    ],
-    "provenance": {
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Barak 8 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Barak_8",
-          "note": "MR-SAM land variant 'has a range of 70 km according to the manufacturer IAI'; the missile's maximum operational range is reported 70 km, later ~90 km, later 100 km depending on source. Naval LR-SAM 100 km; Barak-8ER 150 km. Treat as reported spread."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Barak 8 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Barak_8",
-          "note": "'Each launcher will have eight such missiles in two stacks'; a land firing unit has three mobile launchers (24 ready rounds)."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Two missiles per target typical; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimate for an active-radar-homing interceptor against a non-manoeuvring target; not published."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Estimated detection-to-launch; not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "akash",
-    "name": "Akash",
-    "typeId": "sam-launcher",
-    "origin": "India",
-    "note": "DRDO Akash medium-range SAM (Indian Army and Air Force). A battery has four Rajendra 3D PESA radars and four self-propelled launchers of three missiles each. Range ~30 km, ceiling 18 km, ramjet-rocket propulsion. Figures are for the in-service Akash / Akash-1S; Akash-NG (up to ~30-70 km, new RF seeker) is a newer development.",
-    "sensor": {
-      "detectionKm": 100,
-      "tracks": 64,
-      "sees": [
-        "air"
-      ],
-      "horizonLimited": true
-    },
-    "weapons": [
-      {
-        "name": "Akash",
-        "rangeKm": 30,
-        "magazine": 3,
-        "salvo": 2,
-        "pk": 0.88,
-        "reactionSec": 8,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
-          "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
-          "note": "Battery-level Rajendra radar tracking range up to 100 km (army variant, 40 targets) or 60 km (air-force variant, 64 targets); a separate 3D Central Acquisition Radar tracks 200 targets to 150 km."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
-          "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
-          "note": "Air-force Rajendra 'capable of tracking 64 targets within a range of 60 km'; army variant tracks 40 targets to 100 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
-          "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
-          "note": "'...destroying aircraft within the range of 30 km to 35 km and at altitudes up to 18,000 m'; older sources cite engagement to ~25 km."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
-          "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
-          "note": "'...four self-propelled launchers with three missiles each' - 3 ready rounds per launcher, four launchers per battery."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "reference",
-          "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
-          "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
-          "note": "'The kill probability of the missile is 88% and can be increased to 98.5% by launching a second missile after five seconds.' Single-shot 0.88."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "reference",
-          "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
-          "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
-          "note": "Pk rises to 98.5% 'by launching the second missile after five seconds' - two rounds per target."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "The cited five seconds is inter-missile spacing, not detection-to-launch reaction; reaction time not published."
-        },
-        "confidence": "low"
-      }
-    }
-  },
-  {
-    "id": "iron-dome",
-    "name": "Iron Dome",
-    "typeId": "sam-launcher",
-    "origin": "Israel",
-    "note": "Israeli short-range counter-rocket, artillery and mortar (C-RAM) / counter-UAV system, the lowest tier of Israel's air defence. ELM-2084 MMR S-band AESA radar; a battery has three to four launchers, each holding up to 20 Tamir interceptors. Detects and engages to ~70 km; discriminates rockets that threaten populated areas from those falling harmlessly. Naval C-Dome variant exists.",
-    "sensor": {
-      "detectionKm": 70,
-      "tracks": 1100,
-      "sees": [
-        "air"
-      ],
-      "horizonLimited": true
-    },
-    "weapons": [
-      {
-        "name": "Tamir",
-        "rangeKm": 70,
-        "magazine": 20,
-        "salvo": 2,
-        "pk": 0.85,
-        "reactionSec": 15,
-        "engages": [
-          "air"
-        ]
-      }
-    ],
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/iron-dome/",
-          "note": "'Iron Dome can detect and engage targets at ranges of up to 70 km' (Raytheon / IHS Jane's). Optimised against short-range rockets, mortars and artillery."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/iron-dome/",
-          "note": "ELM-2084 MMR has a manufacturer-stated capacity of 'up to 1100 targets for air surveillance purposes'."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/iron-dome/",
-          "note": "Engagement to ~70 km; effective envelope typically ~4-70 km against short-range rockets. One battery defends up to ~150 km squared."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
-          "url": "https://missilethreat.csis.org/defsys/iron-dome/",
-          "note": "'Each launcher can hold up to 20 Tamir interceptors'; a battery has three to four launchers."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No single-shot figure",
-          "note": "Iron Dome is widely reported to fire two Tamirs per threatening rocket, but the exact salvo policy is not stated on the cited page."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No single-shot figure",
-          "note": "CSIS reports ~90% kill rate against rockets selected for interception across the 2012, 2014 and 2021 campaigns - an operational success rate, not a single-shot Pk. Estimated 0.85."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Iron Dome reacts within seconds against short-flight-time rockets; exact figure not published."
-        },
-        "confidence": "low"
-      }
-    }
+    "confidence": "medium"
+   }
   }
+ },
+ {
+  "id": "s-300pmu2",
+  "name": "S-300PMU-2 Favorit",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Favorit (SA-20B) built around the 83M6E2 command post, 96L6 acquisition radar and 48N6E2 missile; can also quad-pack 9M96. In wide service.",
+  "sensor": {
+   "detectionKm": 300,
+   "tracks": 100,
+   "engagements": 36,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "48N6E2",
+    "rangeKm": 200,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.85,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
+     "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
+     "note": "96L6 acquisition radar range 300 km. Conditions/RCS not stated; horizon-limited against low-altitude targets."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
+     "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
+     "note": "System 'can simultaneously detect and track 100 targets'."
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
+     "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
+     "note": "'...engage 36 of them while guiding 72 missiles.'"
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
+     "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
+     "note": "48N6E2 range 200 km, 'versus the 150 km of previous versions'."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No stated figure on retrieved page",
+     "note": "Estimated 4 ready large missiles per 5P85 TEL, as with the S-300/S-400 family; a battery fields several launchers. Not stated on the cited page."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two interceptors per target is standard doctrine; not published for this system."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "reference",
+     "title": "S-300PMU2 Favorit SA-20 GARGOYLE | GlobalSecurity.org",
+     "url": "https://www.globalsecurity.org/military/world/russia/s-300pmu2.htm",
+     "note": "Manufacturer-style claim: kill ratio 0.8-0.93 against aircraft and 0.8-0.98 against Tomahawk-class cruise missiles; 0.85 taken as a mid aircraft value. Optimistic vendor figure."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch for an alerted battery; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "s-350",
+  "name": "S-350 Vityaz",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Medium-range replacement for the S-300PS. Uses the 50N6A X-band AESA multifunction radar with 9M96-series (medium) and 9M100 (short) missiles; IOC 2020, combat-used in Ukraine. The research found no published 50N6A detection range; the figure below is a declared model estimate, not a sourced one.",
+  "sensor": {
+   "detectionKm": 180,
+   "tracks": 40,
+   "engagements": 8,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "9M96E2",
+    "rangeKm": 120,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "model estimate — no published 50N6A detection range found",
+     "note": "The research could not source a figure for the 50N6A. Set to 1.5x the 120 km reach of the 9M96E2, the ratio the S-400 and S-300PMU2 show between search range and longest missile, on the reasoning that an acquisition radar must out-range the missile it cues. Replace this the moment a real figure turns up."
+    },
+    "confidence": "low"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "50N6A Multi-Function Mobile Tracking Radar S-350 | Army Recognition",
+     "url": "https://www.armyrecognition.com/military-products/army/radars/air-defense-radars/50n6a-multi-function-mobile-tracking-radar-s-350",
+     "note": "50N6A X-band phased array 'can detect and track up to 40 targets simultaneously'."
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "50N6A Multi-Function Mobile Tracking Radar S-350 | Army Recognition",
+     "url": "https://www.armyrecognition.com/military-products/army/radars/air-defense-radars/50n6a-multi-function-mobile-tracking-radar-s-350",
+     "note": "'...engage eight of them typically using two missiles per target.'"
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S-400 Triumph Air Defence Missile System | Army Technology",
+     "url": "https://www.army-technology.com/projects/s-400-triumph-air-defence-missile-system/",
+     "note": "9M96 maximum range 120 km; same missile family as fielded on the S-350."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "reference",
+     "title": "50N6A Multi-Function Mobile Tracking Radar S-350 | Army Recognition",
+     "url": "https://www.armyrecognition.com/military-products/army/radars/air-defense-radars/50n6a-multi-function-mobile-tracking-radar-s-350",
+     "note": "Radar engages targets 'typically using two missiles per target'."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for the active-homing 9M96 against a non-manoeuvring target. Not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "pantsir-s1",
+  "name": "Pantsir-S1",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Baseline Pantsir-S1 (SA-22) gun/missile SPAAGM used, not the longer-range S1M/SM variants. Carries 12 57E6 missiles plus two twin 30 mm 2A38M cannons. Point/short-range defence, often escorting S-300/S-400 batteries.",
+  "sensor": {
+   "detectionKm": 36,
+   "tracks": 20,
+   "engagements": 4,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "57E6 missile",
+    "rangeKm": 20,
+    "minRangeKm": 1.5,
+    "magazine": 12,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 6,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "name": "2A38M 30mm cannon",
+    "rangeKm": 4,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "Solid-state search radar tracks up to 20 tactical-aircraft-sized targets at 32-36 km; 36 km taken as the detection ceiling. Later S1M/SM raise this to 40-75 km."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "'...can track up to 20 tactical aircraft-sized targets at a range of 32-36 km.'"
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "CSIS: baseline 'engage up to four targets simultaneously'; other sources cite 2-3 simultaneous missile channels."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "57E6 max 20 km against tactical aircraft (12 km vs subsonic cruise missiles). Ranges roughly halve against targets perpendicular to the system's orientation."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.minRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "57E6 minimum engagement range 1.5 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "'...equipped with up to twelve 57E6 missiles.'"
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per engagement typical for command-guided short-range SAMs; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for radio-command point defence against a non-manoeuvring target; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Pantsir is quoted as fast-reacting (a few seconds); exact detection-to-launch not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Pantsir S-1 | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/pantsir-s-1/",
+     "note": "Guns engage airborne targets to 4 km (max altitude 3 km); each gun ~40 rounds/second."
+    },
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "buk-m3",
+  "name": "Buk-M3",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Buk-M3 (9K317M, SA-27) adopted 2016, firing the 9M317M. Uses the 9S18M3 detection radar, 9A317M self-propelled fire units and 9S36M illuminators (22 m mast) plus 9A316M launchers holding 12 missiles. A full complex engages up to 36 targets.",
+  "sensor": {
+   "detectionKm": 160,
+   "tracks": 36,
+   "engagements": 36,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true,
+   "antennaM": 22
+  },
+  "weapons": [
+   {
+    "name": "9M317M",
+    "rangeKm": 70,
+    "minRangeKm": 2.5,
+    "magazine": 12,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "9S18M3 target-detection radar: azimuth 360 deg, range 160 km at RCS 1-2 m2. The 9S36M with its 22 m mast detects 5 m-altitude cruise missiles out to ~70 km."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "Command post issues up to 36 target designations; 36 target channels per division."
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "'...the complex provides simultaneous firing of up to 36 air targets.' Each 9A317M fire unit handles up to 6."
+    },
+    "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "9S36M illuminator antenna post rises to 22 m to extend the radio horizon against low-altitude targets."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "9M317M target range 2.5-70 km, kill altitude 0.015-35 km; intercept of high-speed targets to 30 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.minRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "Target range quoted as 2.5-70 km; 2.5 km is the near edge."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "9K317M Buk-M3 | Missilery.info",
+     "url": "https://en.missilery.info/missile/bukm3",
+     "note": "9A316M launcher carries 12 sealed missile canisters (two tiers of six); the 9A317M fire unit carries 6."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per target is standard doctrine; not published for this system."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No credible public figure",
+     "note": "The cited page repeats a vendor claim of 0.9999, which is not a plausible single-shot Pk. Estimated 0.75 against a non-manoeuvring target instead. Not a published value."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "tor-m2",
+  "name": "Tor-M2",
+  "typeId": "sam-launcher",
+  "origin": "Russia",
+  "note": "Tor-M2 family (SA-15 Gauntlet), the current tracked short-range/point-defence variant, VLS-launched 9M338-series missiles (up to 16). Detects at 32 km and engages four targets at once. Figures are for the land Tor-M2/M2E, not the naval Kinzhal or Arctic M2DT.",
+  "sensor": {
+   "detectionKm": 32,
+   "tracks": 48,
+   "engagements": 4,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "9M338K",
+    "rangeKm": 16,
+    "magazine": 16,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 6,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tor/",
+     "note": "'...the Tor-M2 family [can] detect targets at 32 km.' Tracking radar handles RCS as small as 0.1 m2."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tor/",
+     "note": "Surveillance radar 'can scan up to 48 targets' and track up to ten of them for engagement."
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tor/",
+     "note": "Tor-M2 family 'engage up to four targets simultaneously'."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tor/",
+     "note": "Tor-M2 engagement range expanded to 16 km, ceiling 10 km, against targets under Mach 3."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Tor (SA-15 Gauntlet) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/tor/",
+     "note": "Tor-M2 'can be armed with up to 8 9M331 or 16 9M338-series missiles'; 16 for the newer canisterised load."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per target typical for point defence; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for a command-guided point-defence SAM against a non-manoeuvring target; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Tor is marketed as very short reaction (a few seconds), able to fire on the move; exact figure not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "patriot-pac3",
+  "name": "MIM-104 Patriot PAC-3",
+  "typeId": "sam-launcher",
+  "origin": "United States",
+  "note": "PAC-3 MSE-equipped Patriot battery: AN/MPQ-65/65A sector-scanning radar, six to eight launching stations, ~90 crew. Fires the hit-to-kill PAC-3 MSE (aircraft + terminal ballistic defence) and typically mixes in longer-range PAC-2 GEM-T (~150-160 km against aircraft). A new 360-degree LTAMDS radar is replacing the MPQ-65 series.",
+  "sensor": {
+   "detectionKm": 100,
+   "tracks": 100,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "PAC-3 MSE",
+    "rangeKm": 45,
+    "magazine": 12,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 9,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "AN/MPQ-53/65 Radar | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/defense-systems/anmpq-5365-radar/",
+     "note": "AN/MPQ-65 has 'a range of over 100 km'; the digitised MPQ-65A adds ~30%. Sector-scanning (not 360-degree) and horizon-limited at low altitude."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "AN/MPQ-53/65 Radar | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/defense-systems/anmpq-5365-radar/",
+     "note": "MPQ-65 'can track up to 100 targets at once'."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Patriot | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/system/patriot/",
+     "note": "Public figures vary widely: roughly 35-45 km against aerodynamic targets versus an 'extended MSE battlespace' out to ~120 km+ against ballistic targets. CSIS states the MSE 'nearly doubles' the PAC-3's range but gives no absolute value; 45 km taken as a mid aerodynamic estimate. Treat as contested."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Patriot | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/system/patriot/",
+     "note": "M903 launcher holds 12 single-packed PAC-3 MSE (or 16 PAC-3 CRI, four per canister). A battery fields six to eight launchers."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "reference",
+     "title": "Patriot | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/system/patriot/",
+     "note": "PAC-3 engagements throughout the CSIS test record are repeatedly '2 missiles fired' against a single target; two per target is the standard ripple."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for a hit-to-kill interceptor against a non-manoeuvring target; not a published single-shot value."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Patriot engagements are near-autonomous; exact detection-to-launch not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "thaad",
+  "name": "THAAD",
+  "typeId": "sam-launcher",
+  "origin": "United States",
+  "note": "Terminal High Altitude Area Defense: US terminal-phase ballistic missile defence. Uses the AN/TPY-2 X-band radar; a battery has six launchers of eight interceptors (48 rounds). Hit-to-kill, effective both inside and outside the atmosphere. Engages ballistic missiles, not aircraft.",
+  "sensor": {
+   "detectionKm": 3000,
+   "sees": [
+    "ballistic-short",
+    "ballistic-medium"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "THAAD interceptor",
+    "rangeKm": 200,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.8,
+    "reactionSec": 15,
+    "engages": [
+     "ballistic-short",
+     "ballistic-medium"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Terminal High Altitude Area Defense (THAAD) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/system/thaad/",
+     "note": "AN/TPY-2 detects missiles at 870-3,000 km: up to ~3,000 km in forward-based cueing mode, ~870 km-class in terminal mode. Strongly dependent on target RCS and radar mode; the 3,000 km figure is a cueing sensor range, not a THAAD engagement range."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Terminal High Altitude Area Defense (THAAD) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/system/thaad/",
+     "note": "'The THAAD system defend targets at ranges of 150-200 km'; 200 km taken as the outer figure. Intercept altitude up to ~150 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Terminal High Altitude Area Defense (THAAD) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/system/thaad/",
+     "note": "Each launcher carries up to eight interceptors; a typical battery has six launchers (48 rounds)."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "BMD doctrine is typically shoot-look-shoot, 1-2 interceptors per target; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "THAAD's production test record is strong, but a single-shot Pk against a real threat is not published. Estimated 0.8."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch for a cued terminal engagement; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "nasams",
+  "name": "NASAMS",
+  "typeId": "sam-launcher",
+  "origin": "Norway / United States",
+  "note": "National Advanced Surface-to-Air Missile System (Raytheon/Kongsberg). AN/MPQ-64 Sentinel radar, AIM-120 AMRAAM interceptor and Kongsberg Fire Distribution Center; a unit has three launchers of six missiles (18 ready), reloadable, radar and launchers can be dispersed >20 km apart. No ballistic-missile capability. Figures are for the AMRAAM/Sentinel baseline; the newer MPQ-64F1 radar (~120 km) and AMRAAM-ER extend the envelope.",
+  "sensor": {
+   "detectionKm": 75,
+   "engagements": 72,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "AIM-120 AMRAAM",
+    "rangeKm": 40,
+    "magazine": 18,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "government",
+     "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
+     "url": "https://www.everycrsreport.com/reports/IF12230.html",
+     "note": "AN/MPQ-64 Sentinel: X-band, 360-degree phased array with a 75 km range to identify targets. Newer MPQ-64F1/A3 reportedly ~120 km."
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "government",
+     "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
+     "url": "https://www.everycrsreport.com/reports/IF12230.html",
+     "note": "'The system can engage 72 targets simultaneously in active and passive modes.'"
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "government",
+     "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
+     "url": "https://www.everycrsreport.com/reports/IF12230.html",
+     "note": "'AMRAAMs employed by NASAMS have a 40-kilometer... range, and longer-range missiles are currently under development.'"
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "government",
+     "title": "National Advanced Surface-to-Air Missile System (NASAMS) | Congressional Research Service",
+     "url": "https://www.everycrsreport.com/reports/IF12230.html",
+     "note": "'The NASAMS is armed with three launchers, each carrying up to six missiles' = 18 ready rounds per unit."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per target typical; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for an active-radar-homing AMRAAM against a non-manoeuvring target; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "iris-t-slm",
+  "name": "IRIS-T SLM",
+  "typeId": "sam-launcher",
+  "origin": "Germany",
+  "note": "Diehl Defence medium-range SAM, a surface-launched derivative of the IRIS-T air-to-air missile and the medium tier of the European Sky Shield Initiative. Eight-canister vertical launcher on a MAN 8x8, 360-degree engagement, paired with the Hensoldt TRML-4D S-band AESA radar (instrumented range ~250 km, ~120 km against a fighter per Hensoldt). Combat-proven in Ukraine. Radar detection omitted here as the retrieved source does not state a figure.",
+  "weapons": [
+   {
+    "name": "IRIS-T SL",
+    "rangeKm": 40,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Grosswald Systems: IRIS-T SLM",
+     "url": "https://www.grosswald.org/grosswald-systems-iris-t-slm-surface-to-air-missile-systems/",
+     "note": "IRIS-T SL (SLM) range up to 40 km, altitude 20 km, Mach 3+. The longer-range SLX interceptor (80 km / 30 km) fires from the same common launcher."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Grosswald Systems: IRIS-T SLM",
+     "url": "https://www.grosswald.org/grosswald-systems-iris-t-slm-surface-to-air-missile-systems/",
+     "note": "Launcher carries eight canisters in two banks of four; vertical launch, 360-degree engagement."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per target typical; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No single-shot figure",
+     "note": "Diehl and Ukrainian operators cite operational intercept rates near 99%, but that is a campaign statistic, not a single-shot Pk. Estimated 0.75."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "samp-t",
+  "name": "SAMP/T",
+  "typeId": "sam-launcher",
+  "origin": "France / Italy",
+  "note": "Eurosam (MBDA/Thales) SAMP/T, French designation MAMBA. Figures are for the current in-service Aster 30 / Arabel-radar variant: an Arabel 360-degree phased-array radar and up to six TELs of eight Aster interceptors per battery. The upgraded SAMP/T NG (Thales Ground Fire 300 radar, Aster 30 B1NT) is in development. The Arabel detection range below is recorded as unverified: it is the figure commonly quoted, but the page the research retrieved did not state it.",
+  "sensor": {
+   "detectionKm": 100,
+   "tracks": 100,
+   "engagements": 10,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "Aster 30",
+    "rangeKm": 120,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "unverified — Arabel range commonly quoted at 100 km, not confirmed here",
+     "note": "The research noted this figure but declined to record it, because the CSIS page it retrieved does not state it. Kept so the battery draws a detection ring at all, and marked low until someone opens a page that says it."
+    },
+    "confidence": "low"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/samp-t/",
+     "note": "'The SAMP/T can track up to 100 targets and engage 10 simultaneously.'"
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/samp-t/",
+     "note": "'...engage 10 simultaneously.'"
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/samp-t/",
+     "note": "Aster 30 ranges 120 km (Aster 15 covers ~30 km); Mach 4.5, 20 km altitude. Can engage TBMs fired from >600 km with external cueing."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Sol-Air Moyenne Portee/Terrestre (SAMP/T) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/samp-t/",
+     "note": "Each TEL carries eight interceptors; a battery has up to six TELs plus a full set of reloads."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two interceptors per target typical; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for the Aster 30 against a non-manoeuvring target; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "hq-9b",
+  "name": "HQ-9B",
+  "typeId": "sam-launcher",
+  "origin": "China",
+  "note": "Long-range HQ-9B (300 km) variant with a dual semi-active + infrared seeker, from the S-300P-derived HQ-9 family. The HT-233 X-band engagement radar only reaches ~120 km, so the 300 km missile relies on cueing from separate long-range search radars (Type 305A/B). Launcher holds four missiles; a PLA battery fields ~48 launch vehicles and 192 missiles.",
+  "sensor": {
+   "detectionKm": 120,
+   "tracks": 100,
+   "engagements": 50,
+   "sees": [
+    "air",
+    "ballistic-short"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "HQ-9B",
+    "rangeKm": 300,
+    "magazine": 4,
+    "salvo": 2,
+    "pk": 0.9,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-9 | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
+     "note": "HT-233 X-band engagement radar: 120 km detection, 90 km tracking. A battery adds longer-range search radars (Type 305A/B) for earlier warning, so the system's effective detection exceeds the HT-233's own range."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-9 | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
+     "note": "'HQ-9's standard HT-233 engagement radar can track 100 targets and engage 50 of them at a range of 100 km.'"
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-9 | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
+     "note": "'...engage 50 of them at a range of 100 km.'"
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-9 | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
+     "note": "HQ-9B 'longer 300 km range'; most earlier land HQ-9 variants ~200 km. Altitude to ~30 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-9 | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
+     "note": "'Each HQ-9 launcher contains four missiles stored in individual containers.'"
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-9 | Missile Defense Advocacy Alliance",
+     "url": "https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/china/china-anti-access-area-denial/hq-9/",
+     "note": "'...single-shot kill probability is as high as 90 percent against airplanes,' but only ~30 percent against ballistic missiles. Vendor/analytic estimate, not a controlled figure."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per target typical; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "hq-16",
+  "name": "HQ-16A",
+  "typeId": "sam-launcher",
+  "origin": "China",
+  "note": "Land-based HQ-16A (export designation LY-80), a Buk-derived medium-range low-to-mid-altitude SAM. IBIS-150 S-band detection radar, separate L-band illumination/guidance radar; each launcher holds six canisters. Baseline HQ-16A figures used; the HQ-16B extends missile range to ~75 km.",
+  "sensor": {
+   "detectionKm": 140,
+   "tracks": 144,
+   "engagements": 4,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "HQ-16 missile",
+    "rangeKm": 40,
+    "minRangeKm": 3.5,
+    "magazine": 6,
+    "salvo": 2,
+    "pk": 0.85,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "IBIS-150 three-axis S-band passive phased array: air-target detection range 140 km."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "Detection radar 'capable of detecting up to 144 targets, the number of simultaneously accompanied targets is 48'."
+    },
+    "confidence": "medium"
+   },
+   "sensor.engagements": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "L-band illumination/guidance radar 'provides detection of six targets, escorting four of them and pointing at... up to 8 SURs' (missiles) - i.e. four simultaneous engagements."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "Range of fire against a fighter target 3.5-40 km (HQ-16A); 3.5-12 km against a low sea-skimming cruise missile. HQ-16B extends to ~75 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.minRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "Near edge of the fire zone 3.5 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "Launcher carries 'two bags of three transport and launch containers' = 6 ready missiles."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "'According to advertising materials, the probability of hitting a fighter-type target with one missile is about 85%, cruise missile 60%.' Optimistic vendor figure."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "reference",
+     "title": "Antiaircraft missile system HQ-16 (LY-80) | Missilery.info",
+     "url": "https://en.missilery.info/missile/hq16",
+     "note": "Guidance radar handles four targets while guiding up to eight missiles = two per target."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Full-system deployment quoted at 12 minutes, but detection-to-launch reaction is not published. Estimated."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "barak-8",
+  "name": "Barak 8 (MR-SAM, land)",
+  "typeId": "sam-launcher",
+  "origin": "Israel / India",
+  "note": "Land MR-SAM configuration of the IAI/DRDO Barak 8. Manufacturer range 70 km (some reporting ~90-100 km); the naval LR-SAM reaches 100 km and the Barak-8ER 150 km. A land firing unit has three mobile launchers of eight missiles each (24 ready) plus a long-range radar of the MF-STAR family. Radar detection range omitted: the retrieved page states it only for the naval MF-STAR, not the land radar.",
+  "weapons": [
+   {
+    "name": "Barak 8",
+    "rangeKm": 70,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 8,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   }
+  ],
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Barak 8 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Barak_8",
+     "note": "MR-SAM land variant 'has a range of 70 km according to the manufacturer IAI'; the missile's maximum operational range is reported 70 km, later ~90 km, later 100 km depending on source. Naval LR-SAM 100 km; Barak-8ER 150 km. Treat as reported spread."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Barak 8 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Barak_8",
+     "note": "'Each launcher will have eight such missiles in two stacks'; a land firing unit has three mobile launchers (24 ready rounds)."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per target typical; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimate for an active-radar-homing interceptor against a non-manoeuvring target; not published."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "akash",
+  "name": "Akash",
+  "typeId": "sam-launcher",
+  "origin": "India",
+  "note": "DRDO Akash medium-range SAM (Indian Army and Air Force). A battery has four Rajendra 3D PESA radars and four self-propelled launchers of three missiles each. Range ~30 km, ceiling 18 km, ramjet-rocket propulsion. Figures are for the in-service Akash / Akash-1S; Akash-NG (up to ~30-70 km, new RF seeker) is a newer development.",
+  "sensor": {
+   "detectionKm": 100,
+   "tracks": 64,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "Akash",
+    "rangeKm": 30,
+    "magazine": 3,
+    "salvo": 2,
+    "pk": 0.88,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
+     "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
+     "note": "Battery-level Rajendra radar tracking range up to 100 km (army variant, 40 targets) or 60 km (air-force variant, 64 targets); a separate 3D Central Acquisition Radar tracks 200 targets to 150 km."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
+     "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
+     "note": "Air-force Rajendra 'capable of tracking 64 targets within a range of 60 km'; army variant tracks 40 targets to 100 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
+     "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
+     "note": "'...destroying aircraft within the range of 30 km to 35 km and at altitudes up to 18,000 m'; older sources cite engagement to ~25 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
+     "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
+     "note": "'...four self-propelled launchers with three missiles each' - 3 ready rounds per launcher, four launchers per battery."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "reference",
+     "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
+     "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
+     "note": "'The kill probability of the missile is 88% and can be increased to 98.5% by launching a second missile after five seconds.' Single-shot 0.88."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "reference",
+     "title": "Akash Surface-to-Air Missile (SAM) System | Airforce Technology",
+     "url": "https://www.airforce-technology.com/projects/akash-surface-to-air-missile-system/",
+     "note": "Pk rises to 98.5% 'by launching the second missile after five seconds' - two rounds per target."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "The cited five seconds is inter-missile spacing, not detection-to-launch reaction; reaction time not published."
+    },
+    "confidence": "low"
+   }
+  }
+ },
+ {
+  "id": "iron-dome",
+  "name": "Iron Dome",
+  "typeId": "sam-launcher",
+  "origin": "Israel",
+  "note": "Israeli short-range counter-rocket, artillery and mortar (C-RAM) / counter-UAV system, the lowest tier of Israel's air defence. ELM-2084 MMR S-band AESA radar; a battery has three to four launchers, each holding up to 20 Tamir interceptors. Detects and engages to ~70 km; discriminates rockets that threaten populated areas from those falling harmlessly. Naval C-Dome variant exists.",
+  "sensor": {
+   "detectionKm": 70,
+   "tracks": 1100,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true
+  },
+  "weapons": [
+   {
+    "name": "Tamir",
+    "rangeKm": 70,
+    "magazine": 20,
+    "salvo": 2,
+    "pk": 0.85,
+    "reactionSec": 15,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/iron-dome/",
+     "note": "'Iron Dome can detect and engage targets at ranges of up to 70 km' (Raytheon / IHS Jane's). Optimised against short-range rockets, mortars and artillery."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/iron-dome/",
+     "note": "ELM-2084 MMR has a manufacturer-stated capacity of 'up to 1100 targets for air surveillance purposes'."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/iron-dome/",
+     "note": "Engagement to ~70 km; effective envelope typically ~4-70 km against short-range rockets. One battery defends up to ~150 km squared."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Iron Dome (Israel) | Missile Threat (CSIS)",
+     "url": "https://missilethreat.csis.org/defsys/iron-dome/",
+     "note": "'Each launcher can hold up to 20 Tamir interceptors'; a battery has three to four launchers."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No single-shot figure",
+     "note": "Iron Dome is widely reported to fire two Tamirs per threatening rocket, but the exact salvo policy is not stated on the cited page."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No single-shot figure",
+     "note": "CSIS reports ~90% kill rate against rockets selected for interception across the 2012, 2014 and 2021 campaigns - an operational success rate, not a single-shot Pk. Estimated 0.85."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Iron Dome reacts within seconds against short-flight-time rockets; exact figure not published."
+    },
+    "confidence": "low"
+   }
+  }
+ }
 ]

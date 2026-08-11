@@ -21,16 +21,47 @@
 
 import { UNIT_BY_ID, type Domain } from './warGames';
 
-/** What a sensor can see or a weapon can shoot at. */
-export type TargetClass = 'air' | 'ballistic' | 'surface' | 'ground' | 'subsurface';
+/**
+ * What a sensor can see or a weapon can shoot at.
+ *
+ * `air` is everything that flies aerodynamically — aircraft, but also cruise
+ * missiles and drones, which is most of what an air-defence system would
+ * actually be shooting at. Ballistic is separate because it is a different
+ * engagement problem entirely: boosted, then coasting on an unpowered arc, and
+ * re-entering steeply at Mach 5 and up.
+ *
+ * Ballistic is split by the class of threat, because a Patriot PAC-3 at 45 km
+ * and an SM-3 at 1,200 km are not answering the same question and a single
+ * `ballistic` tag made the map claim they were.
+ */
+export type TargetClass =
+  | 'air'
+  | 'ballistic-short'
+  | 'ballistic-medium'
+  | 'ballistic-imrbm'
+  | 'surface'
+  | 'ground'
+  | 'subsurface';
 
-export const TARGET_CLASSES: { id: TargetClass; label: string }[] = [
-  { id: 'air', label: 'Aircraft' },
-  { id: 'ballistic', label: 'Ballistic' },
-  { id: 'surface', label: 'Ships' },
-  { id: 'ground', label: 'Ground' },
-  { id: 'subsurface', label: 'Submarines' },
+export const TARGET_CLASSES: { id: TargetClass; label: string; hint: string }[] = [
+  { id: 'air', label: 'Air', hint: 'Aircraft, cruise missiles and drones — anything that flies on wings' },
+  { id: 'ballistic-short', label: 'SRBM', hint: 'Battlefield rockets and short-range ballistic missiles' },
+  { id: 'ballistic-medium', label: 'MRBM', hint: 'Medium-range, theatre ballistic missiles' },
+  { id: 'ballistic-imrbm', label: 'IRBM+', hint: 'Intermediate-range and above, engaged outside the atmosphere' },
+  { id: 'surface', label: 'Ships', hint: 'Surface vessels' },
+  { id: 'ground', label: 'Ground', hint: 'Land targets — fixed sites, formations, infrastructure' },
+  { id: 'subsurface', label: 'Submarines', hint: 'Submerged contacts' },
 ];
+
+/** The ballistic tiers, in ascending order of threat — grouped in the UI. */
+export const BALLISTIC_CLASSES = [
+  'ballistic-short',
+  'ballistic-medium',
+  'ballistic-imrbm',
+] as const satisfies readonly TargetClass[];
+
+export const isBallistic = (t: TargetClass): boolean =>
+  (BALLISTIC_CLASSES as readonly string[]).includes(t);
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -150,9 +181,48 @@ export interface SystemSpec {
  */
 export function mergeSystems(library: SystemSpec[], custom: SystemSpec[]): SystemSpec[] {
   const byId = new Map<string, SystemSpec>();
-  for (const spec of library) byId.set(spec.id, spec);
-  for (const spec of custom) byId.set(spec.id, { ...spec, custom: true });
+  for (const spec of library) byId.set(spec.id, reviveSpec(spec));
+  for (const spec of custom) byId.set(spec.id, { ...reviveSpec(spec), custom: true });
   return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Target classes that no longer exist, and what they became.
+ *
+ * `ballistic` was one bucket holding a Patriot at 45 km and an SM-3 at 1,200 km.
+ * A saved system still carrying it would draw a ring that no filter matches, so
+ * it is mapped to the narrowest tier — claiming less than the author may have
+ * meant is the right direction to be wrong in.
+ */
+const LEGACY_TARGETS: Record<string, TargetClass[]> = {
+  ballistic: ['ballistic-short'],
+};
+
+/** Returns the same array when there is nothing to migrate, so `reviveSpec` can
+    hand back the identical object and callers keep their memoisation. */
+const reviveTargets = (classes: TargetClass[] | undefined): TargetClass[] | undefined => {
+  if (!classes?.length || !classes.some((c) => LEGACY_TARGETS[c])) return classes;
+  return [...new Set(classes.flatMap((c) => LEGACY_TARGETS[c] ?? [c]))];
+};
+
+/**
+ * Brings a stored system up to the current vocabulary. Read-time and idempotent:
+ * a system saved before the ballistic split still loads, and still draws.
+ */
+export function reviveSpec(spec: SystemSpec): SystemSpec {
+  const sees = reviveTargets(spec.sensor?.sees);
+  const weapons = spec.weapons?.map((w) => {
+    const engages = reviveTargets(w.engages);
+    return engages === w.engages ? w : { ...w, engages };
+  });
+  const sensorChanged = spec.sensor && sees !== spec.sensor.sees;
+  const weaponsChanged = weapons?.some((w, i) => w !== spec.weapons?.[i]);
+  if (!sensorChanged && !weaponsChanged) return spec;
+  return {
+    ...spec,
+    ...(spec.sensor && sensorChanged ? { sensor: { ...spec.sensor, sees } } : {}),
+    ...(weaponsChanged ? { weapons } : {}),
+  };
 }
 
 export function systemsForType(systems: SystemSpec[], typeId: string): SystemSpec[] {
@@ -187,17 +257,48 @@ export interface Envelope {
   engages?: TargetClass[];
 }
 
+/**
+ * How a class reads in a sentence, in a tooltip.
+ *
+ * 'air' says more than 'aircraft' on purpose: the class covers cruise missiles
+ * and drones too, and a ring labelled 'vs aircraft' understated what an S-400
+ * is actually pointed at.
+ */
 export const TARGET_LABEL: Record<TargetClass, string> = {
-  air: 'aircraft',
-  ballistic: 'ballistic',
+  air: 'aircraft & cruise missiles',
+  'ballistic-short': 'short-range ballistic',
+  'ballistic-medium': 'medium-range ballistic',
+  'ballistic-imrbm': 'intermediate-range ballistic',
   surface: 'ships',
   ground: 'ground',
   subsurface: 'submarines',
 };
 
-/** 'aircraft, ballistic' — for a tooltip. */
-export const describeTargets = (classes: TargetClass[] | undefined): string =>
-  classes?.length ? classes.map((c) => TARGET_LABEL[c]).join(', ') : 'unspecified targets';
+/** Short form of a ballistic tier, for when several are listed together. */
+const BALLISTIC_SHORT_LABEL: Record<string, string> = {
+  'ballistic-short': 'SRBM',
+  'ballistic-medium': 'MRBM',
+  'ballistic-imrbm': 'IRBM+',
+};
+
+/**
+ * 'aircraft & cruise missiles, ballistic (SRBM, MRBM)' — for a tooltip.
+ *
+ * The tiers collapse into one phrase rather than spelling each out, because
+ * 'short-range ballistic, medium-range ballistic' is the same word twice and
+ * pushes the useful part off the end of the card.
+ */
+export const describeTargets = (classes: TargetClass[] | undefined): string => {
+  if (!classes?.length) return 'unspecified targets';
+  const tiers = BALLISTIC_CLASSES.filter((t) => classes.includes(t));
+  const rest = classes.filter((c) => !isBallistic(c)).map((c) => TARGET_LABEL[c]);
+  if (!tiers.length) return rest.join(', ');
+  const ballistic =
+    tiers.length === BALLISTIC_CLASSES.length
+      ? 'ballistic missiles'
+      : `ballistic (${tiers.map((t) => BALLISTIC_SHORT_LABEL[t]).join(', ')})`;
+  return [...rest, ballistic].join(', ');
+};
 
 export const ENVELOPE_LABELS: Record<EnvelopeKind, string> = {
   detection: 'Detection',
@@ -348,12 +449,14 @@ export function specLines(spec: SystemSpec): SpecLine[] {
     push('sensor.detectionKm', 'Detection', km(spec.sensor.detectionKm));
     push('sensor.tracks', 'Tracks held', spec.sensor.tracks);
     push('sensor.engagements', 'Fire channels', spec.sensor.engagements);
-    if (spec.sensor.sees?.length) push('sensor.sees', 'Sees', spec.sensor.sees.join(', '));
+    if (spec.sensor.sees?.length) push('sensor.sees', 'Sees', describeTargets(spec.sensor.sees));
   }
 
   (spec.weapons ?? []).forEach((w, i) => {
     const prefix = `weapons.${i}`;
     push(`${prefix}.rangeKm`, w.name ?? `Weapon ${i + 1}`, km(w.rangeKm));
+    // What it is for, which is the difference between a Tomahawk and an SM-6.
+    if (w.engages?.length) push(`${prefix}.engages`, 'Engages', describeTargets(w.engages));
     push(`${prefix}.magazine`, 'Ready rounds', w.magazine);
     push(`${prefix}.salvo`, 'Salvo', w.salvo);
     push(`${prefix}.pk`, 'Kill probability', w.pk === undefined ? undefined : w.pk.toFixed(2));

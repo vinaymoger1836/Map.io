@@ -33,7 +33,18 @@ const target = args.find((a) => !a.startsWith('--')) ?? join(ROOT, 'public', 'da
 const catalogue = readFileSync(join(ROOT, 'lib', 'warGames.ts'), 'utf8');
 const TYPE_IDS = new Set([...catalogue.matchAll(/unit\('([a-z0-9-]+)'/g)].map((m) => m[1]));
 
-const TARGETS = new Set(['air', 'ballistic', 'surface', 'ground', 'subsurface']);
+/* Ballistic is tiered: a Patriot at 45 km and an SM-3 at 1,200 km are not
+   answering the same question. Plain 'ballistic' is deliberately absent so a
+   stale tag fails loudly rather than drawing a ring nobody can interpret. */
+const TARGETS = new Set([
+  'air',
+  'ballistic-short',
+  'ballistic-medium',
+  'ballistic-imrbm',
+  'surface',
+  'ground',
+  'subsurface',
+]);
 const KINDS = new Set(['manufacturer', 'government', 'reference', 'press', 'placeholder']);
 const CONFIDENCE = new Set(['high', 'medium', 'low']);
 const SIGNATURES = new Set(['low', 'medium', 'high']);

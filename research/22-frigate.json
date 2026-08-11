@@ -1,131 +1,388 @@
 [
-  {
-    "id": "admiral-gorshkov",
-    "name": "Admiral Gorshkov class",
-    "typeId": "frigate",
-    "origin": "Russia",
-    "note": "Project 22350 Admiral Gorshkov-class frigate. Area air defence by the Redut system (32 cells, 9M96 family, ~150 km); strike by 16 UKSK VLS cells for Kalibr, Oniks or Zircon (anti-ship and land-attack). Displacement/speed/crew below are estimates (specifications table not captured on fetch).",
-    "weapons": [
-      {
-        "id": "9m96",
-        "name": "9M96 (Redut)",
-        "rangeKm": 150,
-        "magazine": 32,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 10,
-        "engages": ["air"]
-      },
-      {
-        "id": "oniks",
-        "name": "P-800 Oniks",
-        "rangeKm": 600,
-        "massKg": 3100,
-        "salvo": 4,
-        "pk": 0.6,
-        "reactionSec": 30,
-        "engages": ["surface"]
-      },
-      {
-        "id": "kalibr",
-        "name": "Kalibr (3M14/3M54)",
-        "rangeKm": 1500,
-        "salvo": 4,
-        "pk": 0.75,
-        "reactionSec": 60,
-        "engages": ["ground", "surface"]
-      }
-    ],
-    "platform": {
-      "displacementT": 5400,
-      "vls": 48,
-      "speedKmh": 54,
-      "crew": 210
-    },
-    "signature": "medium",
-    "provenance": {
-      "weapons.0.rangeKm": {
-        "source": {"kind": "reference", "title": "Admiral Gorshkov-class frigate | Wikipedia", "url": "https://en.wikipedia.org/wiki/Admiral_Gorshkov-class_frigate", "note": "'Redut 150 km range air defence missile system' with the 9M96 missile family (short-range 9M100 also carried)."},
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {"source": {"kind": "reference", "title": "Admiral Gorshkov-class frigate | Wikipedia", "url": "https://en.wikipedia.org/wiki/Admiral_Gorshkov-class_frigate", "note": "Redut has 32 VLS cells on the class."}, "confidence": "medium"},
-      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Two missiles per engagement (modelling default)."}, "confidence": "low"},
-      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a modern active-radar SAM."}, "confidence": "low"},
-      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-launch not published; modelling estimate."}, "confidence": "low"},
-      "weapons.1.rangeKm": {"source": {"kind": "reference", "title": "P-800 Oniks | Wikipedia", "url": "https://en.wikipedia.org/wiki/P-800_Oniks", "note": "Russian ship/sub Oniks ~600 km (Oniks-M up to 800 km). Figures kept identical to the shared 'oniks' catalogue entry."}, "confidence": "medium"},
-      "weapons.1.massKg": {"source": {"kind": "reference", "title": "P-800 Oniks | Wikipedia", "url": "https://en.wikipedia.org/wiki/P-800_Oniks", "note": "'Weight: 3,100 kg'."}, "confidence": "high"},
-      "weapons.1.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling default, matched to the shared oniks entry."}, "confidence": "low"},
-      "weapons.1.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Matched to the shared oniks entry."}, "confidence": "low"},
-      "weapons.1.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Matched to the shared oniks entry."}, "confidence": "low"},
-      "weapons.2.rangeKm": {"source": {"kind": "reference", "title": "3M-54 Kalibr | Wikipedia", "url": "https://en.wikipedia.org/wiki/3M-54_Kalibr", "note": "3M14 land-attack ~1,400-2,500 km; 3M54 anti-ship 550-660 km. Figures kept identical to the shared 'kalibr' catalogue entry."}, "confidence": "medium"},
-      "weapons.2.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Matched to the shared kalibr entry."}, "confidence": "low"},
-      "weapons.2.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Matched to the shared kalibr entry."}, "confidence": "low"},
-      "weapons.2.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Matched to the shared kalibr entry."}, "confidence": "low"},
-      "platform.displacementT": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Project 22350 full-load displacement commonly cited ~5,400 t. Estimate."}, "confidence": "low"},
-      "platform.vls": {"source": {"kind": "reference", "title": "Admiral Gorshkov-class frigate | Wikipedia", "url": "https://en.wikipedia.org/wiki/Admiral_Gorshkov-class_frigate", "note": "16 UKSK strike cells + 32 Redut cells = 48 VLS cells."}, "confidence": "medium"},
-      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Top speed commonly cited ~29 kn (~54 km/h). Estimate."}, "confidence": "low"},
-      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Complement commonly cited ~170-210. Estimate."}, "confidence": "low"}
-    }
+ {
+  "id": "admiral-gorshkov",
+  "name": "Admiral Gorshkov class",
+  "typeId": "frigate",
+  "origin": "Russia",
+  "note": "Project 22350 Admiral Gorshkov-class frigate. Area air defence by the Redut system (32 cells, 9M96 family, ~150 km); strike by 16 UKSK VLS cells for Kalibr, Oniks or Zircon (anti-ship and land-attack). Displacement/speed/crew below are estimates (specifications table not captured on fetch).",
+  "weapons": [
+   {
+    "id": "9m96",
+    "name": "9M96 (Redut)",
+    "rangeKm": 150,
+    "magazine": 32,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "id": "oniks",
+    "name": "P-800 Oniks",
+    "rangeKm": 600,
+    "massKg": 3100,
+    "salvo": 4,
+    "pk": 0.6,
+    "reactionSec": 30,
+    "engages": [
+     "surface"
+    ]
+   },
+   {
+    "id": "kalibr",
+    "name": "Kalibr (3M14/3M54)",
+    "rangeKm": 1500,
+    "salvo": 4,
+    "pk": 0.75,
+    "reactionSec": 60,
+    "engages": [
+     "ground",
+     "surface"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 5400,
+   "vls": 48,
+   "speedKmh": 54,
+   "crew": 210
   },
-  {
-    "id": "fremm",
-    "name": "FREMM class",
-    "typeId": "frigate",
-    "origin": "France / Italy",
-    "note": "FREMM (Frégate multi-mission / Bergamini) multipurpose frigate. Area air defence with Aster 15/30 in Sylver VLS; anti-ship with Exocet MM40 Block 3; land attack with the MdCN naval cruise missile (French A70 cells). Displacement/speed/crew below are estimates (specifications table not captured on fetch).",
-    "weapons": [
-      {
-        "id": "aster-30",
-        "name": "Aster 30",
-        "rangeKm": 120,
-        "magazine": 16,
-        "salvo": 2,
-        "pk": 0.75,
-        "reactionSec": 10,
-        "engages": ["air", "ballistic"]
-      },
-      {
-        "id": "exocet",
-        "name": "Exocet MM40 Block 3",
-        "rangeKm": 200,
-        "salvo": 2,
-        "pk": 0.6,
-        "reactionSec": 30,
-        "engages": ["surface"]
-      },
-      {
-        "id": "mdcn",
-        "name": "MdCN (naval cruise missile)",
-        "rangeKm": 1000,
-        "salvo": 2,
-        "pk": 0.8,
-        "reactionSec": 60,
-        "engages": ["ground"]
-      }
-    ],
-    "platform": {
-      "displacementT": 6000,
-      "speedKmh": 50,
-      "crew": 145
+  "signature": "medium",
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Admiral Gorshkov-class frigate | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Admiral_Gorshkov-class_frigate",
+     "note": "'Redut 150 km range air defence missile system' with the 9M96 missile family (short-range 9M100 also carried)."
     },
-    "signature": "low",
-    "provenance": {
-      "weapons.0.rangeKm": {"source": {"kind": "reference", "title": "Type 45 destroyer | Wikipedia", "url": "https://en.wikipedia.org/wiki/Type_45_destroyer", "note": "'Aster 30 (3-120 km).' Figures kept identical to the shared 'aster-30' catalogue entry."}, "confidence": "high"},
-      "weapons.0.magazine": {"source": {"kind": "reference", "title": "FREMM multipurpose frigate | Wikipedia", "url": "https://en.wikipedia.org/wiki/FREMM_multipurpose_frigate", "note": "'SYLVER A50 VLS for 16 MBDA Aster 15 or 30 missiles' (Italian GP variant carries up to 32)."}, "confidence": "medium"},
-      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Two missiles per engagement (modelling default)."}, "confidence": "low"},
-      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a modern active-radar SAM."}, "confidence": "low"},
-      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Detection-to-launch not published; modelling estimate."}, "confidence": "low"},
-      "weapons.1.rangeKm": {"source": {"kind": "placeholder", "title": "Range not on retrieved page", "note": "Exocet MM40 Block 3 anti-ship missile; commonly cited ~200 km. The page confirms carriage but not the range. Estimate."}, "confidence": "low"},
-      "weapons.1.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling default."}, "confidence": "low"},
-      "weapons.1.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a subsonic sea-skimming anti-ship missile."}, "confidence": "low"},
-      "weapons.1.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling estimate."}, "confidence": "low"},
-      "weapons.2.rangeKm": {"source": {"kind": "placeholder", "title": "Range not on retrieved page", "note": "MdCN naval land-attack cruise missile; commonly cited ~1,000 km. The page confirms carriage but not the range. Estimate."}, "confidence": "low"},
-      "weapons.2.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling default."}, "confidence": "low"},
-      "weapons.2.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Single-shot kill probability not published; estimate for a subsonic land-attack cruise missile."}, "confidence": "low"},
-      "weapons.2.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Modelling estimate."}, "confidence": "low"},
-      "platform.displacementT": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "FREMM full-load displacement commonly cited ~6,000-6,700 t. Estimate."}, "confidence": "low"},
-      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Top speed commonly cited ~27 kn (~50 km/h). Estimate."}, "confidence": "low"},
-      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Core complement commonly cited ~145. Estimate."}, "confidence": "low"}
-    }
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Admiral Gorshkov-class frigate | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Admiral_Gorshkov-class_frigate",
+     "note": "Redut has 32 VLS cells on the class."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per engagement (modelling default)."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Single-shot kill probability not published; estimate for a modern active-radar SAM."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Detection-to-launch not published; modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "P-800 Oniks | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/P-800_Oniks",
+     "note": "Russian ship/sub Oniks ~600 km (Oniks-M up to 800 km). Figures kept identical to the shared 'oniks' catalogue entry."
+    },
+    "confidence": "medium"
+   },
+   "weapons.1.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "P-800 Oniks | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/P-800_Oniks",
+     "note": "'Weight: 3,100 kg'."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Modelling default, matched to the shared oniks entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Matched to the shared oniks entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Matched to the shared oniks entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "3M-54 Kalibr | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/3M-54_Kalibr",
+     "note": "3M14 land-attack ~1,400-2,500 km; 3M54 anti-ship 550-660 km. Figures kept identical to the shared 'kalibr' catalogue entry."
+    },
+    "confidence": "medium"
+   },
+   "weapons.2.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Matched to the shared kalibr entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Matched to the shared kalibr entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Matched to the shared kalibr entry."
+    },
+    "confidence": "low"
+   },
+   "platform.displacementT": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Project 22350 full-load displacement commonly cited ~5,400 t. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.vls": {
+    "source": {
+     "kind": "reference",
+     "title": "Admiral Gorshkov-class frigate | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Admiral_Gorshkov-class_frigate",
+     "note": "16 UKSK strike cells + 32 Redut cells = 48 VLS cells."
+    },
+    "confidence": "medium"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Top speed commonly cited ~29 kn (~54 km/h). Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Complement commonly cited ~170-210. Estimate."
+    },
+    "confidence": "low"
+   }
   }
+ },
+ {
+  "id": "fremm",
+  "name": "FREMM class",
+  "typeId": "frigate",
+  "origin": "France / Italy",
+  "note": "FREMM (Frégate multi-mission / Bergamini) multipurpose frigate. Area air defence with Aster 15/30 in Sylver VLS; anti-ship with Exocet MM40 Block 3; land attack with the MdCN naval cruise missile (French A70 cells). Displacement/speed/crew below are estimates (specifications table not captured on fetch).",
+  "weapons": [
+   {
+    "id": "aster-30",
+    "name": "Aster 30",
+    "rangeKm": 120,
+    "magazine": 16,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 10,
+    "engages": [
+     "air",
+     "ballistic-short"
+    ]
+   },
+   {
+    "id": "exocet",
+    "name": "Exocet MM40 Block 3",
+    "rangeKm": 200,
+    "salvo": 2,
+    "pk": 0.6,
+    "reactionSec": 30,
+    "engages": [
+     "surface"
+    ]
+   },
+   {
+    "id": "mdcn",
+    "name": "MdCN (naval cruise missile)",
+    "rangeKm": 1000,
+    "salvo": 2,
+    "pk": 0.8,
+    "reactionSec": 60,
+    "engages": [
+     "ground"
+    ]
+   }
+  ],
+  "platform": {
+   "displacementT": 6000,
+   "speedKmh": 50,
+   "crew": 145
+  },
+  "signature": "low",
+  "provenance": {
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Type 45 destroyer | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Type_45_destroyer",
+     "note": "'Aster 30 (3-120 km).' Figures kept identical to the shared 'aster-30' catalogue entry."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "FREMM multipurpose frigate | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/FREMM_multipurpose_frigate",
+     "note": "'SYLVER A50 VLS for 16 MBDA Aster 15 or 30 missiles' (Italian GP variant carries up to 32)."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per engagement (modelling default)."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Single-shot kill probability not published; estimate for a modern active-radar SAM."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Detection-to-launch not published; modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Range not on retrieved page",
+     "note": "Exocet MM40 Block 3 anti-ship missile; commonly cited ~200 km. The page confirms carriage but not the range. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Modelling default."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Single-shot kill probability not published; estimate for a subsonic sea-skimming anti-ship missile."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.rangeKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Range not on retrieved page",
+     "note": "MdCN naval land-attack cruise missile; commonly cited ~1,000 km. The page confirms carriage but not the range. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Modelling default."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Single-shot kill probability not published; estimate for a subsonic land-attack cruise missile."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.displacementT": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "FREMM full-load displacement commonly cited ~6,000-6,700 t. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Top speed commonly cited ~27 kn (~50 km/h). Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Core complement commonly cited ~145. Estimate."
+    },
+    "confidence": "low"
+   }
+  }
+ }
 ]

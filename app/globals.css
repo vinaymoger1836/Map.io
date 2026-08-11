@@ -1082,6 +1082,27 @@ button {
   margin-top: 6px;
 }
 
+/* The ballistic tiers: one question at three scales, so they sit on their own
+   line behind a label rather than reading as three unrelated threats. */
+.wg-tiers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  padding-left: 8px;
+  border-left: 1px solid var(--rule);
+}
+
+.wg-tier-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  margin-right: 2px;
+}
+
 .wg-kind {
   padding: 5px 9px;
   border: 1px solid var(--rule);
