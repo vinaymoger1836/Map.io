@@ -84,9 +84,15 @@
       "echelonId": "squadron",
       "systemId": "f-16c",
       "loadout": [
-        "aim-120c-amraam",
-        "aim-9x-sidewinder",
-        "harpoon"
+        {
+          "id": "aim-120c-amraam"
+        },
+        {
+          "id": "aim-9x-sidewinder"
+        },
+        {
+          "id": "harpoon"
+        }
       ],
       "count": 12
     },
@@ -140,10 +146,16 @@
       "typeId": "fighter",
       "echelonId": "squadron",
       "systemId": "f-35a",
-      "count": 1,
       "loadout": [
-        "gbu-12"
-      ]
+        {
+          "id": "gbu-12",
+          "count": 2
+        },
+        {
+          "id": "kh-31"
+        }
+      ],
+      "count": 1
     },
     {
       "kind": "unit",
@@ -156,9 +168,40 @@
       "typeId": "fighter",
       "echelonId": "squadron",
       "systemId": "f-35a",
+      "loadout": [
+        {
+          "id": "aim-120d-amraam"
+        }
+      ],
+      "count": 1
+    },
+    {
+      "kind": "unit",
+      "id": "umsonwayn1",
+      "iso": "392",
+      "lngLat": [
+        61.708261519056265,
+        8.074573383759699
+      ],
+      "typeId": "destroyer",
+      "echelonId": "ship",
+      "systemId": "arleigh-burke",
       "count": 1,
       "loadout": [
-        "aim-120d-amraam"
+        {
+          "id": "harpoon",
+          "count": 3
+        },
+        {
+          "id": "aster-30",
+          "count": 3
+        },
+        {
+          "id": "brahmos"
+        },
+        {
+          "id": "cj-10"
+        }
       ]
     }
   ],

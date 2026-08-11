@@ -790,15 +790,62 @@ button {
 
 .wg-carried-name {
   flex: 1;
+  min-width: 0;
   font-size: 11.5px;
   color: var(--paper);
 }
 
-.wg-carried-range {
+/* The range sits under the name rather than beside it, because the count
+   stepper now wants the room the range used to have. */
+.wg-carried-name em {
+  display: block;
+  font-style: normal;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 9.5px;
   color: var(--brass);
   font-variant-numeric: tabular-nums;
+}
+
+.wg-stepper-sm button {
+  width: 18px;
+  height: 20px;
+  font-size: 12px;
+}
+
+.wg-stepper-sm input {
+  width: 40px;
+  height: 20px;
+  font-size: 10.5px;
+}
+
+/* An empty count is "not recorded", so the placeholder must read as absence
+   rather than as zero. */
+.wg-stepper-sm input::placeholder {
+  color: var(--paper-dim);
+  opacity: 0.6;
+}
+
+.wg-capacity {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--paper-dim);
+}
+
+.wg-capacity.over {
+  color: #e4572e;
+}
+
+.wg-capacity em {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-style: normal;
+  letter-spacing: 0;
+  line-height: 1.35;
+  opacity: 0.75;
 }
 
 .wg-munitions {

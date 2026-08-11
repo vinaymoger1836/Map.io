@@ -11,7 +11,7 @@
  */
 
 import { domainOf, type SystemSpec, type WeaponFacet } from './specs';
-import type { Domain } from './warGames';
+import type { Domain, LoadoutItem } from './warGames';
 
 export interface Munition {
   id: string;
@@ -90,17 +90,47 @@ export function compatibleMunitions(catalogue: MunitionCatalogue, spec: SystemSp
   return [...catalogue.values()].filter((m) => m.domains.includes(domain)).sort(byName);
 }
 
+/** A stable key for comparing two loadouts regardless of order. */
+const loadoutKey = (items: LoadoutItem[]): string =>
+  [...items]
+    .map((i) => `${i.id}:${i.count ?? ''}`)
+    .sort()
+    .join('|');
+
 /** True when the deployed unit is carrying something other than its system's own fit. */
-export function isRearmed(spec: SystemSpec | undefined, loadout: string[] | undefined): boolean {
+export function isRearmed(spec: SystemSpec | undefined, loadout: LoadoutItem[] | undefined): boolean {
   if (!loadout) return false;
-  const stock = (spec?.weapons ?? []).map(munitionId).filter(Boolean) as string[];
-  if (stock.length !== loadout.length) return true;
-  return [...stock].sort().join('|') !== [...loadout].sort().join('|');
+  return loadoutKey(stockLoadout(spec)) !== loadoutKey(loadout);
 }
 
-/** The munition ids a system carries as standard. */
-export function stockLoadout(spec: SystemSpec | undefined): string[] {
-  return ((spec?.weapons ?? []).map(munitionId).filter(Boolean) as string[]);
+/** What a system carries as standard, counts included where it records them. */
+export function stockLoadout(spec: SystemSpec | undefined): LoadoutItem[] {
+  const out: LoadoutItem[] = [];
+  for (const weapon of spec?.weapons ?? []) {
+    const id = munitionId(weapon);
+    if (id) out.push({ id, count: weapon.magazine });
+  }
+  return out;
+}
+
+/** Rounds carried in total, ignoring the ones whose count is unrecorded. */
+export const totalRounds = (loadout: LoadoutItem[]): number =>
+  loadout.reduce((sum, item) => sum + (item.count ?? 0), 0);
+
+/**
+ * How many rounds the platform can hold, where it says.
+ *
+ * Only vertical launch cells are a published capacity in this library. Aircraft
+ * hardpoints are not recorded anywhere, so there is no aircraft answer and the
+ * interface does not pretend there is one.
+ */
+export function capacityOf(spec: SystemSpec | undefined): { cells: number; note: string } | null {
+  const vls = spec?.platform?.vls;
+  if (!vls) return null;
+  return {
+    cells: vls,
+    note: 'One round per cell. Some missiles quad-pack — an ESSM takes a quarter of a cell — so this is a floor, not a hard limit.',
+  };
 }
 
 /**
@@ -113,13 +143,19 @@ export function stockLoadout(spec: SystemSpec | undefined): string[] {
  */
 export function effectiveSpec(
   spec: SystemSpec | undefined,
-  loadout: string[] | undefined,
+  loadout: LoadoutItem[] | undefined,
   catalogue: MunitionCatalogue
 ): SystemSpec | undefined {
   if (!spec || !loadout) return spec;
-  const weapons = loadout
-    .map((id) => catalogue.get(id)?.weapon)
-    .filter((w): w is WeaponFacet => Boolean(w));
+  const weapons: WeaponFacet[] = [];
+  for (const item of loadout) {
+    const weapon = catalogue.get(item.id)?.weapon;
+    if (!weapon) continue;
+    // The count carried overrides the catalogue's magazine — that is what
+    // "twelve of these on this aircraft" means, and the engagement model will
+    // read it from the same field it always did.
+    weapons.push(item.count === undefined ? weapon : { ...weapon, magazine: item.count });
+  }
   // An empty loadout is a real state — a fighter flying clean — and must not be
   // mistaken for "no loadout recorded, use the system's own".
   return { ...spec, weapons };

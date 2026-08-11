@@ -410,13 +410,28 @@ silently clipped to the panel's width.
 
 ### Changing what a deployed unit carries
 
-Select a unit, open **Edit**, and its armament is a list you can add to and take
-from. The change is local to that deployment: re-arming one flight of Su-30s
-changes that flight's rings and nothing else — not the system, not the library,
-not the other Su-30s on the board. `lib/munitions.ts` resolves the loadout
-against the catalogue and hands everything downstream an *effective* spec, so
-rings, tooltips and the spec sheet all redraw without any of them knowing that
-loadouts exist.
+Select a unit, open **Edit**, and its armament is a list you can add to, take
+from, and **set a count on**. The change is local to that deployment: re-arming
+one flight of Su-30s changes that flight's rings and nothing else — not the
+system, not the library, not the other Su-30s on the board. Two F-35As on
+opposite sides of the map can carry entirely different stores.
+`lib/munitions.ts` resolves the loadout against the catalogue and hands
+everything downstream an *effective* spec, so rings, tooltips and the spec sheet
+all redraw without any of them knowing that loadouts exist.
+
+**How many is a count on the loadout, not a new concept.** It overrides the
+weapon's `magazine` — the field that already meant "ready rounds: VLS cells,
+launcher rails, hardpoints" — so the engagement model reads it from where it
+always read it. A blank count means *not recorded*, which is the honest default:
+most weapons in the library publish no magazine at all, and defaulting them to 1
+would assert a figure nobody wrote down.
+
+**Capacity is enforced only where it is published.** Vertical launch cells are
+the one real capacity figure in the library, so a ship shows `90 of 96 launch
+cells` and turns red past its limit. Aircraft hardpoints are recorded nowhere, so
+aircraft are uncapped and the panel says so instead of inventing a number. Even
+the cell count is described as a floor rather than a hard limit, because some
+missiles quad-pack — an ESSM takes a quarter of a cell.
 
 **The catalogue is derived, never authored.** Every weapon on every system is a
 row in it, keyed by the munition's own id — which is why the research prompt

@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * What one deployed unit is carrying.
+ * What one deployed unit is carrying, and how many of each.
  *
  * The change is local to the unit: swapping a flight of Su-30s onto anti-ship
  * missiles changes that flight's reach and nothing else — not the system, not
@@ -13,8 +13,14 @@
 import { useMemo, useState } from 'react';
 
 import type { WarGames } from '@/lib/useWarGames';
-import type { DeployedGeneric } from '@/lib/warGames';
-import { compatibleMunitions, isRearmed, stockLoadout } from '@/lib/munitions';
+import type { DeployedGeneric, LoadoutItem } from '@/lib/warGames';
+import {
+  capacityOf,
+  compatibleMunitions,
+  isRearmed,
+  stockLoadout,
+  totalRounds,
+} from '@/lib/munitions';
 import { describeTargets, systemById } from '@/lib/specs';
 
 export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneric }) {
@@ -24,6 +30,8 @@ export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneri
   const stock = useMemo(() => stockLoadout(spec), [spec]);
   const carried = unit.loadout ?? stock;
   const rearmed = isRearmed(spec, unit.loadout);
+  const capacity = capacityOf(spec);
+  const total = totalRounds(carried);
 
   const available = useMemo(() => {
     const all = compatibleMunitions(wg.munitions, spec);
@@ -40,20 +48,40 @@ export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneri
     );
   }
 
-  const set = (next: string[]) => {
+  const set = (next: LoadoutItem[]) => {
     // Back to undefined when it matches the standard fit, so a unit that was
     // re-armed and then restored stops claiming to be modified.
-    const same = [...next].sort().join('|') === [...stock].sort().join('|');
-    wg.setUnitLoadout(unit.id, same ? undefined : next);
+    wg.setUnitLoadout(unit.id, isRearmed(spec, next) ? next : undefined);
   };
 
-  const toggle = (id: string) =>
-    set(carried.includes(id) ? carried.filter((m) => m !== id) : [...carried, id]);
+  const add = (id: string) => {
+    if (carried.some((i) => i.id === id)) {
+      set(carried.filter((i) => i.id !== id));
+      return;
+    }
+    // A round added by hand starts at whatever the library says this platform
+    // carries, and at nothing when the library does not say.
+    const fromStock = stock.find((i) => i.id === id);
+    set([...carried, { id, count: fromStock?.count }]);
+  };
+
+  const setCount = (id: string, count: number | undefined) =>
+    set(carried.map((i) => (i.id === id ? { ...i, count } : i)));
+
+  /** Steps from "not recorded" to a real number without pretending it was one. */
+  const bump = (item: LoadoutItem, by: number) => {
+    const from = item.count ?? 0;
+    const next = Math.max(0, from + by);
+    setCount(item.id, next);
+  };
 
   return (
     <div className="wg-loadout">
       <div className="wg-loadout-head">
-        <span className="wg-field-label">Carrying</span>
+        <span className="wg-field-label">
+          Carrying
+          {total > 0 && <b> · {total.toLocaleString()} rounds</b>}
+        </span>
         {rearmed && (
           <button className="wg-mini" onClick={() => wg.setUnitLoadout(unit.id, undefined)}>
             Restore standard fit
@@ -63,13 +91,40 @@ export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneri
 
       {carried.length ? (
         <ul className="wg-carried">
-          {carried.map((id) => {
-            const m = wg.munitions.get(id);
+          {carried.map((item) => {
+            const m = wg.munitions.get(item.id);
             return (
-              <li key={id}>
-                <span className="wg-carried-name">{m?.name ?? id}</span>
-                <span className="wg-carried-range">{m ? `${m.weapon.rangeKm} km` : '—'}</span>
-                <button className="wg-comp-del" onClick={() => toggle(id)} aria-label={`Remove ${m?.name ?? id}`}>
+              <li key={item.id}>
+                <span className="wg-carried-name">
+                  {m?.name ?? item.id}
+                  <em>{m ? `${m.weapon.rangeKm} km` : 'unknown round'}</em>
+                </span>
+                <div className="wg-stepper wg-stepper-sm">
+                  <button onClick={() => bump(item, -1)} aria-label={`One fewer ${m?.name ?? item.id}`}>
+                    −
+                  </button>
+                  {/* Blank rather than a dash: an em dash beside the minus
+                      button reads as a second minus. Empty already says
+                      "no number recorded", and 0 still shows as 0. */}
+                  <input
+                    type="number"
+                    min={0}
+                    value={item.count ?? ''}
+                    title="How many carried. Leave blank if the number is not recorded."
+                    onChange={(e) =>
+                      setCount(item.id, e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)))
+                    }
+                    aria-label={`How many ${m?.name ?? item.id}`}
+                  />
+                  <button onClick={() => bump(item, 1)} aria-label={`One more ${m?.name ?? item.id}`}>
+                    +
+                  </button>
+                </div>
+                <button
+                  className="wg-comp-del"
+                  onClick={() => set(carried.filter((i) => i.id !== item.id))}
+                  aria-label={`Remove ${m?.name ?? item.id}`}
+                >
                   ×
                 </button>
               </li>
@@ -78,6 +133,21 @@ export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneri
         </ul>
       ) : (
         <p className="wg-note">Clean — carrying nothing, so it draws no engagement ring.</p>
+      )}
+
+      {capacity && (
+        <p className={`wg-capacity${total > capacity.cells ? ' over' : ''}`}>
+          {total.toLocaleString()} of {capacity.cells.toLocaleString()} launch cells
+          {total > capacity.cells && ' — more than the hull holds'}
+          <em>{capacity.note}</em>
+        </p>
+      )}
+
+      {!capacity && carried.length > 0 && (
+        <p className="wg-note">
+          {spec.name} records no magazine capacity, so nothing here is capped — the count is yours to
+          set and the engagement model will use it.
+        </p>
       )}
 
       <input
@@ -91,13 +161,13 @@ export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneri
 
       <div className="wg-munitions">
         {available.map((m) => {
-          const on = carried.includes(m.id);
-          const isStock = stock.includes(m.id);
+          const on = carried.some((i) => i.id === m.id);
+          const isStock = stock.some((i) => i.id === m.id);
           return (
             <button
               key={m.id}
               className={`wg-munition${on ? ' on' : ''}`}
-              onClick={() => toggle(m.id)}
+              onClick={() => add(m.id)}
               title={`${m.weapon.rangeKm} km · vs ${describeTargets(m.weapon.engages)}${
                 isStock ? ' · standard fit' : ''
               }`}
@@ -119,9 +189,7 @@ export function LoadoutEditor({ wg, unit }: { wg: WarGames; unit: DeployedGeneri
 
       <p className="wg-note">
         {spec.compatible?.length ? (
-          <>
-            {spec.name} declares what it can carry, so this list is exact.
-          </>
+          <>{spec.name} declares what it can carry, so this list is exact.</>
         ) : (
           <>
             Offered because other {domainWord(spec.typeId)} in the library carry them. {spec.name}{' '}

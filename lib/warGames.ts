@@ -427,6 +427,19 @@ interface DeployedBase {
   name?: string;
 }
 
+/**
+ * One line of a unit's loadout: which round, and how many.
+ *
+ * `count` is optional because "not recorded" is a real answer — most weapons in
+ * the library declare no magazine, and defaulting them to 1 would assert a
+ * figure nobody published. Absent means "whatever the spec says", which for most
+ * weapons is nothing at all.
+ */
+export interface LoadoutItem {
+  id: string;
+  count?: number;
+}
+
 export interface DeployedGeneric extends DeployedBase {
   kind: 'unit';
   typeId: string;
@@ -434,14 +447,15 @@ export interface DeployedGeneric extends DeployedBase {
   /** The specific system deployed, where one was chosen. */
   systemId?: string;
   /**
-   * Munition ids this deployment is carrying, when it has been re-armed.
+   * What this deployment is carrying, and how many of each, when it has been
+   * re-armed.
    *
    * Local to the unit on purpose: swapping a Su-30's air-to-air missiles for
    * anti-ship ones changes that one flight's reach and nothing else — not the
    * system, not the library, not the eleven other Su-30s on the board. Absent
    * means it carries whatever its system carries as standard.
    */
-  loadout?: string[];
+  loadout?: LoadoutItem[];
   /** How many. This is the number national stock is drawn down by. */
   count: number;
 }
@@ -523,8 +537,22 @@ function reviveUnit(raw: unknown, custom: Formation[]): DeployedUnit | null {
   const systemId = typeof u.systemId === 'string' ? u.systemId : undefined;
   // An empty array is a real state — a unit deliberately carrying nothing — and
   // must survive the round trip distinctly from "never re-armed".
+  //
+  // Loadouts were once a bare list of munition ids, before counts existed. Those
+  // still load: a string becomes one line with no count recorded, which is
+  // exactly what it meant.
   const loadout = Array.isArray(u.loadout)
-    ? u.loadout.filter((m): m is string => typeof m === 'string')
+    ? u.loadout
+        .map((entry): LoadoutItem | null => {
+          if (typeof entry === 'string') return { id: entry };
+          if (!entry || typeof entry !== 'object') return null;
+          const item = entry as Record<string, unknown>;
+          if (typeof item.id !== 'string') return null;
+          const count =
+            typeof item.count === 'number' && item.count >= 0 ? Math.round(item.count) : undefined;
+          return { id: item.id, count };
+        })
+        .filter((m): m is LoadoutItem => m !== null)
     : undefined;
   return { kind: 'unit', id, iso, lngLat, name, typeId, echelonId, systemId, loadout, count };
 }

@@ -32,6 +32,7 @@ import {
   type Component,
   type DeployedUnit,
   type Formation,
+  type LoadoutItem,
   type Nation,
 } from './warGames';
 import {
@@ -135,7 +136,7 @@ export interface WarGames {
   setUnitEchelon: (id: string, echelonId: string) => void;
   setUnitSystem: (id: string, systemId: string | undefined) => void;
   /** Re-arm one deployment. `undefined` puts it back on its system's own fit. */
-  setUnitLoadout: (id: string, loadout: string[] | undefined) => void;
+  setUnitLoadout: (id: string, loadout: LoadoutItem[] | undefined) => void;
   setUnitCount: (id: string, count: number) => void;
   setUnitComposition: (id: string, composition: Component[]) => void;
   removeUnit: (id: string) => void;
@@ -664,7 +665,7 @@ export function useWarGames({
   );
 
   const setUnitLoadout = useCallback(
-    (id: string, loadout: string[] | undefined) =>
+    (id: string, loadout: LoadoutItem[] | undefined) =>
       patchUnit(id, (u) => (u.kind === 'unit' ? { ...u, loadout } : u)),
     [patchUnit]
   );
