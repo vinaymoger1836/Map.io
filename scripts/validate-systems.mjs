@@ -55,7 +55,7 @@ const PLATFORM_KEYS = new Set([
   'combatRadiusKm', 'refuelledRadiusKm', 'ferryRangeKm', 'speedKmh', 'payloadKg',
   'crew', 'displacementT', 'aircraft', 'vls', 'enduranceDays',
 ]);
-const SYSTEM_KEYS = new Set(['id', 'name', 'typeId', 'origin', 'note', 'sensor', 'weapons', 'platform', 'signature', 'provenance', 'custom']);
+const SYSTEM_KEYS = new Set(['id', 'name', 'typeId', 'origin', 'note', 'sensor', 'weapons', 'platform', 'signature', 'compatible', 'provenance', 'custom']);
 
 const errors = [];
 const warnings = [];

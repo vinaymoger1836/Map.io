@@ -207,6 +207,12 @@ The **Systems** tab browses the shipped library, and duplicating an entry is how
 you disagree with a figure: library entries are read-only, your copy is yours,
 and a copy with the same id replaces the original everywhere.
 
+**Writing one yourself:** [`docs/authoring-a-system.md`](docs/authoring-a-system.md)
+is the field-by-field guide — what reads each field, what happens when you leave
+it out, and a fighter and a destroyer annotated line by line. Read it before
+adding a ship; three of the fields mean something other than they look like, and
+`horizonLimited` is one of them.
+
 **About the numbers.** `public/data/systems.json` holds 104 researched systems:
 1,067 figures carry provenance, and **474 of them carry the URL of a page someone
 actually opened**. The rest are declared estimates, and the distinction is
