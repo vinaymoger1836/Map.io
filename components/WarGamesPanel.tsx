@@ -3,10 +3,10 @@
 /**
  * The War Games console.
  *
- * Composition only. Three sections rather than one long scroll: arranging the
- * board, describing equipment, and counting what each nation has. Each is a
- * different job, and putting them in one column meant the colour picker sat
- * above whatever you were actually doing.
+ * Composition only. Four sections rather than one long scroll: arranging the
+ * board, describing equipment, counting what each nation has, and keeping whole
+ * boards. Each is a different job, and putting them in one column meant the
+ * colour picker sat above whatever you were actually doing.
  */
 
 import { useState } from 'react';
@@ -16,6 +16,7 @@ import type { WarGames } from '@/lib/useWarGames';
 import { ArmamentsSection } from './wargames/SystemsEditor';
 import { ForcesSection } from './wargames/ForcesSection';
 import { MapSection } from './wargames/MapSection';
+import { ScenariosSection } from './wargames/ScenariosSection';
 import { SectionNav, type Section } from './wargames/SectionNav';
 import { NEUTRAL } from './wargames/icons';
 
@@ -33,12 +34,14 @@ export default function WarGamesPanel(wg: WarGames) {
           map: undefined,
           armaments: wg.systems.length,
           forces: wg.board.units.length,
+          boards: wg.scenarios.length || undefined,
         }}
       />
 
       {section === 'map' && <MapSection wg={wg} color={paintColor} />}
       {section === 'armaments' && <ArmamentsSection wg={wg} color={paintColor} />}
       {section === 'forces' && <ForcesSection wg={wg} />}
+      {section === 'boards' && <ScenariosSection wg={wg} />}
 
       <p className="wg-storage">
         {wg.storageKind === 'files'

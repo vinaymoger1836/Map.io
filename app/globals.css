@@ -578,21 +578,25 @@ button {
   border-bottom: 1px solid var(--rule);
 }
 
+/* Four tabs and their badges in a 384 px panel: the tracking comes down rather
+   than the labels being abbreviated, since "ARM." saves 40 px and costs the
+   word. */
 .wg-nav-tab {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 11px 6px 10px;
+  gap: 5px;
+  padding: 11px 4px 10px;
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
   font-family: var(--font-display);
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--paper-dim);
 }
 
@@ -2143,6 +2147,106 @@ button {
   padding: 10px 13px;
   font-size: 11px;
   color: #e4572e;
+}
+
+/* ---------- scenarios ---------- */
+
+.wg-scenarios {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wg-scenario {
+  padding: 9px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.wg-scenario:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+/* The board currently on the map, marked in the list rather than only in the
+   header — otherwise "Load" on the one you are already looking at is a button
+   with no visible consequence. */
+.wg-scenario.on .wg-scenario-head strong {
+  color: var(--brass);
+}
+
+.wg-scenario-head {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.wg-scenario-head strong {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.wg-scenario-head .wg-tag {
+  margin-left: 3px;
+}
+
+.wg-scenario-meta {
+  margin: 3px 0 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--paper-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.wg-scenario-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+
+/* Five verbs do not fit across the panel on one line, and shortening them to
+   fit would leave "Dup" and "Del". They wrap instead. */
+.wg-scenario-acts {
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+
+.wg-scenario-acts .wg-btn {
+  flex: 1 1 auto;
+  min-width: 58px;
+  padding: 5px 7px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.wg-scenario.editing .wg-row {
+  margin-top: 7px;
+}
+
+/* The file input itself is never shown: a browser's own control cannot be
+   restyled far enough to belong here, and the label does the same job. */
+.wg-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wg-file {
+  display: block;
+  margin-top: 4px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.wg-file-input:focus-visible + .wg-file {
+  color: var(--paper);
+  border-color: var(--brass);
 }
 
 /* ---------- responsive ---------- */

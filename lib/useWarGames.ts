@@ -58,6 +58,19 @@ import {
   type Holding,
   type Tally,
 } from './forces';
+import {
+  EMPTY_SCENARIOS,
+  buildBundle,
+  mergeImported,
+  mergeImportedForces,
+  nextScenarioId,
+  readBundle,
+  reviveScenarios,
+  type Bundle,
+  type ImportReport,
+  type Scenario,
+  type ScenarioDoc,
+} from './scenarios';
 import { getStore, readDoc, readWithLegacyFallback, writeDoc } from './store';
 import { ensureIcons, type IconSpec } from './unitIcons';
 import {
@@ -167,6 +180,26 @@ export interface WarGames {
   clearUnits: () => void;
   clearNations: () => void;
 
+  /** Boards kept under a name on this machine, newest first. */
+  scenarios: Scenario[];
+  /** Which one the working board came from, if any — a label, not ownership. */
+  activeScenario: Scenario | null;
+  /** Files the working board under a new name, and makes it the active one. */
+  saveScenario: (name: string, note?: string) => void;
+  /** Writes the working board back over a scenario it has drifted from. */
+  updateScenario: (id: string) => void;
+  /** Puts a scenario on the map. Undoable, like any other board change. */
+  loadScenario: (id: string) => void;
+  renameScenario: (id: string, name: string, note?: string) => void;
+  duplicateScenario: (id: string) => void;
+  deleteScenario: (id: string) => void;
+
+  /** A portable bundle of a scenario, or of the working board when id is null. */
+  exportBundle: (id: string | null) => Bundle | null;
+  /** Reads a bundle, files it as a scenario and loads it. Non-destructive
+      everywhere the undo stack cannot reach — see `lib/scenarios.ts`. */
+  importBundle: (text: string) => { ok: true; report: ImportReport } | { ok: false; error: string };
+
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
   setCoverageMode: (mode: CoverageState['mode']) => void;
@@ -189,6 +222,7 @@ export interface WarGames {
 const BOARD_DOC = 'board';
 const SYSTEMS_DOC = 'systems';
 const FORCES_DOC = 'forces';
+const SCENARIOS_DOC = 'scenarios';
 /** How many board states undo remembers. Enough for a session's mistakes. */
 const HISTORY_LIMIT = 50;
 
@@ -247,6 +281,7 @@ export function useWarGames({
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
   const [forces, setForces] = useState<Forces>(EMPTY_FORCES);
+  const [scenarioDoc, setScenarioDoc] = useState<ScenarioDoc>(EMPTY_SCENARIOS);
   const [storageKind, setStorageKind] = useState<'files' | 'browser' | 'unknown'>('unknown');
 
   const boardRef = useRef(board);
@@ -259,6 +294,8 @@ export function useWarGames({
   const compositionRef = useRef(pendingComposition);
   const coverageRef = useRef(coverage);
   const forcesRef = useRef(forces);
+  const customSystemsRef = useRef(customSystems);
+  const scenarioRef = useRef(scenarioDoc);
   const countriesRef = useRef<Map<string, CountryOption>>(new Map());
   const hydratedRef = useRef(false);
 
@@ -272,6 +309,8 @@ export function useWarGames({
   compositionRef.current = pendingComposition;
   coverageRef.current = coverage;
   forcesRef.current = forces;
+  customSystemsRef.current = customSystems;
+  scenarioRef.current = scenarioDoc;
 
   /* ---------------- persistence and history ---------------- */
 
@@ -350,10 +389,11 @@ export function useWarGames({
     let cancelled = false;
     (async () => {
       const store = await getStore();
-      const [saved, custom, heldForces, shipped] = await Promise.all([
+      const [saved, custom, heldForces, savedScenarios, shipped] = await Promise.all([
         readWithLegacyFallback<unknown>(BOARD_DOC, LEGACY_BOARD_KEY),
         readDoc<SystemSpec[]>(SYSTEMS_DOC),
         readDoc<unknown>(FORCES_DOC),
+        readDoc<unknown>(SCENARIOS_DOC),
         fetch('/data/systems.json')
           .then((r) => (r.ok ? r.json() : []))
           .catch(() => []),
@@ -365,6 +405,7 @@ export function useWarGames({
       setBoard(revived);
       setCustomSystems(Array.isArray(custom) ? custom : []);
       setForces(reviveForces(heldForces));
+      setScenarioDoc(reviveScenarios(savedScenarios));
       setLibrary(Array.isArray(shipped) ? shipped : []);
       setStorageKind(store.kind);
       loadedRef.current = true;
@@ -393,6 +434,12 @@ export function useWarGames({
     const timer = setTimeout(() => void writeDoc(FORCES_DOC, forces), 400);
     return () => clearTimeout(timer);
   }, [forces]);
+
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    const timer = setTimeout(() => void writeDoc(SCENARIOS_DOC, scenarioDoc), 400);
+    return () => clearTimeout(timer);
+  }, [scenarioDoc]);
 
   /* ---------------- national forces ---------------- */
 
@@ -816,6 +863,133 @@ export function useWarGames({
     commit((prev) => ({ ...prev, nations: {} }));
   }, [commit]);
 
+  /* ---------------- scenarios ---------------- */
+
+  // A scenario holds the board object it was saved from, not a copy of it. The
+  // board is only ever replaced, never mutated in place — every edit here goes
+  // through `commit`, which builds a new one — so sharing the reference is free
+  // and a deep clone would be ceremony.
+
+  const saveScenario = useCallback((name: string, note?: string) => {
+    const scenario: Scenario = {
+      id: nextScenarioId(),
+      name: name.trim() || 'Untitled board',
+      note: note?.trim() || undefined,
+      savedAt: new Date().toISOString(),
+      board: boardRef.current,
+    };
+    setScenarioDoc((prev) => ({ active: scenario.id, items: [scenario, ...prev.items] }));
+  }, []);
+
+  const updateScenario = useCallback((id: string) => {
+    setScenarioDoc((prev) => ({
+      active: id,
+      items: prev.items.map((s) =>
+        s.id === id ? { ...s, board: boardRef.current, savedAt: new Date().toISOString() } : s
+      ),
+    }));
+  }, []);
+
+  const loadScenario = useCallback(
+    (id: string) => {
+      const scenario = scenarioRef.current.items.find((s) => s.id === id);
+      if (!scenario) return;
+      // Through `commit`, so putting the wrong board on the map costs one
+      // Ctrl+Z rather than an evening.
+      commit(() => scenario.board);
+      setScenarioDoc((prev) => ({ ...prev, active: id }));
+      // The ids in the incoming board are not the ids that were selected.
+      setSelectedId(null);
+    },
+    [commit]
+  );
+
+  const renameScenario = useCallback((id: string, name: string, note?: string) => {
+    setScenarioDoc((prev) => ({
+      ...prev,
+      items: prev.items.map((s) =>
+        s.id === id ? { ...s, name: name.trim() || s.name, note: note?.trim() || undefined } : s
+      ),
+    }));
+  }, []);
+
+  const duplicateScenario = useCallback((id: string) => {
+    setScenarioDoc((prev) => {
+      const source = prev.items.find((s) => s.id === id);
+      if (!source) return prev;
+      const copy: Scenario = {
+        ...source,
+        id: nextScenarioId(),
+        name: `${source.name} (copy)`,
+        savedAt: new Date().toISOString(),
+      };
+      // Beside the one it came from, not at the top: a copy is a variant of
+      // that scenario, and the list reads better with the pair together.
+      const at = prev.items.indexOf(source);
+      return { ...prev, items: [...prev.items.slice(0, at + 1), copy, ...prev.items.slice(at + 1)] };
+    });
+  }, []);
+
+  const deleteScenario = useCallback((id: string) => {
+    setScenarioDoc((prev) => ({
+      // The working board stays exactly as it is; only its name is forgotten.
+      active: prev.active === id ? null : prev.active,
+      items: prev.items.filter((s) => s.id !== id),
+    }));
+  }, []);
+
+  const exportBundle = useCallback((id: string | null): Bundle | null => {
+    const scenario = id ? scenarioRef.current.items.find((s) => s.id === id) : null;
+    if (id && !scenario) return null;
+    const board = scenario ? scenario.board : boardRef.current;
+    return buildBundle({
+      name: scenario?.name ?? 'Working board',
+      note: scenario?.note,
+      board,
+      systems: customSystemsRef.current,
+      forces: forcesRef.current,
+    });
+  }, []);
+
+  const importBundle = useCallback(
+    (text: string): { ok: true; report: ImportReport } | { ok: false; error: string } => {
+      const read = readBundle(text);
+      if (!read.ok) return read;
+      const { bundle } = read;
+
+      const systems = mergeImported(customSystemsRef.current, bundle.systems, (s) => s.id);
+      const heldForces = mergeImportedForces(forcesRef.current, bundle.forces);
+      if (systems.added) setCustomSystems(systems.merged);
+      if (heldForces.added) setForces(heldForces.merged);
+
+      // Filed under its own name and loaded, in that order, so that an import
+      // is never a board you cannot get back to.
+      const scenario: Scenario = {
+        id: nextScenarioId(),
+        name: bundle.name,
+        note: bundle.note,
+        savedAt: new Date().toISOString(),
+        board: bundle.board,
+      };
+      setScenarioDoc((prev) => ({ active: scenario.id, items: [scenario, ...prev.items] }));
+      commit(() => bundle.board);
+      setSelectedId(null);
+
+      return {
+        ok: true,
+        report: {
+          name: bundle.name,
+          units: bundle.board.units.length,
+          systemsAdded: systems.added,
+          systemsKept: systems.kept,
+          nationsAdded: heldForces.added,
+          nationsKept: heldForces.kept,
+        },
+      };
+    },
+    [commit]
+  );
+
   const flyToUnit = useCallback(
     (id: string) => {
       const unit = boardRef.current.units.find((u) => u.id === id);
@@ -1078,6 +1252,16 @@ export function useWarGames({
     flyToUnit,
     clearUnits,
     clearNations,
+    scenarios: scenarioDoc.items,
+    activeScenario: scenarioDoc.items.find((s) => s.id === scenarioDoc.active) ?? null,
+    saveScenario,
+    updateScenario,
+    loadScenario,
+    renameScenario,
+    duplicateScenario,
+    deleteScenario,
+    exportBundle,
+    importBundle,
     coverage,
     setCoverageMode,
     toggleCoverageKind,

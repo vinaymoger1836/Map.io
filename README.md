@@ -265,6 +265,7 @@ and backed up, and is worth committing:
 | `data/board.json` | the working board — nations, units, your special units |
 | `data/systems.json` | systems you authored or edited |
 | `data/forces.json` | what each nation owns, keyed by country id |
+| `data/scenarios.json` | saved boards, and which one is on the map |
 
 `lib/store.ts` is the only file that knows this. It falls back to `localStorage`
 if the route is unavailable — a static export, say — and the console says which
@@ -277,6 +278,51 @@ check before anything else.**
 
 Every board change is undoable — `Ctrl+Z`, `Ctrl+Shift+Z`, or the buttons beside
 the tool row. History is per session and is not saved.
+
+### Scenarios, and carrying a board elsewhere
+
+Two jobs that look alike and are not, both in the **Boards** section.
+
+A **scenario** is a board kept under a name on this machine. The working board is
+still the only one the map draws; a scenario is somewhere to put the Baltic
+contingency while you argue about the Pacific one. Save the working board under
+a name, and load, rename, copy or delete it later.
+
+Loading a scenario **replaces what is on the map, and is undoable** — it goes
+through the same commit every other board change does, so putting the wrong one
+up costs one `Ctrl+Z`. The console remembers which scenario the board came from
+across reloads, so **Update** writes your edits back rather than saving a second
+copy. That link is soft: the working board is free to drift from the scenario it
+was loaded from, and deleting a scenario leaves the board alone.
+
+Systems and national inventories are deliberately *not* part of a scenario. They
+are configuration — a country does not forget its army because you switched
+boards.
+
+A **bundle** is a board leaving the machine, and that is the harder problem,
+because a board is mostly references: a deployment names a system, a system names
+its munitions, a holding names a system. Sent alone it arrives as a list of ids
+that mean nothing. So **Export file** writes the board together with:
+
+- **every system you authored** — not the subset this board happens to
+  reference. The tempting optimisation is wrong: a deployment's loadout can name
+  a munition defined on a *different* system, and the shipped library is a moving
+  target between versions. The whole authored set is a few kilobytes and cannot
+  lose a reference; computing the closure is clever and can.
+- **the inventories of the nations on this board** — the countries it actually
+  involves travel with it, and the rest of the world's order of battle stays home.
+
+Importing is **non-destructive everywhere undo cannot reach.** The board is
+undoable, so an import loads it; systems and inventories are not, so a file can
+never rewrite an S-400 figure you corrected or an order of battle you spent an
+hour on. New ones are added, anything you already have is kept, and the panel
+reports which — a bundle whose systems were all skipped may well draw different
+rings from the ones its author saw. Every import is also filed as a scenario
+under its own name, so it is never a board you cannot get back to.
+
+A file that is not one of ours is refused by its marker rather than guessed at: a
+stray `frontline.geojson` parses perfectly well as JSON and would otherwise
+import as an empty board over the top of a good one.
 
 ### Coverage
 
@@ -377,6 +423,7 @@ lib/geo.ts         geodesic circles and distance — no dependency
 lib/store.ts       the document store — the only thing that knows about storage
 lib/munitions.ts   the munitions catalogue, derived from the systems
 lib/forces.ts      national holdings, and what the board has committed
+lib/scenarios.ts   saved boards, and the bundle a board travels in
 lib/unitIcons.ts   the canvas icon factory
 lib/warLayers.ts   MapLibre sources and layers for the board
 lib/useWarGames.ts board state and the map wiring
@@ -386,23 +433,25 @@ components/wargames/           MapSection      tool, selection, palette,
                                                coverage, then paint at the foot
                                ArmamentsSection the systems catalogue + editor
                                ForcesSection    per-nation strength
+                               ScenariosSection saved boards, export, import
                                and the parts they use: NationBlock, Palette,
                                SelectedUnit, LoadoutEditor, CompositionEditor,
                                SpecSheet, Coverage, OrderOfBattle, EnvelopeTip,
                                SectionNav, Modal
 ```
 
-### The console's three sections
+### The console's four sections
 
 One long scroll put the colour picker above whatever you were actually doing and
-buried the systems catalogue under the deploy controls. They are three different
-jobs, so they are three places:
+buried the systems catalogue under the deploy controls. They are four different
+jobs, so they are four places:
 
 | Section | For |
 | --- | --- |
 | **Map** | Arranging the board. Tool, the selected unit and its editors, the deploy palette, what coverage draws — and painting at the foot, because you choose a nation's colour once and then deploy under it for an hour. |
 | **Armaments** | What every system *is*. Search and filter the catalogue, read a spec sheet with its sources, duplicate a library entry to disagree with it, or author a new one in a dialog with the whole schema. |
 | **Forces** | What each nation has, and what it owns. Strength by nation, a per-nation inventory that deploying draws down, and the order of battle. |
+| **Boards** | Whole boards. Save the working board as a scenario, load one back, and export or import a board as a file. Last, because it is the section you visit at the start and end of a session rather than throughout it. |
 
 The system form is a dialog rather than a column, because thirty-odd fields in a
 384 px panel is a scroll inside a scroll. It is portalled to `<body>`: the console
@@ -552,9 +601,9 @@ scripts/        data generation
   minima. Use NSIDC data for anything quantitative.
 - **War Games units are markers, not a model.** Nothing moves, shoots, spots or
   is scored; the mode is a board you arrange, not a simulation.
-- **A board is local to one machine.** It is a file under `data/`, so it
-  survives a cleared browser but does not follow you to another computer.
-  Scenarios and export/import are the next phase.
+- **A board travels as a file, not as a link.** Export writes a bundle and import
+  reads one; there is no server, no sync and no merge. Two people editing the
+  same scenario produce two scenarios.
 - **Coverage rings are flat circles of constant range.** Terrain does not mask
   them, a system's reach is not really uniform in every direction, and a ring
   drawn around a point near a pole will not enclose the pole properly.

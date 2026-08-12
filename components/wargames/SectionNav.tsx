@@ -1,21 +1,26 @@
 'use client';
 
 /**
- * The console's three rooms.
+ * The console's rooms.
  *
  * The old panel was one long scroll holding everything at once, which meant the
  * colour picker sat above the thing you were actually doing and the systems
- * catalogue was buried under the deploy controls. These are three different
- * jobs — arranging the board, describing equipment, and counting what a nation
- * owns — and they deserve three places rather than three scroll positions.
+ * catalogue was buried under the deploy controls. These are different jobs —
+ * arranging the board, describing equipment, counting what a nation owns, and
+ * keeping whole boards — and they deserve their own places rather than four
+ * scroll positions.
+ *
+ * Boards comes last because it is the one you visit at the start and end of a
+ * session rather than throughout it.
  */
 
-export type Section = 'map' | 'armaments' | 'forces';
+export type Section = 'map' | 'armaments' | 'forces' | 'boards';
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   { id: 'map', label: 'Map', hint: 'Paint nations, deploy units, and set what the map draws' },
   { id: 'armaments', label: 'Armaments', hint: 'What every system is — specifications, sources, and your own' },
   { id: 'forces', label: 'Forces', hint: 'What each nation has on the board' },
+  { id: 'boards', label: 'Boards', hint: 'Save and load scenarios, and carry a board to another machine' },
 ];
 
 export function SectionNav({
