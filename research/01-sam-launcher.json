@@ -14,7 +14,8 @@
     "ballistic-short",
     "ballistic-medium"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 24
   },
   "weapons": [
    {
@@ -198,6 +199,15 @@
      "note": "Not published. Quicker than the 40N6 — a shorter round on the same fire-control chain."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "40V6M/40V6MD Universal Mobile Mast | Air Power Australia",
+     "url": "https://www.ausairpower.net/APA-40V6M-Mast-System.html",
+     "note": "The acquisition radar of this family is carried on the 40V6M universal mobile mast, which Russian literature gives as 24 m (the taller 40V6MD is 40 m). This is the single largest correction here: raising the antenna is precisely what these masts exist to do, and the previous 20 m default threw that away."
+    },
+    "confidence": "medium"
    }
   }
  },
@@ -215,7 +225,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 24
   },
   "weapons": [
    {
@@ -300,6 +311,15 @@
      "note": "Estimated detection-to-launch for an alerted battery; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "40V6M/40V6MD Universal Mobile Mast | Air Power Australia",
+     "url": "https://www.ausairpower.net/APA-40V6M-Mast-System.html",
+     "note": "The acquisition radar of this family is carried on the 40V6M universal mobile mast, which Russian literature gives as 24 m (the taller 40V6MD is 40 m). This is the single largest correction here: raising the antenna is precisely what these masts exist to do, and the previous 20 m default threw that away."
+    },
+    "confidence": "medium"
    }
   }
  },
@@ -317,7 +337,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 24
   },
   "weapons": [
    {
@@ -391,6 +412,15 @@
      "note": "Estimated detection-to-launch; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "40V6M/40V6MD Universal Mobile Mast | Air Power Australia",
+     "url": "https://www.ausairpower.net/APA-40V6M-Mast-System.html",
+     "note": "The acquisition radar of this family is carried on the 40V6M universal mobile mast, which Russian literature gives as 24 m (the taller 40V6MD is 40 m). This is the single largest correction here: raising the antenna is precisely what these masts exist to do, and the previous 20 m default threw that away."
+    },
+    "confidence": "medium"
    }
   }
  },
@@ -407,7 +437,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -543,6 +574,14 @@
      "kind": "placeholder",
      "title": "Modeling placeholder - not publicly disclosed",
      "note": "Not published. A gun already slaved to the vehicle's own tracking radar traverses and fires quickly."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Radar mounted on the vehicle turret itself. Not published; a short-range system on a tracked or wheeled chassis, so the antenna is roughly cab height."
     },
     "confidence": "low"
    }
@@ -683,7 +722,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -767,6 +807,14 @@
      "note": "Tor is marketed as very short reaction (a few seconds), able to fire on the move; exact figure not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Radar mounted on the vehicle turret itself. Not published; a short-range system on a tracked or wheeled chassis, so the antenna is roughly cab height."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -783,7 +831,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -860,6 +909,14 @@
      "note": "Patriot engagements are near-autonomous; exact detection-to-launch not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -875,7 +932,8 @@
     "ballistic-short",
     "ballistic-medium"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -942,6 +1000,14 @@
      "note": "Estimated detection-to-launch for a cued terminal engagement; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -957,7 +1023,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -1030,6 +1097,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -1113,7 +1188,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -1197,6 +1273,14 @@
      "note": "Estimated detection-to-launch; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -1214,7 +1298,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -1300,6 +1385,14 @@
      "note": "Estimated detection-to-launch; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -1316,7 +1409,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -1412,6 +1506,14 @@
      "note": "Full-system deployment quoted at 12 minutes, but detection-to-launch reaction is not published. Estimated."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -1493,7 +1595,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -1570,6 +1673,14 @@
      "note": "The cited five seconds is inter-missile spacing, not detection-to-launch reaction; reaction time not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -1585,7 +1696,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -1658,6 +1770,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Iron Dome reacts within seconds against short-flight-time rockets; exact figure not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }

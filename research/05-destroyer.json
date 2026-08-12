@@ -10,7 +10,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -218,6 +219,14 @@
      "note": "'Aircraft (Flight IIA and III): Two LAMPS MK III MH-60 R helicopters.'"
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "SPY-1D faces are fixed to the superstructure, low by design — the arrays SAMPSON is described as double the height of. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -232,7 +241,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -427,6 +437,14 @@
      "note": "'normally carries a Harbin Z-9 helicopter' (Z-20 on the 052DL variant)."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Type 346 faces fixed to the superstructure at destroyer height. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -441,7 +459,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 40
   },
   "weapons": [
    {
@@ -594,6 +613,14 @@
      "note": "Hangar for one Merlin HM2 or up to two Wildcat HMA2; one taken as the routine embarkation."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Wikipedia's SAMPSON article states it 'is at approximately double the height above the waterline than the arrays of equivalent ships in foreign navies' — a comparative claim, not an absolute one. Taking the Aegis fixed arrays here at 20 m puts SAMPSON near 40 m, which is the reason the Type 45 sees a sea-skimmer sooner than a Burke does. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -608,7 +635,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -791,6 +819,14 @@
      "note": "'an enclosed hangar for up to two maritime helicopters.'"
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "MF-STAR faces fixed to the mast at destroyer height. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -805,7 +841,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -1002,6 +1039,14 @@
      "kind": "placeholder",
      "title": "Not in the retrieved excerpt",
      "note": "Complement commonly cited ~300; not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Aegis fixed arrays, as the Burke. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
     },
     "confidence": "low"
    }

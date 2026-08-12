@@ -1,63 +1,170 @@
 [
-  {
-    "id": "kub-mobile",
-    "name": "Mobile SHORAD (generic)",
-    "typeId": "mobile-ad",
-    "origin": "—",
-    "note": "Generic mobile short-range air-defence (SHORAD) system - a representative stand-in rather than a specific vehicle. Figures are modelling estimates for a modern gun/missile SHORAD in the class of Pantsir-S1, Tor-M2 or the US IM-SHORAD (short-range SAM plus an autocannon, on a mobile chassis with its own search radar). All values are placeholders.",
-    "sensor": {
-      "detectionKm": 30,
-      "tracks": 10,
-      "sees": ["air"],
-      "horizonLimited": true
+ {
+  "id": "kub-mobile",
+  "name": "Mobile SHORAD (generic)",
+  "typeId": "mobile-ad",
+  "origin": "—",
+  "note": "Generic mobile short-range air-defence (SHORAD) system - a representative stand-in rather than a specific vehicle. Figures are modelling estimates for a modern gun/missile SHORAD in the class of Pantsir-S1, Tor-M2 or the US IM-SHORAD (short-range SAM plus an autocannon, on a mobile chassis with its own search radar). All values are placeholders.",
+  "sensor": {
+   "detectionKm": 30,
+   "tracks": 10,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": true,
+   "antennaM": 6
+  },
+  "weapons": [
+   {
+    "id": "shorad-sam",
+    "name": "Short-range SAM (generic)",
+    "rangeKm": 12,
+    "magazine": 8,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ]
+   },
+   {
+    "id": "shorad-gun",
+    "name": "Air-defence autocannon (generic)",
+    "rangeKm": 4,
+    "magazine": 700,
+    "salvo": 50,
+    "pk": 0.3,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "speedKmh": 65,
+   "crew": 3
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative search-radar detection range for a mobile SHORAD (~30 km against a fighter-sized target). Not a specific system; estimate."
     },
-    "weapons": [
-      {
-        "id": "shorad-sam",
-        "name": "Short-range SAM (generic)",
-        "rangeKm": 12,
-        "magazine": 8,
-        "salvo": 2,
-        "pk": 0.7,
-        "reactionSec": 8,
-        "engages": ["air"]
-      },
-      {
-        "id": "shorad-gun",
-        "name": "Air-defence autocannon (generic)",
-        "rangeKm": 4,
-        "magazine": 700,
-        "salvo": 50,
-        "pk": 0.3,
-        "reactionSec": 5,
-        "engages": ["air"]
-      }
-    ],
-    "platform": {
-      "speedKmh": 65,
-      "crew": 3
+    "confidence": "low"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative simultaneous-track capacity for a mobile SHORAD. Estimate."
     },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative search-radar detection range for a mobile SHORAD (~30 km against a fighter-sized target). Not a specific system; estimate."},
-        "confidence": "low"
-      },
-      "sensor.tracks": {
-        "source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative simultaneous-track capacity for a mobile SHORAD. Estimate."},
-        "confidence": "low"
-      },
-      "weapons.0.rangeKm": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative short-range SAM reach (~12 km), in the class of the Pantsir 57E6 / Tor 9M338. Estimate."}, "confidence": "low"},
-      "weapons.0.magazine": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative ready-missile count for a SHORAD vehicle. Estimate."}, "confidence": "low"},
-      "weapons.0.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Two missiles per engagement (modelling default)."}, "confidence": "low"},
-      "weapons.0.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Representative single-shot kill probability for a modern short-range SAM against a non-manoeuvring target. Estimate."}, "confidence": "low"},
-      "weapons.0.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Representative detection-to-launch time for a SHORAD. Estimate."}, "confidence": "low"},
-      "weapons.1.rangeKm": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative air-defence autocannon reach (~4 km), in the class of a 30 mm 2A38 / 35 mm gun. Estimate."}, "confidence": "low"},
-      "weapons.1.magazine": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative ready-round count for a twin autocannon. Estimate."}, "confidence": "low"},
-      "weapons.1.salvo": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Rounds per burst (modelling default)."}, "confidence": "low"},
-      "weapons.1.pk": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Representative per-burst kill probability for a radar-directed autocannon. Estimate."}, "confidence": "low"},
-      "weapons.1.reactionSec": {"source": {"kind": "placeholder", "title": "No public figure", "note": "Representative detection-to-fire time. Estimate."}, "confidence": "low"},
-      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative road speed for a wheeled/tracked SHORAD (~65 km/h). Estimate."}, "confidence": "low"},
-      "platform.crew": {"source": {"kind": "placeholder", "title": "Generic system - no specific source", "note": "Representative crew of ~3 for a mobile SHORAD. Estimate."}, "confidence": "low"}
-    }
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative short-range SAM reach (~12 km), in the class of the Pantsir 57E6 / Tor 9M338. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative ready-missile count for a SHORAD vehicle. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Two missiles per engagement (modelling default)."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Representative single-shot kill probability for a modern short-range SAM against a non-manoeuvring target. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Representative detection-to-launch time for a SHORAD. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative air-defence autocannon reach (~4 km), in the class of a 30 mm 2A38 / 35 mm gun. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative ready-round count for a twin autocannon. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Rounds per burst (modelling default)."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Representative per-burst kill probability for a radar-directed autocannon. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Representative detection-to-fire time. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative road speed for a wheeled/tracked SHORAD (~65 km/h). Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Generic system - no specific source",
+     "note": "Representative crew of ~3 for a mobile SHORAD. Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Radar mounted on the vehicle turret itself. Not published; a short-range system on a tracked or wheeled chassis, so the antenna is roughly cab height."
+    },
+    "confidence": "low"
+   }
   }
+ }
 ]

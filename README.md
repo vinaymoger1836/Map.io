@@ -208,18 +208,18 @@ you disagree with a figure: library entries are read-only, your copy is yours,
 and a copy with the same id replaces the original everywhere.
 
 **About the numbers.** `public/data/systems.json` holds 104 researched systems:
-1,033 figures carry provenance, and **471 of them carry the URL of a page someone
+1,067 figures carry provenance, and **474 of them carry the URL of a page someone
 actually opened**. The rest are declared estimates, and the distinction is
 recorded in the data rather than implied — `source.kind: "placeholder"` may not
 carry a URL, and the validator fails the file if one does. Confidence is per
 field, shown as a dot beside the value:
 
 - **high** (250) — sourced and unambiguous: hull displacement, VLS cells, crew.
-- **medium** (212) — sourced but conditional or contested. A range means nothing
+- **medium** (215) — sourced but conditional or contested. A range means nothing
   without the target it assumes; the S-400's "600 km" is against a large, high,
   non-manoeuvring target, and each figure's `source.note` records that condition.
-- **low** (571) — mostly kill probability, reaction time and salvo size, which
-  nobody publishes. They are what the engagement model multiplies, and every one
+- **low** (602) — mostly kill probability, reaction time, salvo size and antenna
+  height, none of which anybody publishes. They are what the engagement model multiplies, and every one
   of them says so.
 
 A handful of detection ranges are model estimates rather than citations — the
@@ -465,8 +465,30 @@ its unit at both 60°N and the equator, while the two rings look nothing alike.
 **The radar horizon is modelled.** Sensors marked `horizonLimited` are cut short
 by the earth's curve against the altitude you are asking about. Switch the target
 altitude from **High** to **Low** and an S-400's 600 km detection range collapses
-to 62 km — which is roughly the truth about a 100 m target, and a useful
+to 61 km — which is roughly the truth about a 100 m target, and a useful
 corrective to reading brochure figures off a map.
+
+**How far it collapses depends on how high the antenna sits**, which is why every
+horizon-limited sensor now records `antennaM`. Before, twenty of the twenty-two
+had none, so all of them fell back to the same 20 m default and reported an
+identical 60 km against a low target — a supercarrier island and a battery radar
+on a trailer given the same reach. Now a Type 45's masthead SAMPSON picks up a
+sea-skimmer at 67 km, an Arleigh Burke's lower fixed arrays at 60 km, and a
+Nimitz's island at 73 km. That ordering is the whole reason the field exists.
+
+**Ships were not horizon-limited at all, and should have been.** The research
+prompt says the flag is "true for ships and ground sites, false for aircraft";
+sixteen of the seventeen ships came back `false`, and two helicopters came back
+`true`. So a destroyer's 320 km air-search range applied unchanged to a missile
+skimming the wave tops, which is the single least true thing the map was drawing.
+Corrected, a Burke sees that missile at 60 km rather than 320. Only the Visby had
+it right, which is why it was the one ship whose ring already behaved.
+
+Antenna heights above the waterline are not published for any of these ships, so
+they are reasoned by class — supercarrier island, carrier island, destroyer
+array, corvette mast — and each says so in its note. The one cited figure is the
+40V6M mobile mast at 24 m, which is what the S-400 and S-300 families raise their
+acquisition radar on, and raising it is exactly what the mast is for.
 
 ### How the symbols are drawn
 

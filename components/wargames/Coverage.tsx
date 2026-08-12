@@ -145,7 +145,9 @@ export function Coverage({ wg }: { wg: WarGames }) {
           <p className="wg-note">
             Ground and sea radars are cut short by the earth’s curve. Switch to <b>Low</b> and a
             600 km detection range collapses to what it can actually see of something flying at
-            100 m.
+            100 m. How far that is depends on how high the antenna sits: a Type 45’s masthead
+            radar picks up a sea-skimmer sooner than a Burke’s lower arrays, and a carrier’s
+            island sooner than either.
           </p>
         </>
       )}

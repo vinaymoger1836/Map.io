@@ -414,7 +414,7 @@
     "ground",
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": false
   },
   "weapons": [
    {
@@ -643,7 +643,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -718,6 +719,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "The cited five seconds is inter-missile spacing, not detection-to-launch reaction; reaction time not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -881,6 +890,14 @@
      "note": "'2 x Rolling Airframe Missile launchers'. The infobox gives no round count; 42 is two Mk 49 launchers at 21 rounds each."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Large-deck amphibious ship; island height close to a light carrier. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -888,7 +905,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
@@ -933,7 +951,8 @@
     "ballistic-medium",
     "ballistic-imrbm"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "provenance": {
    "sensor.detectionKm": {
@@ -951,6 +970,14 @@
      "title": "AN/TPY-2 Radar | Missile Threat (CSIS)",
      "url": "https://missilethreat.csis.org/defsys/tpy-2/",
      "note": "In a 1998 test the radar accurately tracked 'over 180 separate objects and debris'. Used here as an indicative simultaneous-track figure; the true capacity is classified."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -1084,7 +1111,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -1292,6 +1320,14 @@
      "note": "'Aircraft (Flight IIA and III): Two LAMPS MK III MH-60 R helicopters.'"
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "SPY-1D faces are fixed to the superstructure, low by design — the arrays SAMPSON is described as double the height of. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -2760,6 +2796,14 @@
      "note": "'2 x 6 cell Sadral launchers carrying Mistral short-range missiles' — 2 x 6."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Island-mounted, on a hull considerably smaller than a US supercarrier. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -2768,7 +2812,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
@@ -4435,6 +4480,14 @@
      "note": "'2 x Mk 49 Guided Missile Launching Systems, 21 x RIM-116 Rolling Airframe Missiles each' — 2 x 21."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "As Nimitz — the island is lower and further aft, but the array height is the same order. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -4442,7 +4495,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 60
   },
   "weapons": [
    {
@@ -4721,7 +4775,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -4817,6 +4872,14 @@
      "note": "Full-system deployment quoted at 12 minutes, but detection-to-launch reaction is not published. Estimated."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -4834,7 +4897,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -4918,6 +4982,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -5083,6 +5155,14 @@
      "note": "Not published. Held identical to the Kolkata entry."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "MF-STAR faces are island-mounted. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -5090,7 +5170,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
@@ -5183,7 +5264,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -5256,6 +5338,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Iron Dome reacts within seconds against short-flight-time rockets; exact figure not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -5782,7 +5872,8 @@
     "ballistic-short",
     "ballistic-medium"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 12
   },
   "provenance": {
    "sensor.detectionKm": {
@@ -5793,6 +5884,14 @@
      "note": "Instrumented range 310 NM (500 km); 'able to detect stealth aircraft like the F-22 at a distance of up to 500 km'. Against a conventional target this is the instrumented limit; against genuine low-observables the effective range is lower (~350 km per vendor material)."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Large semi-fixed early-warning array on prepared ground. Not published; taller than a battery radar and lower than a dedicated mast."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -5874,7 +5973,7 @@
     "ground",
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": false
   },
   "weapons": [
    {
@@ -6255,7 +6354,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -6438,6 +6538,14 @@
      "note": "'an enclosed hangar for up to two maritime helicopters.'"
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "MF-STAR faces fixed to the mast at destroyer height. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -6703,6 +6811,14 @@
      "note": "'3 x HQ-10 (18-cell missile system)' — 3 x 18."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Island-mounted arrays on a full-size carrier. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -6710,7 +6826,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
@@ -7070,7 +7187,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -7269,6 +7387,14 @@
      "note": "Complement commonly cited ~300; not stated in the retrieved portion. Estimate."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Aegis fixed arrays, as the Burke. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -7382,7 +7508,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -7457,6 +7584,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Patriot engagements are near-autonomous; exact detection-to-launch not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -7567,6 +7702,14 @@
      "note": "'2 x Simbad missile systems'. Simbad is a twin mount, so four rounds ready."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Smaller LHD with a correspondingly lower island. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -7574,7 +7717,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 30
   },
   "weapons": [
    {
@@ -7604,7 +7748,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -7746,6 +7891,14 @@
      "kind": "placeholder",
      "title": "Generic system - no specific source",
      "note": "Representative crew of ~3 for a mobile SHORAD. Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Radar mounted on the vehicle turret itself. Not published; a short-range system on a tracked or wheeled chassis, so the antenna is roughly cab height."
     },
     "confidence": "low"
    }
@@ -7924,7 +8077,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -7999,6 +8153,14 @@
      "note": "Estimated detection-to-launch; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -8016,7 +8178,8 @@
     "ballistic-medium",
     "ballistic-imrbm"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 12
   },
   "provenance": {
    "sensor.detectionKm": {
@@ -8027,6 +8190,14 @@
      "note": "Complex 'scans airspace at a range of 1,800 km and an altitude of 1,200 km'. That is the instrumented ceiling against large/high targets; export figures are quoted 600-1,800 km. Against a stealth fighter the VHF RLM-M module is claimed by Almaz-Antey to detect 5th-gen aircraft at only ~100-200 km (unverified)."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Large semi-fixed early-warning array on prepared ground. Not published; taller than a battery radar and lower than a dedicated mast."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -8190,6 +8361,14 @@
      "note": "'2 x Mk 49 Guided Missile Launching Systems, 21 x RIM-116 Rolling Airframe Missiles each' — 2 x 21."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Supercarrier island: flight deck about 20 m above the waterline, island and mast above that. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -8197,7 +8376,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 60
   },
   "weapons": [
    {
@@ -8547,7 +8727,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -8685,6 +8866,14 @@
      "note": "Not published. A gun already slaved to the vehicle's own tracking radar traverses and fires quickly."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Radar mounted on the vehicle turret itself. Not published; a short-range system on a tracked or wheeled chassis, so the antenna is roughly cab height."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -8754,6 +8943,14 @@
      "note": "'up to 1,000 targets'."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "S1850M sits on the aft island of a two-island carrier, lower than a US supercarrier mast. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -8762,7 +8959,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   }
  },
  {
@@ -9000,7 +9198,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 24
   },
   "weapons": [
    {
@@ -9085,6 +9284,15 @@
      "note": "Estimated detection-to-launch for an alerted battery; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "40V6M/40V6MD Universal Mobile Mast | Air Power Australia",
+     "url": "https://www.ausairpower.net/APA-40V6M-Mast-System.html",
+     "note": "The acquisition radar of this family is carried on the 40V6M universal mobile mast, which Russian literature gives as 24 m (the taller 40V6MD is 40 m). This is the single largest correction here: raising the antenna is precisely what these masts exist to do, and the previous 20 m default threw that away."
+    },
+    "confidence": "medium"
    }
   }
  },
@@ -9102,7 +9310,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 24
   },
   "weapons": [
    {
@@ -9176,6 +9385,15 @@
      "note": "Estimated detection-to-launch; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "40V6M/40V6MD Universal Mobile Mast | Air Power Australia",
+     "url": "https://www.ausairpower.net/APA-40V6M-Mast-System.html",
+     "note": "The acquisition radar of this family is carried on the 40V6M universal mobile mast, which Russian literature gives as 24 m (the taller 40V6MD is 40 m). This is the single largest correction here: raising the antenna is precisely what these masts exist to do, and the previous 20 m default threw that away."
+    },
+    "confidence": "medium"
    }
   }
  },
@@ -9194,7 +9412,8 @@
     "ballistic-short",
     "ballistic-medium"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 24
   },
   "weapons": [
    {
@@ -9378,6 +9597,15 @@
      "note": "Not published. Quicker than the 40N6 — a shorter round on the same fire-control chain."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "reference",
+     "title": "40V6M/40V6MD Universal Mobile Mast | Air Power Australia",
+     "url": "https://www.ausairpower.net/APA-40V6M-Mast-System.html",
+     "note": "The acquisition radar of this family is carried on the 40V6M universal mobile mast, which Russian literature gives as 24 m (the taller 40V6MD is 40 m). This is the single largest correction here: raising the antenna is precisely what these masts exist to do, and the previous 20 m default threw that away."
+    },
+    "confidence": "medium"
    }
   }
  },
@@ -9395,7 +9623,8 @@
     "air",
     "ballistic-short"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 5
   },
   "weapons": [
    {
@@ -9477,6 +9706,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Estimated detection-to-launch; not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
     },
     "confidence": "low"
    }
@@ -9590,7 +9827,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -9761,6 +9999,14 @@
      "note": "'The helicopter hangar deck is located a half deck below the landing pad' - one Ka-27 embarked."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Top Pair / Top Steer on a cruiser mast. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -10552,7 +10798,8 @@
     "ballistic-short",
     "ballistic-medium"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -10619,6 +10866,14 @@
      "note": "Estimated detection-to-launch for a cued terminal engagement; not published."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -10633,7 +10888,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -10850,6 +11106,14 @@
      "note": "Carries LAMPS III (SH-60) helicopters; hangar for two."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "SPY-1 faces fixed to the superstructure, as the Burke. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -10866,7 +11130,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "weapons": [
    {
@@ -10948,6 +11213,14 @@
      "kind": "placeholder",
      "title": "No public figure",
      "note": "Tor is marketed as very short reaction (a few seconds), able to fire on the move; exact figure not published."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Radar mounted on the vehicle turret itself. Not published; a short-range system on a tracked or wheeled chassis, so the antenna is roughly cab height."
     },
     "confidence": "low"
    }
@@ -11195,7 +11468,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -11390,6 +11664,14 @@
      "note": "'normally carries a Harbin Z-9 helicopter' (Z-20 on the 052DL variant)."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Type 346 faces fixed to the superstructure at destroyer height. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -11404,7 +11686,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -11599,6 +11882,14 @@
      "note": "'There is hangar space for two helicopters.'"
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Type 346B faces fixed to the superstructure; a larger hull, but the arrays sit in the same band. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -11711,7 +12002,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 40
   },
   "weapons": [
    {
@@ -11864,6 +12156,14 @@
      "note": "Hangar for one Merlin HM2 or up to two Wildcat HMA2; one taken as the routine embarkation."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Wikipedia's SAMPSON article states it 'is at approximately double the height above the waterline than the arrays of equivalent ships in foreign navies' — a comparative claim, not an absolute one. Taking the Aegis fixed arrays here at 20 m puts SAMPSON near 40 m, which is the reason the Type 45 sees a sea-skimmer sooner than a Burke does. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -12095,7 +12395,8 @@
     "air",
     "surface"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 15
   },
   "weapons": [
    {
@@ -12188,6 +12489,14 @@
      "kind": "placeholder",
      "title": "Not captured from retrieved page",
      "note": "Complement commonly cited ~43. Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Small corvette — the lowest array in the library, and the reason it was the one ship already marked horizon-limited. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
     },
     "confidence": "low"
    }

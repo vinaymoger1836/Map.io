@@ -1,350 +1,367 @@
 [
-  {
-    "id": "ah-64e",
-    "name": "AH-64E Apache",
-    "typeId": "attack-heli",
-    "origin": "United States",
-    "note": "Boeing AH-64E Apache Guardian attack helicopter, crew of 2 (pilot + co-pilot/gunner). Performance figures are the published AH-64A/D numbers (the AH-64E is broadly similar, slightly faster). Primary armament: AGM-114 Hellfire ATGM and 30 mm M230 chain gun; AH-64E adds the JAGM. AN/APG-78 Longbow millimetre-wave fire-control radar.",
-    "sensor": {
-      "detectionKm": 8,
-      "tracks": 256,
-      "sees": ["ground", "air"],
-      "horizonLimited": true
-    },
-    "weapons": [
-      {
-        "id": "agm-114",
-        "name": "AGM-114 Hellfire",
-        "rangeKm": 10,
-        "magazine": 16,
-        "salvo": 1,
-        "pk": 0.8,
-        "reactionSec": 8,
-        "engages": ["ground"]
-      },
-      {
-        "id": "m230",
-        "name": "M230 30 mm chain gun",
-        "rangeKm": 4.5,
-        "magazine": 1200,
-        "salvo": 20,
-        "pk": 0.3,
-        "reactionSec": 4,
-        "engages": ["ground", "air"]
-      }
-    ],
-    "platform": {
-      "combatRadiusKm": 480,
-      "ferryRangeKm": 1900,
-      "speedKmh": 279,
-      "crew": 2
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Longbow FCR range not stated by source",
-          "note": "AN/APG-78 Longbow fire-control radar; the source gives target-handling but no detection range in km. ~8 km is the commonly cited figure. Estimate."
-        },
-        "confidence": "low"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'Processors determine the location, speed and direction of travel of a maximum of 256 targets.'"
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "AGM-114D Longbow Hellfire: 'Its range is 8km to 12km.' 10 km taken as a mid value."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'the helicopter carries 16 Hellfire missiles on four four-rail launchers'."
-        },
-        "confidence": "high"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Rounds committed per engagement is doctrine-dependent; modelling default of 1 per target."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Single-shot kill probability not published; estimate for a laser/mmW ATGM against an armoured vehicle."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Detection-to-launch not published; modelling estimate."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.rangeKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Gun range not stated by source",
-          "note": "M230 30 mm chain gun; the source gives rate of fire and ammunition but no range. ~1.5 km point / up to ~4.5 km area is typical. Estimate."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'The helicopter has capacity for up to 1,200 rounds of ammunition.'"
-        },
-        "confidence": "high"
-      },
-      "weapons.1.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Rounds per burst is doctrine-dependent; modelling default."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Per-burst kill probability not published; low estimate for a cannon against a point target."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Detection-to-fire not published; modelling estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.combatRadiusKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'Combat Radius 480km' (AH-64A/D figure; the AH-64E is broadly similar)."
-        },
-        "confidence": "medium"
-      },
-      "platform.ferryRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'Ferry Range 1,900km' (on internal and external fuel)."
-        },
-        "confidence": "high"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'Maximum Speed 279km/h'; maximum cruising speed 265 km/h."
-        },
-        "confidence": "high"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
-          "url": "https://www.army-technology.com/projects/apache/",
-          "note": "'Crew 2 - pilot and co-pilot / gunner'."
-        },
-        "confidence": "high"
-      }
-    }
+ {
+  "id": "ah-64e",
+  "name": "AH-64E Apache",
+  "typeId": "attack-heli",
+  "origin": "United States",
+  "note": "Boeing AH-64E Apache Guardian attack helicopter, crew of 2 (pilot + co-pilot/gunner). Performance figures are the published AH-64A/D numbers (the AH-64E is broadly similar, slightly faster). Primary armament: AGM-114 Hellfire ATGM and 30 mm M230 chain gun; AH-64E adds the JAGM. AN/APG-78 Longbow millimetre-wave fire-control radar.",
+  "sensor": {
+   "detectionKm": 8,
+   "tracks": 256,
+   "sees": [
+    "ground",
+    "air"
+   ],
+   "horizonLimited": false
   },
-  {
-    "id": "ka-52",
-    "name": "Ka-52 Alligator",
-    "typeId": "attack-heli",
-    "origin": "Russia",
-    "note": "Kamov Ka-52 Alligator, coaxial-rotor two-seat (side-by-side) scout/attack helicopter. Primary armament 9K121 Vikhr ATGM and 2A42 30 mm cannon; also carries the newer LMUR (izdeliye 305) ~14.5 km ATGM and Igla air-to-air missiles. Radar/EO detection ~25 km ground / 15 km air.",
-    "sensor": {
-      "detectionKm": 25,
-      "sees": ["ground", "air"],
-      "horizonLimited": true
+  "weapons": [
+   {
+    "id": "agm-114",
+    "name": "AGM-114 Hellfire",
+    "rangeKm": 10,
+    "magazine": 16,
+    "salvo": 1,
+    "pk": 0.8,
+    "reactionSec": 8,
+    "engages": [
+     "ground"
+    ]
+   },
+   {
+    "id": "m230",
+    "name": "M230 30 mm chain gun",
+    "rangeKm": 4.5,
+    "magazine": 1200,
+    "salvo": 20,
+    "pk": 0.3,
+    "reactionSec": 4,
+    "engages": [
+     "ground",
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 480,
+   "ferryRangeKm": 1900,
+   "speedKmh": 279,
+   "crew": 2
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Longbow FCR range not stated by source",
+     "note": "AN/APG-78 Longbow fire-control radar; the source gives target-handling but no detection range in km. ~8 km is the commonly cited figure. Estimate."
     },
-    "weapons": [
-      {
-        "id": "vikhr",
-        "name": "9K121 Vikhr",
-        "rangeKm": 10,
-        "magazine": 12,
-        "salvo": 1,
-        "pk": 0.8,
-        "reactionSec": 10,
-        "engages": ["ground", "air"]
-      },
-      {
-        "id": "2a42",
-        "name": "2A42 30 mm cannon",
-        "rangeKm": 4,
-        "magazine": 460,
-        "salvo": 20,
-        "pk": 0.3,
-        "reactionSec": 4,
-        "engages": ["ground", "air"]
-      }
-    ],
-    "platform": {
-      "combatRadiusKm": 470,
-      "ferryRangeKm": 545,
-      "speedKmh": 315,
-      "crew": 2
+    "confidence": "low"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'Processors determine the location, speed and direction of travel of a maximum of 256 targets.'"
     },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "'a detection range of 25 km for ground targets and 15 km for aerial targets'; a 32 km figure is also cited. Value is the ground-target detection range."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.rangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "9K121 Vikhr laser-beam-riding ATGM; sources cite ~8 km, with later Vikhr-1 to ~10-12 km. 10 km taken as a mid value."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.magazine": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "Up to 12 Vikhr carried on the wing hardpoints."
-        },
-        "confidence": "medium"
-      },
-      "weapons.0.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Rounds committed per engagement is doctrine-dependent; modelling default of 1 per target."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Single-shot kill probability not published; estimate for a laser-guided ATGM against an armoured vehicle."
-        },
-        "confidence": "low"
-      },
-      "weapons.0.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Detection-to-launch not published; modelling estimate."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.rangeKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Gun range not stated by source",
-          "note": "2A42 30 mm cannon; effective range ~4 km against air and ~2 km against ground is typical, but not stated on the retrieved page. Estimate."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.magazine": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not stated on the retrieved page",
-          "note": "Ka-52 typically carries ~460 rounds for the 2A42; not confirmed on the retrieved page. Estimate."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.salvo": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Rounds per burst is doctrine-dependent; modelling default."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.pk": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Per-burst kill probability not published; low estimate for a cannon against a point target."
-        },
-        "confidence": "low"
-      },
-      "weapons.1.reactionSec": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No public figure",
-          "note": "Detection-to-fire not published; modelling estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.combatRadiusKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "'Combat range: 470 km'."
-        },
-        "confidence": "medium"
-      },
-      "platform.ferryRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "'Range: 545 km' on internal fuel; ~1,110 km with external tanks."
-        },
-        "confidence": "medium"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "'Maximum speed: 315 km/h'; cruise 270 km/h."
-        },
-        "confidence": "high"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Kamov Ka-52 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
-          "note": "Crew of 2, seated side-by-side."
-        },
-        "confidence": "high"
-      }
-    }
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "AGM-114D Longbow Hellfire: 'Its range is 8km to 12km.' 10 km taken as a mid value."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'the helicopter carries 16 Hellfire missiles on four four-rail launchers'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Rounds committed per engagement is doctrine-dependent; modelling default of 1 per target."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Single-shot kill probability not published; estimate for a laser/mmW ATGM against an armoured vehicle."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Detection-to-launch not published; modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Gun range not stated by source",
+     "note": "M230 30 mm chain gun; the source gives rate of fire and ammunition but no range. ~1.5 km point / up to ~4.5 km area is typical. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'The helicopter has capacity for up to 1,200 rounds of ammunition.'"
+    },
+    "confidence": "high"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Rounds per burst is doctrine-dependent; modelling default."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Per-burst kill probability not published; low estimate for a cannon against a point target."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Detection-to-fire not published; modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.combatRadiusKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'Combat Radius 480km' (AH-64A/D figure; the AH-64E is broadly similar)."
+    },
+    "confidence": "medium"
+   },
+   "platform.ferryRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'Ferry Range 1,900km' (on internal and external fuel)."
+    },
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'Maximum Speed 279km/h'; maximum cruising speed 265 km/h."
+    },
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Apache Attack Helicopter (AH-64A/D) | Army Technology",
+     "url": "https://www.army-technology.com/projects/apache/",
+     "note": "'Crew 2 - pilot and co-pilot / gunner'."
+    },
+    "confidence": "high"
+   }
   }
+ },
+ {
+  "id": "ka-52",
+  "name": "Ka-52 Alligator",
+  "typeId": "attack-heli",
+  "origin": "Russia",
+  "note": "Kamov Ka-52 Alligator, coaxial-rotor two-seat (side-by-side) scout/attack helicopter. Primary armament 9K121 Vikhr ATGM and 2A42 30 mm cannon; also carries the newer LMUR (izdeliye 305) ~14.5 km ATGM and Igla air-to-air missiles. Radar/EO detection ~25 km ground / 15 km air.",
+  "sensor": {
+   "detectionKm": 25,
+   "sees": [
+    "ground",
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "weapons": [
+   {
+    "id": "vikhr",
+    "name": "9K121 Vikhr",
+    "rangeKm": 10,
+    "magazine": 12,
+    "salvo": 1,
+    "pk": 0.8,
+    "reactionSec": 10,
+    "engages": [
+     "ground",
+     "air"
+    ]
+   },
+   {
+    "id": "2a42",
+    "name": "2A42 30 mm cannon",
+    "rangeKm": 4,
+    "magazine": 460,
+    "salvo": 20,
+    "pk": 0.3,
+    "reactionSec": 4,
+    "engages": [
+     "ground",
+     "air"
+    ]
+   }
+  ],
+  "platform": {
+   "combatRadiusKm": 470,
+   "ferryRangeKm": 545,
+   "speedKmh": 315,
+   "crew": 2
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "'a detection range of 25 km for ground targets and 15 km for aerial targets'; a 32 km figure is also cited. Value is the ground-target detection range."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "9K121 Vikhr laser-beam-riding ATGM; sources cite ~8 km, with later Vikhr-1 to ~10-12 km. 10 km taken as a mid value."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "Up to 12 Vikhr carried on the wing hardpoints."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Rounds committed per engagement is doctrine-dependent; modelling default of 1 per target."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Single-shot kill probability not published; estimate for a laser-guided ATGM against an armoured vehicle."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Detection-to-launch not published; modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Gun range not stated by source",
+     "note": "2A42 30 mm cannon; effective range ~4 km against air and ~2 km against ground is typical, but not stated on the retrieved page. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not stated on the retrieved page",
+     "note": "Ka-52 typically carries ~460 rounds for the 2A42; not confirmed on the retrieved page. Estimate."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Rounds per burst is doctrine-dependent; modelling default."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Per-burst kill probability not published; low estimate for a cannon against a point target."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No public figure",
+     "note": "Detection-to-fire not published; modelling estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.combatRadiusKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "'Combat range: 470 km'."
+    },
+    "confidence": "medium"
+   },
+   "platform.ferryRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "'Range: 545 km' on internal fuel; ~1,110 km with external tanks."
+    },
+    "confidence": "medium"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "'Maximum speed: 315 km/h'; cruise 270 km/h."
+    },
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Kamov Ka-52 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Kamov_Ka-52",
+     "note": "Crew of 2, seated side-by-side."
+    },
+    "confidence": "high"
+   }
+  }
+ }
 ]

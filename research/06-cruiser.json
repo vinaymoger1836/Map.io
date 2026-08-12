@@ -10,7 +10,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -227,6 +228,14 @@
      "note": "Carries LAMPS III (SH-60) helicopters; hangar for two."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "SPY-1 faces fixed to the superstructure, as the Burke. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -241,7 +250,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -436,6 +446,14 @@
      "note": "'There is hangar space for two helicopters.'"
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Type 346B faces fixed to the superstructure; a larger hull, but the arrays sit in the same band. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -450,7 +468,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 20
   },
   "weapons": [
    {
@@ -621,6 +640,14 @@
      "note": "'The helicopter hangar deck is located a half deck below the landing pad' - one Ka-27 embarked."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Top Pair / Top Steer on a cruiser mast. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   }
  }

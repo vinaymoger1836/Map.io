@@ -13,7 +13,8 @@
     "ballistic-medium",
     "ballistic-imrbm"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 12
   },
   "provenance": {
    "sensor.detectionKm": {
@@ -24,6 +25,14 @@
      "note": "Complex 'scans airspace at a range of 1,800 km and an altitude of 1,200 km'. That is the instrumented ceiling against large/high targets; export figures are quoted 600-1,800 km. Against a stealth fighter the VHF RLM-M module is claimed by Almaz-Antey to detect 5th-gen aircraft at only ~100-200 km (unverified)."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Large semi-fixed early-warning array on prepared ground. Not published; taller than a battery radar and lower than a dedicated mast."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -41,7 +50,8 @@
     "ballistic-medium",
     "ballistic-imrbm"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 6
   },
   "provenance": {
    "sensor.detectionKm": {
@@ -61,6 +71,14 @@
      "note": "In a 1998 test the radar accurately tracked 'over 180 separate objects and debris'. Used here as an indicative simultaneous-track figure; the true capacity is classified."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Trailer- or shelter-mounted planar array with no mast. Not published; reasoned from the vehicle: the antenna face sits a few metres up, which is why a battery radar of this kind sees a low target barely past its own perimeter."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -77,7 +95,8 @@
     "ballistic-short",
     "ballistic-medium"
    ],
-   "horizonLimited": true
+   "horizonLimited": true,
+   "antennaM": 12
   },
   "provenance": {
    "sensor.detectionKm": {
@@ -88,6 +107,14 @@
      "note": "Instrumented range 310 NM (500 km); 'able to detect stealth aircraft like the F-22 at a distance of up to 500 km'. Against a conventional target this is the instrumented limit; against genuine low-observables the effective range is lower (~350 km per vendor material)."
     },
     "confidence": "medium"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Large semi-fixed early-warning array on prepared ground. Not published; taller than a battery radar and lower than a dedicated mast."
+    },
+    "confidence": "low"
    }
   }
  },

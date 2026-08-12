@@ -159,6 +159,14 @@
      "note": "'2 x Mk 49 Guided Missile Launching Systems, 21 x RIM-116 Rolling Airframe Missiles each' — 2 x 21."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Supercarrier island: flight deck about 20 m above the waterline, island and mast above that. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -166,7 +174,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 60
   },
   "weapons": [
    {
@@ -354,6 +363,14 @@
      "note": "'2 x Mk 49 Guided Missile Launching Systems, 21 x RIM-116 Rolling Airframe Missiles each' — 2 x 21."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "As Nimitz — the island is lower and further aft, but the array height is the same order. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -361,7 +378,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 60
   },
   "weapons": [
    {
@@ -458,6 +476,14 @@
      "note": "'up to 1,000 targets'."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "S1850M sits on the aft island of a two-island carrier, lower than a US supercarrier mast. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -466,7 +492,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   }
  },
  {
@@ -575,6 +602,14 @@
      "note": "'3 x HQ-10 (18-cell missile system)' — 3 x 18."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Island-mounted arrays on a full-size carrier. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -582,7 +617,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
@@ -808,6 +844,14 @@
      "note": "Not published. Held identical to the Kolkata entry."
     },
     "confidence": "low"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "MF-STAR faces are island-mounted. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -815,7 +859,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
@@ -998,6 +1043,14 @@
      "note": "'2 x 6 cell Sadral launchers carrying Mistral short-range missiles' — 2 x 6."
     },
     "confidence": "high"
+   },
+   "sensor.antennaM": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Island-mounted, on a hull considerably smaller than a US supercarrier. Height of the array above the waterline is not published for any of these ships. Reasoned by class rather than measured: what the horizon calculation needs is the order of magnitude, and the previous blanket 20 m default gave a supercarrier island and a corvette mast the same reach."
+    },
+    "confidence": "low"
    }
   },
   "sensor": {
@@ -1006,7 +1059,8 @@
    "sees": [
     "air"
    ],
-   "horizonLimited": false
+   "horizonLimited": true,
+   "antennaM": 45
   },
   "weapons": [
    {
