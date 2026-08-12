@@ -35,7 +35,11 @@
      "air",
      "ballistic-short",
      "ballistic-medium"
-    ]
+    ],
+    "id": "48n6",
+    "pk": 0.75,
+    "salvo": 2,
+    "reactionSec": 10
    },
    {
     "name": "9M96E2",
@@ -43,7 +47,11 @@
     "magazine": 16,
     "engages": [
      "air"
-    ]
+    ],
+    "id": "9m96e2",
+    "pk": 0.7,
+    "salvo": 2,
+    "reactionSec": 8
    }
   ],
   "provenance": {
@@ -142,6 +150,54 @@
      "note": "Small 9M96 quad-packs four per launch tube; four tubes per TEL = 16 ready rounds."
     },
     "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held level with the 40N6 on the same battery and with the library's other long-range SAMs (SM-6, Aster 30 at 0.75)."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement, the conventional shoot-shoot assumption; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the 40N6, which shares the battery's fire-control chain."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Set marginally below the longer-range rounds: an active-homing missile on a shorter engagement with less mid-course correction."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.2.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Quicker than the 40N6 — a shorter round on the same fire-control chain."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -371,7 +427,11 @@
     "rangeKm": 4,
     "engages": [
      "air"
-    ]
+    ],
+    "id": "2a38m",
+    "pk": 0.3,
+    "salvo": 1,
+    "reactionSec": 3
    }
   ],
   "provenance": {
@@ -461,6 +521,30 @@
      "note": "Guns engage airborne targets to 4 km (max altitude 3 km); each gun ~40 rounds/second."
     },
     "confidence": "medium"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published, and far lower than any missile here: this is a 30 mm cannon. The modelled \"round\" is one burst, and a burst is a much weaker single engagement than a guided missile."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One burst per engagement. Salvo counts rounds committed per engagement, and for a cannon the meaningful unit is the burst rather than the shell."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. A gun already slaved to the vehicle's own tracking radar traverses and fires quickly."
+    },
+    "confidence": "low"
    }
   }
  },

@@ -1,54 +1,328 @@
 [
-  {
-    "id": "america-class",
-    "name": "America class",
-    "typeId": "amphib-ship",
-    "origin": "United States",
-    "note": "US Navy America-class landing helicopter assault (LHA) ship. Its striking power is the embarked air group (F-35B / AV-8B jets, MV-22 Osprey, and attack/transport helicopters), not ship-launched missiles; the only armament is self-defence (RAM, ESSM, Phalanx CIWS), which is not modelled as offensive weapons. Crew/speed below are estimates.",
-    "platform": {
-      "displacementT": 46000,
-      "aircraft": 20,
-      "speedKmh": 40,
-      "crew": 1060
-    },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {"kind": "reference", "title": "America-class amphibious assault ship | Wikipedia", "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship", "note": "'a displacement of about 45,000 long tons (46,000 t)'."},
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {"kind": "reference", "title": "America-class amphibious assault ship | Wikipedia", "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship", "note": "'They can carry about 20 AV-8Bs or F-35Bs' in the sea-control configuration; a mixed amphibious air group of ~20-25 aircraft is typical."},
-        "confidence": "medium"
-      },
-      "platform.speedKmh": {
-        "source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "America-class top speed commonly cited ~22 kn (~40 km/h). Estimate."},
-        "confidence": "low"
-      },
-      "platform.crew": {
-        "source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Ship's company commonly cited ~1,060 (plus a Marine Expeditionary Unit of ~1,700). Estimate."},
-        "confidence": "low"
-      }
-    }
+ {
+  "id": "america-class",
+  "name": "America class",
+  "typeId": "amphib-ship",
+  "origin": "United States",
+  "note": "US Navy America-class landing helicopter assault (LHA) ship. Its striking power is the embarked air group (F-35B / AV-8B jets, MV-22 Osprey, and attack/transport helicopters), not ship-launched missiles; the only armament is self-defence (RAM, ESSM, Phalanx CIWS), which is not modelled as offensive weapons. Crew/speed below are estimates.",
+  "platform": {
+   "displacementT": 46000,
+   "aircraft": 20,
+   "speedKmh": 40,
+   "crew": 1060
   },
-  {
-    "id": "mistral",
-    "name": "Mistral class",
-    "typeId": "amphib-ship",
-    "origin": "France",
-    "note": "French Navy Mistral-class amphibious assault ship (LHD / helicopter carrier). Capability is the embarked helicopter group and landing force; armament is self-defence only (Simbad RAM launchers, small guns), not modelled as offensive weapons. All platform figures below are commonly-cited estimates (specifications table not captured on fetch).",
-    "platform": {
-      "displacementT": 21300,
-      "aircraft": 16,
-      "speedKmh": 35,
-      "crew": 180
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "reference",
+     "title": "America-class amphibious assault ship | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship",
+     "note": "'a displacement of about 45,000 long tons (46,000 t)'."
     },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Mistral full-load displacement commonly cited ~21,300 t. Estimate."}, "confidence": "low"},
-      "platform.aircraft": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Mistral carries up to 16 heavy helicopters (or ~35 light). Estimate."}, "confidence": "low"},
-      "platform.speedKmh": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Top speed commonly cited ~19 kn (~35 km/h). Estimate."}, "confidence": "low"},
-      "platform.crew": {"source": {"kind": "placeholder", "title": "Not captured from retrieved page", "note": "Ship's company ~180 (plus ~450-900 embarked troops). Estimate."}, "confidence": "low"}
-    }
-  }
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "reference",
+     "title": "America-class amphibious assault ship | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship",
+     "note": "'They can carry about 20 AV-8Bs or F-35Bs' in the sea-control configuration; a mixed amphibious air group of ~20-25 aircraft is typical."
+    },
+    "confidence": "medium"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "America-class top speed commonly cited ~22 kn (~40 km/h). Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Ship's company commonly cited ~1,060 (plus a Marine Expeditionary Unit of ~1,700). Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "AN/SPS-48 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/AN/SPS-48",
+     "note": "'Range: 250 nautical miles (290 mi; 460 km)'. An instrumented maximum against a large, high target; against a small or low-flying one it is very much shorter."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-162 ESSM | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-162_ESSM",
+     "note": "Infobox operational range '27 nmi+ (50 km+)'. A minimum against a manoeuvring sea-skimmer; the figure is quoted as a floor, not a maximum."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-162 ESSM | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-162_ESSM",
+     "note": "Infobox launch weight '620 lb (280 kg)'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Kill probability is not published for ESSM; this is a modeling default, set level with the library's other modern point/short-range SAMs (Barak 8, PAC-3 at 0.7)."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement is the conventional shoot-shoot doctrine for ship self-defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Detection-to-launch is not published. 8 s assumes the target is already held by the ship's own air-search radar."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "America-class amphibious assault ship | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship",
+     "note": "'2 x Evolved Sea Sparrow Missile launchers'. The infobox gives no round count; 16 is two Mk 29 launchers at the 8 rounds each the Nimitz and Ford entries cite."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-116 Rolling Airframe Missile | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-116_Rolling_Airframe_Missile",
+     "note": "Infobox operational range '9 km (5.6 mi)'. A point-defence weapon — this is the outer edge of a last-ditch engagement, not an area-defence reach."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-116 Rolling Airframe Missile | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-116_Rolling_Airframe_Missile",
+     "note": "Infobox '73.5 kilograms (162 lb 1 oz) (missile)'."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Set slightly above ESSM because a point-defence engagement happens at short range against a target already tracked; the trade is that there is almost no time to re-engage."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement, conventional for point defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. 5 s reflects an automatic point-defence mount already cued by the ship's combat system."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "America-class amphibious assault ship | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/America-class_amphibious_assault_ship",
+     "note": "'2 x Rolling Airframe Missile launchers'. The infobox gives no round count; 42 is two Mk 49 launchers at 21 rounds each."
+    },
+    "confidence": "low"
+   }
+  },
+  "sensor": {
+   "detectionKm": 460,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "weapons": [
+   {
+    "id": "essm",
+    "name": "RIM-162 ESSM",
+    "rangeKm": 50,
+    "massKg": 280,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ],
+    "magazine": 16
+   },
+   {
+    "id": "ram",
+    "name": "RIM-116 RAM",
+    "rangeKm": 9,
+    "massKg": 73.5,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ],
+    "magazine": 42
+   }
+  ]
+ },
+ {
+  "id": "mistral",
+  "name": "Mistral class",
+  "typeId": "amphib-ship",
+  "origin": "France",
+  "note": "French Navy Mistral-class amphibious assault ship (LHD / helicopter carrier). Capability is the embarked helicopter group and landing force; armament is self-defence only (Simbad RAM launchers, small guns), not modelled as offensive weapons. All platform figures below are commonly-cited estimates (specifications table not captured on fetch).",
+  "platform": {
+   "displacementT": 21300,
+   "aircraft": 16,
+   "speedKmh": 35,
+   "crew": 180
+  },
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Mistral full-load displacement commonly cited ~21,300 t. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Mistral carries up to 16 heavy helicopters (or ~35 light). Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Top speed commonly cited ~19 kn (~35 km/h). Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not captured from retrieved page",
+     "note": "Ship's company ~180 (plus ~450-900 embarked troops). Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "MRR-3D NG | Radartutorial",
+     "url": "https://www.radartutorial.eu/19.kartei/07.naval/karte067.en.html",
+     "note": "Specification table: 'instrumented range: 180 km', G band. Air-surveillance mode; surface surveillance is shorter."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Mistral (missile) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Mistral_(missile)",
+     "note": "Infobox effective firing range '8 km (Mistral 3)'. Earlier marks are shorter."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "Mistral (missile) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Mistral_(missile)",
+     "note": "Infobox mass '19.7 kg'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. A MANPADS-derived infrared seeker on a naval mount: set below the radar-guided point-defence missiles because it is fire-and-forget against a single target with no mid-course update."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One round per engagement — the Simbad and Sadral mounts hold few rounds and an IR seeker gives no benefit to a second simultaneous shot."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published; assumed comparable to other short-range mounts."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Mistral-class amphibious assault ship | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Mistral-class_amphibious_assault_ship",
+     "note": "'2 x Simbad missile systems'. Simbad is a twin mount, so four rounds ready."
+    },
+    "confidence": "low"
+   }
+  },
+  "sensor": {
+   "detectionKm": 180,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "weapons": [
+   {
+    "id": "mistral",
+    "name": "Mistral 3",
+    "rangeKm": 8,
+    "massKg": 19.7,
+    "salvo": 1,
+    "pk": 0.6,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ],
+    "magazine": 4
+   }
+  ]
+ }
 ]

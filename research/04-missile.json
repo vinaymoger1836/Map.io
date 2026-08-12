@@ -12,7 +12,11 @@
     "magazine": 2,
     "engages": [
      "ground"
-    ]
+    ],
+    "id": "9m723",
+    "pk": 0.7,
+    "salvo": 1,
+    "reactionSec": 300
    }
   ],
   "provenance": {
@@ -33,6 +37,30 @@
      "note": "Each 9P78 TEL carries two missiles; a brigade fields 12 TELs (reportedly moving to 16)."
     },
     "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Against a fixed target the figure is really a measure of guidance accuracy against a hardened aim point rather than a shot at a manoeuvring object."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One round per engagement; a launcher carries two and doctrine fires them at separate aim points."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Minutes, not seconds: this is launch preparation for a ballistic missile, not a reaction to a target crossing a radar. Recorded honestly so the engagement model does not treat a road-mobile SRBM as something that shoots at passing aircraft."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -50,7 +78,11 @@
     "magazine": 2,
     "engages": [
      "ground"
-    ]
+    ],
+    "id": "atacms",
+    "pk": 0.7,
+    "salvo": 1,
+    "reactionSec": 180
    }
   ],
   "provenance": {
@@ -80,6 +112,30 @@
      "note": "An M270 MLRS carries two ATACMS (in place of 12 rockets); a HIMARS carries one."
     },
     "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. As with other ballistic rounds here, a measure of accuracy against a fixed aim point."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One round per engagement; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Launch preparation from a HIMARS or MLRS already laid, rather than a reaction to a target."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -95,7 +151,11 @@
     "rangeKm": 1500,
     "engages": [
      "surface"
-    ]
+    ],
+    "id": "df-21d",
+    "pk": 0.5,
+    "salvo": 1,
+    "reactionSec": 600
    }
   ],
   "provenance": {
@@ -107,6 +167,30 @@
      "note": "'U.S. reports suggest a range of 1,450 to 1,550 km' for the DF-21D anti-ship variant; ~20 m CEP maneuverable warhead. This is a US estimate; the land-attack DF-21C reaches ~2,150 km."
     },
     "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published, and contested more than most: an anti-ship ballistic missile has to find and hit a moving ship at the end of a 1,500 km flight, and no engagement has ever been observed. Set at a coin toss, and the narrower reading is deliberate where a capability claim is disputed."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One round per engagement; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Launch preparation plus the targeting chain a moving ship requires — this is not a weapon that reacts to something crossing a radar."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -123,7 +207,11 @@
     "engages": [
      "ground",
      "surface"
-    ]
+    ],
+    "id": "df-26",
+    "pk": 0.5,
+    "salvo": 1,
+    "reactionSec": 600
    }
   ],
   "provenance": {
@@ -135,6 +223,30 @@
      "note": "Two-stage solid IRBM, range 4,000 km (NASIC), payload 1,200-1,800 kg. The DF-26B anti-ship variant engages moving ships at intermediate range."
     },
     "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held level with the DF-21D: the anti-ship variant faces the same unobserved terminal problem, and the narrower reading is taken where the claim is contested."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One round per engagement; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Launch preparation for an intermediate-range ballistic missile."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -151,7 +263,11 @@
     "engages": [
      "ground",
      "surface"
-    ]
+    ],
+    "id": "tomahawk",
+    "pk": 0.8,
+    "salvo": 4,
+    "reactionSec": 60
    }
   ],
   "provenance": {
@@ -163,6 +279,30 @@
      "note": "'The Block IV TLAM-E has a range of 900 nautical miles or 1,600 km'; subsonic, low-altitude, <10 m CEP, 1,000 lb unitary warhead. Anti-ship reach is restored by the Maritime Strike Tomahawk."
     },
     "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Copied from the Arleigh Burke, Ticonderoga, Virginia and Astute entries so that one round carries one figure — it is the same missile from a different launcher."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Copied from the ship entries carrying the same round."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Copied from the ship entries carrying the same round."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -181,7 +321,10 @@
      "surface",
      "ground"
     ],
-    "id": "oniks-coastal"
+    "id": "oniks-coastal",
+    "pk": 0.6,
+    "salvo": 4,
+    "reactionSec": 60
    }
   ],
   "provenance": {
@@ -202,6 +345,30 @@
      "note": "'4 launchers with 2 missiles each' per battery."
     },
     "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held level with the ship-launched P-800 on the Admiral Gorshkov and Yasen-M entries. The id stays separate from theirs because the coastal battery is cited at 450 km against their 600 km — a real disagreement between variants, not a duplicate."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Copied from the ship-launched P-800 entries."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Copied from the ship-launched P-800 entries."
+    },
+    "confidence": "low"
    }
   }
  },
@@ -218,7 +385,11 @@
     "engages": [
      "surface",
      "ground"
-    ]
+    ],
+    "id": "brahmos",
+    "pk": 0.65,
+    "salvo": 4,
+    "reactionSec": 20
    }
   ],
   "provenance": {
@@ -230,6 +401,30 @@
      "note": "'Range of between 300-500 km depending on which variant and launch platform is used'; export capped at 290 km (MTCR). 400 km taken as a mid figure for the current land variant; extended-range versions go further."
     },
     "confidence": "medium"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Copied from the Kolkata entry so that one round carries one figure — the land battery fires the same missile."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Copied from the Kolkata entry carrying the same round."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Copied from the Kolkata entry carrying the same round."
+    },
+    "confidence": "low"
    }
   }
  }

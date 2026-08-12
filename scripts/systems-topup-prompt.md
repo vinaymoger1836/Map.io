@@ -20,7 +20,7 @@ touches nothing else.
 | `04-missile.json` | **Nothing.** A missile launcher needs no search radar of its own. |
 | `05-destroyer.json` | Add weapons and `sensor.detectionKm` to all 5. |
 | `06-cruiser.json` | Add weapons and `sensor.detectionKm` to all 3. |
-| `07-carrier-ship.json` | Add weapons and `sensor.detectionKm` to all 7. |
+| `07-carrier-ship.json` | **Done.** All 7 have armament and a sensor, except Fujian, whose radar no retrieved page stated, and Queen Elizabeth, which genuinely carries no missile. |
 | `08-submarine.json` | Add weapons and `sensor.detectionKm` to all 5. |
 | `09-bomber.json` | Add weapons to all 6. |
 

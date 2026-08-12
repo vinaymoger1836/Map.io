@@ -208,29 +208,40 @@ you disagree with a figure: library entries are read-only, your copy is yours,
 and a copy with the same id replaces the original everywhere.
 
 **About the numbers.** `public/data/systems.json` holds 104 researched systems:
-917 figures carry provenance, and **425 of them carry the URL of a page someone
+1,033 figures carry provenance, and **471 of them carry the URL of a page someone
 actually opened**. The rest are declared estimates, and the distinction is
 recorded in the data rather than implied — `source.kind: "placeholder"` may not
 carry a URL, and the validator fails the file if one does. Confidence is per
 field, shown as a dot beside the value:
 
-- **high** (223) — sourced and unambiguous: hull displacement, VLS cells, crew.
-- **medium** (197) — sourced but conditional or contested. A range means nothing
+- **high** (250) — sourced and unambiguous: hull displacement, VLS cells, crew.
+- **medium** (212) — sourced but conditional or contested. A range means nothing
   without the target it assumes; the S-400's "600 km" is against a large, high,
   non-manoeuvring target, and each figure's `source.note` records that condition.
-- **low** (497) — mostly kill probability, reaction time and salvo size, which
-  nobody publishes. They exist so the engagement model has something to multiply,
-  and they say so.
+- **low** (571) — mostly kill probability, reaction time and salvo size, which
+  nobody publishes. They are what the engagement model multiplies, and every one
+  of them says so.
 
-Two detection ranges (S-350, SAMP/T) are model estimates rather than citations:
-the research declined to record a figure its retrieved page did not state, which
-was correct but left those batteries with no detection ring at all. Both are
-marked `placeholder` with the reasoning in the note.
+A handful of detection ranges are model estimates rather than citations — the
+S-350, SAMP/T, and the Gerald R. Ford's EASR, for which no range is published for
+any SPY-6 variant. The research declined to record a figure its retrieved page
+did not state, which was correct but left those systems with no detection ring at
+all. Each is marked `placeholder` with the reasoning in the note.
 
-Known gap: the seven carriers and two amphibious ships carry no sensor or
-armament, so they draw no ring of their own — their reach is currently the air
-wing and escorts around them. That family is worth one more pass with
-`scripts/systems-topup-prompt.md`.
+**Every weapon in the library now carries a kill probability**, so the engagement
+model's *Cannot be modelled* list is empty. Getting there meant estimating 11 of
+them; each says what it was reasoned from.
+
+Two rounds were quietly living under two catalogue keys, because a munition with
+no `id` falls back to a slug of its name: the Tomahawk on the land TEL hashed
+apart from the identical Tomahawk on four ships, and the same for BrahMos. They
+are unified, and the pair now carries one set of figures. The P-800 Oniks was
+left split on purpose — the coastal battery is cited at 450 km against the ships'
+600 km, which is a real disagreement between variants rather than a duplicate,
+and the name says "(coastal)" so the catalogue admits it.
+
+Deliberate non-gap: a C-17, a Chinook, two tankers and an oiler carry no sensor
+and no weapons. That is correct, not missing.
 
 To research further systems, hand `scripts/systems-research-prompt.md` to a
 Claude with web search, then check what comes back.

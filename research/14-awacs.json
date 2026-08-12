@@ -1,239 +1,260 @@
 [
-  {
-    "id": "e-3g",
-    "name": "E-3G Sentry",
-    "typeId": "awacs",
-    "origin": "United States",
-    "note": "USAF E-3 Sentry AWACS (E-3G is the Block 40/45-upgraded standard), based on the Boeing 707. Unarmed. AN/APY-2 pulse-Doppler surveillance radar in a rotodome. Flight crew 4 plus 13-19 mission crew.",
-    "sensor": {
-      "detectionKm": 400,
-      "sees": ["air", "surface"],
-      "horizonLimited": false
-    },
-    "platform": {
-      "combatRadiusKm": 3700,
-      "ferryRangeKm": 9300,
-      "speedKmh": 854,
-      "crew": 21
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Boeing E-3 Sentry | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
-          "note": "AN/APY-2 pulse-Doppler radar: 'range of more than 250 mi (400 km) for low-flying targets' and 'approximately 400 mi (650 km) for aircraft flying at medium altitude'. Value is the low-altitude figure."
-        },
-        "confidence": "medium"
-      },
-      "platform.combatRadiusKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No published combat radius (AWACS)",
-          "note": "No published radius; estimated on-station orbit radius. Unrefuelled endurance ~8 h; unlimited with aerial refuelling."
-        },
-        "confidence": "low"
-      },
-      "platform.ferryRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Boeing E-3 Sentry | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
-          "note": "'unrefueled range of more than 5,000 nmi (9,300 km)'; the specifications table gives 4,000 nmi (7,400 km) - taken the larger, stated figure."
-        },
-        "confidence": "medium"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Boeing E-3 Sentry | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
-          "note": "'Maximum speed: 461 kn (854 km/h)'."
-        },
-        "confidence": "high"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Boeing E-3 Sentry | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
-          "note": "Flight crew of 4 plus mission crew of 13-19; ~21 taken as a representative total."
-        },
-        "confidence": "medium"
-      }
-    }
+ {
+  "id": "e-3g",
+  "name": "E-3G Sentry",
+  "typeId": "awacs",
+  "origin": "United States",
+  "note": "USAF E-3 Sentry AWACS (E-3G is the Block 40/45-upgraded standard), based on the Boeing 707. Unarmed. AN/APY-2 pulse-Doppler surveillance radar in a rotodome. Flight crew 4 plus 13-19 mission crew.",
+  "sensor": {
+   "detectionKm": 400,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": false
   },
-  {
-    "id": "a-50u",
-    "name": "A-50U Mainstay",
-    "typeId": "awacs",
-    "origin": "Russia",
-    "note": "Beriev A-50U, the modernised Mainstay AEW&C based on the Il-76. Unarmed. Liana (Shmel-M) surveillance radar in a rotodome; 15-man mission crew; can control up to 10 fighters. On-station radius ~1,000 km for 4 hours.",
-    "sensor": {
-      "detectionKm": 650,
-      "sees": ["air", "ground"],
-      "horizonLimited": false
-    },
-    "platform": {
-      "combatRadiusKm": 1000,
-      "crew": 15
-    },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Beriev A-50 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
-          "note": "'Detection range is 650 kilometres for air targets and 300 kilometres for ground targets.' Value is the air-target figure."
-        },
-        "confidence": "medium"
-      },
-      "platform.combatRadiusKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Beriev A-50 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
-          "note": "'The A-50 can fly for four hours with a range of 1,000 kilometres from its base' - an on-station orbit radius, not a strike radius."
-        },
-        "confidence": "medium"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Beriev A-50 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
-          "note": "'the 15-man crew'."
-        },
-        "confidence": "high"
-      }
-    }
+  "platform": {
+   "combatRadiusKm": 3700,
+   "ferryRangeKm": 9300,
+   "speedKmh": 854,
+   "crew": 21
   },
-  {
-    "id": "kj-500",
-    "name": "KJ-500",
-    "typeId": "awacs",
-    "origin": "China",
-    "note": "Shaanxi KJ-500 AEW&C (current standard is the aerial-refuelling KJ-500A), based on the Y-9 airframe. Unarmed. Fixed dorsal radome with three AESA arrays for 360-degree coverage.",
-    "sensor": {
-      "detectionKm": 470,
-      "sees": ["air"],
-      "horizonLimited": false
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Boeing E-3 Sentry | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
+     "note": "AN/APY-2 pulse-Doppler radar: 'range of more than 250 mi (400 km) for low-flying targets' and 'approximately 400 mi (650 km) for aircraft flying at medium altitude'. Value is the low-altitude figure."
     },
-    "platform": {
-      "combatRadiusKm": 2000,
-      "ferryRangeKm": 5700,
-      "speedKmh": 550
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No published combat radius (AWACS)",
+     "note": "No published radius; estimated on-station orbit radius. Unrefuelled endurance ~8 h; unlimited with aerial refuelling."
     },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Shaanxi KJ-500 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/KJ-500",
-          "note": "Published Chinese parameters: 'Range against fighter sized targets (km): 470'."
-        },
-        "confidence": "medium"
-      },
-      "platform.combatRadiusKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No published combat radius (AWACS)",
-          "note": "No published radius; estimated on-station orbit radius. Max range 5,700 km and endurance 12 h (KJ-500A adds aerial refuelling)."
-        },
-        "confidence": "low"
-      },
-      "platform.ferryRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Shaanxi KJ-500 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/KJ-500",
-          "note": "Published parameters: 'Max range (km): 5700'; 'Max endurance (h): 12'."
-        },
-        "confidence": "medium"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Shaanxi KJ-500 | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/KJ-500",
-          "note": "Published parameters: 'Max speed (km/h): 550'."
-        },
-        "confidence": "medium"
-      }
-    }
-  },
-  {
-    "id": "e-2d",
-    "name": "E-2D Advanced Hawkeye",
-    "typeId": "awacs",
-    "origin": "United States",
-    "note": "Northrop Grumman E-2D Advanced Hawkeye, carrier-borne AEW&C. Unarmed. AN/APY-9 UHF-band radar (suspected to have some capability against fighter-sized stealth targets). Crew of 5.",
-    "sensor": {
-      "detectionKm": 640,
-      "tracks": 2000,
-      "sees": ["air", "surface"],
-      "horizonLimited": false
+    "confidence": "low"
+   },
+   "platform.ferryRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Boeing E-3 Sentry | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
+     "note": "'unrefueled range of more than 5,000 nmi (9,300 km)'; the specifications table gives 4,000 nmi (7,400 km) - taken the larger, stated figure."
     },
-    "platform": {
-      "combatRadiusKm": 320,
-      "ferryRangeKm": 2708,
-      "speedKmh": 650,
-      "crew": 5
+    "confidence": "medium"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Boeing E-3 Sentry | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
+     "note": "'Maximum speed: 461 kn (854 km/h)'."
     },
-    "provenance": {
-      "sensor.detectionKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
-          "note": "AN/APY-9: 'detecting 20,000 targets to a range greater than 400 mi (640 km)' while tracking over 2,000 and guiding 40-100 intercepts."
-        },
-        "confidence": "medium"
-      },
-      "sensor.tracks": {
-        "source": {
-          "kind": "reference",
-          "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
-          "note": "'over 2,000 targets simultaneously'."
-        },
-        "confidence": "medium"
-      },
-      "platform.combatRadiusKm": {
-        "source": {
-          "kind": "placeholder",
-          "title": "No published combat radius (AWACS)",
-          "note": "No published radius; estimated on-station orbit ~200 nmi from the carrier. Endurance 6 h (8 h land-based)."
-        },
-        "confidence": "low"
-      },
-      "platform.ferryRangeKm": {
-        "source": {
-          "kind": "reference",
-          "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
-          "note": "'Ferry range: 1,462 nmi (2,708 km)'."
-        },
-        "confidence": "high"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
-          "note": "'Maximum speed: 350 kn (650 km/h)'; cruise 474 km/h."
-        },
-        "confidence": "high"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
-          "note": "'Crew: 5': pilot, copilot, and three mission-system operators."
-        },
-        "confidence": "high"
-      }
-    }
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Boeing E-3 Sentry | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
+     "note": "Flight crew of 4 plus mission crew of 13-19; ~21 taken as a representative total."
+    },
+    "confidence": "medium"
+   }
   }
+ },
+ {
+  "id": "a-50u",
+  "name": "A-50U Mainstay",
+  "typeId": "awacs",
+  "origin": "Russia",
+  "note": "Beriev A-50U, the modernised Mainstay AEW&C based on the Il-76. Unarmed. Liana (Shmel-M) surveillance radar in a rotodome; 15-man mission crew; can control up to 10 fighters. On-station radius ~1,000 km for 4 hours.",
+  "sensor": {
+   "detectionKm": 650,
+   "sees": [
+    "air",
+    "ground"
+   ],
+   "horizonLimited": false
+  },
+  "platform": {
+   "combatRadiusKm": 1000,
+   "crew": 15,
+   "speedKmh": 850
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Beriev A-50 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
+     "note": "'Detection range is 650 kilometres for air targets and 300 kilometres for ground targets.' Value is the air-target figure."
+    },
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Beriev A-50 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
+     "note": "'The A-50 can fly for four hours with a range of 1,000 kilometres from its base' - an on-station orbit radius, not a strike radius."
+    },
+    "confidence": "medium"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Beriev A-50 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
+     "note": "'the 15-man crew'."
+    },
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Beriev A-50 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Beriev_A-50",
+     "note": "Specifications: maximum speed '850 km/h (530 mph, 460 kn)'; cruise is quoted as 750-800 km/h. The maximum is recorded, consistent with how the other aircraft in this library record speed."
+    },
+    "confidence": "high"
+   }
+  }
+ },
+ {
+  "id": "kj-500",
+  "name": "KJ-500",
+  "typeId": "awacs",
+  "origin": "China",
+  "note": "Shaanxi KJ-500 AEW&C (current standard is the aerial-refuelling KJ-500A), based on the Y-9 airframe. Unarmed. Fixed dorsal radome with three AESA arrays for 360-degree coverage.",
+  "sensor": {
+   "detectionKm": 470,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "platform": {
+   "combatRadiusKm": 2000,
+   "ferryRangeKm": 5700,
+   "speedKmh": 550
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Shaanxi KJ-500 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/KJ-500",
+     "note": "Published Chinese parameters: 'Range against fighter sized targets (km): 470'."
+    },
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No published combat radius (AWACS)",
+     "note": "No published radius; estimated on-station orbit radius. Max range 5,700 km and endurance 12 h (KJ-500A adds aerial refuelling)."
+    },
+    "confidence": "low"
+   },
+   "platform.ferryRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Shaanxi KJ-500 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/KJ-500",
+     "note": "Published parameters: 'Max range (km): 5700'; 'Max endurance (h): 12'."
+    },
+    "confidence": "medium"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Shaanxi KJ-500 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/KJ-500",
+     "note": "Published parameters: 'Max speed (km/h): 550'."
+    },
+    "confidence": "medium"
+   }
+  }
+ },
+ {
+  "id": "e-2d",
+  "name": "E-2D Advanced Hawkeye",
+  "typeId": "awacs",
+  "origin": "United States",
+  "note": "Northrop Grumman E-2D Advanced Hawkeye, carrier-borne AEW&C. Unarmed. AN/APY-9 UHF-band radar (suspected to have some capability against fighter-sized stealth targets). Crew of 5.",
+  "sensor": {
+   "detectionKm": 640,
+   "tracks": 2000,
+   "sees": [
+    "air",
+    "surface"
+   ],
+   "horizonLimited": false
+  },
+  "platform": {
+   "combatRadiusKm": 320,
+   "ferryRangeKm": 2708,
+   "speedKmh": 650,
+   "crew": 5
+  },
+  "provenance": {
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
+     "note": "AN/APY-9: 'detecting 20,000 targets to a range greater than 400 mi (640 km)' while tracking over 2,000 and guiding 40-100 intercepts."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
+     "note": "'over 2,000 targets simultaneously'."
+    },
+    "confidence": "medium"
+   },
+   "platform.combatRadiusKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "No published combat radius (AWACS)",
+     "note": "No published radius; estimated on-station orbit ~200 nmi from the carrier. Endurance 6 h (8 h land-based)."
+    },
+    "confidence": "low"
+   },
+   "platform.ferryRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
+     "note": "'Ferry range: 1,462 nmi (2,708 km)'."
+    },
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
+     "note": "'Maximum speed: 350 kn (650 km/h)'; cruise 474 km/h."
+    },
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Northrop Grumman E-2 Hawkeye | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Northrop_Grumman_E-2_Hawkeye",
+     "note": "'Crew: 5': pilot, copilot, and three mission-system operators."
+    },
+    "confidence": "high"
+   }
+  }
+ }
 ]

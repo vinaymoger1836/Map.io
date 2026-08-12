@@ -1,357 +1,1040 @@
 [
-  {
-    "id": "nimitz",
-    "name": "Nimitz class",
-    "typeId": "carrier-ship",
-    "origin": "United States",
-    "note": "US Navy nuclear-powered CATOBAR supercarrier (CVN-68 to CVN-77), two A4W reactors (effectively unlimited propulsion endurance, ~20 years between refuels). Air wing of around 64 aircraft (capacity ~90), primarily F/A-18E/F. Ship's company ~3,532; total complement with air wing ~5,700-6,000. Full-load displacement has grown past 100,000 tons on later hulls.",
-    "platform": {
-      "displacementT": 100000,
-      "speedKmh": 56,
-      "crew": 3532,
-      "aircraft": 64
-    },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "reference",
-          "title": "Nimitz-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
-          "note": "'full-load displacement of over 100,000 long tons'; later ships heavier (e.g. USS Abraham Lincoln 104,112 long tons full load)."
-        },
-        "confidence": "high"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Nimitz-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
-          "note": "'maximum speed of over 30 knots (56 km/h; 35 mph).'"
-        },
-        "confidence": "high"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Nimitz-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
-          "note": "Infobox: ship's company 3,532; air wing adds ~2,480, plus ~500 other, for a total complement near 5,700-6,000."
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "reference",
-          "title": "Nimitz-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
-          "note": "'An embarked carrier air wing comprising around 64 aircraft is normally deployed'; maximum capacity is ~90."
-        },
-        "confidence": "high"
-      }
-    }
+ {
+  "id": "nimitz",
+  "name": "Nimitz class",
+  "typeId": "carrier-ship",
+  "origin": "United States",
+  "note": "US Navy nuclear-powered CATOBAR supercarrier (CVN-68 to CVN-77), two A4W reactors (effectively unlimited propulsion endurance, ~20 years between refuels). Air wing of around 64 aircraft (capacity ~90), primarily F/A-18E/F. Ship's company ~3,532; total complement with air wing ~5,700-6,000. Full-load displacement has grown past 100,000 tons on later hulls.",
+  "platform": {
+   "displacementT": 100000,
+   "speedKmh": 56,
+   "crew": 3532,
+   "aircraft": 64
   },
-  {
-    "id": "gerald-ford",
-    "name": "Gerald R. Ford class",
-    "typeId": "carrier-ship",
-    "origin": "United States",
-    "note": "US Navy nuclear-powered CATOBAR supercarrier replacing the Nimitz class; EMALS electromagnetic catapults, Advanced Arresting Gear, two A1B reactors (25%+ more power), reduced crew, and reduced radar signature. Dual Band Radar on CVN-78 / SPY-6 EASR from CVN-79. Full-load displacement and top speed are not in the retrieved excerpt.",
-    "platform": {
-      "displacementT": 100000,
-      "speedKmh": 56,
-      "crew": 4297,
-      "aircraft": 90
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "reference",
+     "title": "Nimitz-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+     "note": "'full-load displacement of over 100,000 long tons'; later ships heavier (e.g. USS Abraham Lincoln 104,112 long tons full load)."
     },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Ford-class full-load displacement is ~100,000 tonnes (commonly ~100,000-101,600 t); not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Top speed 'in excess of 30 knots' (>56 km/h) as with the Nimitz class; not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
-          "note": "Infobox: 508 officers + 3,789 enlisted = 4,297 total complement; automation allows 'several hundred fewer than the Nimitz class'."
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "reference",
-          "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
-          "note": "'The ability to carry up to 90 aircraft'; a typical embarked air wing is nearer ~65-75."
-        },
-        "confidence": "high"
-      }
-    }
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Nimitz-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+     "note": "'maximum speed of over 30 knots (56 km/h; 35 mph).'"
+    },
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Nimitz-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+     "note": "Infobox: ship's company 3,532; air wing adds ~2,480, plus ~500 other, for a total complement near 5,700-6,000."
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "reference",
+     "title": "Nimitz-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+     "note": "'An embarked carrier air wing comprising around 64 aircraft is normally deployed'; maximum capacity is ~90."
+    },
+    "confidence": "high"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "AN/SPS-48 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/AN/SPS-48",
+     "note": "'Range: 250 nautical miles (290 mi; 460 km)'. An instrumented maximum against a large, high target; against a small or low-flying one it is very much shorter."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-162 ESSM | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-162_ESSM",
+     "note": "Infobox operational range '27 nmi+ (50 km+)'. A minimum against a manoeuvring sea-skimmer; the figure is quoted as a floor, not a maximum."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-162 ESSM | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-162_ESSM",
+     "note": "Infobox launch weight '620 lb (280 kg)'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Kill probability is not published for ESSM; this is a modeling default, set level with the library's other modern point/short-range SAMs (Barak 8, PAC-3 at 0.7)."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement is the conventional shoot-shoot doctrine for ship self-defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Detection-to-launch is not published. 8 s assumes the target is already held by the ship's own air-search radar."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Nimitz-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+     "note": "'2-3 x Mk 29 Guided Missile Launching Systems, 8 x RIM-162 ESSM or RIM-7 Sea Sparrow missiles each' — 16 is the two-launcher fit; hulls with three carry 24."
+    },
+    "confidence": "medium"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-116 Rolling Airframe Missile | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-116_Rolling_Airframe_Missile",
+     "note": "Infobox operational range '9 km (5.6 mi)'. A point-defence weapon — this is the outer edge of a last-ditch engagement, not an area-defence reach."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-116 Rolling Airframe Missile | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-116_Rolling_Airframe_Missile",
+     "note": "Infobox '73.5 kilograms (162 lb 1 oz) (missile)'."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Set slightly above ESSM because a point-defence engagement happens at short range against a target already tracked; the trade is that there is almost no time to re-engage."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement, conventional for point defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. 5 s reflects an automatic point-defence mount already cued by the ship's combat system."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Nimitz-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nimitz-class_aircraft_carrier",
+     "note": "'2 x Mk 49 Guided Missile Launching Systems, 21 x RIM-116 Rolling Airframe Missiles each' — 2 x 21."
+    },
+    "confidence": "high"
+   }
   },
-  {
-    "id": "queen-elizabeth",
-    "name": "Queen Elizabeth class",
-    "typeId": "carrier-ship",
-    "origin": "United Kingdom",
-    "note": "Royal Navy STOVL carrier (conventionally powered, integrated electric propulsion; built 'for but not with' catapults). Ski-jump flight deck operating the F-35B; Artisan Type 997 and S1850M radars. Air group 40 aircraft in peacetime (up to 72 in wartime; ~12-36 F-35B). Ship's company 679, ~1,600 with the air group. Range 10,000 nmi. Top speed not in the retrieved excerpt.",
-    "platform": {
-      "displacementT": 80600,
-      "speedKmh": 46,
-      "crew": 679,
-      "aircraft": 40
-    },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "reference",
-          "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
-          "note": "'full load displacement of an estimated 80,600 tonnes' (empty ~65,000 t on delivery)."
-        },
-        "confidence": "high"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "QE-class top speed ~25 knots (~46 km/h); not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
-          "note": "'The ships' company is 679, rising to 1,600 when the air crew is added.'"
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "reference",
-          "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
-          "note": "'40 aircraft in peacetime, 72 aircraft in wartime'; F-35B (12-36, up to 48 in extreme cases) plus Merlin/Chinook/Wildcat/Apache."
-        },
-        "confidence": "high"
-      }
-    }
+  "sensor": {
+   "detectionKm": 460,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
   },
-  {
-    "id": "liaoning",
-    "name": "Liaoning / Shandong",
-    "typeId": "carrier-ship",
-    "origin": "China",
-    "note": "PLAN Type 001 Liaoning, rebuilt from the ex-Soviet Kuznetsov-class hull Varyag; STOBAR ski-jump (no catapults), Type 346 S-band AESA radar, ~24 J-15 fighters plus helicopters. The near-sister Type 002 Shandong is a modified indigenous build with broadly similar figures. Displacement, air-wing size and speed are not in the retrieved excerpt.",
-    "platform": {
-      "displacementT": 60000,
-      "speedKmh": 59,
-      "crew": 1960,
-      "aircraft": 36
-    },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Full-load displacement commonly cited ~60,000-66,000 tonnes; not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Top speed ~32 knots (~59 km/h); not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Chinese aircraft carrier Liaoning | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Liaoning",
-          "note": "Infobox: 1,960 crew, plus 626 air group and 40 flag staff (~2,626 total)."
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Air wing typically ~24 J-15 fighters plus ~12 helicopters (~36 total); not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      }
-    }
+  "weapons": [
+   {
+    "id": "essm",
+    "name": "RIM-162 ESSM",
+    "rangeKm": 50,
+    "massKg": 280,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ],
+    "magazine": 16
+   },
+   {
+    "id": "ram",
+    "name": "RIM-116 RAM",
+    "rangeKm": 9,
+    "massKg": 73.5,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ],
+    "magazine": 42
+   }
+  ]
+ },
+ {
+  "id": "gerald-ford",
+  "name": "Gerald R. Ford class",
+  "typeId": "carrier-ship",
+  "origin": "United States",
+  "note": "US Navy nuclear-powered CATOBAR supercarrier replacing the Nimitz class; EMALS electromagnetic catapults, Advanced Arresting Gear, two A1B reactors (25%+ more power), reduced crew, and reduced radar signature. Dual Band Radar on CVN-78 / SPY-6 EASR from CVN-79. Full-load displacement and top speed are not in the retrieved excerpt.",
+  "platform": {
+   "displacementT": 100000,
+   "speedKmh": 56,
+   "crew": 4297,
+   "aircraft": 90
   },
-  {
-    "id": "fujian",
-    "name": "Fujian",
-    "typeId": "carrier-ship",
-    "origin": "China",
-    "note": "PLAN Type 003 Fujian, China's first indigenous CATOBAR carrier and the second in the world (after Gerald R. Ford) with electromagnetic catapults (MVDC integrated power). Conventionally powered. Air wing of J-15T, J-35 stealth fighters, KJ-600 AEW&C and Z-20 helicopters. Commissioned November 2025.",
-    "platform": {
-      "displacementT": 82000,
-      "speedKmh": 56,
-      "crew": 3000,
-      "aircraft": 50
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Ford-class full-load displacement is ~100,000 tonnes (commonly ~100,000-101,600 t); not stated in the retrieved portion. Estimate."
     },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "reference",
-          "title": "Chinese aircraft carrier Fujian | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
-          "note": "'full load displacement of 80,000 to 85,000 tons'; 82,000 taken as a mid figure."
-        },
-        "confidence": "medium"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "Chinese aircraft carrier Fujian | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
-          "note": "'a top speed of 30 knots and a range of 8,000 to 10,000 nautical miles.'"
-        },
-        "confidence": "high"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "Chinese aircraft carrier Fujian | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
-          "note": "'Its crew consists of 2,000 sailors and 1,000 airmen' (3,000 total)."
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "reference",
-          "title": "Chinese aircraft carrier Fujian | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
-          "note": "'50+ aircraft'; estimated at least 40 fixed-wing plus 12 helicopters."
-        },
-        "confidence": "high"
-      }
-    }
+    "confidence": "low"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Top speed 'in excess of 30 knots' (>56 km/h) as with the Nimitz class; not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
+     "note": "Infobox: 508 officers + 3,789 enlisted = 4,297 total complement; automation allows 'several hundred fewer than the Nimitz class'."
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "reference",
+     "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
+     "note": "'The ability to carry up to 90 aircraft'; a typical embarked air wing is nearer ~65-75."
+    },
+    "confidence": "high"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "No range is published for any AN/SPY-6 variant, the EASR included — the source describes it only as '30 times more sensitive' than SPY-1D. Carried at the 460 km of the AN/SPS-48E it replaces, which the same comparison makes a conservative floor rather than a claim. CVN-78 herself fits SPY-3/SPY-4; EASR is CVN-79 and later."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-162 ESSM | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-162_ESSM",
+     "note": "Infobox operational range '27 nmi+ (50 km+)'. A minimum against a manoeuvring sea-skimmer; the figure is quoted as a floor, not a maximum."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-162 ESSM | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-162_ESSM",
+     "note": "Infobox launch weight '620 lb (280 kg)'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Kill probability is not published for ESSM; this is a modeling default, set level with the library's other modern point/short-range SAMs (Barak 8, PAC-3 at 0.7)."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement is the conventional shoot-shoot doctrine for ship self-defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Detection-to-launch is not published. 8 s assumes the target is already held by the ship's own air-search radar."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
+     "note": "'2 x Mk 29 Guided Missile Launching Systems, 8 x RIM-162 Evolved SeaSparrow Missile (ESSM) each' — 2 x 8."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-116 Rolling Airframe Missile | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-116_Rolling_Airframe_Missile",
+     "note": "Infobox operational range '9 km (5.6 mi)'. A point-defence weapon — this is the outer edge of a last-ditch engagement, not an area-defence reach."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "RIM-116 Rolling Airframe Missile | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/RIM-116_Rolling_Airframe_Missile",
+     "note": "Infobox '73.5 kilograms (162 lb 1 oz) (missile)'."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Set slightly above ESSM because a point-defence engagement happens at short range against a target already tracked; the trade is that there is almost no time to re-engage."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement, conventional for point defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. 5 s reflects an automatic point-defence mount already cued by the ship's combat system."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Gerald R. Ford-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Gerald_R._Ford-class_aircraft_carrier",
+     "note": "'2 x Mk 49 Guided Missile Launching Systems, 21 x RIM-116 Rolling Airframe Missiles each' — 2 x 21."
+    },
+    "confidence": "high"
+   }
   },
-  {
-    "id": "vikrant",
-    "name": "INS Vikrant",
-    "typeId": "carrier-ship",
-    "origin": "India",
-    "note": "Indian Navy Vikrant-class (IAC-1), India's first indigenously built carrier; STOBAR ski-jump, MF-STAR AESA radar, two 32-cell Barak-8 VLS. Air wing of MiG-29K (Rafale M on order), Ka-31, MH-60R. Range 8,000 nmi. Commissioned 2022.",
-    "platform": {
-      "displacementT": 45000,
-      "speedKmh": 56,
-      "crew": 1645,
-      "aircraft": 36
-    },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "reference",
-          "title": "INS Vikrant (2013) | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
-          "note": "'45,000 tonnes of loaded displacement.'"
-        },
-        "confidence": "high"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "reference",
-          "title": "INS Vikrant (2013) | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
-          "note": "Infobox: 30 knots (56 km/h); the article body cites a top speed of 28 knots (52 km/h)."
-        },
-        "confidence": "medium"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "INS Vikrant (2013) | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
-          "note": "'196 officers, 1,449 sailors (including air crew)' = 1,645; the article body cites ~1,700."
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "reference",
-          "title": "INS Vikrant (2013) | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
-          "note": "'Aircraft carried: 36 aircraft' (MiG-29K, Ka-31, MH-60R); hangar capacity 20."
-        },
-        "confidence": "high"
-      }
-    }
+  "sensor": {
+   "detectionKm": 460,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
   },
-  {
-    "id": "charles-de-gaulle",
-    "name": "Charles de Gaulle",
-    "typeId": "carrier-ship",
-    "origin": "France",
-    "note": "French Navy Charles de Gaulle (R91), France's only carrier and the only nuclear-powered CATOBAR carrier outside the US. Rafale M fighters and E-2C Hawkeye AEW aircraft; 32 Aster 15 SAM cells (4x8 Sylver) plus Mistral. Displacement, air-wing size and speed are not in the retrieved excerpt.",
-    "platform": {
-      "displacementT": 42500,
-      "speedKmh": 50,
-      "crew": 1350,
-      "aircraft": 30
+  "weapons": [
+   {
+    "id": "essm",
+    "name": "RIM-162 ESSM",
+    "rangeKm": 50,
+    "massKg": 280,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ],
+    "magazine": 16
+   },
+   {
+    "id": "ram",
+    "name": "RIM-116 RAM",
+    "rangeKm": 9,
+    "massKg": 73.5,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ],
+    "magazine": 42
+   }
+  ]
+ },
+ {
+  "id": "queen-elizabeth",
+  "name": "Queen Elizabeth class",
+  "typeId": "carrier-ship",
+  "origin": "United Kingdom",
+  "note": "Royal Navy STOVL carrier (conventionally powered, integrated electric propulsion; built 'for but not with' catapults). Ski-jump flight deck operating the F-35B; Artisan Type 997 and S1850M radars. Air group 40 aircraft in peacetime (up to 72 in wartime; ~12-36 F-35B). Ship's company 679, ~1,600 with the air group. Range 10,000 nmi. Top speed not in the retrieved excerpt.",
+  "platform": {
+   "displacementT": 80600,
+   "speedKmh": 46,
+   "crew": 679,
+   "aircraft": 40
+  },
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "reference",
+     "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
+     "note": "'full load displacement of an estimated 80,600 tonnes' (empty ~65,000 t on delivery)."
     },
-    "signature": "high",
-    "provenance": {
-      "platform.displacementT": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Full-load displacement commonly cited ~42,500 tonnes; not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.speedKmh": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Top speed ~27 knots (~50 km/h); not stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      },
-      "platform.crew": {
-        "source": {
-          "kind": "reference",
-          "title": "French aircraft carrier Charles de Gaulle | Wikipedia",
-          "url": "https://en.wikipedia.org/wiki/French_aircraft_carrier_Charles_de_Gaulle",
-          "note": "Infobox: ship's company 1,350, plus 600 air wing (~1,950 total)."
-        },
-        "confidence": "high"
-      },
-      "platform.aircraft": {
-        "source": {
-          "kind": "placeholder",
-          "title": "Not in the retrieved excerpt",
-          "note": "Air group typically ~30 (up to ~40): Rafale M and E-2C Hawkeye; not numerically stated in the retrieved portion. Estimate."
-        },
-        "confidence": "low"
-      }
-    }
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "QE-class top speed ~25 knots (~46 km/h); not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
+     "note": "'The ships' company is 679, rising to 1,600 when the air crew is added.'"
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "reference",
+     "title": "Queen Elizabeth-class aircraft carrier | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Queen_Elizabeth-class_aircraft_carrier",
+     "note": "'40 aircraft in peacetime, 72 aircraft in wartime'; F-35B (12-36, up to 48 in extreme cases) plus Merlin/Chinook/Wildcat/Apache."
+    },
+    "confidence": "high"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "S1850M | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/S1850M",
+     "note": "'capable of fully automatic detection, track initiation, and tracking of up to 1,000 targets at a range of 400 kilometres (250 mi)'."
+    },
+    "confidence": "high"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "S1850M | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/S1850M",
+     "note": "'up to 1,000 targets'."
+    },
+    "confidence": "high"
+   }
+  },
+  "sensor": {
+   "detectionKm": 400,
+   "tracks": 1000,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
   }
+ },
+ {
+  "id": "liaoning",
+  "name": "Liaoning / Shandong",
+  "typeId": "carrier-ship",
+  "origin": "China",
+  "note": "PLAN Type 001 Liaoning, rebuilt from the ex-Soviet Kuznetsov-class hull Varyag; STOBAR ski-jump (no catapults), Type 346 S-band AESA radar, ~24 J-15 fighters plus helicopters. The near-sister Type 002 Shandong is a modified indigenous build with broadly similar figures. Displacement, air-wing size and speed are not in the retrieved excerpt.",
+  "platform": {
+   "displacementT": 60000,
+   "speedKmh": 59,
+   "crew": 1960,
+   "aircraft": 36
+  },
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Full-load displacement commonly cited ~60,000-66,000 tonnes; not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Top speed ~32 knots (~59 km/h); not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Chinese aircraft carrier Liaoning | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Liaoning",
+     "note": "Infobox: 1,960 crew, plus 626 air group and 40 flag staff (~2,626 total)."
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Air wing typically ~24 J-15 fighters plus ~12 helicopters (~36 total); not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Type 346 radar | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Type_346_radar",
+     "note": "The article gives '400 km (Type 346A)' and states no figure for the original Type 346, which is what Liaoning carries. Recorded as an upper bound rather than a measurement of this ship's set."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-10 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/HQ-10",
+     "note": "'The missile has a range of 9 km against subsonic targets and 6 km against supersonic targets' — the 9 km subsonic figure is recorded here; against a supersonic sea-skimmer it is 6 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-10 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/HQ-10",
+     "note": "Infobox mass '20 kg'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Set below the comparable RAM because Chinese point-defence performance claims are not independently corroborated, and the narrower reading is taken where a claim is contested."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement, conventional for point defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published; assumed comparable to other automatic point-defence mounts."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "Chinese aircraft carrier Liaoning | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Liaoning",
+     "note": "'3 x HQ-10 (18-cell missile system)' — 3 x 18."
+    },
+    "confidence": "high"
+   }
+  },
+  "sensor": {
+   "detectionKm": 400,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "weapons": [
+   {
+    "id": "hq-10",
+    "name": "HQ-10 (HHQ-10)",
+    "rangeKm": 9,
+    "massKg": 20,
+    "salvo": 2,
+    "pk": 0.65,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ],
+    "magazine": 54
+   }
+  ]
+ },
+ {
+  "id": "fujian",
+  "name": "Fujian",
+  "typeId": "carrier-ship",
+  "origin": "China",
+  "note": "PLAN Type 003 Fujian, China's first indigenous CATOBAR carrier and the second in the world (after Gerald R. Ford) with electromagnetic catapults (MVDC integrated power). Conventionally powered. Air wing of J-15T, J-35 stealth fighters, KJ-600 AEW&C and Z-20 helicopters. Commissioned November 2025.",
+  "platform": {
+   "displacementT": 82000,
+   "speedKmh": 56,
+   "crew": 3000,
+   "aircraft": 50
+  },
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "reference",
+     "title": "Chinese aircraft carrier Fujian | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+     "note": "'full load displacement of 80,000 to 85,000 tons'; 82,000 taken as a mid figure."
+    },
+    "confidence": "medium"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "Chinese aircraft carrier Fujian | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+     "note": "'a top speed of 30 knots and a range of 8,000 to 10,000 nautical miles.'"
+    },
+    "confidence": "high"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "Chinese aircraft carrier Fujian | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+     "note": "'Its crew consists of 2,000 sailors and 1,000 airmen' (3,000 total)."
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "reference",
+     "title": "Chinese aircraft carrier Fujian | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Fujian",
+     "note": "'50+ aircraft'; estimated at least 40 fixed-wing plus 12 helicopters."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-10 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/HQ-10",
+     "note": "'The missile has a range of 9 km against subsonic targets and 6 km against supersonic targets' — the 9 km subsonic figure is recorded here; against a supersonic sea-skimmer it is 6 km."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "HQ-10 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/HQ-10",
+     "note": "Infobox mass '20 kg'."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Set below the comparable RAM because Chinese point-defence performance claims are not independently corroborated, and the narrower reading is taken where a claim is contested."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Two rounds per engagement, conventional for point defence; not a published figure."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published; assumed comparable to other automatic point-defence mounts."
+    },
+    "confidence": "low"
+   }
+  },
+  "weapons": [
+   {
+    "id": "hq-10",
+    "name": "HQ-10 (HHQ-10)",
+    "rangeKm": 9,
+    "massKg": 20,
+    "salvo": 2,
+    "pk": 0.65,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "vikrant",
+  "name": "INS Vikrant",
+  "typeId": "carrier-ship",
+  "origin": "India",
+  "note": "Indian Navy Vikrant-class (IAC-1), India's first indigenously built carrier; STOBAR ski-jump, MF-STAR AESA radar, two 32-cell Barak-8 VLS. Air wing of MiG-29K (Rafale M on order), Ka-31, MH-60R. Range 8,000 nmi. Commissioned 2022.",
+  "platform": {
+   "displacementT": 45000,
+   "speedKmh": 56,
+   "crew": 1645,
+   "aircraft": 36
+  },
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "reference",
+     "title": "INS Vikrant (2013) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+     "note": "'45,000 tonnes of loaded displacement.'"
+    },
+    "confidence": "high"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "reference",
+     "title": "INS Vikrant (2013) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+     "note": "Infobox: 30 knots (56 km/h); the article body cites a top speed of 28 knots (52 km/h)."
+    },
+    "confidence": "medium"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "INS Vikrant (2013) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+     "note": "'196 officers, 1,449 sailors (including air crew)' = 1,645; the article body cites ~1,700."
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "reference",
+     "title": "INS Vikrant (2013) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+     "note": "'Aircraft carried: 36 aircraft' (MiG-29K, Ka-31, MH-60R); hangar capacity 20."
+    },
+    "confidence": "high"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "EL/M-2248 MF-STAR | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/EL/M-2248_MF-STAR",
+     "note": "Automatic track initiation beyond 250 km against a fighter-size target at high altitude. Raw instrumented range is quoted as over 450 km, and only 25+ km against a sea-skimming missile — the track-initiation figure is the one that means anything operationally."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "INS Vikrant (2013) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+     "note": "'2 x 32 cell VLS Barak 8 SAM (range: 0.5 km (0.31 mi) to 100 km (62 mi)'. Identical to the Kolkata entry, as the same round must be."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "INS Vikrant (2013) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/INS_Vikrant_(2013)",
+     "note": "'2 x 32 cell VLS Barak 8 SAM' — 2 x 32."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the Kolkata entry so the same round does not carry two kill probabilities."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the Kolkata entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the Kolkata entry."
+    },
+    "confidence": "low"
+   }
+  },
+  "sensor": {
+   "detectionKm": 250,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "weapons": [
+   {
+    "id": "barak-8",
+    "name": "Barak 8 (LR-SAM/MRSAM)",
+    "rangeKm": 100,
+    "salvo": 2,
+    "pk": 0.7,
+    "reactionSec": 10,
+    "engages": [
+     "air"
+    ],
+    "magazine": 64
+   }
+  ]
+ },
+ {
+  "id": "charles-de-gaulle",
+  "name": "Charles de Gaulle",
+  "typeId": "carrier-ship",
+  "origin": "France",
+  "note": "French Navy Charles de Gaulle (R91), France's only carrier and the only nuclear-powered CATOBAR carrier outside the US. Rafale M fighters and E-2C Hawkeye AEW aircraft; 32 Aster 15 SAM cells (4x8 Sylver) plus Mistral. Displacement, air-wing size and speed are not in the retrieved excerpt.",
+  "platform": {
+   "displacementT": 42500,
+   "speedKmh": 50,
+   "crew": 1350,
+   "aircraft": 30
+  },
+  "signature": "high",
+  "provenance": {
+   "platform.displacementT": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Full-load displacement commonly cited ~42,500 tonnes; not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.speedKmh": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Top speed ~27 knots (~50 km/h); not stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "platform.crew": {
+    "source": {
+     "kind": "reference",
+     "title": "French aircraft carrier Charles de Gaulle | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/French_aircraft_carrier_Charles_de_Gaulle",
+     "note": "Infobox: ship's company 1,350, plus 600 air wing (~1,950 total)."
+    },
+    "confidence": "high"
+   },
+   "platform.aircraft": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Not in the retrieved excerpt",
+     "note": "Air group typically ~30 (up to ~40): Rafale M and E-2C Hawkeye; not numerically stated in the retrieved portion. Estimate."
+    },
+    "confidence": "low"
+   },
+   "sensor.detectionKm": {
+    "source": {
+     "kind": "reference",
+     "title": "SMART-S Mk2 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/SMART-S_Mk2",
+     "note": "Long-range mode reaches 250 km at 13.5 rpm; medium-range mode 150 km at 27 rpm. The 250 km figure is for air targets — surface detection is 40-80 km. SMART-S Mk2 is replacing the original DRBJ 11B."
+    },
+    "confidence": "medium"
+   },
+   "sensor.tracks": {
+    "source": {
+     "kind": "reference",
+     "title": "SMART-S Mk2 | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/SMART-S_Mk2",
+     "note": "Tracks up to 160 air and 40 surface targets simultaneously."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Aster 15 — figures held level with the Type 45 entry",
+     "url": "https://en.wikipedia.org/wiki/Aster_(missile_family)",
+     "note": "Copied field for field from the Type 45 entry researched earlier, because a munition shared between platforms must carry identical figures — the validator fails the file otherwise."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.minRangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Aster 15 — figures held level with the Type 45 entry",
+     "url": "https://en.wikipedia.org/wiki/Aster_(missile_family)",
+     "note": "As above: identical to the Type 45 entry."
+    },
+    "confidence": "medium"
+   },
+   "weapons.0.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "French aircraft carrier Charles de Gaulle | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/French_aircraft_carrier_Charles_de_Gaulle",
+     "note": "'4 x 8 cell A-43 Sylver launchers carrying the MBDA Aster 15 surface-to-air missile' — 4 x 8."
+    },
+    "confidence": "high"
+   },
+   "weapons.0.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the Type 45 entry so the same round does not carry two kill probabilities."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the Type 45 entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.0.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. Held identical to the Type 45 entry."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.rangeKm": {
+    "source": {
+     "kind": "reference",
+     "title": "Mistral (missile) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Mistral_(missile)",
+     "note": "Infobox effective firing range '8 km (Mistral 3)'. Earlier marks are shorter."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.massKg": {
+    "source": {
+     "kind": "reference",
+     "title": "Mistral (missile) | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Mistral_(missile)",
+     "note": "Infobox mass '19.7 kg'."
+    },
+    "confidence": "high"
+   },
+   "weapons.1.pk": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published. A MANPADS-derived infrared seeker on a naval mount: set below the radar-guided point-defence missiles because it is fire-and-forget against a single target with no mid-course update."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.salvo": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "One round per engagement — the Simbad and Sadral mounts hold few rounds and an IR seeker gives no benefit to a second simultaneous shot."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.reactionSec": {
+    "source": {
+     "kind": "placeholder",
+     "title": "Modeling placeholder - not publicly disclosed",
+     "note": "Not published; assumed comparable to other short-range mounts."
+    },
+    "confidence": "low"
+   },
+   "weapons.1.magazine": {
+    "source": {
+     "kind": "reference",
+     "title": "French aircraft carrier Charles de Gaulle | Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/French_aircraft_carrier_Charles_de_Gaulle",
+     "note": "'2 x 6 cell Sadral launchers carrying Mistral short-range missiles' — 2 x 6."
+    },
+    "confidence": "high"
+   }
+  },
+  "sensor": {
+   "detectionKm": 250,
+   "tracks": 160,
+   "sees": [
+    "air"
+   ],
+   "horizonLimited": false
+  },
+  "weapons": [
+   {
+    "id": "aster-15",
+    "name": "Aster 15",
+    "rangeKm": 30,
+    "minRangeKm": 1.7,
+    "salvo": 2,
+    "pk": 0.75,
+    "reactionSec": 8,
+    "engages": [
+     "air"
+    ],
+    "magazine": 32
+   },
+   {
+    "id": "mistral",
+    "name": "Mistral 3",
+    "rangeKm": 8,
+    "massKg": 19.7,
+    "salvo": 1,
+    "pk": 0.6,
+    "reactionSec": 5,
+    "engages": [
+     "air"
+    ],
+    "magazine": 12
+   }
+  ]
+ }
 ]
