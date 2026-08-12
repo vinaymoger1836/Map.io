@@ -320,7 +320,31 @@ does" is the whole reason for the section: an S-400 has three missiles and only
 one of them carries a kill probability, so two of its three are reported rather
 than counted.
 
-**Four conventions, and which way each one is wrong:**
+**Nothing fires at what it cannot see.** The raid flies at an altitude — the same
+**Low / Medium / High** the coverage rings are drawn against, because it is the
+same quantity: a detection ring is what a radar sees of something at *that*
+height. Each weapon opens fire at the later of entering its envelope and being
+detected, and the panel shows how far it held fire.
+
+This is what makes flying low a real decision. An Arleigh Burke picketed 250 km
+off the track can reach the raid with an SM-6 at any altitude, but its arrays sit
+20 m above the water: at 100 m the raid crosses unseen and the layer reports
+*blind*, and twelve of twelve arrive. At 3,000 m the same picket kills eleven of
+them.
+
+**Detection is shared within a nation**, so a battery blind on its own radar
+still fires if a friendly AEW&C or early-warning radar holds the raid — the layer
+is marked *cued*. Put an E-3G over that same picket and the low-level run is
+punished exactly as the high one was. This is the first thing that makes a radar
+or an AEW&C worth deploying for its own sake rather than for the ring it draws.
+It also assumes a data link that may not exist, which is why those engagements
+are labelled rather than folded in silently.
+
+A system that records **no sensor at all** is unrecorded, not blind, and so is
+not held back — 48 of the 89 armed systems are in that position, and treating a
+missing figure as a zero would quietly disarm half the board.
+
+**Five conventions, and which way each one is wrong:**
 
 | Convention | Why | Direction |
 | --- | --- | --- |
@@ -328,8 +352,25 @@ than counted.
 | An unpublished magazine is not a limit | Only 51 of 128 weapons record ready rounds; guessing would silently invent the moment it runs dry | Overstates the defence |
 | An unpublished fire-channel count is not a limit | 10 of 104 systems record one | Overstates the defence |
 | The raid flies straight through everything at the recorded speed | No evasion, no terrain masking, no stand-off launch — and the recorded speed is usually a maximum, not a cruise | The straight line overstates, the speed understates; the line is much the larger |
+| A weapon fires only from the point the raid is detected, on a picture shared across the nation, and once held the raid stays held | Detection is what the horizon figures were recorded for. The shared picture is how an integrated air defence works; the alternative silently blinds every battery | Overstates |
 
 Read the answer as a floor on what arrives, not a prediction.
+
+**Why an assessment so often comes back *Stopped*.** Exposure time is a gate, not
+a quantity: a layer that opens fire late does the same damage as one that opens
+on time, provided it gets a shot at all. So detection usually changes *which*
+layers fight and *when*, rather than the final count. The count is instead
+dominated by the second convention above — an S-400's 48N6 records no magazine,
+so on paper that one round stops any raid entering its envelope, whatever else
+you change. Scaling shots with exposure was tried and backed out: it needed an
+invented re-fire cadence and an arbitrary cap, and measured against the library it
+moved almost nothing, because the binding constraint is nearly always the
+magazine or the `pk` rather than the clock.
+
+Everything that actually defeats a modern SAM belt in life — stand-off launch,
+jamming, SEAD, decoys, stealth, terrain — is absent from this model. When it says
+*Stopped*, it is reporting what the figures say about an unsuppressed battery, not
+what would happen.
 
 **What it will not assess.** A special unit cannot fly a raid: an air strike
 package is strike aircraft, fighters, an AEW&C and a tanker, and the tanker does

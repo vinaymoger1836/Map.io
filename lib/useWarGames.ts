@@ -1242,10 +1242,14 @@ export function useWarGames({
     const attacker = board.units.find((u) => u.id === raidFromId);
     const target = board.units.find((u) => u.id === raidToId);
     if (!attacker || !target) return null;
-    const raid = raidFrom(attacker, target.lngLat, boardContext);
+    // The raid flies at the altitude the coverage panel is asking about, because
+    // they are the same quantity: a detection ring is drawn against the height of
+    // the thing being looked for. Sharing it means the rings on the map are the
+    // rings the raid is assessed through.
+    const raid = raidFrom(attacker, target.lngLat, coverage.targetAltM, boardContext);
     if (!raid) return null;
     return assess(raid, defendersFrom(board.units, attacker.iso, boardContext));
-  }, [board.units, raidFromId, raidToId, boardContext]);
+  }, [board.units, raidFromId, raidToId, boardContext, coverage.targetAltM]);
 
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.

@@ -29,7 +29,14 @@ const SILENT: Record<SilentReason, string> = {
   'too-fast': 'through before it can fire',
   dry: 'out of ready rounds',
   'nothing-left': 'nothing left to engage',
+  blind: 'in range, never detected',
 };
+
+const ALTITUDES: [number, string, string][] = [
+  [100, 'Low', 'Under the horizon of most ground radars — the reason to fly it'],
+  [3_000, 'Medium', 'Seen by most things well before they can shoot'],
+  [10_000, 'High', 'Seen by everything, at close to brochure range'],
+];
 
 function Picker({
   label,
@@ -121,8 +128,10 @@ function Result({ a }: { a: Assessment }) {
                   </td>
                   <td>
                     {e.unitLabel}
+                    {e.cued && <span className="wg-tag">cued</span>}
                     <span className="wg-layer-sub">
                       {e.weaponName} · {km(e.rangeKm)}
+                      {e.heldFireKm !== undefined && ` · held fire ${km(e.heldFireKm)}`}
                       {e.assumedEngages && ' · target class not stated'}
                     </span>
                   </td>
@@ -217,6 +226,26 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           }
         />
 
+        <div className="wg-field-label">Flown at</div>
+        <div className="wg-kinds">
+          {ALTITUDES.map(([metres, label, hint]) => (
+            <button
+              key={metres}
+              className={`wg-kind${wg.coverage.targetAltM === metres ? ' on' : ''}`}
+              onClick={() => wg.setTargetAltitude(metres)}
+              title={hint}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="wg-note">
+          The same altitude the coverage rings are drawn against, because it is the same number —
+          a detection ring is what a radar sees of something at <em>this</em> height. Fly low and
+          a battery holds its fire until the raid clears its horizon; fly high and it engages at
+          close to the brochure figure.
+        </p>
+
         {runKm !== null && radius !== undefined && (
           <p className={`wg-hint${runKm > (refuelled ?? radius) ? ' wg-warn' : ''}`}>
             {km(runKm)} out.{' '}
@@ -234,12 +263,22 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           <h3 className="wg-h">Assessment</h3>
           <Result a={assessment} />
 
+          {assessment.engagements.some((e) => e.cued) && (
+            <p className="wg-note">
+              A <em>cued</em> layer cannot see the raid itself and is firing on a friendly sensor&rsquo;s
+              picture. Those engagements assume an air picture shared across the nation, and they
+              are the first thing to disappear if the data link does.
+            </p>
+          )}
+
           <p className="wg-note">
             One engagement per battery: each fires a salvo at every raider it can hold, once, because
             re-fire interval is not a figure this library has. Weapons that record no magazine are
-            not capped. The raid flies straight through everything at the recorded speed, which for
-            most aircraft is a maximum rather than a cruise. Nothing is destroyed at the far end and
-            nobody shoots back — this reads the board, it does not change it.
+            not capped. Nothing fires at what it cannot see — but a system recording no sensor at
+            all is unrecorded rather than blind, so it is not held back. The raid flies straight
+            through everything at the recorded speed, which for most aircraft is a maximum rather
+            than a cruise. Nothing is destroyed at the far end and nobody shoots back — this reads
+            the board, it does not change it.
           </p>
         </section>
       )}

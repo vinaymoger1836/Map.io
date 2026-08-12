@@ -29,10 +29,22 @@
  *    interval is not a figure this library has* — and inventing one would let a
  *    single battery with a deep magazine destroy an arbitrarily large raid.
  *    → Understates the defence.
+ *
+ *    A consequence worth stating plainly, because it limits what detection
+ *    below can buy: exposure time is only a gate, not a quantity. A layer that
+ *    opens fire late does the same damage as one that opens on time, provided
+ *    it gets any shot at all. Scaling shots with exposure was tried and backed
+ *    out — it needed an invented re-fire cadence and an arbitrary cap, and
+ *    measured against the library it moved almost no outcome, because the
+ *    binding constraint is nearly always the magazine or the `pk`, not the
+ *    clock.
  * 2. **An unpublished magazine is not a limit.** Only 51 of 128 weapons record
  *    ready rounds. Where none is recorded the battery is not capped, because
  *    guessing a number would silently invent the moment it runs dry.
- *    → Overstates the defence.
+ *    → Overstates the defence, and by more than it first appears: an S-400's
+ *    48N6 records no magazine, so on paper that one round stops any raid that
+ *    enters its envelope, whatever else is or is not true. When an assessment
+ *    comes back *Stopped* regardless of what you change, this is usually why.
  * 3. **A weapon with no `pk` cannot be modelled at all**, and is reported as
  *    such rather than treated as harmless. A missing figure is not a zero. This
  *    is the difference between "this belt is porous" and "we do not know what
@@ -44,6 +56,22 @@
  *    most aircraft is a maximum rather than a cruise, so the run is quicker than
  *    a real one. → Overstates the defence via the straight line, understates it
  *    via the speed. The straight line is much the larger of the two.
+ * 5. **Nothing fires at what it cannot see.** A weapon engages only from the
+ *    point the raid is detected, so a battery whose radar horizon is shorter
+ *    than its missiles opens fire late, or not at all. Three consequences worth
+ *    knowing, because they pull in different directions:
+ *    - **Detection is shared within a nation.** A battery blind at 61 km still
+ *      fires if a friendly AEW&C or early-warning radar holds the raid, and the
+ *      layer is reported as *cued*. That is how an integrated air defence
+ *      works, and it is what makes a radar worth deploying — but it assumes a
+ *      data link that may not exist. → Overstates the defence.
+ *    - **Once held, always held.** Detection begins at the first point any
+ *      friendly sensor sees the raid and does not lapse. → Overstates.
+ *    - **A system with no sensor recorded is not blind, it is unrecorded**, and
+ *      so is not limited at all — 48 of the 89 armed systems in the library are
+ *      in that position. Treating a missing figure as a zero would silently
+ *      disarm half the board, which is the same error this file refuses to make
+ *      with `pk`. → Overstates, and this is the largest of the three.
  *
  * The two that overstate are stronger than the one that understates, so a raid
  * that gets through here would get through in life. Read the number as a floor
@@ -54,6 +82,7 @@ import { distanceKm, interpolate } from './geo';
 import { effectiveSpec, type MunitionCatalogue } from './munitions';
 import {
   domainOf,
+  effectiveDetectionKm,
   systemById,
   type Confidence,
   type SystemSpec,
@@ -153,6 +182,13 @@ export interface Raid {
   count: number;
   from: [number, number];
   to: [number, number];
+  /**
+   * How high it flies, in metres. This is the same quantity the coverage panel
+   * calls target altitude — a defender's detection ring *is* drawn against the
+   * altitude of the thing it is looking for — so the two share one value and the
+   * rings on the map are the rings the raid actually flies through.
+   */
+  altitudeM: number;
 }
 
 /** One hostile weapon, positioned — everything the walk needs about a defender. */
@@ -187,6 +223,17 @@ export interface Engagement {
   silent?: SilentReason;
   /** True when the spec never said what this weapon engages. */
   assumedEngages?: boolean;
+  /**
+   * This layer is firing on somebody else's picture: its own radar cannot see
+   * the raid here, and a friendly sensor can. Worth surfacing, because these are
+   * the engagements that disappear the moment the data link does.
+   */
+  cued?: boolean;
+  /**
+   * How much of the weapon's reach detection cost it. Set when the raid was
+   * inside the envelope before anything could see it.
+   */
+  heldFireKm?: number;
 }
 
 export type SilentReason =
@@ -195,7 +242,9 @@ export type SilentReason =
   /** Ready rounds exhausted earlier in this same raid. */
   | 'dry'
   /** The raid was already destroyed before it reached this layer. */
-  | 'nothing-left';
+  | 'nothing-left'
+  /** In range for the whole pass, and never detected. */
+  | 'blind';
 
 export interface Assessment {
   raid: Raid;
@@ -260,6 +309,26 @@ function crossing(
   // Still inside at the target: the raid arrives under fire, which is exactly
   // what happens when you strike something inside a defended area.
   return { entryKm: entry, exitKm: exit ?? totalKm };
+}
+
+/**
+ * The point along the path at which a sensor first holds the raid, or null if it
+ * never does.
+ *
+ * Detection is judged against the altitude the raid is flying at, so the earth's
+ * curve does the work it was recorded for: a battery whose radar sits 5 m up on
+ * a trailer sees a 100 m target 50 km away and a 10,000 m one 430 km away, and
+ * its missiles wait accordingly.
+ */
+function onsetFor(
+  spec: SystemSpec,
+  at: [number, number],
+  raid: Raid,
+  totalKm: number
+): number | null {
+  const reach = effectiveDetectionKm(spec, raid.altitudeM);
+  if (!reach) return null;
+  return crossing(raid.from, raid.to, at, reach, totalKm)?.entryKm ?? null;
 }
 
 /** Whether this weapon can be pointed at this raid at all. */
@@ -334,12 +403,29 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
     defender: Defender;
     weapon: WeaponFacet;
     index: number;
+    /** Where fire opens — inside the envelope, and not before detection. */
     entryKm: number;
     exitKm: number;
+    cued?: boolean;
+    heldFireKm?: number;
+    /** In range throughout and never seen. */
+    blind?: boolean;
   };
 
   const layers: Layer[] = [];
   const unmodelled: Assessment['unmodelled'] = [];
+
+  /* Who can see the raid, and from where.
+     Every sensor on the defending side is asked, armed or not: an early-warning
+     radar and an AEW&C carry no weapon at all, and holding the picture for the
+     batteries is the entire reason they are on the board. */
+  const ownOnset = new Map<string, number | null>();
+  let networkOnset: number | null = null;
+  for (const defender of defenders) {
+    const onset = defender.spec.sensor ? onsetFor(defender.spec, defender.at, raid, totalKm) : null;
+    ownOnset.set(defender.unitId, onset);
+    if (onset !== null && (networkOnset === null || onset < networkOnset)) networkOnset = onset;
+  }
 
   for (const defender of defenders) {
     const weapons = defender.spec.weapons ?? [];
@@ -356,7 +442,30 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
         });
         continue;
       }
-      layers.push({ defender, weapon, index, ...cross });
+
+      // A system that records no sensor is unrecorded, not blind, so nothing
+      // holds its fire. One that records one waits until somebody sees the raid.
+      const mine = ownOnset.get(defender.unitId) ?? null;
+      const seenFrom = defender.spec.sensor ? networkOnset : cross.entryKm;
+
+      if (seenFrom === null) {
+        layers.push({ ...cross, defender, weapon, index, blind: true });
+        continue;
+      }
+
+      const opensAt = Math.max(cross.entryKm, seenFrom);
+      layers.push({
+        defender,
+        weapon,
+        index,
+        entryKm: opensAt,
+        exitKm: cross.exitKm,
+        // Firing on somebody else's picture: its own radar cannot hold the raid
+        // this early, and a friendly one can.
+        cued: defender.spec.sensor ? mine === null || seenFrom < mine : false,
+        heldFireKm: opensAt > cross.entryKm ? opensAt - cross.entryKm : undefined,
+        blind: opensAt >= cross.exitKm,
+      });
     }
   }
 
@@ -385,7 +494,9 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
       let rounds = 0;
       let silent: SilentReason | undefined;
 
-      if (facing <= 0) {
+      if (layer.blind) {
+        silent = 'blind';
+      } else if (facing <= 0) {
         silent = 'nothing-left';
       } else if (weapon.reactionSec !== undefined && exposureSec < weapon.reactionSec) {
         silent = 'too-fast';
@@ -416,6 +527,8 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
           killed,
           silent,
           assumedEngages: !weapon.engages?.length,
+          cued: layer.cued,
+          heldFireKm: layer.heldFireKm,
         });
       }
     }
@@ -468,6 +581,7 @@ export function canRaid(unit: DeployedUnit, ctx: BoardContext): boolean {
 export function raidFrom(
   unit: DeployedUnit,
   to: [number, number],
+  altitudeM: number,
   ctx: BoardContext
 ): Raid | null {
   if (unit.kind !== 'unit') return null;
@@ -480,6 +594,7 @@ export function raidFrom(
     count: unit.count,
     from: unit.lngLat,
     to,
+    altitudeM,
   };
 }
 
@@ -509,7 +624,9 @@ export function defendersFrom(
       for (const part of unit.composition) {
         if (part.count <= 0) continue;
         const spec = systemById(ctx.systems, part.systemId);
-        if (!spec?.weapons?.length) continue;
+        // A sensor with no weapon still belongs here: the radar inside an air
+        // defence system is what lets its launchers shoot.
+        if (!spec || (!spec.weapons?.length && !spec.sensor)) continue;
         out.push({
           unitId: `${unit.id}:${part.typeId}:${part.systemId ?? ''}`,
           unitLabel: `${label} — ${spec.name}`,
@@ -523,7 +640,8 @@ export function defendersFrom(
     }
 
     const spec = specOf(unit, ctx);
-    if (!spec?.weapons?.length) continue;
+    // Armed, or able to see for something that is armed.
+    if (!spec || (!spec.weapons?.length && !spec.sensor)) continue;
     out.push({
       unitId: unit.id,
       unitLabel: label,
