@@ -279,6 +279,63 @@ check before anything else.**
 Every board change is undoable — `Ctrl+Z`, `Ctrl+Shift+Z`, or the buttons beside
 the tool row. History is per session and is not saved.
 
+### The engagement model
+
+The one place in the app that multiplies figures together rather than reporting
+them. It exists because the library has carried `pk`, `salvo`, `reactionSec` and
+`magazine` from the beginning — figures nobody publishes, collected so a model
+would have something to multiply, and inert until now.
+
+Pick a raider and something to fly it at, in the **Raid** section. It walks the
+great circle between them, finds every hostile envelope the path crosses, and
+takes attrition off the raid layer by layer, outermost first.
+
+It answers one question — *how much of this raid arrives?* — and nothing else.
+Nothing is destroyed at the far end, nobody shoots back, nothing moves, and there
+is no time step. This is still a board you arrange: the model reads it and
+reports, and putting a number on the screen changes nothing on the map.
+
+**The result is a range, and the range is the data's, not the model's.** Each
+`pk` is widened by the confidence recorded against it — ±10% for `high`, ±25%
+for `medium`, ±40% for `low` — so the spread reflects the quality of what went
+in. Nearly every kill probability in the library is `low`, because nobody
+publishes them, so the range is wide by rights. This is the point at which the
+per-field provenance stops being decoration.
+
+**A missing figure is not a zero.** A weapon with no `pk` cannot be modelled, so
+it is listed under *Cannot be modelled* rather than folded in as harmless. The
+difference between "this belt is porous" and "we do not know what this belt
+does" is the whole reason for the section: an S-400 has three missiles and only
+one of them carries a kill probability, so two of its three are reported rather
+than counted.
+
+**Four conventions, and which way each one is wrong:**
+
+| Convention | Why | Direction |
+| --- | --- | --- |
+| One engagement per battery per raid — a salvo at each raider it can hold, once | Re-fire interval is not a figure this library has, and inventing one would let a single deep magazine destroy an arbitrarily large raid | Understates the defence |
+| An unpublished magazine is not a limit | Only 51 of 128 weapons record ready rounds; guessing would silently invent the moment it runs dry | Overstates the defence |
+| An unpublished fire-channel count is not a limit | 10 of 104 systems record one | Overstates the defence |
+| The raid flies straight through everything at the recorded speed | No evasion, no terrain masking, no stand-off launch — and the recorded speed is usually a maximum, not a cruise | The straight line overstates, the speed understates; the line is much the larger |
+
+Read the answer as a floor on what arrives, not a prediction.
+
+**What it will not assess.** A special unit cannot fly a raid: an air strike
+package is strike aircraft, fighters, an AEW&C and a tanker, and the tanker does
+not fly into the missile belt. Putting the whole package through one envelope at
+one speed is not a simplification of what happens, it is a different thing
+happening — a composition raid wants its own model, and refusing is better than
+inventing one. A system with no recorded speed is refused for the same reason:
+exposure time is the hinge the calculation turns on.
+
+Defenders are *everything not the raider's own nation*. The board records no
+alliances, so it cannot know two countries are on the same side.
+
+The path is drawn on the map as a great circle at the resolution the model walks
+it, so a belt the line visibly crosses is a belt the numbers counted. A straight
+line in screen space would be a different path from the one the geodesic rings
+were drawn against, and would show a raid missing belts it actually crosses.
+
 ### Scenarios, and carrying a board elsewhere
 
 Two jobs that look alike and are not, both in the **Boards** section.
@@ -419,11 +476,12 @@ dots and bars for ground echelons, a short word for naval and air groupings.
 lib/warGames.ts    unit and formation catalogues, echelons, nation colours,
                    board state and how it is revived
 lib/specs.ts       system specifications, facets, envelopes, provenance
-lib/geo.ts         geodesic circles and distance — no dependency
+lib/geo.ts         geodesic circles, great-circle paths, distance — no dependency
 lib/store.ts       the document store — the only thing that knows about storage
 lib/munitions.ts   the munitions catalogue, derived from the systems
 lib/forces.ts      national holdings, and what the board has committed
 lib/scenarios.ts   saved boards, and the bundle a board travels in
+lib/engagement.ts  what a defence does to a raid, and what it will not claim
 lib/unitIcons.ts   the canvas icon factory
 lib/warLayers.ts   MapLibre sources and layers for the board
 lib/useWarGames.ts board state and the map wiring
@@ -433,6 +491,7 @@ components/wargames/           MapSection      tool, selection, palette,
                                                coverage, then paint at the foot
                                ArmamentsSection the systems catalogue + editor
                                ForcesSection    per-nation strength
+                               EngagementSection a raid, and what stops it
                                ScenariosSection saved boards, export, import
                                and the parts they use: NationBlock, Palette,
                                SelectedUnit, LoadoutEditor, CompositionEditor,
@@ -440,17 +499,18 @@ components/wargames/           MapSection      tool, selection, palette,
                                SectionNav, Modal
 ```
 
-### The console's four sections
+### The console's five sections
 
 One long scroll put the colour picker above whatever you were actually doing and
-buried the systems catalogue under the deploy controls. They are four different
-jobs, so they are four places:
+buried the systems catalogue under the deploy controls. They are five different
+jobs, so they are five places:
 
 | Section | For |
 | --- | --- |
 | **Map** | Arranging the board. Tool, the selected unit and its editors, the deploy palette, what coverage draws — and painting at the foot, because you choose a nation's colour once and then deploy under it for an hour. |
 | **Armaments** | What every system *is*. Search and filter the catalogue, read a spec sheet with its sources, duplicate a library entry to disagree with it, or author a new one in a dialog with the whole schema. |
 | **Forces** | What each nation has, and what it owns. Strength by nation, a per-nation inventory that deploying draws down, and the order of battle. |
+| **Raid** | Fly something at something and see what the defence does to it — the layers it crosses, what each one fires, and how much arrives. |
 | **Boards** | Whole boards. Save the working board as a scenario, load one back, and export or import a board as a file. Last, because it is the section you visit at the start and end of a session rather than throughout it. |
 
 The system form is a dialog rather than a column, because thirty-odd fields in a
@@ -599,8 +659,10 @@ scripts/        data generation
     exterior. Well-formed polygons pass through untouched, by identity.
 - **Sea ice extent is illustrative**, hand-fitted to typical modern maxima and
   minima. Use NSIDC data for anything quantitative.
-- **War Games units are markers, not a model.** Nothing moves, shoots, spots or
-  is scored; the mode is a board you arrange, not a simulation.
+- **War Games units are markers, not a simulation.** Nothing moves, spots or is
+  scored, and there is no time step. The engagement model is the one exception
+  and a narrow one: it reads the board and reports what a defence would do to a
+  raid, without changing anything on it.
 - **A board travels as a file, not as a link.** Export writes a bundle and import
   reads one; there is no server, no sync and no merge. Two people editing the
   same scenario produce two scenarios.

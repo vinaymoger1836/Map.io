@@ -50,6 +50,64 @@ export function destination(
 }
 
 /**
+ * The point a given fraction of the way along the great circle from `a` to `b`.
+ *
+ * Not a linear blend of the coordinates: interpolating lon/lat directly gives a
+ * straight line on Web Mercator, which at high latitude is a different path
+ * from the one an aircraft flies and — more to the point here — a different
+ * path from the one the geodesic rings were drawn against. A raid assessed on
+ * the wrong line crosses the wrong belts.
+ *
+ * Longitudes come back unwrapped relative to `a`, for the same reason
+ * `geodesicRing` unwraps: a path over the Bering Strait must run 179, 180, 181
+ * rather than falling off the end of the world.
+ */
+export function interpolate(
+  a: [number, number],
+  b: [number, number],
+  fraction: number
+): [number, number] {
+  const [lon1, lat1] = [toRad(a[0]), toRad(a[1])];
+  const [lon2, lat2] = [toRad(b[0]), toRad(b[1])];
+
+  const angular = distanceKm(a, b) / EARTH_RADIUS_KM;
+  // Coincident points have no bearing between them; anything else divides by ~0.
+  if (angular < 1e-12) return [a[0], a[1]];
+
+  const sinAngular = Math.sin(angular);
+  const scaleA = Math.sin((1 - fraction) * angular) / sinAngular;
+  const scaleB = Math.sin(fraction * angular) / sinAngular;
+
+  const x = scaleA * Math.cos(lat1) * Math.cos(lon1) + scaleB * Math.cos(lat2) * Math.cos(lon2);
+  const y = scaleA * Math.cos(lat1) * Math.sin(lon1) + scaleB * Math.cos(lat2) * Math.sin(lon2);
+  const z = scaleA * Math.sin(lat1) + scaleB * Math.sin(lat2);
+
+  const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
+  let lon = toDeg(Math.atan2(y, x));
+  while (lon - a[0] > 180) lon -= 360;
+  while (a[0] - lon > 180) lon += 360;
+  return [lon, toDeg(lat)];
+}
+
+/**
+ * A great-circle path as a polyline, for drawing and for walking.
+ *
+ * `steps` sets the resolution, and the caller picks it from how much accuracy
+ * the answer deserves: a line on the map needs enough to look like a curve, and
+ * a raid being walked through a defence needs enough that a 40 km battery is not
+ * stepped straight over.
+ */
+export function greatCirclePath(
+  a: [number, number],
+  b: [number, number],
+  steps: number
+): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i <= steps; i++) out.push(interpolate(a, b, i / steps));
+  return out;
+}
+
+/**
  * A circle of constant ground distance, as a GeoJSON polygon ring.
  *
  * Longitudes are unwrapped rather than normalised into ±180: a ring around

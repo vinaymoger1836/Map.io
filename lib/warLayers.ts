@@ -44,6 +44,8 @@ export const WAR_LAYERS = [
   'wg-envelope-line',
   'wg-envelope-hover',
   'wg-envelope-hit',
+  'wg-raid-line',
+  'wg-raid-head',
   'wg-country-label',
   'wg-city-dot',
   'wg-city-label',
@@ -123,6 +125,7 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
   source('wg-world-places', world.places);
   source('wg-units', emptyCollection());
   source('wg-envelopes', emptyCollection());
+  source('wg-raid', emptyCollection());
 
   const add = (layer: any, before?: string) => {
     if (!map.getLayer(layer.id)) map.addLayer(layer, before);
@@ -237,6 +240,51 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       filter: HIDE_ALL,
       layout: { visibility: 'none', 'line-join': 'round' },
       paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 14 },
+    },
+    firstSymbol
+  );
+
+  /* ---------- the axis of attack ---------- */
+
+  // Drawn above the envelopes and below the labels: the whole point of the line
+  // is to be read against the rings it crosses, so it must not be buried by
+  // them, and it must not bury the place names you are aiming at.
+  //
+  // It is a great-circle polyline rather than a two-point line, because MapLibre
+  // draws a two-point line straight in screen space — which at 60°N is a
+  // different path from the one the raid was assessed along, and would show it
+  // missing belts it actually crosses.
+  add(
+    {
+      id: 'wg-raid-line',
+      type: 'line',
+      source: 'wg-raid',
+      filter: ['==', ['geometry-type'], 'LineString'],
+      layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 2,
+        'line-opacity': 0.9,
+        'line-dasharray': [3, 2],
+      },
+    },
+    firstSymbol
+  );
+
+  // The target end, so the direction of the run is not ambiguous.
+  add(
+    {
+      id: 'wg-raid-head',
+      type: 'circle',
+      source: 'wg-raid',
+      filter: ['==', ['geometry-type'], 'Point'],
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': 5,
+        'circle-color': 'rgba(0,0,0,0)',
+        'circle-stroke-color': ['get', 'color'],
+        'circle-stroke-width': 2,
+      },
     },
     firstSymbol
   );
@@ -392,6 +440,42 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
 }
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * Draws the raid's path, or clears it.
+ *
+ * The polyline is walked at the same resolution the model walks it, so what you
+ * see crossing a belt is what the assessment counted as crossing it.
+ */
+export function setRaidPath(
+  map: MLMap,
+  path: [number, number][] | null,
+  color = '#E4B363'
+) {
+  const source = map.getSource('wg-raid') as { setData?: (d: unknown) => void } | undefined;
+  if (!source?.setData) return;
+
+  if (!path?.length) {
+    source.setData(emptyCollection());
+    return;
+  }
+
+  source.setData({
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { color },
+        geometry: { type: 'LineString', coordinates: path },
+      },
+      {
+        type: 'Feature',
+        properties: { color },
+        geometry: { type: 'Point', coordinates: path[path.length - 1] },
+      },
+    ],
+  });
+}
 
 export function setWarVisible(map: MLMap, on: boolean) {
   for (const id of WAR_LAYERS) {

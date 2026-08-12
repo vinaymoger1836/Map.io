@@ -46,6 +46,15 @@ import {
 } from './specs';
 import { buildMunitions, type MunitionCatalogue } from './munitions';
 import {
+  assess,
+  canRaid,
+  defendersFrom,
+  raidFrom,
+  type Assessment,
+  type BoardContext,
+} from './engagement';
+import { greatCirclePath } from './geo';
+import {
   EMPTY_FORCES,
   canAfford,
   costOf,
@@ -83,6 +92,7 @@ import {
   paintNations,
   restoreBasemapSymbols,
   setEnvelopes,
+  setRaidPath,
   setUnits,
   setWarVisible,
   type CoverageState,
@@ -200,6 +210,16 @@ export interface WarGames {
       everywhere the undo stack cannot reach — see `lib/scenarios.ts`. */
   importBundle: (text: string) => { ok: true; report: ImportReport } | { ok: false; error: string };
 
+  /** Which deployment is flying the raid, and what it is flying at. */
+  raidFromId: string | null;
+  raidToId: string | null;
+  setRaidFrom: (id: string | null) => void;
+  setRaidTo: (id: string | null) => void;
+  /** Deployments that could fly a raid — a unit, with a system that has a speed. */
+  raidCandidates: DeployedUnit[];
+  /** What the defence does to it. Null until both ends are chosen. */
+  assessment: Assessment | null;
+
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
   setCoverageMode: (mode: CoverageState['mode']) => void;
@@ -277,6 +297,9 @@ export function useWarGames({
     targetAltM: 3_000,
   });
   const [hoveredEnvelope, setHoveredEnvelope] = useState<EnvelopeHover | null>(null);
+
+  const [raidFromId, setRaidFromId] = useState<string | null>(null);
+  const [raidToId, setRaidToId] = useState<string | null>(null);
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
@@ -1203,6 +1226,52 @@ export function useWarGames({
   const canUndo = useMemo(() => historyRef.current.length > 0, [historyMark]);
   const canRedo = useMemo(() => futureRef.current.length > 0, [historyMark]);
 
+  /* ---------------- engagement ---------------- */
+
+  const boardContext = useMemo<BoardContext>(
+    () => ({ systems, munitions, formations: allFormations(board.formations) }),
+    [systems, munitions, board.formations]
+  );
+
+  const raidCandidates = useMemo(
+    () => board.units.filter((u) => canRaid(u, boardContext)),
+    [board.units, boardContext]
+  );
+
+  const assessment = useMemo(() => {
+    const attacker = board.units.find((u) => u.id === raidFromId);
+    const target = board.units.find((u) => u.id === raidToId);
+    if (!attacker || !target) return null;
+    const raid = raidFrom(attacker, target.lngLat, boardContext);
+    if (!raid) return null;
+    return assess(raid, defendersFrom(board.units, attacker.iso, boardContext));
+  }, [board.units, raidFromId, raidToId, boardContext]);
+
+  // The drawn path is the assessed path — same great circle, same resolution —
+  // so a belt the line visibly crosses is a belt the numbers counted.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !hydratedRef.current) return;
+    if (!assessment || assessment.blocked) {
+      setRaidPath(map, null);
+      return;
+    }
+    const { from, to } = assessment.raid;
+    const color = board.nations[board.units.find((u) => u.id === raidFromId)?.iso ?? '']?.color;
+    setRaidPath(map, greatCirclePath(from, to, 128), color);
+  }, [assessment, raidFromId, board.nations, board.units, mapRef]);
+
+  // A raid whose ends have left the board is not a raid — and neither is one
+  // aimed at its own side, which is what changing the raider to a unit of the
+  // target's nation would otherwise leave selected but invisible in the list.
+  useEffect(() => {
+    if (raidFromId && !board.units.some((u) => u.id === raidFromId)) setRaidFromId(null);
+    if (!raidToId) return;
+    const attacker = board.units.find((u) => u.id === raidFromId);
+    const target = board.units.find((u) => u.id === raidToId);
+    if (!target || (attacker && target.iso === attacker.iso)) setRaidToId(null);
+  }, [board.units, raidFromId, raidToId]);
+
   return {
     ready: Boolean(world),
     loading,
@@ -1262,6 +1331,12 @@ export function useWarGames({
     deleteScenario,
     exportBundle,
     importBundle,
+    raidFromId,
+    raidToId,
+    setRaidFrom: setRaidFromId,
+    setRaidTo: setRaidToId,
+    raidCandidates,
+    assessment,
     coverage,
     setCoverageMode,
     toggleCoverageKind,
