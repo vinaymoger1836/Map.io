@@ -42,9 +42,22 @@ export function Modal({
     // Capture, so Escape closes the dialog rather than reaching the map's own
     // handler and quietly resetting the tool behind it.
     window.addEventListener('keydown', onKey, true);
-    panelRef.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus();
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose]);
+
+  /* Focus once, on open, and never again.
+     This deliberately has no dependencies. Sharing the effect above meant it
+     re-ran whenever `onClose` changed identity — and callers pass an inline
+     arrow, so that was every render, so it was every keystroke: type one
+     character anywhere in the system form and focus was dragged back to the
+     first field. `mounted` is in the condition rather than the deps because the
+     portal does not exist on the first pass. */
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!mounted || focused.current) return;
+    focused.current = true;
+    panelRef.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus();
+  });
 
   if (!mounted) return null;
 
