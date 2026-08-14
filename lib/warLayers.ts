@@ -456,7 +456,7 @@ export interface RaidPathSpec {
  */
 export function setRaidPath(
   map: MLMap,
-  pathData: [number, number][] | RaidPathSpec | null,
+  pathData: [number, number][] | RaidPathSpec | RaidPathSpec[] | null,
   color = '#E4B363'
 ) {
   const source = map.getSource('wg-raid') as { setData?: (d: unknown) => void } | undefined;
@@ -467,64 +467,65 @@ export function setRaidPath(
     return;
   }
 
-  if (Array.isArray(pathData)) {
-    if (!pathData.length) {
-      source.setData(emptyCollection());
-      return;
-    }
+  // Array of coordinates (legacy simple continuous path)
+  if (Array.isArray(pathData) && pathData.length > 0 && typeof pathData[0][0] === 'number') {
+    const coords = pathData as [number, number][];
     source.setData({
       type: 'FeatureCollection',
       features: [
         {
           type: 'Feature',
           properties: { color },
-          geometry: { type: 'LineString', coordinates: pathData },
+          geometry: { type: 'LineString', coordinates: coords },
         },
         {
           type: 'Feature',
           properties: { color },
-          geometry: { type: 'Point', coordinates: pathData[pathData.length - 1] },
+          geometry: { type: 'Point', coordinates: coords[coords.length - 1] },
         },
       ],
     });
     return;
   }
 
+  const specs = (Array.isArray(pathData) ? pathData : [pathData]) as RaidPathSpec[];
   const features: Array<{
     type: 'Feature';
     properties: { color: string; kind?: string };
     geometry: { type: 'LineString' | 'Point'; coordinates: [number, number][] | [number, number] };
   }> = [];
 
-  if (pathData.ingress.length > 1) {
+  for (const spec of specs) {
+    if (spec.ingress.length > 1) {
+      features.push({
+        type: 'Feature',
+        properties: { color: spec.color, kind: 'ingress' },
+        geometry: { type: 'LineString', coordinates: spec.ingress },
+      });
+    }
+
+    if (spec.releasePoint) {
+      features.push({
+        type: 'Feature',
+        properties: { color: spec.color, kind: 'release' },
+        geometry: { type: 'Point', coordinates: spec.releasePoint },
+      });
+    }
+
+    if (spec.munition && spec.munition.length > 1) {
+      features.push({
+        type: 'Feature',
+        properties: { color: spec.munitionColor ?? '#FFB020', kind: 'munition' },
+        geometry: { type: 'LineString', coordinates: spec.munition },
+      });
+    }
+
     features.push({
       type: 'Feature',
-      properties: { color: pathData.color, kind: 'ingress' },
-      geometry: { type: 'LineString', coordinates: pathData.ingress },
+      properties: { color: spec.munitionColor ?? spec.color, kind: 'target' },
+      geometry: { type: 'Point', coordinates: spec.targetPoint },
     });
   }
-
-  if (pathData.releasePoint) {
-    features.push({
-      type: 'Feature',
-      properties: { color: pathData.color, kind: 'release' },
-      geometry: { type: 'Point', coordinates: pathData.releasePoint },
-    });
-  }
-
-  if (pathData.munition && pathData.munition.length > 1) {
-    features.push({
-      type: 'Feature',
-      properties: { color: pathData.munitionColor ?? '#FFB020', kind: 'munition' },
-      geometry: { type: 'LineString', coordinates: pathData.munition },
-    });
-  }
-
-  features.push({
-    type: 'Feature',
-    properties: { color: pathData.munitionColor ?? pathData.color, kind: 'target' },
-    geometry: { type: 'Point', coordinates: pathData.targetPoint },
-  });
 
   source.setData({
     type: 'FeatureCollection',

@@ -16,6 +16,7 @@ import type { WarGames } from '@/lib/useWarGames';
 import { ArmamentsSection } from './wargames/SystemsEditor';
 import { ForcesSection } from './wargames/ForcesSection';
 import { EngagementSection } from './wargames/EngagementSection';
+import { TheaterSection } from './wargames/TheaterSection';
 import { MapSection } from './wargames/MapSection';
 import { ScenariosSection } from './wargames/ScenariosSection';
 import { SectionNav, type Section } from './wargames/SectionNav';
@@ -36,6 +37,7 @@ export default function WarGamesPanel(wg: WarGames) {
           armaments: wg.systems.length,
           forces: wg.board.units.length,
           raid: undefined,
+          theater: wg.theaterPhases.length || undefined,
           boards: wg.scenarios.length || undefined,
         }}
       />
@@ -44,6 +46,7 @@ export default function WarGamesPanel(wg: WarGames) {
       {section === 'armaments' && <ArmamentsSection wg={wg} color={paintColor} />}
       {section === 'forces' && <ForcesSection wg={wg} />}
       {section === 'raid' && <EngagementSection wg={wg} />}
+      {section === 'theater' && <TheaterSection wg={wg} />}
       {section === 'boards' && <ScenariosSection wg={wg} />}
 
       <p className="wg-storage">

@@ -1,0 +1,571 @@
+'use client';
+
+/**
+ * Theater Strike & Multi-Phase Raid Console.
+ *
+ * Coordinates operational-level Air Tasking Orders against defended target complexes:
+ * 1. Target Objective Selection with automated Defensive Umbrella discovery.
+ * 2. Attacker Coalition discovery with weapon reach checks.
+ * 3. Strike Phase Sequencer (OCA Fighter Sweeps, SEAD Radar Strikes, Main Saturation).
+ * 4. State & Magazine Persistence across phases (depleted missiles & suppressed radars persist).
+ * 5. Master Theater After-Action Report (AAR) & Chronological Battle Debrief.
+ */
+
+import { useMemo, useState } from 'react';
+
+import type { WarGames } from '@/lib/useWarGames';
+import { distanceKm } from '@/lib/geo';
+import { unitLabel, type DeployedUnit } from '@/lib/warGames';
+import {
+  type StrikePhaseTask,
+  type PhaseReport,
+  type CandidateAttacker,
+} from '@/lib/theaterEngagement';
+
+const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
+
+function DefensiveUmbrellaView({
+  target,
+  umbrella,
+  wg,
+}: {
+  target: DeployedUnit;
+  umbrella: ReturnType<typeof wg.theaterUmbrella>;
+  wg: WarGames;
+}) {
+  if (!umbrella) return null;
+
+  const totalDefenders =
+    umbrella.samDefenders.length + umbrella.capDefenders.length + umbrella.sensorDefenders.length;
+
+  return (
+    <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
+      <div className="wg-tactical-title">
+        <span>Defensive Umbrella over Objective</span>
+        <span className="wg-tag">{totalDefenders} protective nodes</span>
+      </div>
+
+      <div className="wg-tactical-body">
+        <p style={{ margin: '3px 0' }}>
+          Defending <strong>{unitLabel(target, wg.formations, wg.systems)}</strong> ({wg.board.nations[target.iso]?.name ?? target.iso}):
+        </p>
+
+        {umbrella.samDefenders.length > 0 && (
+          <div style={{ marginTop: '6px' }}>
+            <span style={{ fontSize: '10px', color: '#E8833A', fontWeight: 600 }}>Covering SAM Batteries:</span>
+            <div className="wg-package-pills" style={{ marginTop: '2px' }}>
+              {umbrella.samDefenders.map((s, idx) => (
+                <span key={`sam-${idx}`} className="wg-package-pill" style={{ color: '#E8833A' }}>
+                  {unitLabel(s.unit, wg.formations, wg.systems)}
+                  <em>({km(s.rangeKm)} reach · {km(s.coverageDistanceKm)} out)</em>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {umbrella.capDefenders.length > 0 && (
+          <div style={{ marginTop: '6px' }}>
+            <span style={{ fontSize: '10px', color: '#4DD0E1', fontWeight: 600 }}>Combat Air Patrol (CAP):</span>
+            <div className="wg-package-pills" style={{ marginTop: '2px' }}>
+              {umbrella.capDefenders.map((c, idx) => (
+                <span key={`cap-${idx}`} className="wg-package-pill" style={{ color: '#4DD0E1' }}>
+                  {unitLabel(c.unit, wg.formations, wg.systems)}
+                  <em>({km(c.combatRadiusKm)} radius)</em>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {umbrella.sensorDefenders.length > 0 && (
+          <div style={{ marginTop: '6px' }}>
+            <span style={{ fontSize: '10px', color: '#9AA7B4', fontWeight: 600 }}>Early Warning & AEW&C:</span>
+            <div className="wg-package-pills" style={{ marginTop: '2px' }}>
+              {umbrella.sensorDefenders.map((sn, idx) => (
+                <span key={`sensor-${idx}`} className="wg-package-pill">
+                  {unitLabel(sn.unit, wg.formations, wg.systems)}
+                  <em>({km(sn.detectionKm)} scan)</em>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {totalDefenders === 0 && (
+          <p className="wg-note" style={{ marginTop: '4px' }}>
+            No nearby SAM batteries or CAP fighters cover this objective. Target is isolated and vulnerable.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhaseCard({
+  report,
+  order,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
+}: {
+  report?: PhaseReport;
+  order: number;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  if (!report) return null;
+
+  const isSuccess = report.targetDestroyed || report.targetSuppressed;
+
+  return (
+    <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
+      <div className="wg-tactical-title">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="wg-tag" style={{ background: 'var(--ink)' }}>Phase {order}</span>
+          <span style={{ fontWeight: 600 }}>{report.task.title}</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button
+            className="wg-salvo-btn"
+            style={{ width: '20px', height: '20px', fontSize: '10px' }}
+            disabled={isFirst}
+            onClick={onMoveUp}
+            title="Move phase earlier"
+          >
+            ▲
+          </button>
+          <button
+            className="wg-salvo-btn"
+            style={{ width: '20px', height: '20px', fontSize: '10px' }}
+            disabled={isLast}
+            onClick={onMoveDown}
+            title="Move phase later"
+          >
+            ▼
+          </button>
+          <button
+            className="wg-salvo-btn"
+            style={{ width: '20px', height: '20px', fontSize: '10px', color: '#D9534F' }}
+            onClick={onRemove}
+            title="Delete this phase"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div className="wg-tactical-body">
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '11px' }}>
+          <span>
+            <strong>{report.attackerLabel}</strong> ──► <strong>{report.targetLabel}</strong>
+          </span>
+          <span className={`wg-tag ${isSuccess ? 'success' : 'loss'}`}>
+            {report.targetDestroyed ? 'Target Destroyed' : report.targetSuppressed ? 'Suppressed' : 'Defended'}
+          </span>
+        </div>
+
+        <p style={{ margin: '4px 0', fontSize: '11px', color: 'var(--paper-dim)' }}>
+          Fired <strong>{report.salvoCommitted} × {report.weaponName}</strong>. {report.munitionsImpacted} impacted objective ({report.munitionsIntercepted} intercepted).
+        </p>
+
+        <p className="wg-note" style={{ color: isSuccess ? '#4FA85F' : '#D9534F', marginTop: '3px' }}>
+          ✦ {report.targetDamageSummary}
+        </p>
+
+        {/* Expandable Phase Log */}
+        <div style={{ marginTop: '6px' }}>
+          <button
+            className="wg-btn"
+            style={{ fontSize: '9px', padding: '2px 6px' }}
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? 'Hide Phase Timeline' : `View ${report.battleLog.length} Phase Events`}
+          </button>
+
+          {expanded && (
+            <ol className="wg-battlelog" style={{ marginTop: '8px' }}>
+              {report.battleLog.map((evt) => (
+                <li key={evt.id} className="wg-battlelog-item">
+                  <span className={`wg-battlelog-dot ${evt.badge?.variant ?? 'neutral'}`} />
+                  <div className="wg-battlelog-card">
+                    <div className="wg-battlelog-header">
+                      <div className="wg-battlelog-meta">
+                        <span className="wg-battlelog-time">{evt.timeFormatted}</span>
+                        <span className="wg-battlelog-title">{evt.title}</span>
+                      </div>
+                      {evt.badge && (
+                        <span className={`wg-tag ${evt.badge.variant === 'neutral' ? '' : evt.badge.variant}`}>
+                          {evt.badge.text}
+                        </span>
+                      )}
+                    </div>
+                    <p className="wg-battlelog-detail">{evt.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TheaterSection({ wg }: { wg: WarGames }) {
+  const {
+    board,
+    theaterTargetId,
+    setTheaterTargetId,
+    theaterAttackerIso,
+    setTheaterAttackerIso,
+    theaterPhases,
+    addTheaterPhase,
+    removeTheaterPhase,
+    reorderTheaterPhase,
+    theaterUmbrella,
+    theaterAttackers,
+    theaterAssessment,
+  } = wg;
+
+  // New Phase Form State
+  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike'>('sead');
+  const [newAttackerId, setNewAttackerId] = useState<string>('');
+  const [newTargetId, setNewTargetId] = useState<string>('');
+  const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
+  const [newSalvo, setNewSalvo] = useState<number>(4);
+
+  // Targets candidates: all units on board
+  const targetCandidates = board.units;
+  const targetUnit = board.units.find((u) => u.id === theaterTargetId) ?? null;
+
+  // Opposing nations
+  const opposingNations = useMemo(() => {
+    if (!targetUnit) return [];
+    return Object.keys(board.nations).filter((iso) => iso !== targetUnit.iso);
+  }, [board.nations, targetUnit]);
+
+  // Target options for a phase: Main target + all umbrella SAMs + CAPs
+  const phaseTargetOptions = useMemo(() => {
+    if (!targetUnit || !theaterUmbrella) return [];
+    const list: { id: string; label: string; kind: string }[] = [
+      { id: targetUnit.id, label: `${unitLabel(targetUnit, wg.formations, wg.systems)} (PRIMARY OBJECTIVE)`, kind: 'objective' },
+    ];
+    for (const sam of theaterUmbrella.samDefenders) {
+      list.push({ id: sam.unit.id, label: `${unitLabel(sam.unit, wg.formations, wg.systems)} (SAM Radar)`, kind: 'sam' });
+    }
+    for (const cap of theaterUmbrella.capDefenders) {
+      list.push({ id: cap.unit.id, label: `${unitLabel(cap.unit, wg.formations, wg.systems)} (CAP Fighter Flight)`, kind: 'cap' });
+    }
+    return list;
+  }, [targetUnit, theaterUmbrella, wg.formations, wg.systems]);
+
+  // Available weapons on selected new attacker
+  const selectedAttackerCandidate = theaterAttackers.find((a) => a.unit.id === newAttackerId);
+  const availableWeapons = selectedAttackerCandidate?.availableWeapons ?? [];
+  const activeWeapon = availableWeapons[newWeaponIndex] ?? availableWeapons[0];
+  const maxMag = activeWeapon?.maxMagazine ?? 4;
+
+  const handleAddPhase = () => {
+    if (!newAttackerId || !newTargetId) return;
+
+    let defaultTitle = 'Main Objective Saturation Strike';
+    if (newCategory === 'oca') defaultTitle = 'Offensive Counter-Air (CAP Sweep)';
+    if (newCategory === 'sead') defaultTitle = 'SEAD Anti-Radiation SAM Strike';
+
+    addTheaterPhase({
+      title: defaultTitle,
+      category: newCategory,
+      attackerUnitId: newAttackerId,
+      targetUnitId: newTargetId,
+      weaponIndex: newWeaponIndex,
+      salvoSize: Math.min(maxMag, Math.max(1, newSalvo)),
+      altitudeM: 3000,
+    });
+  };
+
+  return (
+    <>
+      {/* Step 1: Target Objective & Defensive Umbrella */}
+      <section className="wg-block">
+        <h3 className="wg-h">
+          1. Target Objective & Defenses
+        </h3>
+
+        <label className="wg-field wide">
+          <span>
+            Primary Objective <em>target complex</em>
+          </span>
+          <select
+            value={theaterTargetId ?? ''}
+            onChange={(e) => {
+              setTheaterTargetId(e.target.value || null);
+              setNewTargetId(e.target.value || '');
+            }}
+          >
+            <option value="">Choose objective to attack…</option>
+            {targetCandidates.map((u) => (
+              <option key={u.id} value={u.id}>
+                {wg.board.nations[u.iso]?.name ?? u.iso} — {unitLabel(u, wg.formations, wg.systems)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {targetUnit && theaterUmbrella && (
+          <DefensiveUmbrellaView target={targetUnit} umbrella={theaterUmbrella} wg={wg} />
+        )}
+      </section>
+
+      {/* Step 2: Attacker Coalition & Assets */}
+      {targetUnit && (
+        <section className="wg-block">
+          <h3 className="wg-h">
+            2. Attacking Force
+          </h3>
+
+          <label className="wg-field wide">
+            <span>
+              Attacking Nation <em>coalition</em>
+            </span>
+            <select
+              value={theaterAttackerIso ?? ''}
+              onChange={(e) => setTheaterAttackerIso(e.target.value || null)}
+            >
+              <option value="">Choose attacking country…</option>
+              {opposingNations.map((iso) => (
+                <option key={iso} value={iso}>
+                  {wg.board.nations[iso]?.name ?? iso}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {theaterAttackerIso && (
+            <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
+              <div className="wg-tactical-title">
+                <span>Available Strike Platforms in Theater</span>
+                <span className="wg-tag">{theaterAttackers.length} ready</span>
+              </div>
+              <div className="wg-package-pills">
+                {theaterAttackers.map((att, idx) => (
+                  <span key={idx} className="wg-package-pill">
+                    <strong>{unitLabel(att.unit, wg.formations, wg.systems)}</strong>
+                    <em>({km(att.distanceToTargetKm)} to target)</em>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Step 3: Air Tasking Order & Strike Phase Sequencer */}
+      {targetUnit && theaterAttackerIso && (
+        <section className="wg-block">
+          <h3 className="wg-h">
+            3. Air Tasking Order (Strike Phases)
+            <span className="wg-h-note">{theaterPhases.length} phases planned</span>
+          </h3>
+
+          {/* Builder Form */}
+          <div className="wg-tactical-card" style={{ background: 'color-mix(in srgb, var(--ink) 60%, var(--surface))' }}>
+            <div className="wg-tactical-title">
+              <span>+ Add Strike Wave / Phase</span>
+            </div>
+
+            <div className="wg-tactical-grid">
+              <label className="wg-field">
+                <span>Strike Category</span>
+                <select
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value as any)}
+                  style={{ fontSize: '11px' }}
+                >
+                  <option value="oca">Fighter Sweep (OCA)</option>
+                  <option value="sead">SEAD (SAM Radar Strike)</option>
+                  <option value="strike">Main Strike (Saturation)</option>
+                </select>
+              </label>
+
+              <label className="wg-field">
+                <span>Attacking Unit</span>
+                <select
+                  value={newAttackerId}
+                  onChange={(e) => {
+                    setNewAttackerId(e.target.value);
+                    setNewWeaponIndex(0);
+                  }}
+                  style={{ fontSize: '11px' }}
+                >
+                  <option value="">Select attacker…</option>
+                  {theaterAttackers.map((a) => (
+                    <option key={a.unit.id} value={a.unit.id}>
+                      {unitLabel(a.unit, wg.formations, wg.systems)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="wg-tactical-grid">
+              <label className="wg-field">
+                <span>Phase Target</span>
+                <select
+                  value={newTargetId}
+                  onChange={(e) => setNewTargetId(e.target.value)}
+                  style={{ fontSize: '11px' }}
+                >
+                  <option value="">Select target node…</option>
+                  {phaseTargetOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="wg-field">
+                <span>Weapon System</span>
+                <select
+                  value={newWeaponIndex}
+                  onChange={(e) => setNewWeaponIndex(Number(e.target.value))}
+                  style={{ fontSize: '11px' }}
+                >
+                  {availableWeapons.map((w, idx) => (
+                    <option key={idx} value={idx}>
+                      {w.weapon.name ?? 'Munition'} ({km(w.weapon.rangeKm)} reach · {w.maxMagazine} ready)
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {/* Salvo Size for new phase */}
+            <div className="wg-salvo-container" style={{ marginTop: '8px' }}>
+              <div className="wg-salvo-header">
+                <span>Salvo Size Committed</span>
+                <span>Max Ready: {maxMag}</span>
+              </div>
+              <div className="wg-salvo-stepper">
+                <button
+                  className="wg-salvo-btn"
+                  disabled={newSalvo <= 1}
+                  onClick={() => setNewSalvo(Math.max(1, newSalvo - 1))}
+                >
+                  −
+                </button>
+                <div className="wg-salvo-val">{newSalvo}</div>
+                <button
+                  className="wg-salvo-btn"
+                  disabled={newSalvo >= maxMag}
+                  onClick={() => setNewSalvo(Math.min(maxMag, newSalvo + 1))}
+                >
+                  +
+                </button>
+                <div style={{ flex: 1, fontSize: '10px', color: 'var(--paper-dim)', marginLeft: '6px' }}>
+                  {newSalvo} missiles committed for this wave
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="wg-btn"
+              style={{ width: '100%', marginTop: '8px', padding: '6px 8px', fontSize: '11px' }}
+              disabled={!newAttackerId || !newTargetId}
+              onClick={handleAddPhase}
+            >
+              + Add Phase to Air Tasking Order
+            </button>
+          </div>
+
+          {/* List of configured phases */}
+          {theaterAssessment && theaterAssessment.phases.map((rep, idx) => (
+            <PhaseCard
+              key={rep.task.id}
+              report={rep}
+              order={idx + 1}
+              onRemove={() => removeTheaterPhase(rep.task.id)}
+              onMoveUp={() => reorderTheaterPhase(idx, idx - 1)}
+              onMoveDown={() => reorderTheaterPhase(idx, idx + 1)}
+              isFirst={idx === 0}
+              isLast={idx === theaterAssessment.phases.length - 1}
+            />
+          ))}
+        </section>
+      )}
+
+      {/* Step 4: Master Theater After-Action Report (AAR) */}
+      {theaterAssessment && (
+        <section className="wg-block">
+          <h3 className="wg-h">
+            4. Theater Battle Debrief
+          </h3>
+
+          <div
+            className={`wg-outcome-banner ${
+              theaterAssessment.primaryTargetStatus === 'destroyed'
+                ? 'attacker'
+                : theaterAssessment.primaryTargetStatus === 'damaged'
+                  ? 'contested'
+                  : 'defender'
+            }`}
+          >
+            <div className="wg-outcome-title">{theaterAssessment.overallHeadline}</div>
+            <div className="wg-outcome-desc">{theaterAssessment.overallVerdict}</div>
+
+            <div className="wg-aar-grid">
+              <div className="wg-aar-col">
+                <h5>Attacker Results</h5>
+                <ul className="wg-aar-list">
+                  {theaterAssessment.cumulativeAttackerSurvivors.map((s, idx) => (
+                    <li key={`att-surv-${idx}`} style={{ color: '#4FA85F' }}>
+                      <span>{s.name}</span>
+                      <strong>{s.count}</strong>
+                    </li>
+                  ))}
+                  {theaterAssessment.cumulativeAttackerLosses.map((l, idx) => (
+                    <li key={`att-loss-${idx}`} style={{ color: l.count > 0 ? '#D9534F' : 'var(--paper-dim)' }}>
+                      <span>{l.name}</span>
+                      <strong>{l.count}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="wg-aar-col">
+                <h5>Defender Casualties</h5>
+                <ul className="wg-aar-list">
+                  {theaterAssessment.cumulativeDefenderLosses.map((d, idx) => (
+                    <li
+                      key={`def-loss-${idx}`}
+                      style={{
+                        color:
+                          d.status === 'destroyed'
+                            ? '#D9534F'
+                            : d.status === 'suppressed'
+                              ? '#E8833A'
+                              : '#4FA85F',
+                      }}
+                    >
+                      <span>{d.name}</span>
+                      <strong>{d.status.toUpperCase()}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}

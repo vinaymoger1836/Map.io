@@ -14,13 +14,14 @@
  * session rather than throughout it.
  */
 
-export type Section = 'map' | 'armaments' | 'forces' | 'raid' | 'boards';
+export type Section = 'map' | 'armaments' | 'forces' | 'raid' | 'theater' | 'boards';
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   { id: 'map', label: 'Map', hint: 'Paint nations, deploy units, and set what the map draws' },
   { id: 'armaments', label: 'Armaments', hint: 'What every system is — specifications, sources, and your own' },
   { id: 'forces', label: 'Forces', hint: 'What each nation has on the board' },
-  { id: 'raid', label: 'Raid', hint: 'Fly a raid at something and see what the defence does to it' },
+  { id: 'raid', label: 'Raid', hint: 'Fly a single raid and assess air defence response' },
+  { id: 'theater', label: 'Theater', hint: 'Coordinate multi-phase theater strikes against defended targets' },
   { id: 'boards', label: 'Boards', hint: 'Save and load scenarios, and carry a board to another machine' },
 ];
 

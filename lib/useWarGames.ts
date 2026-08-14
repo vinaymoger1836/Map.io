@@ -53,6 +53,15 @@ import {
   type Assessment,
   type BoardContext,
 } from './engagement';
+import {
+  assessTheaterRaid,
+  discoverAttackerAssets,
+  discoverDefensiveUmbrella,
+  type CandidateAttacker,
+  type DefensiveUmbrella,
+  type StrikePhaseTask,
+  type TheaterAssessment,
+} from './theaterEngagement';
 import { greatCirclePath } from './geo';
 import {
   EMPTY_FORCES,
@@ -232,6 +241,20 @@ export interface WarGames {
   selectedSeadEscortId: string | null;
   setSelectedSeadEscortId: (id: string | null) => void;
 
+  /* Theater Multi-Phase Raid Operations */
+  theaterTargetId: string | null;
+  setTheaterTargetId: (id: string | null) => void;
+  theaterAttackerIso: string | null;
+  setTheaterAttackerIso: (iso: string | null) => void;
+  theaterPhases: StrikePhaseTask[];
+  setTheaterPhases: React.Dispatch<React.SetStateAction<StrikePhaseTask[]>>;
+  addTheaterPhase: (phase: Omit<StrikePhaseTask, 'id' | 'order'>) => void;
+  removeTheaterPhase: (id: string) => void;
+  reorderTheaterPhase: (fromIndex: number, toIndex: number) => void;
+  theaterUmbrella: DefensiveUmbrella | null;
+  theaterAttackers: CandidateAttacker[];
+  theaterAssessment: TheaterAssessment | null;
+
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
   setCoverageMode: (mode: CoverageState['mode']) => void;
@@ -317,6 +340,11 @@ export function useWarGames({
   const [salvoSize, setSalvoSize] = useState<number | null>(null);
   const [selectedEwEscortId, setSelectedEwEscortId] = useState<string | null>(null);
   const [selectedSeadEscortId, setSelectedSeadEscortId] = useState<string | null>(null);
+
+  /* Theater Raid State */
+  const [theaterTargetId, setTheaterTargetId] = useState<string | null>(null);
+  const [theaterAttackerIso, setTheaterAttackerIso] = useState<string | null>(null);
+  const [theaterPhases, setTheaterPhases] = useState<StrikePhaseTask[]>([]);
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
@@ -1292,11 +1320,67 @@ export function useWarGames({
     selectedSeadEscortId,
   ]);
 
+  /* ---------------- theater raid ---------------- */
+
+  const theaterUmbrella = useMemo(() => {
+    if (!theaterTargetId) return null;
+    const target = board.units.find((u) => u.id === theaterTargetId);
+    if (!target) return null;
+    return discoverDefensiveUmbrella(target, board.units, boardContext);
+  }, [theaterTargetId, board.units, boardContext]);
+
+  const theaterAttackers = useMemo(() => {
+    if (!theaterAttackerIso || !theaterUmbrella) return [];
+    const target = board.units.find((u) => u.id === theaterTargetId);
+    if (!target) return [];
+    return discoverAttackerAssets(theaterAttackerIso, target, theaterUmbrella, board.units, boardContext);
+  }, [theaterAttackerIso, theaterTargetId, theaterUmbrella, board.units, boardContext]);
+
+  const theaterAssessment = useMemo(() => {
+    if (!theaterTargetId || !theaterAttackerIso || theaterPhases.length === 0) return null;
+    return assessTheaterRaid(theaterTargetId, theaterAttackerIso, theaterPhases, board.units, boardContext);
+  }, [theaterTargetId, theaterAttackerIso, theaterPhases, board.units, boardContext]);
+
+  const addTheaterPhase = useCallback(
+    (phase: Omit<StrikePhaseTask, 'id' | 'order'>) => {
+      setTheaterPhases((prev) => [
+        ...prev,
+        {
+          ...phase,
+          id: `phase-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          order: prev.length + 1,
+        },
+      ]);
+    },
+    []
+  );
+
+  const removeTheaterPhase = useCallback((id: string) => {
+    setTheaterPhases((prev) =>
+      prev.filter((p) => p.id !== id).map((p, idx) => ({ ...p, order: idx + 1 }))
+    );
+  }, []);
+
+  const reorderTheaterPhase = useCallback((fromIndex: number, toIndex: number) => {
+    setTheaterPhases((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next.map((p, idx) => ({ ...p, order: idx + 1 }));
+    });
+  }, []);
+
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !hydratedRef.current) return;
+
+    if (theaterAssessment && theaterAssessment.pathSpecs.length > 0) {
+      setRaidPath(map, theaterAssessment.pathSpecs);
+      return;
+    }
+
     if (!assessment || assessment.blocked) {
       setRaidPath(map, null);
       return;
@@ -1318,7 +1402,7 @@ export function useWarGames({
     } else {
       setRaidPath(map, greatCirclePath(from, to, 128), color);
     }
-  }, [assessment, raidFromId, board.nations, board.units, mapRef]);
+  }, [assessment, theaterAssessment, raidFromId, board.nations, board.units, mapRef]);
 
   // A raid whose ends have left the board is not a raid — and neither is one
   // aimed at its own side, which is what changing the raider to a unit of the
@@ -1406,6 +1490,18 @@ export function useWarGames({
     setSelectedEwEscortId,
     selectedSeadEscortId,
     setSelectedSeadEscortId,
+    theaterTargetId,
+    setTheaterTargetId,
+    theaterAttackerIso,
+    setTheaterAttackerIso,
+    theaterPhases,
+    setTheaterPhases,
+    addTheaterPhase,
+    removeTheaterPhase,
+    reorderTheaterPhase,
+    theaterUmbrella,
+    theaterAttackers,
+    theaterAssessment,
     coverage,
     setCoverageMode,
     toggleCoverageKind,
