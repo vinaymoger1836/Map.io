@@ -468,6 +468,32 @@ export function standoffWeapons(spec: SystemSpec): { weapon: WeaponFacet; index:
   return out;
 }
 
+/**
+ * Calculates the maximum available magazine capacity for a given weapon on a platform,
+ * taking into account custom loadouts, ready magazine cells, VLS cells, and unit count.
+ */
+export function maxMunitionCapacity(
+  spec: SystemSpec,
+  weapon: WeaponFacet,
+  unitCount = 1,
+  loadoutItemCount?: number
+): number {
+  if (loadoutItemCount !== undefined && loadoutItemCount > 0) {
+    return loadoutItemCount * unitCount;
+  }
+  if (weapon.magazine !== undefined && weapon.magazine > 0) {
+    return weapon.magazine * unitCount;
+  }
+  if (spec.platform?.vls !== undefined && spec.platform.vls > 0) {
+    return spec.platform.vls * unitCount;
+  }
+  const domain = domainOf(spec);
+  if (domain === 'sea' || domain === 'sub' || domain === 'site') {
+    return 16 * unitCount;
+  }
+  return Math.max(1, (weapon.salvo ?? 2) * 2) * unitCount;
+}
+
 /* ------------------------------------------------------------------ */
 /* Presentation                                                        */
 /* ------------------------------------------------------------------ */

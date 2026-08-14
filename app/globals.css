@@ -2335,6 +2335,100 @@ button {
   margin-left: 4px;
 }
 
+/* Salvo Size & Saturation Controls */
+.wg-salvo-container {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--ink) 50%, var(--surface));
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+}
+
+.wg-salvo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-salvo-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.wg-salvo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  background: color-mix(in srgb, var(--paper-dim) 15%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wg-salvo-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--paper-dim) 25%, transparent);
+  border-color: var(--brass);
+}
+
+.wg-salvo-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.wg-salvo-val {
+  min-width: 44px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brass);
+  font-variant-numeric: tabular-nums;
+}
+
+.wg-salvo-presets {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.wg-salvo-preset-btn {
+  flex: 1;
+  padding: 3px 4px;
+  background: color-mix(in srgb, var(--paper-dim) 10%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: var(--paper-dim);
+  text-align: center;
+  cursor: pointer;
+}
+
+.wg-salvo-preset-btn:hover {
+  color: var(--paper);
+  border-color: var(--paper-dim);
+}
+
+.wg-salvo-preset-btn.active {
+  color: var(--ink);
+  background: var(--brass);
+  border-color: var(--brass);
+  font-weight: 600;
+}
+
 /* ---------- Chronological Battle Log & AAR ---------- */
 
 .wg-outcome-banner {

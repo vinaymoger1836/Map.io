@@ -15,6 +15,7 @@ import { effectiveSpec, type MunitionCatalogue } from './munitions';
 import {
   domainOf,
   effectiveDetectionKm,
+  maxMunitionCapacity,
   radarHorizonKm,
   signatureRangeMultiplier,
   standoffWeapons,
@@ -297,7 +298,14 @@ function lossesFrom(
 export function assess(raid: Raid, defenders: Defender[]): Assessment {
   const threat = threatClassOf(raid.spec);
   const totalKm = distanceKm(raid.from, raid.to);
-  const speedKmh = speedOf(raid.spec);
+  const isStandoff = Boolean(raid.standoff?.enabled && raid.standoff.rangeKm > 0);
+  const standoffRange = isStandoff ? raid.standoff!.rangeKm : 0;
+  const releaseKm = isStandoff ? Math.max(0, totalKm - standoffRange) : totalKm;
+  const releaseFraction = totalKm > 0 ? releaseKm / totalKm : 0;
+  const releaseLngLat = isStandoff ? interpolate(raid.from, raid.to, releaseFraction) : undefined;
+
+  const rawSpeed = speedOf(raid.spec);
+  const speedKmh = rawSpeed ?? (isStandoff ? raid.standoff?.munitionSpeedKmh ?? 900 : null);
 
   const defaultOutcome: BattleOutcome = {
     winner: 'unopposed',
@@ -325,12 +333,6 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
 
   if (totalKm < 1e-6) return { ...base, blocked: 'no-distance' };
   if (!speedKmh) return { ...base, blocked: 'no-speed' };
-
-  const isStandoff = Boolean(raid.standoff?.enabled && raid.standoff.rangeKm > 0);
-  const standoffRange = isStandoff ? raid.standoff!.rangeKm : 0;
-  const releaseKm = isStandoff ? Math.max(0, totalKm - standoffRange) : totalKm;
-  const releaseFraction = totalKm > 0 ? releaseKm / totalKm : 0;
-  const releaseLngLat = isStandoff ? interpolate(raid.from, raid.to, releaseFraction) : undefined;
 
   const hasEwJammer = (raid.escorts?.ewCount ?? 0) > 0;
   const seadSquadrons = raid.escorts?.seadCount ?? 0;
@@ -1044,13 +1046,22 @@ const isStrikeType = (typeId: string): boolean =>
 
 export function canRaid(unit: DeployedUnit, ctx: BoardContext): boolean {
   if (unit.kind === 'unit') {
-    return Boolean(specOf(unit, ctx)?.platform?.speedKmh);
+    const spec = specOf(unit, ctx);
+    if (!spec) return false;
+    const hasSpeed = Boolean(spec.platform?.speedKmh && spec.platform.speedKmh > 0);
+    const hasStandoff = standoffWeapons(spec).length > 0;
+    return hasSpeed || hasStandoff;
   }
   if (unit.kind === 'formation') {
     return unit.composition.some((p) => {
       if (p.count <= 0) return false;
       const spec = systemById(ctx.systems, p.systemId);
-      return (spec?.platform?.speedKmh && spec.platform.speedKmh > 0) || isStrikeType(p.typeId);
+      if (!spec) return false;
+      return (
+        (spec.platform?.speedKmh && spec.platform.speedKmh > 0) ||
+        standoffWeapons(spec).length > 0 ||
+        isStrikeType(p.typeId)
+      );
     });
   }
   return false;
@@ -1059,6 +1070,7 @@ export function canRaid(unit: DeployedUnit, ctx: BoardContext): boolean {
 export interface RaidOptions {
   standoffEnabled?: boolean;
   weaponIndex?: number;
+  salvoSize?: number;
   ewUnitId?: string | null;
   seadUnitId?: string | null;
 }
@@ -1170,12 +1182,20 @@ export function raidFrom(
     if (chosen) {
       const w = chosen.weapon;
       const isEnabled = options.standoffEnabled !== false && w.rangeKm > 0;
+      const loadoutItem = unit.kind === 'unit' ? unit.loadout?.find((l) => l.id === w.id) : undefined;
+      const maxCap = maxMunitionCapacity(spec, w, count, loadoutItem?.count);
+      const desiredSalvo =
+        options.salvoSize !== undefined && options.salvoSize > 0
+          ? options.salvoSize
+          : Math.min(maxCap, Math.max(1, (w.salvo ?? (w.magazine ? Math.min(w.magazine, 4) : 4)) * count));
+      const munitionCount = Math.min(maxCap, Math.max(1, desiredSalvo));
+
       standoff = {
         enabled: isEnabled,
         weaponIndex: chosen.index,
         weaponName: w.name ?? 'Stand-off munition',
         rangeKm: w.rangeKm,
-        munitionCount: Math.max(1, w.salvo ?? (w.magazine ? Math.min(w.magazine, 4) : 2)),
+        munitionCount,
         munitionSignature: (w.rangeKm > 300 ? 'low' : 'medium') as 'low' | 'medium' | 'high',
         munitionSpeedKmh: 950,
       };

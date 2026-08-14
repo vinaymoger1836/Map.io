@@ -225,6 +225,8 @@ export interface WarGames {
   setStandoffEnabled: (v: boolean) => void;
   selectedWeaponIndex: number;
   setSelectedWeaponIndex: (idx: number) => void;
+  salvoSize: number | null;
+  setSalvoSize: (n: number | null) => void;
   selectedEwEscortId: string | null;
   setSelectedEwEscortId: (id: string | null) => void;
   selectedSeadEscortId: string | null;
@@ -312,6 +314,7 @@ export function useWarGames({
   const [raidToId, setRaidToId] = useState<string | null>(null);
   const [standoffEnabled, setStandoffEnabled] = useState<boolean>(true);
   const [selectedWeaponIndex, setSelectedWeaponIndex] = useState<number>(0);
+  const [salvoSize, setSalvoSize] = useState<number | null>(null);
   const [selectedEwEscortId, setSelectedEwEscortId] = useState<string | null>(null);
   const [selectedSeadEscortId, setSelectedSeadEscortId] = useState<string | null>(null);
 
@@ -1269,6 +1272,7 @@ export function useWarGames({
       {
         standoffEnabled,
         weaponIndex: selectedWeaponIndex,
+        salvoSize: salvoSize ?? undefined,
         ewUnitId: selectedEwEscortId,
         seadUnitId: selectedSeadEscortId,
       }
@@ -1283,6 +1287,7 @@ export function useWarGames({
     coverage.targetAltM,
     standoffEnabled,
     selectedWeaponIndex,
+    salvoSize,
     selectedEwEscortId,
     selectedSeadEscortId,
   ]);
@@ -1395,6 +1400,8 @@ export function useWarGames({
     setStandoffEnabled,
     selectedWeaponIndex,
     setSelectedWeaponIndex,
+    salvoSize,
+    setSalvoSize,
     selectedEwEscortId,
     setSelectedEwEscortId,
     selectedSeadEscortId,

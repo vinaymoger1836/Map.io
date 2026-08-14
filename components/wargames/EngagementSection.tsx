@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * Enhanced Raid & Engagement Console with Chronological Battle Log.
+ * Enhanced Raid & Engagement Console with Chronological Battle Log & Salvo Sizing.
  *
  * Provides:
- * 1. Whole-integer casualty counting (no fractions of aircraft)
- * 2. After-Action Report (AAR) identifying victor, damage, and losses
- * 3. Step-by-step chronological Battle Log timeline
- * 4. Stealth RCS dynamics, stand-off weapon release, and EW/SEAD escorts
+ * 1. User-configurable strike salvo sizing bounded by platform magazine capacity
+ * 2. Whole-integer casualty counting (no fractions of aircraft/missiles)
+ * 3. After-Action Report (AAR) identifying victor, damage, and losses
+ * 4. Step-by-step chronological Battle Log timeline
+ * 5. Stealth RCS dynamics, stand-off weapon release, and EW/SEAD escorts
  */
 
 import { useMemo, useState } from 'react';
@@ -15,13 +16,12 @@ import { useMemo, useState } from 'react';
 import type { WarGames } from '@/lib/useWarGames';
 import {
   attrition,
-  verdict,
   type Assessment,
   type BattleLogEntry,
   type SilentReason,
 } from '@/lib/engagement';
 import { distanceKm } from '@/lib/geo';
-import { standoffWeapons, TARGET_LABEL } from '@/lib/specs';
+import { maxMunitionCapacity, standoffWeapons, TARGET_LABEL } from '@/lib/specs';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
@@ -175,8 +175,8 @@ function Result({ a }: { a: Assessment }) {
               </div>
               <div className="wg-tactical-body">
                 <p style={{ margin: '4px 0' }}>
-                  <strong>{Math.round(a.aircraftSurviving.stated)}</strong> of {a.raid.count} launch aircraft
-                  egress safely{' '}
+                  <strong>{Math.round(a.aircraftSurviving.stated)}</strong> of {a.raid.count} launch platforms
+                  safe at standoff{' '}
                   {a.aircraftLost.stated > 0 && (
                     <span style={{ color: '#E4572E' }}>
                       ({Math.round(a.aircraftLost.stated)} lost during {km(a.releaseKm ?? 0)} ingress)
@@ -189,12 +189,12 @@ function Result({ a }: { a: Assessment }) {
                   {Math.round(a.leakers.high) !== Math.round(a.leakers.low) && (
                     <> (est. {Math.round(a.leakers.low)} – {Math.round(a.leakers.high)})</>
                   )}{' '}
-                  of {Math.round(a.standoffLaunched ?? 0)} <em>{a.raid.standoff?.weaponName}</em> stand-off munitions
+                  of {Math.round(a.standoffLaunched ?? 0)} <em>{a.raid.standoff?.weaponName}</em> missiles
                   impact objective.
                 </p>
                 <span className="wg-leakers-sub">
-                  Released at {km(a.distanceKm - (a.releaseKm ?? 0))} stand-off range · {km(a.distanceKm)} total run ·{' '}
-                  Munitions engaged as <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
+                  Launched at {km(a.distanceKm - (a.releaseKm ?? 0))} standoff reach · {km(a.distanceKm)} total run ·{' '}
+                  Missiles engaged as <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
                 </span>
               </div>
             </>
@@ -351,6 +351,8 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
     setStandoffEnabled,
     selectedWeaponIndex,
     setSelectedWeaponIndex,
+    salvoSize,
+    setSalvoSize,
     selectedEwEscortId,
     setSelectedEwEscortId,
     selectedSeadEscortId,
@@ -393,6 +395,28 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
 
   const availableStandoff = attackerSpec ? standoffWeapons(attackerSpec) : [];
 
+  const activeStandoff = availableStandoff[selectedWeaponIndex] ?? availableStandoff[0];
+
+  const maxSalvo = useMemo(() => {
+    if (!attackerSpec || !activeStandoff || !attacker) return 1;
+    const unitCount = attacker.kind === 'unit' ? attacker.count : 1;
+    const loadoutItem =
+      attacker.kind === 'unit'
+        ? attacker.loadout?.find((l) => l.id === activeStandoff.weapon.id)
+        : undefined;
+    return maxMunitionCapacity(attackerSpec, activeStandoff.weapon, unitCount, loadoutItem?.count);
+  }, [attackerSpec, activeStandoff, attacker]);
+
+  const currentSalvo = useMemo(() => {
+    if (salvoSize !== null) return Math.min(maxSalvo, Math.max(1, salvoSize));
+    if (!activeStandoff || !attacker) return 1;
+    const unitCount = attacker.kind === 'unit' ? attacker.count : 1;
+    const defaultPerUnit =
+      activeStandoff.weapon.salvo ??
+      (activeStandoff.weapon.magazine ? Math.min(activeStandoff.weapon.magazine, 4) : 4);
+    return Math.min(maxSalvo, Math.max(1, defaultPerUnit * unitCount));
+  }, [salvoSize, maxSalvo, activeStandoff, attacker]);
+
   const reach = attackerSpec?.platform;
   const radius = reach?.combatRadiusKm;
   const refuelled = reach?.refuelledRadiusKm;
@@ -411,12 +435,15 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
 
         <Picker
           label="Flown by"
-          hint="a unit or strike package"
+          hint="a unit, ship, or strike package"
           units={wg.raidCandidates}
           value={raidFromId}
-          onChange={wg.setRaidFrom}
+          onChange={(id) => {
+            wg.setRaidFrom(id);
+            setSalvoSize(null);
+          }}
           wg={wg}
-          emptyText="Nothing on the board can fly a raid. Deploy a strike aircraft, fighter, or strike package with recorded speed."
+          emptyText="Nothing on the board can launch a strike. Deploy a strike aircraft, fighter, warship, or missile launcher."
         />
 
         {assessment?.raid.isComposite && assessment.raid.packageDetails && (
@@ -487,10 +514,11 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           onChange={wg.setRaidTo}
           wg={wg}
           emptyText={
-            attacker ? 'Nothing belonging to another nation is on the board.' : 'Pick a raider first.'
+            attacker ? 'Nothing belonging to another nation is on the board.' : 'Pick an attacker first.'
           }
         />
 
+        {/* Stand-Off Weapon Controls & Salvo Sizing */}
         {availableStandoff.length > 0 && (
           <div className="wg-tactical-card">
             <div className="wg-tactical-title">
@@ -509,7 +537,10 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
               <div style={{ marginTop: '6px' }}>
                 <select
                   value={selectedWeaponIndex}
-                  onChange={(e) => setSelectedWeaponIndex(Number(e.target.value))}
+                  onChange={(e) => {
+                    setSelectedWeaponIndex(Number(e.target.value));
+                    setSalvoSize(null);
+                  }}
                   style={{ width: '100%', fontSize: '11px' }}
                 >
                   {availableStandoff.map(({ weapon }, idx) => (
@@ -518,15 +549,82 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
                     </option>
                   ))}
                 </select>
-                <p className="wg-note" style={{ marginTop: '4px' }}>
-                  Aircraft ingresses to release range, launches stand-off munitions, and egresses safely.
-                  Inner SAM belts engage the munitions.
+
+                {/* Salvo Size Stepper & Presets */}
+                <div className="wg-salvo-container">
+                  <div className="wg-salvo-header">
+                    <span>Strike Salvo Size</span>
+                    <span>Max Magazine: {maxSalvo}</span>
+                  </div>
+
+                  <div className="wg-salvo-stepper">
+                    <button
+                      className="wg-salvo-btn"
+                      disabled={currentSalvo <= 1}
+                      onClick={() => setSalvoSize(Math.max(1, currentSalvo - 1))}
+                      title="Decrease salvo by 1"
+                    >
+                      −
+                    </button>
+                    <div className="wg-salvo-val">{currentSalvo}</div>
+                    <button
+                      className="wg-salvo-btn"
+                      disabled={currentSalvo >= maxSalvo}
+                      onClick={() => setSalvoSize(Math.min(maxSalvo, currentSalvo + 1))}
+                      title="Increase salvo by 1"
+                    >
+                      +
+                    </button>
+
+                    <div style={{ flex: 1, fontSize: '10px', color: 'var(--paper-dim)', marginLeft: '6px' }}>
+                      {currentSalvo === 1 ? 'Single missile' : `${currentSalvo} missiles committed`}
+                    </div>
+                  </div>
+
+                  {maxSalvo > 1 && (
+                    <div className="wg-salvo-presets">
+                      <button
+                        className={`wg-salvo-preset-btn${currentSalvo === 1 ? ' active' : ''}`}
+                        onClick={() => setSalvoSize(1)}
+                      >
+                        Single (1)
+                      </button>
+                      {maxSalvo >= 4 && (
+                        <button
+                          className={`wg-salvo-preset-btn${currentSalvo === 4 ? ' active' : ''}`}
+                          onClick={() => setSalvoSize(4)}
+                        >
+                          Small (4)
+                        </button>
+                      )}
+                      {maxSalvo > 6 && (
+                        <button
+                          className={`wg-salvo-preset-btn${currentSalvo === Math.floor(maxSalvo / 2) ? ' active' : ''}`}
+                          onClick={() => setSalvoSize(Math.floor(maxSalvo / 2))}
+                        >
+                          Half ({Math.floor(maxSalvo / 2)})
+                        </button>
+                      )}
+                      <button
+                        className={`wg-salvo-preset-btn${currentSalvo === maxSalvo ? ' active' : ''}`}
+                        onClick={() => setSalvoSize(maxSalvo)}
+                      >
+                        Full Salvo ({maxSalvo})
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <p className="wg-note" style={{ marginTop: '6px' }}>
+                  Fires {currentSalvo} of {maxSalvo} ready missiles. Defending SAM batteries engage incoming
+                  salvos up to their simultaneous fire channel limit.
                 </p>
               </div>
             )}
           </div>
         )}
 
+        {/* Single-Unit Escort Selection */}
         {attacker && attacker.kind === 'unit' && (ewOptions.length > 0 || seadOptions.length > 0) && (
           <div className="wg-tactical-card">
             <div className="wg-tactical-title">
