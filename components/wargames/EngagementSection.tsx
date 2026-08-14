@@ -1,25 +1,30 @@
 'use client';
 
 /**
- * Enhanced Raid & Engagement Console.
+ * Enhanced Raid & Engagement Console with Chronological Battle Log.
  *
- * Multiplies capabilities across the great-circle penetration path:
- * 1. Stealth RCS scaling (VLO 5th-gen delay and bypass)
- * 2. Stand-off weapon release (aircraft ingress to release range, munitions fly terminal)
- * 3. Composite Strike Packages & Escorts (EW jamming & SEAD anti-radiation suppression)
- * 4. Radar horizon curvature and detection network cueing
+ * Provides:
+ * 1. Whole-integer casualty counting (no fractions of aircraft)
+ * 2. After-Action Report (AAR) identifying victor, damage, and losses
+ * 3. Step-by-step chronological Battle Log timeline
+ * 4. Stealth RCS dynamics, stand-off weapon release, and EW/SEAD escorts
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { WarGames } from '@/lib/useWarGames';
-import { attrition, verdict, type Assessment, type SilentReason } from '@/lib/engagement';
+import {
+  attrition,
+  verdict,
+  type Assessment,
+  type BattleLogEntry,
+  type SilentReason,
+} from '@/lib/engagement';
 import { distanceKm } from '@/lib/geo';
 import { standoffWeapons, TARGET_LABEL } from '@/lib/specs';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
-const n1 = (n: number) => (Math.round(n * 10) / 10).toLocaleString();
 
 const SILENT: Record<SilentReason, string> = {
   'too-fast': 'through before it can fire',
@@ -74,40 +79,118 @@ function Picker({
   );
 }
 
+function BattleLogTimeline({ log }: { log: BattleLogEntry[] }) {
+  return (
+    <ol className="wg-battlelog">
+      {log.map((entry) => {
+        const dotVariant = entry.badge?.variant ?? 'neutral';
+        return (
+          <li key={entry.id} className="wg-battlelog-item">
+            <span className={`wg-battlelog-dot ${dotVariant}`} />
+            <div className="wg-battlelog-card">
+              <div className="wg-battlelog-header">
+                <div className="wg-battlelog-meta">
+                  <span className="wg-battlelog-time">{entry.timeFormatted}</span>
+                  <span className="wg-battlelog-title">{entry.title}</span>
+                </div>
+                {entry.badge && (
+                  <span className={`wg-tag ${entry.badge.variant === 'neutral' ? '' : entry.badge.variant}`}>
+                    {entry.badge.text}
+                  </span>
+                )}
+              </div>
+              <p className="wg-battlelog-detail">{entry.detail}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function Result({ a }: { a: Assessment }) {
+  const [showLayers, setShowLayers] = useState(false);
   const share = attrition(a);
   const isStandoff = Boolean(a.raid.standoff?.enabled);
+  const outcome = a.battleOutcome;
 
   return (
     <>
-      <p className={`wg-verdict${share > 0.6 && !isStandoff ? ' hot' : ''}`}>{verdict(a)}</p>
+      {/* Prominent After-Action Report (AAR) Banner */}
+      <div className={`wg-outcome-banner ${outcome.winner}`}>
+        <div className="wg-outcome-title">{outcome.verdictTitle}</div>
+        <div className="wg-outcome-desc">{outcome.verdictDescription}</div>
+
+        {/* Itemized Losses & Damage Grid in Whole Numbers */}
+        <div className="wg-aar-grid">
+          <div className="wg-aar-col">
+            <h5>Attacker Status</h5>
+            <ul className="wg-aar-list">
+              {outcome.attackerSurvivors.map((s, idx) => (
+                <li key={`surv-${idx}`} style={{ color: '#4FA85F' }}>
+                  <span>{s.name}</span>
+                  <strong>{Math.round(s.count)}</strong>
+                </li>
+              ))}
+              {outcome.attackerLosses.map((l, idx) => (
+                <li key={`loss-${idx}`} style={{ color: l.count > 0 ? '#D9534F' : 'var(--paper-dim)' }}>
+                  <span>{l.name}</span>
+                  <strong>{Math.round(l.count)}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="wg-aar-col">
+            <h5>Defender Status</h5>
+            <ul className="wg-aar-list">
+              {outcome.defenderLosses.map((d, idx) => (
+                <li
+                  key={`def-${idx}`}
+                  style={{
+                    color:
+                      d.status === 'destroyed'
+                        ? '#D9534F'
+                        : d.status === 'suppressed'
+                          ? '#E8833A'
+                          : '#4FA85F',
+                  }}
+                >
+                  <span>{d.name}</span>
+                  <strong>{d.status.toUpperCase()}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
 
       {!a.blocked && (
-        <div className="wg-tactical-card" style={{ marginTop: '10px' }}>
+        <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
           {isStandoff ? (
             <>
               <div className="wg-tactical-title">
-                <span>Stand-Off Strike Assessment</span>
+                <span>Stand-Off Strike Flight Profile</span>
                 <span className="wg-tag standoff">Stand-off</span>
               </div>
               <div className="wg-tactical-body">
                 <p style={{ margin: '4px 0' }}>
-                  <strong>{n1(a.aircraftSurviving.stated)}</strong> of {a.raid.count} launch aircraft
+                  <strong>{Math.round(a.aircraftSurviving.stated)}</strong> of {a.raid.count} launch aircraft
                   egress safely{' '}
                   {a.aircraftLost.stated > 0 && (
                     <span style={{ color: '#E4572E' }}>
-                      ({n1(a.aircraftLost.stated)} lost during {km(a.releaseKm ?? 0)} ingress)
+                      ({Math.round(a.aircraftLost.stated)} lost during {km(a.releaseKm ?? 0)} ingress)
                     </span>
                   )}
                   .
                 </p>
                 <p style={{ margin: '4px 0' }}>
-                  <strong>{n1(a.leakers.low)}</strong>
-                  {a.leakers.high - a.leakers.low > 0.05 && (
-                    <> – <strong>{n1(a.leakers.high)}</strong></>
+                  <strong>{Math.round(a.leakers.stated)}</strong>
+                  {Math.round(a.leakers.high) !== Math.round(a.leakers.low) && (
+                    <> (est. {Math.round(a.leakers.low)} – {Math.round(a.leakers.high)})</>
                   )}{' '}
-                  of {a.standoffLaunched ?? 0} <em>{a.raid.standoff?.weaponName}</em> stand-off munitions
-                  impact target.
+                  of {Math.round(a.standoffLaunched ?? 0)} <em>{a.raid.standoff?.weaponName}</em> stand-off munitions
+                  impact objective.
                 </p>
                 <span className="wg-leakers-sub">
                   Released at {km(a.distanceKm - (a.releaseKm ?? 0))} stand-off range · {km(a.distanceKm)} total run ·{' '}
@@ -118,7 +201,7 @@ function Result({ a }: { a: Assessment }) {
           ) : (
             <>
               <div className="wg-tactical-title">
-                <span>Direct Penetration Assessment</span>
+                <span>Direct Penetration Flight Profile</span>
                 {a.raid.signature && (
                   <span
                     className={`wg-tag ${
@@ -134,20 +217,19 @@ function Result({ a }: { a: Assessment }) {
                 )}
               </div>
               <p className="wg-leakers">
-                <strong>{n1(a.leakers.low)}</strong>
-                {a.leakers.high - a.leakers.low > 0.05 && (
-                  <> – <strong>{n1(a.leakers.high)}</strong></>
+                <strong>{Math.round(a.leakers.stated)}</strong>
+                {Math.round(a.leakers.high) !== Math.round(a.leakers.low) && (
+                  <> (est. {Math.round(a.leakers.low)} – {Math.round(a.leakers.high)})</>
                 )}{' '}
                 of {a.raid.count} arrive
                 <span className="wg-leakers-sub">
-                  {n1(a.leakers.stated)} at stated figures · {Math.round(share * 100)}% attrition ·{' '}
-                  {km(a.distanceKm)} run · engaged as <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
+                  {Math.round(share * 100)}% attrition · {km(a.distanceKm)} run · engaged as{' '}
+                  <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
                 </span>
               </p>
             </>
           )}
 
-          {/* Tactical Advantage Summaries */}
           {a.stealthAdvantage && (
             <p className="wg-note" style={{ color: '#3FB0A0', marginTop: '6px' }}>
               ✦ {a.stealthAdvantage}
@@ -166,56 +248,81 @@ function Result({ a }: { a: Assessment }) {
         </div>
       )}
 
+      {/* Chronological Battle Log */}
+      {a.battleLog.length > 0 && (
+        <div style={{ marginTop: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h4 className="wg-sub" style={{ margin: 0 }}>
+              Chronological Battle Sequence
+            </h4>
+            <span className="wg-tag">{a.battleLog.length} events</span>
+          </div>
+          <BattleLogTimeline log={a.battleLog} />
+        </div>
+      )}
+
+      {/* Expandable Technical Layer Breakdown */}
       {a.engagements.length > 0 && (
-        <>
-          <h4 className="wg-sub">Layers, in the order the raid meets them</h4>
-          <table className="wg-table wg-layers">
-            <thead>
-              <tr>
-                <th>At</th>
-                <th>Firing</th>
-                <th className="num">Facing</th>
-                <th className="num">Rounds</th>
-                <th className="num">Lost</th>
-              </tr>
-            </thead>
-            <tbody>
-              {a.engagements.map((e, i) => (
-                <tr key={`${e.unitId}-${i}`} className={e.silent ? 'wg-silent' : undefined}>
-                  <td>
-                    {km(e.entryKm)}
-                    <span className="wg-layer-sub">{Math.round(e.exposureSec)} s exposed</span>
-                  </td>
-                  <td>
-                    {e.unitLabel}
-                    {e.phase === 'munition-flight' && <span className="wg-tag standoff">munition</span>}
-                    {e.phase === 'aircraft-ingress' && <span className="wg-tag">ingress</span>}
-                    {e.cued && <span className="wg-tag">cued</span>}
-                    {e.jammed && <span className="wg-tag jammed">jammed</span>}
-                    {e.seadSuppressed && <span className="wg-tag sead">SEAD</span>}
-                    {e.stealthDelayed && <span className="wg-tag stealth">stealth delayed</span>}
-                    {e.stealthBypassed && <span className="wg-tag bypassed">bypassed</span>}
-                    <span className="wg-layer-sub">
-                      {e.weaponName} · {km(e.rangeKm)}
-                      {e.heldFireKm !== undefined && ` · held fire ${km(e.heldFireKm)}`}
-                      {e.assumedEngages && ' · target class not stated'}
-                      {e.seadSuppressed && ' · channels halved'}
-                      {e.jammed && ' · -25% Pk'}
-                    </span>
-                  </td>
-                  <td className="num">{n1(e.facing)}</td>
-                  <td className="num">{e.silent ? '—' : n1(e.rounds)}</td>
-                  <td className="num">{e.silent ? SILENT[e.silent] : n1(e.killed)}</td>
+        <div style={{ marginTop: '14px' }}>
+          <button
+            className="wg-btn"
+            style={{ width: '100%', padding: '6px 8px', fontSize: '10px' }}
+            onClick={() => setShowLayers(!showLayers)}
+          >
+            {showLayers ? 'Hide Radar & SAM Envelopes Table' : `View All ${a.engagements.length} Defence Layers`}
+          </button>
+
+          {showLayers && (
+            <table className="wg-table wg-layers" style={{ marginTop: '8px' }}>
+              <thead>
+                <tr>
+                  <th>At</th>
+                  <th>Firing</th>
+                  <th className="num">Facing</th>
+                  <th className="num">Rounds</th>
+                  <th className="num">Lost</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+              </thead>
+              <tbody>
+                {a.engagements.map((e, i) => (
+                  <tr key={`${e.unitId}-${i}`} className={e.silent ? 'wg-silent' : undefined}>
+                    <td>
+                      {km(e.entryKm)}
+                      <span className="wg-layer-sub">{Math.round(e.exposureSec)} s exposed</span>
+                    </td>
+                    <td>
+                      {e.unitLabel}
+                      {e.phase === 'munition-flight' && <span className="wg-tag standoff">munition</span>}
+                      {e.phase === 'aircraft-ingress' && <span className="wg-tag">ingress</span>}
+                      {e.cued && <span className="wg-tag">cued</span>}
+                      {e.jammed && <span className="wg-tag jammed">jammed</span>}
+                      {e.seadSuppressed && <span className="wg-tag sead">SEAD</span>}
+                      {e.stealthDelayed && <span className="wg-tag stealth">stealth delayed</span>}
+                      {e.stealthBypassed && <span className="wg-tag bypassed">bypassed</span>}
+                      <span className="wg-layer-sub">
+                        {e.weaponName} · {km(e.rangeKm)}
+                        {e.heldFireKm !== undefined && ` · held fire ${km(e.heldFireKm)}`}
+                        {e.assumedEngages && ' · target class not stated'}
+                        {e.seadSuppressed && ' · channels halved'}
+                        {e.jammed && ' · -25% Pk'}
+                      </span>
+                    </td>
+                    <td className="num">{Math.round(e.facing)}</td>
+                    <td className="num">{e.silent ? '—' : Math.round(e.rounds)}</td>
+                    <td className="num">{e.silent ? SILENT[e.silent] : Math.round(e.killed)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       )}
 
       {a.unmodelled.length > 0 && (
         <>
-          <h4 className="wg-sub">Cannot be modelled</h4>
+          <h4 className="wg-sub" style={{ marginTop: '12px' }}>
+            Cannot be modelled
+          </h4>
           <ul className="wg-unmodelled">
             {a.unmodelled.map((u, i) => (
               <li key={i}>
@@ -262,7 +369,6 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
   const target = board.units.find((u) => u.id === raidToId) ?? null;
   const runKm = attacker && target ? distanceKm(attacker.lngLat, target.lngLat) : null;
 
-  // Friendly units for escort selection
   const friendlyUnits = useMemo(() => {
     if (!attacker) return [];
     return board.units.filter((u) => u.iso === attacker.iso && u.id !== attacker.id);
@@ -281,7 +387,6 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
     [friendlyUnits]
   );
 
-  // Available standoff weapons on attacker
   const attackerSpec = attacker
     ? wg.systems.find((s) => s.id === (attacker.kind === 'unit' ? attacker.systemId : undefined))
     : undefined;
@@ -314,7 +419,6 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           emptyText="Nothing on the board can fly a raid. Deploy a strike aircraft, fighter, or strike package with recorded speed."
         />
 
-        {/* Formation Package Info */}
         {assessment?.raid.isComposite && assessment.raid.packageDetails && (
           <div className="wg-tactical-card">
             <div className="wg-tactical-title">
@@ -323,30 +427,30 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
             </div>
             <div className="wg-package-pills">
               <span className="wg-package-pill">
-                <strong>{assessment.raid.packageDetails.strikeCount}</strong>
+                <strong>{Math.round(assessment.raid.packageDetails.strikeCount)}</strong>
                 <em>{assessment.raid.packageDetails.strikePlatformName ?? 'Strike'}</em>
               </span>
               {assessment.raid.packageDetails.seadCount > 0 && (
                 <span className="wg-package-pill" style={{ color: '#E8833A' }}>
-                  <strong>{assessment.raid.packageDetails.seadCount}</strong>
+                  <strong>{Math.round(assessment.raid.packageDetails.seadCount)}</strong>
                   <em>SEAD Escort</em>
                 </span>
               )}
               {assessment.raid.packageDetails.ewCount > 0 && (
                 <span className="wg-package-pill" style={{ color: '#9AA7B4' }}>
-                  <strong>{assessment.raid.packageDetails.ewCount}</strong>
+                  <strong>{Math.round(assessment.raid.packageDetails.ewCount)}</strong>
                   <em>EW Jammer</em>
                 </span>
               )}
               {assessment.raid.packageDetails.awacsCount > 0 && (
                 <span className="wg-package-pill">
-                  <strong>{assessment.raid.packageDetails.awacsCount}</strong>
+                  <strong>{Math.round(assessment.raid.packageDetails.awacsCount)}</strong>
                   <em>AEW&C</em>
                 </span>
               )}
               {assessment.raid.packageDetails.tankerCount > 0 && (
                 <span className="wg-package-pill">
-                  <strong>{assessment.raid.packageDetails.tankerCount}</strong>
+                  <strong>{Math.round(assessment.raid.packageDetails.tankerCount)}</strong>
                   <em>Tanker</em>
                 </span>
               )}
@@ -354,7 +458,6 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           </div>
         )}
 
-        {/* RCS Signature Indicator */}
         {attackerSpec?.signature && (
           <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--paper-dim)' }}>
             <span>Radar Signature: </span>
@@ -388,7 +491,6 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           }
         />
 
-        {/* Stand-Off Weapon Controls */}
         {availableStandoff.length > 0 && (
           <div className="wg-tactical-card">
             <div className="wg-tactical-title">
@@ -425,7 +527,6 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           </div>
         )}
 
-        {/* Single-Unit Escort Selection */}
         {attacker && attacker.kind === 'unit' && (ewOptions.length > 0 || seadOptions.length > 0) && (
           <div className="wg-tactical-card">
             <div className="wg-tactical-title">
@@ -509,11 +610,11 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
 
       {assessment && (
         <section className="wg-block">
-          <h3 className="wg-h">Assessment</h3>
+          <h3 className="wg-h">Assessment & Battle Debrief</h3>
           <Result a={assessment} />
 
           {assessment.engagements.some((e) => e.cued) && (
-            <p className="wg-note">
+            <p className="wg-note" style={{ marginTop: '10px' }}>
               A <em>cued</em> layer cannot see the raid itself and is firing on a friendly sensor&rsquo;s
               shared picture.
             </p>

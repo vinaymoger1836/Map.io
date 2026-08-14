@@ -2335,6 +2335,202 @@ button {
   margin-left: 4px;
 }
 
+/* ---------- Chronological Battle Log & AAR ---------- */
+
+.wg-outcome-banner {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--ink) 60%, var(--surface));
+}
+
+.wg-outcome-banner.attacker {
+  border-color: color-mix(in srgb, #4FA85F 60%, transparent);
+  background: color-mix(in srgb, #4FA85F 10%, var(--surface));
+}
+
+.wg-outcome-banner.contested {
+  border-color: color-mix(in srgb, #E4B93C 60%, transparent);
+  background: color-mix(in srgb, #E4B93C 10%, var(--surface));
+}
+
+.wg-outcome-banner.defender {
+  border-color: color-mix(in srgb, #D9534F 60%, transparent);
+  background: color-mix(in srgb, #D9534F 10%, var(--surface));
+}
+
+.wg-outcome-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+}
+
+.wg-outcome-banner.attacker .wg-outcome-title {
+  color: #4FA85F;
+}
+
+.wg-outcome-banner.contested .wg-outcome-title {
+  color: #E4B93C;
+}
+
+.wg-outcome-banner.defender .wg-outcome-title {
+  color: #D9534F;
+}
+
+.wg-outcome-desc {
+  margin-top: 4px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--paper);
+}
+
+.wg-aar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+}
+
+.wg-aar-col h5 {
+  margin: 0 0 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.wg-aar-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+
+.wg-aar-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  color: var(--paper);
+}
+
+.wg-aar-list li strong {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 6px;
+}
+
+.wg-battlelog {
+  position: relative;
+  margin: 12px 0 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+}
+
+.wg-battlelog::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 5px;
+  width: 1px;
+  background: color-mix(in srgb, var(--rule) 80%, transparent);
+}
+
+.wg-battlelog-item {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.wg-battlelog-item:last-child {
+  margin-bottom: 0;
+}
+
+.wg-battlelog-dot {
+  position: absolute;
+  left: -16px;
+  top: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--brass);
+}
+
+.wg-battlelog-dot.loss {
+  border-color: #D9534F;
+  background: color-mix(in srgb, #D9534F 30%, var(--surface));
+}
+
+.wg-battlelog-dot.success {
+  border-color: #4FA85F;
+  background: color-mix(in srgb, #4FA85F 30%, var(--surface));
+}
+
+.wg-battlelog-dot.standoff {
+  border-color: #4F9FD6;
+}
+
+.wg-battlelog-dot.stealth {
+  border-color: #3FB0A0;
+}
+
+.wg-battlelog-dot.sead {
+  border-color: #E8833A;
+}
+
+.wg-battlelog-dot.jammed {
+  border-color: #9AA7B4;
+}
+
+.wg-battlelog-card {
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--ink) 35%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+  border-radius: 4px;
+}
+
+.wg-battlelog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.wg-battlelog-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wg-battlelog-time {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--brass);
+  letter-spacing: 0.04em;
+}
+
+.wg-battlelog-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.wg-battlelog-detail {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+
 /* ---------- scenarios ---------- */
 
 .wg-scenarios {
