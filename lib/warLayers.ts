@@ -441,39 +441,94 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+export interface RaidPathSpec {
+  ingress: [number, number][];
+  munition?: [number, number][];
+  releasePoint?: [number, number];
+  targetPoint: [number, number];
+  color: string;
+  munitionColor?: string;
+}
+
 /**
  * Draws the raid's path, or clears it.
- *
- * The polyline is walked at the same resolution the model walks it, so what you
- * see crossing a belt is what the assessment counted as crossing it.
+ * Supports single continuous paths or multi-phase standoff ingress + munition runs.
  */
 export function setRaidPath(
   map: MLMap,
-  path: [number, number][] | null,
+  pathData: [number, number][] | RaidPathSpec | null,
   color = '#E4B363'
 ) {
   const source = map.getSource('wg-raid') as { setData?: (d: unknown) => void } | undefined;
   if (!source?.setData) return;
 
-  if (!path?.length) {
+  if (!pathData) {
     source.setData(emptyCollection());
     return;
   }
 
+  if (Array.isArray(pathData)) {
+    if (!pathData.length) {
+      source.setData(emptyCollection());
+      return;
+    }
+    source.setData({
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { color },
+          geometry: { type: 'LineString', coordinates: pathData },
+        },
+        {
+          type: 'Feature',
+          properties: { color },
+          geometry: { type: 'Point', coordinates: pathData[pathData.length - 1] },
+        },
+      ],
+    });
+    return;
+  }
+
+  const features: Array<{
+    type: 'Feature';
+    properties: { color: string; kind?: string };
+    geometry: { type: 'LineString' | 'Point'; coordinates: [number, number][] | [number, number] };
+  }> = [];
+
+  if (pathData.ingress.length > 1) {
+    features.push({
+      type: 'Feature',
+      properties: { color: pathData.color, kind: 'ingress' },
+      geometry: { type: 'LineString', coordinates: pathData.ingress },
+    });
+  }
+
+  if (pathData.releasePoint) {
+    features.push({
+      type: 'Feature',
+      properties: { color: pathData.color, kind: 'release' },
+      geometry: { type: 'Point', coordinates: pathData.releasePoint },
+    });
+  }
+
+  if (pathData.munition && pathData.munition.length > 1) {
+    features.push({
+      type: 'Feature',
+      properties: { color: pathData.munitionColor ?? '#FFB020', kind: 'munition' },
+      geometry: { type: 'LineString', coordinates: pathData.munition },
+    });
+  }
+
+  features.push({
+    type: 'Feature',
+    properties: { color: pathData.munitionColor ?? pathData.color, kind: 'target' },
+    geometry: { type: 'Point', coordinates: pathData.targetPoint },
+  });
+
   source.setData({
     type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: { color },
-        geometry: { type: 'LineString', coordinates: path },
-      },
-      {
-        type: 'Feature',
-        properties: { color },
-        geometry: { type: 'Point', coordinates: path[path.length - 1] },
-      },
-    ],
+    features,
   });
 }
 
