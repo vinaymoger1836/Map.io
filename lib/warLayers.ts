@@ -468,7 +468,7 @@ export function setRaidPath(
   }
 
   // Array of coordinates (legacy simple continuous path)
-  if (Array.isArray(pathData) && pathData.length > 0 && typeof pathData[0][0] === 'number') {
+  if (Array.isArray(pathData) && pathData.length > 0 && Array.isArray(pathData[0]) && typeof pathData[0][0] === 'number') {
     const coords = pathData as [number, number][];
     source.setData({
       type: 'FeatureCollection',

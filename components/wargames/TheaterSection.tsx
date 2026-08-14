@@ -20,6 +20,7 @@ import {
   type StrikePhaseTask,
   type PhaseReport,
   type CandidateAttacker,
+  type DefensiveUmbrella,
 } from '@/lib/theaterEngagement';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
@@ -30,7 +31,7 @@ function DefensiveUmbrellaView({
   wg,
 }: {
   target: DeployedUnit;
-  umbrella: ReturnType<typeof wg.theaterUmbrella>;
+  umbrella: DefensiveUmbrella;
   wg: WarGames;
 }) {
   if (!umbrella) return null;

@@ -411,8 +411,9 @@ export function assessTheaterRaid(
       // Check if SAM is suppressed
       const isSuppressed = defState.status === 'suppressed';
 
-      for (let wIdx = 0; wIdx < (defSpec.weapons ?? []).length; wIdx++) {
-        const defWeapon = defSpec.weapons[wIdx];
+      const defWeapons = defSpec.weapons ?? [];
+      for (let wIdx = 0; wIdx < defWeapons.length; wIdx++) {
+        const defWeapon = defWeapons[wIdx];
         if (!defWeapon.rangeKm || defWeapon.rangeKm <= 0) continue;
         if (defWeapon.engages && !defWeapon.engages.includes('air')) continue;
 
