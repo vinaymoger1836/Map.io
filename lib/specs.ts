@@ -423,12 +423,49 @@ export function radarHorizonKm(antennaM: number, targetAltM: number): number {
   return 4.12 * (Math.sqrt(Math.max(0, antennaM)) + Math.sqrt(Math.max(0, targetAltM)));
 }
 
-/** The reach actually available, once the horizon is taken into account. */
-export function effectiveDetectionKm(spec: SystemSpec, targetAltM = 10_000): number | null {
+/**
+ * Radar detection range multiplier derived from the Radar Range Equation:
+ * Range proportional to RCS^(1/4).
+ * - 'low' (5th-gen VLO stealth, e.g. F-35, F-22, B-21, Su-57; RCS ~ 0.001 m²): ~0.25x radar detection reach
+ * - 'medium' (4.5-gen reduced RCS, e.g. Rafale, Typhoon, Super Hornet; RCS ~ 0.75 m²): ~0.65x radar detection reach
+ * - 'high' / undefined (4th-gen baseline; RCS ~ 4 m²): 1.0x radar detection reach
+ */
+export function signatureRangeMultiplier(sig?: 'low' | 'medium' | 'high'): number {
+  if (sig === 'low') return 0.25;
+  if (sig === 'medium') return 0.65;
+  return 1.0;
+}
+
+/**
+ * The reach actually available, once the horizon, target stealth signature, and
+ * active jamming are taken into account.
+ */
+export function effectiveDetectionKm(
+  spec: SystemSpec,
+  targetAltM = 10_000,
+  targetSignature?: 'low' | 'medium' | 'high',
+  isJammed = false
+): number | null {
   const sensor = spec.sensor;
   if (!sensor?.detectionKm) return null;
-  if (!sensor.horizonLimited) return sensor.detectionKm;
-  return Math.min(sensor.detectionKm, radarHorizonKm(sensor.antennaM ?? 20, targetAltM));
+  const sigMult = signatureRangeMultiplier(targetSignature);
+  const jamMult = isJammed ? 0.6 : 1.0;
+  const rawReach = sensor.detectionKm * sigMult * jamMult;
+  if (!sensor.horizonLimited) return rawReach;
+  const horizon = radarHorizonKm(sensor.antennaM ?? 20, targetAltM);
+  return Math.min(rawReach, horizon);
+}
+
+/** Weapons on a system with stand-off reach (rangeKm > 0) that can engage surface or ground targets. */
+export function standoffWeapons(spec: SystemSpec): { weapon: WeaponFacet; index: number }[] {
+  const weapons = spec.weapons ?? [];
+  const out: { weapon: WeaponFacet; index: number }[] = [];
+  weapons.forEach((w, index) => {
+    if (w.rangeKm && w.rangeKm > 0) {
+      out.push({ weapon: w, index });
+    }
+  });
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
