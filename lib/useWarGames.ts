@@ -215,10 +215,20 @@ export interface WarGames {
   raidToId: string | null;
   setRaidFrom: (id: string | null) => void;
   setRaidTo: (id: string | null) => void;
-  /** Deployments that could fly a raid — a unit, with a system that has a speed. */
+  /** Deployments that could fly a raid — a unit or formation with strike capability. */
   raidCandidates: DeployedUnit[];
   /** What the defence does to it. Null until both ends are chosen. */
   assessment: Assessment | null;
+
+  /* Enhanced Engagement Configuration */
+  standoffEnabled: boolean;
+  setStandoffEnabled: (v: boolean) => void;
+  selectedWeaponIndex: number;
+  setSelectedWeaponIndex: (idx: number) => void;
+  selectedEwEscortId: string | null;
+  setSelectedEwEscortId: (id: string | null) => void;
+  selectedSeadEscortId: string | null;
+  setSelectedSeadEscortId: (id: string | null) => void;
 
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
@@ -300,6 +310,10 @@ export function useWarGames({
 
   const [raidFromId, setRaidFromId] = useState<string | null>(null);
   const [raidToId, setRaidToId] = useState<string | null>(null);
+  const [standoffEnabled, setStandoffEnabled] = useState<boolean>(true);
+  const [selectedWeaponIndex, setSelectedWeaponIndex] = useState<number>(0);
+  const [selectedEwEscortId, setSelectedEwEscortId] = useState<string | null>(null);
+  const [selectedSeadEscortId, setSelectedSeadEscortId] = useState<string | null>(null);
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
@@ -1246,10 +1260,32 @@ export function useWarGames({
     // they are the same quantity: a detection ring is drawn against the height of
     // the thing being looked for. Sharing it means the rings on the map are the
     // rings the raid is assessed through.
-    const raid = raidFrom(attacker, target.lngLat, coverage.targetAltM, boardContext);
+    const raid = raidFrom(
+      attacker,
+      target.lngLat,
+      coverage.targetAltM,
+      boardContext,
+      board.units,
+      {
+        standoffEnabled,
+        weaponIndex: selectedWeaponIndex,
+        ewUnitId: selectedEwEscortId,
+        seadUnitId: selectedSeadEscortId,
+      }
+    );
     if (!raid) return null;
     return assess(raid, defendersFrom(board.units, attacker.iso, boardContext));
-  }, [board.units, raidFromId, raidToId, boardContext, coverage.targetAltM]);
+  }, [
+    board.units,
+    raidFromId,
+    raidToId,
+    boardContext,
+    coverage.targetAltM,
+    standoffEnabled,
+    selectedWeaponIndex,
+    selectedEwEscortId,
+    selectedSeadEscortId,
+  ]);
 
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.
@@ -1261,8 +1297,22 @@ export function useWarGames({
       return;
     }
     const { from, to } = assessment.raid;
-    const color = board.nations[board.units.find((u) => u.id === raidFromId)?.iso ?? '']?.color;
-    setRaidPath(map, greatCirclePath(from, to, 128), color);
+    const color = board.nations[board.units.find((u) => u.id === raidFromId)?.iso ?? '']?.color ?? '#E4B363';
+
+    if (assessment.releaseLngLat) {
+      const ingress = greatCirclePath(from, assessment.releaseLngLat, 64);
+      const munition = greatCirclePath(assessment.releaseLngLat, to, 64);
+      setRaidPath(map, {
+        ingress,
+        munition,
+        releasePoint: assessment.releaseLngLat,
+        targetPoint: to,
+        color,
+        munitionColor: '#FFB020',
+      });
+    } else {
+      setRaidPath(map, greatCirclePath(from, to, 128), color);
+    }
   }, [assessment, raidFromId, board.nations, board.units, mapRef]);
 
   // A raid whose ends have left the board is not a raid — and neither is one
@@ -1341,6 +1391,14 @@ export function useWarGames({
     setRaidTo: setRaidToId,
     raidCandidates,
     assessment,
+    standoffEnabled,
+    setStandoffEnabled,
+    selectedWeaponIndex,
+    setSelectedWeaponIndex,
+    selectedEwEscortId,
+    setSelectedEwEscortId,
+    selectedSeadEscortId,
+    setSelectedSeadEscortId,
     coverage,
     setCoverageMode,
     toggleCoverageKind,

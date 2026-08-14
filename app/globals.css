@@ -2252,6 +2252,89 @@ button {
   color: color-mix(in srgb, var(--paper-dim) 70%, transparent);
 }
 
+/* Enhanced Engagement Tactical Styling */
+.wg-tag.jammed {
+  border-color: color-mix(in srgb, #9AA7B4 50%, transparent);
+  color: #9AA7B4;
+}
+
+.wg-tag.sead {
+  border-color: color-mix(in srgb, #E8833A 60%, transparent);
+  color: #E8833A;
+}
+
+.wg-tag.stealth {
+  border-color: color-mix(in srgb, #3FB0A0 60%, transparent);
+  color: #3FB0A0;
+}
+
+.wg-tag.standoff {
+  border-color: color-mix(in srgb, #4F9FD6 60%, transparent);
+  color: #4F9FD6;
+}
+
+.wg-tag.bypassed {
+  border-color: color-mix(in srgb, #8FBF4D 60%, transparent);
+  color: #8FBF4D;
+}
+
+.wg-tactical-card {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--ink) 40%, var(--surface));
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.wg-tactical-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.wg-tactical-body {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+
+.wg-tactical-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.wg-package-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.wg-package-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--paper-dim) 12%, transparent);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--paper);
+}
+
+.wg-package-pill em {
+  font-style: normal;
+  color: var(--paper-dim);
+  margin-left: 4px;
+}
+
 /* ---------- scenarios ---------- */
 
 .wg-scenarios {

@@ -1,15 +1,13 @@
 'use client';
 
 /**
- * A raid, and what the defence does to it.
+ * Enhanced Raid & Engagement Console.
  *
- * The one screen in the app that multiplies figures together rather than
- * reporting them, which is why so much of it is given over to saying what the
- * arithmetic assumed. A leakage number with its assumptions hidden is worse than
- * no number: it is a guess wearing arithmetic.
- *
- * The model is in `lib/engagement.ts`, including the four conventions it rests
- * on and which way each one is wrong.
+ * Multiplies capabilities across the great-circle penetration path:
+ * 1. Stealth RCS scaling (VLO 5th-gen delay and bypass)
+ * 2. Stand-off weapon release (aircraft ingress to release range, munitions fly terminal)
+ * 3. Composite Strike Packages & Escorts (EW jamming & SEAD anti-radiation suppression)
+ * 4. Radar horizon curvature and detection network cueing
  */
 
 import { useMemo } from 'react';
@@ -17,12 +15,10 @@ import { useMemo } from 'react';
 import type { WarGames } from '@/lib/useWarGames';
 import { attrition, verdict, type Assessment, type SilentReason } from '@/lib/engagement';
 import { distanceKm } from '@/lib/geo';
-import { TARGET_LABEL } from '@/lib/specs';
+import { standoffWeapons, TARGET_LABEL } from '@/lib/specs';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
-
-/** Losses read better to one decimal: "0.9 of 12 arrive" is the actual claim. */
 const n1 = (n: number) => (Math.round(n * 10) / 10).toLocaleString();
 
 const SILENT: Record<SilentReason, string> = {
@@ -30,6 +26,8 @@ const SILENT: Record<SilentReason, string> = {
   dry: 'out of ready rounds',
   'nothing-left': 'nothing left to engage',
   blind: 'in range, never detected',
+  'stealth-bypassed': 'stealth: bypassed undetected',
+  'standoff-out-of-range': 'standoff: out of reach',
 };
 
 const ALTITUDES: [number, string, string][] = [
@@ -78,32 +76,94 @@ function Picker({
 
 function Result({ a }: { a: Assessment }) {
   const share = attrition(a);
-  const spread = a.leakers.high - a.leakers.low;
+  const isStandoff = Boolean(a.raid.standoff?.enabled);
 
   return (
     <>
-      <p className={`wg-verdict${share > 0.6 ? ' hot' : ''}`}>{verdict(a)}</p>
+      <p className={`wg-verdict${share > 0.6 && !isStandoff ? ' hot' : ''}`}>{verdict(a)}</p>
 
       {!a.blocked && (
-        <>
-          <p className="wg-leakers">
-            <strong>{n1(a.leakers.low)}</strong>
-            {spread > 0.05 && <> – <strong>{n1(a.leakers.high)}</strong></>} of {a.raid.count}{' '}
-            arrive
-            <span className="wg-leakers-sub">
-              {n1(a.leakers.stated)} at the figures as written · {Math.round(share * 100)}% lost ·{' '}
-              {km(a.distanceKm)} run · engaged as <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
-            </span>
-          </p>
+        <div className="wg-tactical-card" style={{ marginTop: '10px' }}>
+          {isStandoff ? (
+            <>
+              <div className="wg-tactical-title">
+                <span>Stand-Off Strike Assessment</span>
+                <span className="wg-tag standoff">Stand-off</span>
+              </div>
+              <div className="wg-tactical-body">
+                <p style={{ margin: '4px 0' }}>
+                  <strong>{n1(a.aircraftSurviving.stated)}</strong> of {a.raid.count} launch aircraft
+                  egress safely{' '}
+                  {a.aircraftLost.stated > 0 && (
+                    <span style={{ color: '#E4572E' }}>
+                      ({n1(a.aircraftLost.stated)} lost during {km(a.releaseKm ?? 0)} ingress)
+                    </span>
+                  )}
+                  .
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>{n1(a.leakers.low)}</strong>
+                  {a.leakers.high - a.leakers.low > 0.05 && (
+                    <> – <strong>{n1(a.leakers.high)}</strong></>
+                  )}{' '}
+                  of {a.standoffLaunched ?? 0} <em>{a.raid.standoff?.weaponName}</em> stand-off munitions
+                  impact target.
+                </p>
+                <span className="wg-leakers-sub">
+                  Released at {km(a.distanceKm - (a.releaseKm ?? 0))} stand-off range · {km(a.distanceKm)} total run ·{' '}
+                  Munitions engaged as <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="wg-tactical-title">
+                <span>Direct Penetration Assessment</span>
+                {a.raid.signature && (
+                  <span
+                    className={`wg-tag ${
+                      a.raid.signature === 'low'
+                        ? 'stealth'
+                        : a.raid.signature === 'medium'
+                          ? 'sead'
+                          : ''
+                    }`}
+                  >
+                    {a.raid.signature.toUpperCase()} RCS
+                  </span>
+                )}
+              </div>
+              <p className="wg-leakers">
+                <strong>{n1(a.leakers.low)}</strong>
+                {a.leakers.high - a.leakers.low > 0.05 && (
+                  <> – <strong>{n1(a.leakers.high)}</strong></>
+                )}{' '}
+                of {a.raid.count} arrive
+                <span className="wg-leakers-sub">
+                  {n1(a.leakers.stated)} at stated figures · {Math.round(share * 100)}% attrition ·{' '}
+                  {km(a.distanceKm)} run · engaged as <em>{TARGET_LABEL[a.threat] ?? a.threat}</em>
+                </span>
+              </p>
+            </>
+          )}
 
-          {spread > 0.05 && (
-            <p className="wg-note">
-              The spread is not a modelling choice — it is the confidence recorded against each
-              kill probability, widened per figure. Nearly every <em>pk</em> in the library is
-              marked <em>low</em>, because nobody publishes them, so the range is wide by rights.
+          {/* Tactical Advantage Summaries */}
+          {a.stealthAdvantage && (
+            <p className="wg-note" style={{ color: '#3FB0A0', marginTop: '6px' }}>
+              ✦ {a.stealthAdvantage}
             </p>
           )}
-        </>
+          {a.ewSummary && (
+            <p className="wg-note" style={{ color: '#9AA7B4', marginTop: '4px' }}>
+              ✦ {a.ewSummary}
+            </p>
+          )}
+          {a.seadSummary && (
+            <p className="wg-note" style={{ color: '#E8833A', marginTop: '4px' }}>
+              ✦ {a.seadSummary}
+            </p>
+          )}
+        </div>
       )}
 
       {a.engagements.length > 0 && (
@@ -128,17 +188,22 @@ function Result({ a }: { a: Assessment }) {
                   </td>
                   <td>
                     {e.unitLabel}
+                    {e.phase === 'munition-flight' && <span className="wg-tag standoff">munition</span>}
+                    {e.phase === 'aircraft-ingress' && <span className="wg-tag">ingress</span>}
                     {e.cued && <span className="wg-tag">cued</span>}
+                    {e.jammed && <span className="wg-tag jammed">jammed</span>}
+                    {e.seadSuppressed && <span className="wg-tag sead">SEAD</span>}
+                    {e.stealthDelayed && <span className="wg-tag stealth">stealth delayed</span>}
+                    {e.stealthBypassed && <span className="wg-tag bypassed">bypassed</span>}
                     <span className="wg-layer-sub">
                       {e.weaponName} · {km(e.rangeKm)}
                       {e.heldFireKm !== undefined && ` · held fire ${km(e.heldFireKm)}`}
                       {e.assumedEngages && ' · target class not stated'}
+                      {e.seadSuppressed && ' · channels halved'}
+                      {e.jammed && ' · -25% Pk'}
                     </span>
                   </td>
                   <td className="num">{n1(e.facing)}</td>
-                  {/* Fractional, and correctly so: every figure in the walk is an
-                      expectation, so a layer facing 0.1 surviving raiders expends
-                      0.1 of a salvo. Formatted like the others rather than raw. */}
                   <td className="num">{e.silent ? '—' : n1(e.rounds)}</td>
                   <td className="num">{e.silent ? SILENT[e.silent] : n1(e.killed)}</td>
                 </tr>
@@ -170,12 +235,23 @@ function Result({ a }: { a: Assessment }) {
 }
 
 export function EngagementSection({ wg }: { wg: WarGames }) {
-  const { board, raidFromId, raidToId, assessment } = wg;
+  const {
+    board,
+    raidFromId,
+    raidToId,
+    assessment,
+    standoffEnabled,
+    setStandoffEnabled,
+    selectedWeaponIndex,
+    setSelectedWeaponIndex,
+    selectedEwEscortId,
+    setSelectedEwEscortId,
+    selectedSeadEscortId,
+    setSelectedSeadEscortId,
+  } = wg;
 
   const attacker = board.units.find((u) => u.id === raidFromId) ?? null;
 
-  // Anything belonging to somebody else. The board records no alliances, so it
-  // cannot know two nations are on the same side.
   const targets = useMemo(() => {
     if (!attacker) return [];
     return board.units
@@ -183,12 +259,36 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
       .sort((a, b) => distanceKm(attacker.lngLat, a.lngLat) - distanceKm(attacker.lngLat, b.lngLat));
   }, [board.units, attacker]);
 
-  const reach = attacker
-    ? wg.systems.find((s) => s.id === (attacker.kind === 'unit' ? attacker.systemId : undefined))
-        ?.platform
-    : undefined;
   const target = board.units.find((u) => u.id === raidToId) ?? null;
   const runKm = attacker && target ? distanceKm(attacker.lngLat, target.lngLat) : null;
+
+  // Friendly units for escort selection
+  const friendlyUnits = useMemo(() => {
+    if (!attacker) return [];
+    return board.units.filter((u) => u.iso === attacker.iso && u.id !== attacker.id);
+  }, [board.units, attacker]);
+
+  const ewOptions = useMemo(
+    () => friendlyUnits.filter((u) => u.kind === 'unit' && (u.typeId === 'ew' || u.typeId === 'jammer')),
+    [friendlyUnits]
+  );
+
+  const seadOptions = useMemo(
+    () =>
+      friendlyUnits.filter(
+        (u) => u.kind === 'unit' && (u.typeId === 'fighter' || u.typeId === 'strike' || u.typeId === 'special-forces')
+      ),
+    [friendlyUnits]
+  );
+
+  // Available standoff weapons on attacker
+  const attackerSpec = attacker
+    ? wg.systems.find((s) => s.id === (attacker.kind === 'unit' ? attacker.systemId : undefined))
+    : undefined;
+
+  const availableStandoff = attackerSpec ? standoffWeapons(attackerSpec) : [];
+
+  const reach = attackerSpec?.platform;
   const radius = reach?.combatRadiusKm;
   const refuelled = reach?.refuelledRadiusKm;
 
@@ -206,13 +306,75 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
 
         <Picker
           label="Flown by"
-          hint="a unit with a recorded speed"
+          hint="a unit or strike package"
           units={wg.raidCandidates}
           value={raidFromId}
           onChange={wg.setRaidFrom}
           wg={wg}
-          emptyText="Nothing on the board can fly a raid. A raider must be a single unit — not a special unit — with a system whose speed is recorded."
+          emptyText="Nothing on the board can fly a raid. Deploy a strike aircraft, fighter, or strike package with recorded speed."
         />
+
+        {/* Formation Package Info */}
+        {assessment?.raid.isComposite && assessment.raid.packageDetails && (
+          <div className="wg-tactical-card">
+            <div className="wg-tactical-title">
+              <span>Strike Package Composition</span>
+              <span className="wg-tag">Package</span>
+            </div>
+            <div className="wg-package-pills">
+              <span className="wg-package-pill">
+                <strong>{assessment.raid.packageDetails.strikeCount}</strong>
+                <em>{assessment.raid.packageDetails.strikePlatformName ?? 'Strike'}</em>
+              </span>
+              {assessment.raid.packageDetails.seadCount > 0 && (
+                <span className="wg-package-pill" style={{ color: '#E8833A' }}>
+                  <strong>{assessment.raid.packageDetails.seadCount}</strong>
+                  <em>SEAD Escort</em>
+                </span>
+              )}
+              {assessment.raid.packageDetails.ewCount > 0 && (
+                <span className="wg-package-pill" style={{ color: '#9AA7B4' }}>
+                  <strong>{assessment.raid.packageDetails.ewCount}</strong>
+                  <em>EW Jammer</em>
+                </span>
+              )}
+              {assessment.raid.packageDetails.awacsCount > 0 && (
+                <span className="wg-package-pill">
+                  <strong>{assessment.raid.packageDetails.awacsCount}</strong>
+                  <em>AEW&C</em>
+                </span>
+              )}
+              {assessment.raid.packageDetails.tankerCount > 0 && (
+                <span className="wg-package-pill">
+                  <strong>{assessment.raid.packageDetails.tankerCount}</strong>
+                  <em>Tanker</em>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* RCS Signature Indicator */}
+        {attackerSpec?.signature && (
+          <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--paper-dim)' }}>
+            <span>Radar Signature: </span>
+            <span
+              className={`wg-tag ${
+                attackerSpec.signature === 'low'
+                  ? 'stealth'
+                  : attackerSpec.signature === 'medium'
+                    ? 'sead'
+                    : ''
+              }`}
+            >
+              {attackerSpec.signature === 'low'
+                ? '5th-Gen VLO Stealth (-75% radar reach)'
+                : attackerSpec.signature === 'medium'
+                  ? '4.5-Gen Reduced RCS (-35% radar reach)'
+                  : 'Standard 4th-Gen RCS'}
+            </span>
+          </div>
+        )}
 
         <Picker
           label="Against"
@@ -226,7 +388,96 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           }
         />
 
-        <div className="wg-field-label">Flown at</div>
+        {/* Stand-Off Weapon Controls */}
+        {availableStandoff.length > 0 && (
+          <div className="wg-tactical-card">
+            <div className="wg-tactical-title">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={standoffEnabled}
+                  onChange={(e) => setStandoffEnabled(e.target.checked)}
+                />
+                <span>Stand-Off Weapon Release</span>
+              </label>
+              {standoffEnabled && <span className="wg-tag standoff">Active</span>}
+            </div>
+
+            {standoffEnabled && (
+              <div style={{ marginTop: '6px' }}>
+                <select
+                  value={selectedWeaponIndex}
+                  onChange={(e) => setSelectedWeaponIndex(Number(e.target.value))}
+                  style={{ width: '100%', fontSize: '11px' }}
+                >
+                  {availableStandoff.map(({ weapon }, idx) => (
+                    <option key={idx} value={idx}>
+                      {weapon.name ?? 'Munition'} ({km(weapon.rangeKm)} reach)
+                    </option>
+                  ))}
+                </select>
+                <p className="wg-note" style={{ marginTop: '4px' }}>
+                  Aircraft ingresses to release range, launches stand-off munitions, and egresses safely.
+                  Inner SAM belts engage the munitions.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Single-Unit Escort Selection */}
+        {attacker && attacker.kind === 'unit' && (ewOptions.length > 0 || seadOptions.length > 0) && (
+          <div className="wg-tactical-card">
+            <div className="wg-tactical-title">
+              <span>Attached Escorts & Support</span>
+              <span className="wg-tag">Optional</span>
+            </div>
+            <div className="wg-tactical-grid">
+              {ewOptions.length > 0 && (
+                <label className="wg-field">
+                  <span>
+                    EW Jammer <em>(-40% radar)</em>
+                  </span>
+                  <select
+                    value={selectedEwEscortId ?? ''}
+                    onChange={(e) => setSelectedEwEscortId(e.target.value || null)}
+                    style={{ fontSize: '11px' }}
+                  >
+                    <option value="">None</option>
+                    {ewOptions.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {unitLabel(u, wg.formations, wg.systems)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {seadOptions.length > 0 && (
+                <label className="wg-field">
+                  <span>
+                    SEAD Flight <em>(suppress SAMs)</em>
+                  </span>
+                  <select
+                    value={selectedSeadEscortId ?? ''}
+                    onChange={(e) => setSelectedSeadEscortId(e.target.value || null)}
+                    style={{ fontSize: '11px' }}
+                  >
+                    <option value="">None</option>
+                    {seadOptions.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {unitLabel(u, wg.formations, wg.systems)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="wg-field-label" style={{ marginTop: '10px' }}>
+          Flown at
+        </div>
         <div className="wg-kinds">
           {ALTITUDES.map(([metres, label, hint]) => (
             <button
@@ -240,10 +491,8 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           ))}
         </div>
         <p className="wg-note">
-          The same altitude the coverage rings are drawn against, because it is the same number —
-          a detection ring is what a radar sees of something at <em>this</em> height. Fly low and
-          a battery holds its fire until the raid clears its horizon; fly high and it engages at
-          close to the brochure figure.
+          Detection rings reflect this altitude: fly low and ground radars hold fire until the raid
+          clears the horizon; fly high and batteries engage at nominal brochure reach.
         </p>
 
         {runKm !== null && radius !== undefined && (
@@ -252,8 +501,8 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
             {runKm <= radius
               ? `Inside its ${km(radius)} combat radius.`
               : refuelled && runKm <= refuelled
-                ? `Beyond its ${km(radius)} combat radius — needs the tanker that makes it ${km(refuelled)}.`
-                : `Beyond even its refuelled radius of ${km(refuelled ?? radius)}. The assessment still runs; getting there is your problem.`}
+                ? `Beyond its ${km(radius)} combat radius — needs tanker support to reach ${km(refuelled)}.`
+                : `Beyond even its refuelled radius of ${km(refuelled ?? radius)}.`}
           </p>
         )}
       </section>
@@ -266,19 +515,13 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           {assessment.engagements.some((e) => e.cued) && (
             <p className="wg-note">
               A <em>cued</em> layer cannot see the raid itself and is firing on a friendly sensor&rsquo;s
-              picture. Those engagements assume an air picture shared across the nation, and they
-              are the first thing to disappear if the data link does.
+              shared picture.
             </p>
           )}
 
           <p className="wg-note">
-            One engagement per battery: each fires a salvo at every raider it can hold, once, because
-            re-fire interval is not a figure this library has. Weapons that record no magazine are
-            not capped. Nothing fires at what it cannot see — but a system recording no sensor at
-            all is unrecorded rather than blind, so it is not held back. The raid flies straight
-            through everything at the recorded speed, which for most aircraft is a maximum rather
-            than a cruise. Nothing is destroyed at the far end and nobody shoots back — this reads
-            the board, it does not change it.
+            The enhanced model integrates radar curvature horizons, RCS stealth scaling, EW jamming
+            degradation, SEAD anti-radiation suppression, and stand-off munition release phases.
           </p>
         </section>
       )}
