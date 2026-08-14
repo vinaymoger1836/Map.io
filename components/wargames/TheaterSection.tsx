@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * Theater Strike & Multi-Phase Raid Console.
+ * Theater Strike & Air Tasking Order (ATO) Console.
  *
- * Coordinates operational-level Air Tasking Orders against defended target complexes:
+ * Coordinates operational-level multi-phase strike operations:
  * 1. Target Objective Selection with automated Defensive Umbrella discovery.
  * 2. Attacker Coalition discovery with weapon reach checks.
- * 3. Strike Phase Sequencer (OCA Fighter Sweeps, SEAD Radar Strikes, Main Saturation).
+ * 3. Simultaneous (Time-on-Target) & Sequential Strike Phase Sequencer.
  * 4. State & Magazine Persistence across phases (depleted missiles & suppressed radars persist).
  * 5. Master Theater After-Action Report (AAR) & Chronological Battle Debrief.
  */
@@ -14,12 +14,10 @@
 import { useMemo, useState } from 'react';
 
 import type { WarGames } from '@/lib/useWarGames';
-import { distanceKm } from '@/lib/geo';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
 import {
   type StrikePhaseTask,
   type PhaseReport,
-  type CandidateAttacker,
   type DefensiveUmbrella,
 } from '@/lib/theaterEngagement';
 
@@ -130,7 +128,7 @@ function PhaseCard({
     <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
       <div className="wg-tactical-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span className="wg-tag" style={{ background: 'var(--ink)' }}>Phase {order}</span>
+          <span className="wg-tag" style={{ background: 'var(--ink)' }}>Phase {report.phaseNumber}</span>
           <span style={{ fontWeight: 600 }}>{report.task.title}</span>
         </div>
 
@@ -189,7 +187,7 @@ function PhaseCard({
             style={{ fontSize: '9px', padding: '2px 6px' }}
             onClick={() => setExpanded(!expanded)}
           >
-            {expanded ? 'Hide Phase Timeline' : `View ${report.battleLog.length} Phase Events`}
+            {expanded ? 'Hide Phase Events' : `View ${report.battleLog.length} Phase Events`}
           </button>
 
           {expanded && (
@@ -238,6 +236,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   } = wg;
 
   // New Phase Form State
+  const [selectedPhaseNum, setSelectedPhaseNum] = useState<number | 'new'>('new');
   const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike'>('sead');
   const [newAttackerId, setNewAttackerId] = useState<string>('');
   const [newTargetId, setNewTargetId] = useState<string>('');
@@ -254,17 +253,27 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     return Object.keys(board.nations).filter((iso) => iso !== targetUnit.iso);
   }, [board.nations, targetUnit]);
 
+  // Existing distinct phase numbers in the task list
+  const existingPhaseNumbers = useMemo(() => {
+    const set = new Set(theaterPhases.map((p) => p.phaseNumber));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [theaterPhases]);
+
+  const nextPhaseNumber = existingPhaseNumbers.length > 0 ? Math.max(...existingPhaseNumbers) + 1 : 1;
+
   // Target options for a phase: Main target + all umbrella SAMs + CAPs
   const phaseTargetOptions = useMemo(() => {
-    if (!targetUnit || !theaterUmbrella) return [];
+    if (!targetUnit) return [];
     const list: { id: string; label: string; kind: string }[] = [
       { id: targetUnit.id, label: `${unitLabel(targetUnit, wg.formations, wg.systems)} (PRIMARY OBJECTIVE)`, kind: 'objective' },
     ];
-    for (const sam of theaterUmbrella.samDefenders) {
-      list.push({ id: sam.unit.id, label: `${unitLabel(sam.unit, wg.formations, wg.systems)} (SAM Radar)`, kind: 'sam' });
-    }
-    for (const cap of theaterUmbrella.capDefenders) {
-      list.push({ id: cap.unit.id, label: `${unitLabel(cap.unit, wg.formations, wg.systems)} (CAP Fighter Flight)`, kind: 'cap' });
+    if (theaterUmbrella) {
+      for (const sam of theaterUmbrella.samDefenders) {
+        list.push({ id: sam.unit.id, label: `${unitLabel(sam.unit, wg.formations, wg.systems)} (SAM Radar)`, kind: 'sam' });
+      }
+      for (const cap of theaterUmbrella.capDefenders) {
+        list.push({ id: cap.unit.id, label: `${unitLabel(cap.unit, wg.formations, wg.systems)} (CAP Fighter Flight)`, kind: 'cap' });
+      }
     }
     return list;
   }, [targetUnit, theaterUmbrella, wg.formations, wg.systems]);
@@ -273,7 +282,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const selectedAttackerCandidate = theaterAttackers.find((a) => a.unit.id === newAttackerId);
   const availableWeapons = selectedAttackerCandidate?.availableWeapons ?? [];
   const activeWeapon = availableWeapons[newWeaponIndex] ?? availableWeapons[0];
-  const maxMag = activeWeapon?.maxMagazine ?? 4;
+  const maxMag = activeWeapon?.maxMagazine ?? 24;
 
   const handleAddPhase = () => {
     if (!newAttackerId || !newTargetId) return;
@@ -282,7 +291,10 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     if (newCategory === 'oca') defaultTitle = 'Offensive Counter-Air (CAP Sweep)';
     if (newCategory === 'sead') defaultTitle = 'SEAD Anti-Radiation SAM Strike';
 
+    const targetPhaseNumber = selectedPhaseNum === 'new' ? nextPhaseNumber : selectedPhaseNum;
+
     addTheaterPhase({
+      phaseNumber: targetPhaseNumber,
       title: defaultTitle,
       category: newCategory,
       attackerUnitId: newAttackerId,
@@ -374,13 +386,37 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
         <section className="wg-block">
           <h3 className="wg-h">
             3. Air Tasking Order (Strike Phases)
-            <span className="wg-h-note">{theaterPhases.length} phases planned</span>
+            <span className="wg-h-note">{theaterPhases.length} tasks scheduled</span>
           </h3>
 
           {/* Builder Form */}
           <div className="wg-tactical-card" style={{ background: 'color-mix(in srgb, var(--ink) 60%, var(--surface))' }}>
             <div className="wg-tactical-title">
-              <span>+ Add Strike Wave / Phase</span>
+              <span>+ Add Strike Task to Operation</span>
+            </div>
+
+            {/* Simultaneous vs Sequential Phase Selector */}
+            <div style={{ marginTop: '6px' }}>
+              <label className="wg-field wide">
+                <span>
+                  Schedule As <em>simultaneous vs sequential</em>
+                </span>
+                <select
+                  value={selectedPhaseNum}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedPhaseNum(val === 'new' ? 'new' : Number(val));
+                  }}
+                  style={{ fontSize: '11px' }}
+                >
+                  <option value="new">+ Start New Phase {nextPhaseNumber} (Sequential Follow-up Wave)</option>
+                  {existingPhaseNumbers.map((pNum) => (
+                    <option key={pNum} value={pNum}>
+                      Inside Phase {pNum} (Simultaneous Time-on-Target Wave)
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
             <div className="wg-tactical-grid">
@@ -484,7 +520,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
               disabled={!newAttackerId || !newTargetId}
               onClick={handleAddPhase}
             >
-              + Add Phase to Air Tasking Order
+              + Add Task to Operation
             </button>
           </div>
 

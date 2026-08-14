@@ -1,13 +1,13 @@
 /**
  * Operational Theater-Level Raid & Multi-Phase Strike Engine
  *
- * Coordinates multi-phase strike operations (Air Tasking Orders) against defended
+ * Coordinates operational-level Air Tasking Orders against defended
  * target complexes (e.g. Airbases, Naval Fleets, Command Bunkers).
  *
  * Features:
  * 1. Defensive Umbrella Auto-Discovery (SAM batteries, CAP interceptors, sensors covering the target).
  * 2. Attacker Reach Discovery (warships, strike wings, drone swarms within reach of target or defenders).
- * 3. Multi-Phase Strike Sequencing (e.g. OCA Fighter Sweep -> SEAD SAM Suppression -> Main Saturation).
+ * 3. Simultaneous & Sequential Strike Sequencing (e.g. OCA Fighter Sweep + SEAD in Phase 1 -> Main Strike in Phase 2).
  * 4. State & Magazine Persistence across phases (expended missiles & destroyed radars persist across phases).
  * 5. Multi-Vector Map Pathing & Chronological Theater Battle Debrief.
  */
@@ -59,7 +59,7 @@ export interface CandidateAttacker {
 
 export interface StrikePhaseTask {
   id: string;
-  order: number;
+  phaseNumber: number; // 1, 2, 3...
   title: string;
   category: 'oca' | 'sead' | 'strike' | 'standoff';
   attackerUnitId: string;
@@ -92,6 +92,7 @@ export interface PhaseBattleLogEvent {
 
 export interface PhaseReport {
   task: StrikePhaseTask;
+  phaseNumber: number;
   attackerLabel: string;
   targetLabel: string;
   weaponName: string;
@@ -132,10 +133,31 @@ export interface BoardContext {
 /* Discovery Functions                                                */
 /* ------------------------------------------------------------------ */
 
-const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | undefined =>
-  unit.kind === 'unit'
-    ? effectiveSpec(systemById(ctx.systems, unit.systemId), unit.loadout, ctx.munitions)
-    : undefined;
+const isStrikeType = (typeId: string): boolean =>
+  ['strike', 'bomber', 'fighter', 'uav', 'attack-heli', 'missile', 'silo', 'destroyer', 'cruiser', 'corvette', 'submarine'].includes(typeId);
+
+export const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | undefined => {
+  if (unit.kind === 'unit') {
+    const raw = systemById(ctx.systems, unit.systemId);
+    return raw ? effectiveSpec(raw, unit.loadout, ctx.munitions) : undefined;
+  }
+  if (unit.kind === 'formation') {
+    let strikePart = unit.composition.find((p) => p.count > 0 && isStrikeType(p.typeId));
+    if (!strikePart) strikePart = unit.composition.find((p) => p.count > 0);
+    if (!strikePart) return undefined;
+    const baseSpec = systemById(ctx.systems, strikePart.systemId);
+    if (baseSpec) return baseSpec;
+
+    return {
+      id: `formation-${unit.id}`,
+      name: strikePart.typeId,
+      typeId: strikePart.typeId,
+      platform: { speedKmh: 950, combatRadiusKm: 1200 },
+      weapons: [{ name: 'Strike Munitions', rangeKm: 300, salvo: 4, magazine: 16 }],
+    } as SystemSpec;
+  }
+  return undefined;
+};
 
 /**
  * Discovers all friendly defending assets that provide umbrella protection over the target.
@@ -161,22 +183,22 @@ export function discoverDefensiveUmbrella(
     const airWeapons = (spec.weapons ?? []).filter((w) => w.rangeKm && w.rangeKm > 0 && (!w.engages || w.engages.includes('air')));
     const maxSamRange = airWeapons.length > 0 ? Math.max(...airWeapons.map((w) => w.rangeKm)) : 0;
 
-    if (maxSamRange >= distKm || distKm <= 150) {
+    if (maxSamRange >= distKm || distKm <= 250) {
       samDefenders.push({ unit: u, spec, rangeKm: maxSamRange, coverageDistanceKm: distKm });
     }
 
     // CAP Fighters covering the target
     const combatRadius = spec.platform?.combatRadiusKm ?? 0;
-    if (spec.typeId === 'fighter' || spec.typeId === 'interceptor') {
-      if (combatRadius >= distKm || distKm <= 500) {
-        capDefenders.push({ unit: u, spec, combatRadiusKm: combatRadius });
+    if (spec.typeId === 'fighter' || spec.typeId === 'interceptor' || u.kind === 'formation') {
+      if (combatRadius >= distKm || distKm <= 600) {
+        capDefenders.push({ unit: u, spec, combatRadiusKm: combatRadius || 800 });
       }
     }
 
     // Early Warning / AEW&C Sensors
     const detection = spec.sensor?.detectionKm ?? 0;
     if (detection >= distKm || spec.typeId === 'awacs' || spec.typeId === 'radar') {
-      sensorDefenders.push({ unit: u, spec, detectionKm: detection });
+      sensorDefenders.push({ unit: u, spec, detectionKm: detection || 400 });
     }
   }
 
@@ -212,15 +234,25 @@ export function discoverAttackerAssets(
     const spec = specOf(unit, ctx);
     if (!spec) continue;
     const distToTarget = distanceKm(unit.lngLat, target.lngLat);
-    const unitCount = unit.kind === 'unit' ? unit.count : 1;
+    const unitCount = unit.kind === 'unit' ? unit.count : totalStrength(unit.composition);
 
-    const weapons = standoffWeapons(spec).map(({ weapon, index }) => {
+    let weapons = standoffWeapons(spec).map(({ weapon, index }) => {
       const loadoutCount = unit.kind === 'unit' ? unit.loadout?.find((l) => l.id === weapon.id)?.count : undefined;
       const maxMag = maxMunitionCapacity(spec, weapon, unitCount, loadoutCount);
       return { weapon, index, maxMagazine: maxMag };
     });
 
-    const combatRadius = spec.platform?.combatRadiusKm ?? 0;
+    if (weapons.length === 0) {
+      weapons = [
+        {
+          weapon: { name: 'Precision Air Munitions', rangeKm: 120, salvo: 2, magazine: 8 },
+          index: 0,
+          maxMagazine: 8 * unitCount,
+        },
+      ];
+    }
+
+    const combatRadius = spec.platform?.combatRadiusKm ?? 800;
     const refuelledRadius = spec.platform?.refuelledRadiusKm ?? combatRadius;
     const maxWeaponRange = weapons.length > 0 ? Math.max(...weapons.map((w) => w.weapon.rangeKm)) : 0;
     const totalReach = Math.max(combatRadius + maxWeaponRange, refuelledRadius + maxWeaponRange, maxWeaponRange);
@@ -228,16 +260,14 @@ export function discoverAttackerAssets(
     const canReachTarget = totalReach >= distToTarget;
     const canReachUmbrella = defenderPositions.some((pos) => totalReach >= distanceKm(unit.lngLat, pos));
 
-    if (weapons.length > 0 || combatRadius > 0) {
-      out.push({
-        unit,
-        spec,
-        distanceToTargetKm: distToTarget,
-        availableWeapons: weapons,
-        canReachTarget,
-        canReachUmbrella,
-      });
-    }
+    out.push({
+      unit,
+      spec,
+      distanceToTargetKm: distToTarget,
+      availableWeapons: weapons,
+      canReachTarget,
+      canReachUmbrella,
+    });
   }
 
   return out;
@@ -247,7 +277,7 @@ export function discoverAttackerAssets(
 /* Theater Simulation Engine with Persistent Munition Tracking        */
 /* ------------------------------------------------------------------ */
 
-const PHASE_COLORS = ['#4DD0E1', '#FF8A65', '#FFD54F', '#BA68C8', '#4FC3F7'];
+const PHASE_COLORS = ['#4DD0E1', '#FF8A65', '#FFD54F', '#BA68C8', '#4FC3F7', '#81C784', '#FF80AB', '#FFB74D', '#AED581'];
 
 export function assessTheaterRaid(
   targetUnitId: string,
@@ -259,7 +289,6 @@ export function assessTheaterRaid(
   const target = allUnits.find((u) => u.id === targetUnitId);
   if (!target) return null;
 
-  const targetSpec = specOf(target, ctx);
   const targetLabel = unitLabel(target, ctx.formations, ctx.systems);
 
   // Initialize persistent unit states
@@ -268,10 +297,14 @@ export function assessTheaterRaid(
   for (const u of allUnits) {
     const spec = specOf(u, ctx);
     if (!spec) continue;
-    const count = u.kind === 'unit' ? u.count : 1;
+    const count = u.kind === 'unit' ? u.count : Math.max(1, totalStrength(u.composition));
     const magazines = new Map<number, number>();
 
-    (spec.weapons ?? []).forEach((w, idx) => {
+    const weaponsList = spec.weapons && spec.weapons.length > 0
+      ? spec.weapons
+      : [{ name: 'Standard Munition', rangeKm: 80, salvo: 2, magazine: 8 }];
+
+    weaponsList.forEach((w, idx) => {
       const loadoutCount = u.kind === 'unit' ? u.loadout?.find((l) => l.id === w.id)?.count : undefined;
       const cap = maxMunitionCapacity(spec, w, count, loadoutCount);
       magazines.set(idx, cap);
@@ -290,292 +323,355 @@ export function assessTheaterRaid(
   const phaseReports: PhaseReport[] = [];
   const pathSpecs: RaidPathSpec[] = [];
 
-  for (let pIdx = 0; pIdx < phases.length; pIdx++) {
-    const task = phases[pIdx];
-    const attackerUnit = allUnits.find((u) => u.id === task.attackerUnitId);
-    const targetUnit = allUnits.find((u) => u.id === task.targetUnitId);
-    if (!attackerUnit || !targetUnit) continue;
+  // Group tasks by phaseNumber to support simultaneous operations within the same wave
+  const phaseNumbers = Array.from(new Set(phases.map((p) => p.phaseNumber))).sort((a, b) => a - b);
 
-    const attackerState = unitStates.get(attackerUnit.id);
-    const targetState = unitStates.get(targetUnit.id);
-    if (!attackerState || !targetState) continue;
+  let taskGlobalIdx = 0;
 
-    const attackerSpec = specOf(attackerUnit, ctx);
-    const targetSpecCurr = specOf(targetUnit, ctx);
-    if (!attackerSpec || !targetSpecCurr) continue;
+  for (const pNum of phaseNumbers) {
+    const tasksInPhase = phases.filter((p) => p.phaseNumber === pNum);
 
-    const attackerLabel = unitLabel(attackerUnit, ctx.formations, ctx.systems);
-    const phaseTargetLabel = unitLabel(targetUnit, ctx.formations, ctx.systems);
-
-    const weapon = attackerSpec.weapons?.[task.weaponIndex] ?? { rangeKm: 50, name: 'Standard Strike Munition' };
-    const weaponName = weapon.name ?? 'Strike Munition';
-
-    const battleLog: PhaseBattleLogEvent[] = [];
-    let evtId = 0;
-    const nextEvt = () => `p${pIdx}-evt-${++evtId}`;
-
-    // Check attacker availability
-    if (attackerState.status === 'destroyed' || attackerState.aliveCount <= 0) {
-      phaseReports.push({
-        task,
-        attackerLabel,
-        targetLabel: phaseTargetLabel,
-        weaponName,
-        salvoCommitted: 0,
-        attackerPlatformsLost: 0,
-        attackerPlatformsSurviving: 0,
-        munitionsIntercepted: 0,
-        munitionsImpacted: 0,
-        targetDestroyed: targetState.status === 'destroyed',
-        targetSuppressed: targetState.status === 'suppressed',
-        targetDamageSummary: 'Task Aborted: Attacking platform destroyed in previous phase.',
-        battleLog: [
-          {
-            id: nextEvt(),
-            timeFormatted: 'T+00m',
-            title: 'Task Aborted',
-            detail: `${attackerLabel} was destroyed in an earlier phase and cannot execute this strike.`,
-            badge: { text: 'Platform Lost', variant: 'loss' },
-          },
-        ],
-      });
-      continue;
-    }
-
-    // Check target availability
-    if (targetState.status === 'destroyed') {
-      phaseReports.push({
-        task,
-        attackerLabel,
-        targetLabel: phaseTargetLabel,
-        weaponName,
-        salvoCommitted: 0,
-        attackerPlatformsLost: 0,
-        attackerPlatformsSurviving: attackerState.aliveCount,
-        munitionsIntercepted: 0,
-        munitionsImpacted: 0,
-        targetDestroyed: true,
-        targetSuppressed: true,
-        targetDamageSummary: 'Target already destroyed in prior phase.',
-        battleLog: [
-          {
-            id: nextEvt(),
-            timeFormatted: 'T+00m',
-            title: 'Target Already Neutralized',
-            detail: `${phaseTargetLabel} has already been destroyed in an earlier strike wave. Zero munitions committed.`,
-            badge: { text: 'Neutralized', variant: 'neutral' },
-          },
-        ],
-      });
-      continue;
-    }
-
-    // Check available magazine for attacker
-    const curAttackerMag = attackerState.magazines.get(task.weaponIndex) ?? 0;
-    const actualSalvo = Math.min(curAttackerMag, Math.max(1, task.salvoSize));
-
-    // Deduct from attacker magazine
-    attackerState.magazines.set(task.weaponIndex, Math.max(0, curAttackerMag - actualSalvo));
-
-    const totalDistKm = distanceKm(attackerUnit.lngLat, targetUnit.lngLat);
-    const isStandoff = weapon.rangeKm > 0;
-    const standoffDistKm = isStandoff ? Math.min(weapon.rangeKm, totalDistKm) : 0;
-    const releaseDistKm = isStandoff ? Math.max(0, totalDistKm - standoffDistKm) : totalDistKm;
-    const releaseLngLat =
-      isStandoff && totalDistKm > 0 ? interpolate(attackerUnit.lngLat, targetUnit.lngLat, releaseDistKm / totalDistKm) : undefined;
-
-    // Log Launch
-    battleLog.push({
-      id: nextEvt(),
-      timeFormatted: 'T+00m',
-      title: `${task.title} Initiated`,
-      detail: `${attackerLabel} launched salvo of ${actualSalvo} × ${weaponName} against ${phaseTargetLabel} (Remaining Magazine: ${attackerState.magazines.get(task.weaponIndex)}).`,
-      badge: { text: `${actualSalvo} Committed`, variant: 'standoff' },
+    // Sort tasks in this phase so Offensive Counter-Air (OCA) resolves first, then SEAD, then Main Strikes
+    const sortedTasks = [...tasksInPhase].sort((a, b) => {
+      const order = { oca: 1, sead: 2, standoff: 3, strike: 4 };
+      return (order[a.category] ?? 3) - (order[b.category] ?? 3);
     });
 
-    // SAM and CAP Interception Walk along this phase corridor
-    let munitionsSurviving = actualSalvo;
-    let attackerLost = 0;
-    let totalIntercepted = 0;
+    // Check if CAP fighters were pinned/neutralized during OCA in this phase
+    let capFightersPinnedInThisPhase = false;
 
-    // Find defenders covering this route
-    const defenders = allUnits.filter((u) => u.iso === targetUnit.iso);
+    for (const task of sortedTasks) {
+      taskGlobalIdx++;
+      const attackerUnit = allUnits.find((u) => u.id === task.attackerUnitId);
+      const targetUnit = allUnits.find((u) => u.id === task.targetUnitId);
+      if (!attackerUnit || !targetUnit) continue;
 
-    for (const def of defenders) {
-      const defState = unitStates.get(def.id);
-      if (!defState || defState.status === 'destroyed' || defState.aliveCount <= 0) continue;
+      let attackerState = unitStates.get(attackerUnit.id);
+      let targetState = unitStates.get(targetUnit.id);
 
-      const defSpec = specOf(def, ctx);
-      if (!defSpec) continue;
+      if (!attackerState) {
+        attackerState = {
+          unitId: attackerUnit.id,
+          initialCount: 1,
+          aliveCount: 1,
+          destroyedCount: 0,
+          status: 'intact',
+          magazines: new Map([[0, 24]]),
+        };
+        unitStates.set(attackerUnit.id, attackerState);
+      }
 
-      // Check if SAM is suppressed
-      const isSuppressed = defState.status === 'suppressed';
+      if (!targetState) {
+        targetState = {
+          unitId: targetUnit.id,
+          initialCount: 1,
+          aliveCount: 1,
+          destroyedCount: 0,
+          status: 'intact',
+          magazines: new Map([[0, 24]]),
+        };
+        unitStates.set(targetUnit.id, targetState);
+      }
 
-      const defWeapons = defSpec.weapons ?? [];
-      for (let wIdx = 0; wIdx < defWeapons.length; wIdx++) {
-        const defWeapon = defWeapons[wIdx];
-        if (!defWeapon.rangeKm || defWeapon.rangeKm <= 0) continue;
-        if (defWeapon.engages && !defWeapon.engages.includes('air')) continue;
+      const attackerSpec = specOf(attackerUnit, ctx) ?? ({
+        id: attackerUnit.id,
+        name: attackerUnit.kind === 'unit' ? attackerUnit.typeId : 'Strike Force',
+        typeId: 'strike',
+        platform: { speedKmh: 950 },
+        weapons: [{ name: 'Standoff Cruise Missile', rangeKm: 600, salvo: 4, magazine: 24 }],
+      } as SystemSpec);
 
-        // Check if SAM envelope intersects phase route
-        const distToCorridor = distanceKm(def.lngLat, targetUnit.lngLat);
-        if (distToCorridor > defWeapon.rangeKm + 20) continue;
+      const attackerLabel = unitLabel(attackerUnit, ctx.formations, ctx.systems);
+      const phaseTargetLabel = unitLabel(targetUnit, ctx.formations, ctx.systems);
 
-        // Check defender remaining magazine
-        const readyRounds = defState.magazines.get(wIdx) ?? 0;
-        if (readyRounds <= 0) {
-          battleLog.push({
-            id: nextEvt(),
-            timeFormatted: 'T+12m',
-            title: `${unitLabel(def, ctx.formations, ctx.systems)} Magazine Dry`,
-            detail: `Defending battery was in range, but has exhausted all ready interceptor rounds in earlier phases.`,
-            badge: { text: '0 Ammo', variant: 'neutral' },
-          });
+      const weapon = attackerSpec.weapons?.[task.weaponIndex] ?? { rangeKm: 50, name: 'Standard Strike Munition' };
+      const weaponName = weapon.name ?? 'Strike Munition';
+
+      const battleLog: PhaseBattleLogEvent[] = [];
+      let evtId = 0;
+      const nextEvt = () => `p${pNum}-t${taskGlobalIdx}-evt-${++evtId}`;
+
+      // Check attacker availability
+      if (attackerState.status === 'destroyed' || attackerState.aliveCount <= 0) {
+        phaseReports.push({
+          task,
+          phaseNumber: pNum,
+          attackerLabel,
+          targetLabel: phaseTargetLabel,
+          weaponName,
+          salvoCommitted: 0,
+          attackerPlatformsLost: 0,
+          attackerPlatformsSurviving: 0,
+          munitionsIntercepted: 0,
+          munitionsImpacted: 0,
+          targetDestroyed: targetState.status === 'destroyed',
+          targetSuppressed: targetState.status === 'suppressed',
+          targetDamageSummary: 'Task Aborted: Attacking platform destroyed in an earlier phase.',
+          battleLog: [
+            {
+              id: nextEvt(),
+              timeFormatted: 'T+00m',
+              title: 'Task Aborted',
+              detail: `${attackerLabel} was destroyed in an earlier strike wave and cannot launch.`,
+              badge: { text: 'Platform Lost', variant: 'loss' },
+            },
+          ],
+        });
+        continue;
+      }
+
+      // Check target availability
+      if (targetState.status === 'destroyed') {
+        phaseReports.push({
+          task,
+          phaseNumber: pNum,
+          attackerLabel,
+          targetLabel: phaseTargetLabel,
+          weaponName,
+          salvoCommitted: 0,
+          attackerPlatformsLost: 0,
+          attackerPlatformsSurviving: attackerState.aliveCount,
+          munitionsIntercepted: 0,
+          munitionsImpacted: 0,
+          targetDestroyed: true,
+          targetSuppressed: true,
+          targetDamageSummary: 'Target already destroyed in a prior wave.',
+          battleLog: [
+            {
+              id: nextEvt(),
+              timeFormatted: 'T+00m',
+              title: 'Target Already Neutralized',
+              detail: `${phaseTargetLabel} was already destroyed in an earlier wave. Munitions conserved.`,
+              badge: { text: 'Neutralized', variant: 'neutral' },
+            },
+          ],
+        });
+        continue;
+      }
+
+      // Check available magazine for attacker
+      const curAttackerMag = attackerState.magazines.get(task.weaponIndex) ?? 24;
+      const actualSalvo = Math.min(curAttackerMag, Math.max(1, task.salvoSize));
+
+      // Deduct from attacker magazine
+      attackerState.magazines.set(task.weaponIndex, Math.max(0, curAttackerMag - actualSalvo));
+
+      const totalDistKm = distanceKm(attackerUnit.lngLat, targetUnit.lngLat);
+      const isStandoff = (weapon.rangeKm ?? 0) > 0;
+      const standoffDistKm = isStandoff ? Math.min(weapon.rangeKm, totalDistKm) : 0;
+      const releaseDistKm = isStandoff ? Math.max(0, totalDistKm - standoffDistKm) : totalDistKm;
+      const releaseLngLat =
+        isStandoff && totalDistKm > 0 ? interpolate(attackerUnit.lngLat, targetUnit.lngLat, releaseDistKm / totalDistKm) : undefined;
+
+      // Log Launch
+      battleLog.push({
+        id: nextEvt(),
+        timeFormatted: 'T+00m',
+        title: `Phase ${pNum}: ${task.title}`,
+        detail: `${attackerLabel} launched salvo of ${actualSalvo} × ${weaponName} at ${phaseTargetLabel} (Remaining Magazine: ${attackerState.magazines.get(task.weaponIndex)}).`,
+        badge: { text: `${actualSalvo} Committed`, variant: 'standoff' },
+      });
+
+      if (capFightersPinnedInThisPhase && task.category !== 'oca') {
+        battleLog.push({
+          id: nextEvt(),
+          timeFormatted: 'T+05m',
+          title: 'Defending CAP Pinned by Friendly Sweeps',
+          detail: `Simultaneous fighter sweep occupied defending CAP interceptors. Strike ingress proceeds without enemy aircraft interference.`,
+          badge: { text: 'Air Cover Neutralized', variant: 'success' },
+        });
+      }
+
+      // SAM and CAP Interception Walk along this phase corridor
+      let munitionsSurviving = actualSalvo;
+      let attackerLost = 0;
+      let totalIntercepted = 0;
+
+      // Find defenders covering this route
+      const defenders = allUnits.filter((u) => u.iso === targetUnit.iso);
+
+      for (const def of defenders) {
+        const defState = unitStates.get(def.id);
+        if (!defState || defState.status === 'destroyed' || defState.aliveCount <= 0) continue;
+
+        const defSpec = specOf(def, ctx);
+        if (!defSpec) continue;
+
+        // If defending CAP was neutralized/pinned and this unit is a fighter, skip
+        if (capFightersPinnedInThisPhase && (defSpec.typeId === 'fighter' || defSpec.typeId === 'interceptor')) {
           continue;
         }
 
-        // Fire Channels & Interception Math
-        let channels = defSpec.sensor?.engagements ?? 4;
-        if (isSuppressed) channels = Math.max(1, Math.floor(channels / 2));
-        channels = channels * defState.aliveCount;
+        const isSuppressed = defState.status === 'suppressed';
+        const defWeapons = defSpec.weapons ?? [];
 
-        const wantedRounds = Math.min(munitionsSurviving, channels) * (defWeapon.salvo ?? 2);
-        const roundsFired = Math.min(readyRounds, wantedRounds);
+        for (let wIdx = 0; wIdx < defWeapons.length; wIdx++) {
+          const defWeapon = defWeapons[wIdx];
+          if (!defWeapon.rangeKm || defWeapon.rangeKm <= 0) continue;
+          if (defWeapon.engages && !defWeapon.engages.includes('air')) continue;
 
-        // Deduct from defender persistent magazine
-        defState.magazines.set(wIdx, readyRounds - roundsFired);
+          // Check if SAM envelope covers corridor
+          const distToTargetNode = distanceKm(def.lngLat, targetUnit.lngLat);
+          if (distToTargetNode > defWeapon.rangeKm + 30) continue;
 
-        const basePk = defWeapon.pk ?? 0.75;
-        const effectivePk = isSuppressed ? basePk * 0.7 : basePk;
-        const targetsEngaged = Math.floor(roundsFired / (defWeapon.salvo ?? 2));
-        const kills = Math.min(munitionsSurviving, Math.round(targetsEngaged * effectivePk));
-
-        if (roundsFired > 0) {
-          totalIntercepted += kills;
-          munitionsSurviving = Math.max(0, munitionsSurviving - kills);
-
-          const defLabel = unitLabel(def, ctx.formations, ctx.systems);
-          if (kills > 0) {
+          // Check defender remaining magazine
+          const readyRounds = defState.magazines.get(wIdx) ?? 0;
+          if (readyRounds <= 0) {
             battleLog.push({
               id: nextEvt(),
-              timeFormatted: 'T+18m',
-              title: `${defLabel} Interception`,
-              detail: `${defLabel} fired ${roundsFired} × ${defWeapon.name ?? 'SAM'} interceptors (Remaining Magazine: ${defState.magazines.get(wIdx)}). Intercepted ${kills} incoming munitions.`,
-              badge: { text: `${kills} Intercepted`, variant: 'loss' },
+              timeFormatted: 'T+12m',
+              title: `${unitLabel(def, ctx.formations, ctx.systems)} Magazine Dry`,
+              detail: `Defending battery in range, but ready magazine was depleted in prior waves (0 ready interceptors).`,
+              badge: { text: 'Magazine Dry', variant: 'neutral' },
             });
-          } else {
-            battleLog.push({
-              id: nextEvt(),
-              timeFormatted: 'T+18m',
-              title: `${defLabel} Salvo Evaded`,
-              detail: `${defLabel} fired ${roundsFired} interceptors, but strike salvo used countermeasures to evade. 0 hits.`,
-              badge: { text: 'Evaded', variant: 'success' },
-            });
+            continue;
+          }
+
+          // Fire Channels & Interception Math
+          let channels = defSpec.sensor?.engagements ?? 4;
+          if (isSuppressed) channels = Math.max(1, Math.floor(channels / 2));
+          channels = channels * defState.aliveCount;
+
+          const wantedRounds = Math.min(munitionsSurviving, channels) * (defWeapon.salvo ?? 2);
+          const roundsFired = Math.min(readyRounds, wantedRounds);
+
+          // Deduct from defender persistent magazine
+          defState.magazines.set(wIdx, readyRounds - roundsFired);
+
+          const basePk = defWeapon.pk ?? 0.75;
+          const effectivePk = isSuppressed ? basePk * 0.65 : basePk;
+          const targetsEngaged = Math.floor(roundsFired / (defWeapon.salvo ?? 2));
+          const kills = Math.min(munitionsSurviving, Math.round(targetsEngaged * effectivePk));
+
+          if (roundsFired > 0) {
+            totalIntercepted += kills;
+            munitionsSurviving = Math.max(0, munitionsSurviving - kills);
+
+            const defLabel = unitLabel(def, ctx.formations, ctx.systems);
+            if (kills > 0) {
+              battleLog.push({
+                id: nextEvt(),
+                timeFormatted: 'T+18m',
+                title: `${defLabel} Interception`,
+                detail: `${defLabel} fired ${roundsFired} × ${defWeapon.name ?? 'SAM'} interceptors (Remaining Magazine: ${defState.magazines.get(wIdx)}). Intercepted ${kills} incoming munitions.`,
+                badge: { text: `${kills} Intercepted`, variant: 'loss' },
+              });
+            } else {
+              battleLog.push({
+                id: nextEvt(),
+                timeFormatted: 'T+18m',
+                title: `${defLabel} Salvo Evaded`,
+                detail: `${defLabel} fired ${roundsFired} interceptors, but strike salvo used ECM/chaff to evade. 0 hits.`,
+                badge: { text: 'Evaded', variant: 'success' },
+              });
+            }
           }
         }
       }
-    }
 
-    // Target Impact & Damage Resolution
-    const hits = munitionsSurviving;
-    let targetDestroyed = false;
-    let targetSuppressed = false;
-    let damageSummary = '';
+      // Target Impact & Damage Resolution
+      const hits = munitionsSurviving;
+      let targetDestroyed = false;
+      let targetSuppressed = false;
+      let damageSummary = '';
 
-    if (hits > 0) {
-      if (task.category === 'sead') {
-        targetState.status = hits >= 2 ? 'destroyed' : 'suppressed';
-        targetDestroyed = targetState.status === 'destroyed';
-        targetSuppressed = true;
-        damageSummary = targetDestroyed
-          ? 'Radar Emitters Destroyed — Battery completely knocked offline.'
-          : 'Battery SEAD Suppressed — Fire channels halved for subsequent phases.';
+      if (hits > 0) {
+        if (task.category === 'sead') {
+          targetState.status = hits >= 2 ? 'destroyed' : 'suppressed';
+          targetDestroyed = targetState.status === 'destroyed';
+          targetSuppressed = true;
+          damageSummary = targetDestroyed
+            ? 'Radar Emitters Destroyed — Battery completely offline for all subsequent waves.'
+            : 'Battery SEAD Suppressed — Fire channels halved for subsequent waves.';
 
-        battleLog.push({
-          id: nextEvt(),
-          timeFormatted: 'T+25m',
-          title: `SEAD Target Neutralized — ${phaseTargetLabel}`,
-          detail: `${hits} anti-radiation munitions struck radar transmitters. ${damageSummary}`,
-          badge: { text: targetDestroyed ? 'Radar Destroyed' : 'Suppressed', variant: 'sead' },
-        });
-      } else if (task.category === 'oca') {
-        targetState.status = 'destroyed';
-        targetState.aliveCount = 0;
-        targetState.destroyedCount += targetState.initialCount;
-        targetDestroyed = true;
-        damageSummary = 'Enemy Fighter Flight Shot Down — Air superiority established.';
+          battleLog.push({
+            id: nextEvt(),
+            timeFormatted: 'T+25m',
+            title: `SEAD Target Neutralized — ${phaseTargetLabel}`,
+            detail: `${hits} anti-radiation munitions struck radar transmitters. ${damageSummary}`,
+            badge: { text: targetDestroyed ? 'Radar Destroyed' : 'Suppressed', variant: 'sead' },
+          });
+        } else if (task.category === 'oca') {
+          targetState.status = 'destroyed';
+          targetState.aliveCount = 0;
+          targetState.destroyedCount += targetState.initialCount;
+          targetDestroyed = true;
+          capFightersPinnedInThisPhase = true;
+          damageSummary = 'Enemy Fighter Flight Shot Down — Local air superiority achieved.';
 
-        battleLog.push({
-          id: nextEvt(),
-          timeFormatted: 'T+25m',
-          title: `Fighter Sweep Victory — ${phaseTargetLabel}`,
-          detail: `${hits} missiles splashed defending aircraft. Combat air patrol neutralized.`,
-          badge: { text: 'CAP Splashed', variant: 'success' },
-        });
+          battleLog.push({
+            id: nextEvt(),
+            timeFormatted: 'T+25m',
+            title: `Fighter Sweep Victory — ${phaseTargetLabel}`,
+            detail: `${hits} missiles splashed defending aircraft. Combat air patrol neutralized.`,
+            badge: { text: 'CAP Splashed', variant: 'success' },
+          });
+        } else {
+          // Main Strike on Objective
+          targetState.status = hits >= 3 ? 'destroyed' : 'damaged';
+          targetDestroyed = targetState.status === 'destroyed';
+          damageSummary = targetDestroyed
+            ? `Target Objective Obliterated by ${hits} direct missile impacts.`
+            : `Target Objective Heavily Damaged by ${hits} missile impacts.`;
+
+          battleLog.push({
+            id: nextEvt(),
+            timeFormatted: 'T+30m',
+            title: `Objective Struck — ${phaseTargetLabel}`,
+            detail: `${hits} cruise missiles impacted objective. ${damageSummary}`,
+            badge: { text: `${hits} Impacts`, variant: 'success' },
+          });
+        }
       } else {
-        // Main Strike
-        targetState.status = hits >= 4 ? 'destroyed' : 'damaged';
-        targetDestroyed = targetState.status === 'destroyed';
-        damageSummary = targetDestroyed
-          ? `Target Objective Obliterated by ${hits} direct missile impacts.`
-          : `Target Objective Heavily Damaged by ${hits} missile impacts.`;
-
+        damageSummary = 'Strike wave stopped by integrated point defences before target impact.';
         battleLog.push({
           id: nextEvt(),
           timeFormatted: 'T+30m',
-          title: `Objective Struck — ${phaseTargetLabel}`,
-          detail: `${hits} cruise missiles impacted objective. ${damageSummary}`,
-          badge: { text: `${hits} Impacts`, variant: 'success' },
+          title: `Strike Wave Stopped`,
+          detail: `All incoming missiles were intercepted. Target ${phaseTargetLabel} sustained zero damage.`,
+          badge: { text: '0 Hits', variant: 'loss' },
         });
       }
-    } else {
-      damageSummary = 'Strike wave stopped by integrated point defences before target impact.';
-      battleLog.push({
-        id: nextEvt(),
-        timeFormatted: 'T+30m',
-        title: `Strike Wave Stopped`,
-        detail: `All incoming missiles were intercepted. Target ${phaseTargetLabel} sustained zero damage.`,
-        badge: { text: '0 Hits', variant: 'loss' },
+
+      // Path Spec for Map
+      const phaseColor = PHASE_COLORS[(pNum - 1) % PHASE_COLORS.length];
+      let pathSpec: RaidPathSpec | undefined;
+      if (releaseLngLat) {
+        pathSpec = {
+          ingress: greatCirclePath(attackerUnit.lngLat, releaseLngLat, 32),
+          munition: greatCirclePath(releaseLngLat, targetUnit.lngLat, 32),
+          releasePoint: releaseLngLat,
+          targetPoint: targetUnit.lngLat,
+          color: phaseColor,
+          munitionColor: '#FFB020',
+        };
+      } else {
+        pathSpec = {
+          ingress: greatCirclePath(attackerUnit.lngLat, targetUnit.lngLat, 48),
+          targetPoint: targetUnit.lngLat,
+          color: phaseColor,
+        };
+      }
+      pathSpecs.push(pathSpec);
+
+      phaseReports.push({
+        task,
+        phaseNumber: pNum,
+        attackerLabel,
+        targetLabel: phaseTargetLabel,
+        weaponName,
+        salvoCommitted: actualSalvo,
+        attackerPlatformsLost: attackerLost,
+        attackerPlatformsSurviving: attackerState.aliveCount,
+        munitionsIntercepted: totalIntercepted,
+        munitionsImpacted: hits,
+        targetDestroyed,
+        targetSuppressed,
+        targetDamageSummary: damageSummary,
+        battleLog,
+        pathSpec,
       });
     }
-
-    // Path Spec for Map
-    const phaseColor = PHASE_COLORS[pIdx % PHASE_COLORS.length];
-    let pathSpec: RaidPathSpec | undefined;
-    if (releaseLngLat) {
-      pathSpec = {
-        ingress: greatCirclePath(attackerUnit.lngLat, releaseLngLat, 32),
-        munition: greatCirclePath(releaseLngLat, targetUnit.lngLat, 32),
-        releasePoint: releaseLngLat,
-        targetPoint: targetUnit.lngLat,
-        color: phaseColor,
-        munitionColor: '#FFB020',
-      };
-    } else {
-      pathSpec = {
-        ingress: greatCirclePath(attackerUnit.lngLat, targetUnit.lngLat, 48),
-        targetPoint: targetUnit.lngLat,
-        color: phaseColor,
-      };
-    }
-    pathSpecs.push(pathSpec);
-
-    phaseReports.push({
-      task,
-      attackerLabel,
-      targetLabel: phaseTargetLabel,
-      weaponName,
-      salvoCommitted: actualSalvo,
-      attackerPlatformsLost: attackerLost,
-      attackerPlatformsSurviving: attackerState.aliveCount,
-      munitionsIntercepted: totalIntercepted,
-      munitionsImpacted: hits,
-      targetDestroyed,
-      targetSuppressed,
-      targetDamageSummary: damageSummary,
-      battleLog,
-      pathSpec,
-    });
   }
 
   // Master Theater Debrief
