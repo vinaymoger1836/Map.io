@@ -56,6 +56,7 @@ import {
 } from './specs';
 import {
   deriveAbbr,
+  totalStrength,
   unitLabel,
   type Component,
   type DeployedUnit,
@@ -852,11 +853,12 @@ export function raidFrom(
     if (options.ewUnitId) {
       const ewUnit = allUnits.find((u) => u.id === options.ewUnitId);
       if (ewUnit) {
+        const ewCount = ewUnit.kind === 'unit' ? ewUnit.count : totalStrength(ewUnit.composition);
         escorts = {
           ...escorts,
           ewUnitId: ewUnit.id,
           ewUnitLabel: unitLabel(ewUnit, ctx.formations, ctx.systems),
-          ewCount: ewUnit.count,
+          ewCount,
         };
       }
     }
@@ -864,11 +866,12 @@ export function raidFrom(
     if (options.seadUnitId) {
       const seadUnit = allUnits.find((u) => u.id === options.seadUnitId);
       if (seadUnit) {
+        const seadCount = seadUnit.kind === 'unit' ? seadUnit.count : totalStrength(seadUnit.composition);
         escorts = {
           ...escorts,
           seadUnitId: seadUnit.id,
           seadUnitLabel: unitLabel(seadUnit, ctx.formations, ctx.systems),
-          seadCount: seadUnit.count,
+          seadCount,
         };
       }
     }
