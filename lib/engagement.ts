@@ -1036,10 +1036,40 @@ export interface BoardContext {
   formations: Formation[];
 }
 
-const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | undefined =>
-  unit.kind === 'unit'
-    ? effectiveSpec(systemById(ctx.systems, unit.systemId), unit.loadout, ctx.munitions)
-    : undefined;
+const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | undefined => {
+  if (unit.kind === 'unit') {
+    const spec = systemById(ctx.systems, unit.systemId);
+    if (spec) return effectiveSpec(spec, unit.loadout, ctx.munitions);
+
+    // Fallback for valid combatant and strike types
+    if (
+      isStrikeType(unit.typeId) ||
+      ['destroyer', 'cruiser', 'carrier-ship', 'submarine', 'corvette', 'frigate'].includes(unit.typeId)
+    ) {
+      return {
+        id: unit.systemId || unit.typeId,
+        name: unit.systemId ? unit.systemId.replace(/-/g, ' ').toUpperCase() : unit.typeId.toUpperCase(),
+        typeId: unit.typeId as any,
+        platform: {
+          speedKmh: unit.typeId === 'missile' || unit.typeId === 'silo' ? 0 : 900,
+          combatRadiusKm: 1200,
+        },
+        weapons: [
+          {
+            id: 'generic-strike',
+            name: 'Standoff Strike Missile',
+            rangeKm: 600,
+            salvo: 4,
+            magazine: 16,
+            pk: 0.7,
+            engages: ['surface', 'ground'],
+          },
+        ],
+      };
+    }
+  }
+  return undefined;
+};
 
 const isStrikeType = (typeId: string): boolean =>
   ['strike', 'bomber', 'fighter', 'uav', 'attack-heli', 'missile', 'silo'].includes(typeId);
@@ -1047,22 +1077,18 @@ const isStrikeType = (typeId: string): boolean =>
 export function canRaid(unit: DeployedUnit, ctx: BoardContext): boolean {
   if (unit.kind === 'unit') {
     const spec = specOf(unit, ctx);
-    if (!spec) return false;
-    const hasSpeed = Boolean(spec.platform?.speedKmh && spec.platform.speedKmh > 0);
-    const hasStandoff = standoffWeapons(spec).length > 0;
-    return hasSpeed || hasStandoff;
+    if (spec) {
+      const hasSpeed = Boolean(spec.platform?.speedKmh && spec.platform.speedKmh > 0);
+      const hasStandoff = standoffWeapons(spec).length > 0;
+      if (hasSpeed || hasStandoff) return true;
+    }
+    return (
+      isStrikeType(unit.typeId) ||
+      ['destroyer', 'cruiser', 'carrier-ship', 'submarine', 'corvette', 'frigate'].includes(unit.typeId)
+    );
   }
   if (unit.kind === 'formation') {
-    return unit.composition.some((p) => {
-      if (p.count <= 0) return false;
-      const spec = systemById(ctx.systems, p.systemId);
-      if (!spec) return false;
-      return (
-        (spec.platform?.speedKmh && spec.platform.speedKmh > 0) ||
-        standoffWeapons(spec).length > 0 ||
-        isStrikeType(p.typeId)
-      );
-    });
+    return true;
   }
   return false;
 }
