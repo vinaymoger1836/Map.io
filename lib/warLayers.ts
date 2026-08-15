@@ -36,6 +36,7 @@ import {
 import { buildMunitions, effectiveSpec } from './munitions';
 import { distanceKm, geodesicCircle } from './geo';
 import { unitIconId } from './unitIcons';
+import type { PlaybackFrame } from './playback';
 
 export const WAR_LAYERS = [
   'wg-nation-fill',
@@ -46,6 +47,12 @@ export const WAR_LAYERS = [
   'wg-envelope-hit',
   'wg-raid-line',
   'wg-raid-head',
+  'wg-playback-trail',
+  'wg-playback-interceptor',
+  'wg-playback-effect-pulse',
+  'wg-playback-entity-halo',
+  'wg-playback-entity',
+  'wg-playback-label',
   'wg-country-label',
   'wg-city-dot',
   'wg-city-label',
@@ -126,6 +133,10 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
   source('wg-units', emptyCollection());
   source('wg-envelopes', emptyCollection());
   source('wg-raid', emptyCollection());
+  source('wg-playback-trails', emptyCollection());
+  source('wg-playback-interceptors', emptyCollection());
+  source('wg-playback-entities', emptyCollection());
+  source('wg-playback-effects', emptyCollection());
 
   const add = (layer: any, before?: string) => {
     if (!map.getLayer(layer.id)) map.addLayer(layer, before);
@@ -284,6 +295,108 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
         'circle-color': 'rgba(0,0,0,0)',
         'circle-stroke-color': ['get', 'color'],
         'circle-stroke-width': 2,
+      },
+    },
+    firstSymbol
+  );
+
+  /* ---------- animated battle playback ---------- */
+
+  add(
+    {
+      id: 'wg-playback-trail',
+      type: 'line',
+      source: 'wg-playback-trails',
+      layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 2.8,
+        'line-opacity': 0.95,
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-playback-interceptor',
+      type: 'line',
+      source: 'wg-playback-interceptors',
+      layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': '#E8833A',
+        'line-width': 2.2,
+        'line-dasharray': [2, 1],
+        'line-opacity': 1,
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-playback-effect-pulse',
+      type: 'circle',
+      source: 'wg-playback-effects',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': ['get', 'radius'],
+        'circle-color': ['get', 'color'],
+        'circle-opacity': ['get', 'opacity'],
+        'circle-blur': 0.4,
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-playback-entity-halo',
+      type: 'circle',
+      source: 'wg-playback-entities',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': 9,
+        'circle-color': 'rgba(10, 15, 25, 0.9)',
+        'circle-stroke-color': ['get', 'color'],
+        'circle-stroke-width': 2,
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-playback-entity',
+      type: 'circle',
+      source: 'wg-playback-entities',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': 4.5,
+        'circle-color': ['get', 'color'],
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-playback-label',
+      type: 'symbol',
+      source: 'wg-playback-entities',
+      layout: {
+        visibility: 'none',
+        'text-field': ['get', 'label'],
+        'text-font': font,
+        'text-size': 11,
+        'text-offset': [0, 1.4],
+        'text-anchor': 'top',
+        'text-padding': 2,
+      },
+      paint: {
+        'text-color': '#FFFFFF',
+        'text-halo-color': '#000000',
+        'text-halo-width': 1.8,
       },
     },
     firstSymbol
@@ -896,3 +1009,86 @@ export function highlightUnit(map: MLMap, id: string | null) {
   if (!map.getLayer('wg-unit-halo')) return;
   map.setFilter('wg-unit-halo', ['==', ['get', 'id'], id ?? '__none__'] as ExpressionSpecification);
 }
+
+/**
+ * Feeds animated 4D playback geometry (moving platforms, cruise missiles,
+ * interceptor missile tracks, and target explosion pulses) to MapLibre sources.
+ */
+export function renderPlaybackFrame(map: MLMap, frame: PlaybackFrame | null) {
+  const trailSrc = map.getSource('wg-playback-trails') as { setData?: (d: unknown) => void } | undefined;
+  const icSrc = map.getSource('wg-playback-interceptors') as { setData?: (d: unknown) => void } | undefined;
+  const entitySrc = map.getSource('wg-playback-entities') as { setData?: (d: unknown) => void } | undefined;
+  const effectSrc = map.getSource('wg-playback-effects') as { setData?: (d: unknown) => void } | undefined;
+
+  if (!frame) {
+    trailSrc?.setData?.(emptyCollection());
+    icSrc?.setData?.(emptyCollection());
+    entitySrc?.setData?.(emptyCollection());
+    effectSrc?.setData?.(emptyCollection());
+    return;
+  }
+
+  // 1. Ingress & Munition Trails
+  if (trailSrc?.setData) {
+    trailSrc.setData({
+      type: 'FeatureCollection',
+      features: frame.trails.filter((t) => t.type !== 'interceptor').map((t) => ({
+        type: 'Feature',
+        properties: { color: t.color, type: t.type },
+        geometry: { type: 'LineString', coordinates: t.coordinates },
+      })),
+    });
+  }
+
+  // 2. High-speed Interceptor Trails
+  if (icSrc?.setData) {
+    icSrc.setData({
+      type: 'FeatureCollection',
+      features: frame.trails.filter((t) => t.type === 'interceptor').map((t) => ({
+        type: 'Feature',
+        properties: { color: t.color },
+        geometry: { type: 'LineString', coordinates: t.coordinates },
+      })),
+    });
+  }
+
+  // 3. Moving Entities (Aircraft, Munitions, Interceptors)
+  if (entitySrc?.setData) {
+    entitySrc.setData({
+      type: 'FeatureCollection',
+      features: frame.entities.map((e) => ({
+        type: 'Feature',
+        properties: {
+          id: e.id,
+          label: e.label,
+          type: e.type,
+          count: e.count,
+          color: e.color,
+          heading: e.headingDeg,
+          status: e.status,
+        },
+        geometry: { type: 'Point', coordinates: e.lngLat },
+      })),
+    });
+  }
+
+  // 4. Effects (Explosions, Flak Bursts, Hits)
+  if (effectSrc?.setData) {
+    effectSrc.setData({
+      type: 'FeatureCollection',
+      features: frame.effects.map((ef) => ({
+        type: 'Feature',
+        properties: {
+          id: ef.id,
+          label: ef.label,
+          type: ef.type,
+          radius: ef.radius,
+          opacity: ef.opacity,
+          color: ef.type === 'intercept' ? '#FF8A65' : ef.type === 'impact' ? '#FF5252' : '#FFD54F',
+        },
+        geometry: { type: 'Point', coordinates: ef.lngLat },
+      })),
+    });
+  }
+}
+

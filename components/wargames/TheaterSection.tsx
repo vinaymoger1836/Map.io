@@ -543,9 +543,34 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
       {/* Step 4: Master Theater After-Action Report (AAR) */}
       {theaterAssessment && (
         <section className="wg-block">
-          <h3 className="wg-h">
-            4. Theater Battle Debrief
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <h3 className="wg-h" style={{ margin: 0 }}>
+              4. Theater Battle Debrief
+            </h3>
+          </div>
+
+          <button
+            className="wg-btn"
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              fontSize: '11px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: wg.playbackActive ? 'var(--amber-dim, #E8833A)' : 'var(--surface-hover)',
+              color: wg.playbackActive ? '#000000' : 'var(--paper)',
+              marginBottom: '10px',
+            }}
+            onClick={() => {
+              if (wg.playbackActive) wg.stopPlayback();
+              else wg.startPlayback();
+            }}
+          >
+            {wg.playbackActive ? '⏹ Stop Battle Playback' : '🎬 Launch 4D Theater Playback / Timeline'}
+          </button>
 
           <div
             className={`wg-outcome-banner ${

@@ -19,6 +19,7 @@ import {
 } from '@/lib/layerSpec';
 import { INTERACTIVE_LAYERS, applyVisibility, installLayers } from '@/lib/mapLayers';
 import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
+import { PlaybackHUD } from './wargames/PlaybackHUD';
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -499,6 +500,19 @@ export default function EurasiaMap() {
 
         {mode === 'wargames' && war.hoveredEnvelope && (
           <EnvelopeTip hover={war.hoveredEnvelope} width={canvasWidth} />
+        )}
+
+        {mode === 'wargames' && war.playbackActive && war.playbackModel && war.playbackFrame && (
+          <PlaybackHUD
+            model={war.playbackModel}
+            frame={war.playbackFrame}
+            isPlaying={war.playbackPlaying}
+            playbackSpeed={war.playbackSpeed}
+            onTogglePlay={war.togglePlayPlayback}
+            onSeek={war.seekPlayback}
+            onSetSpeed={war.setPlaybackSpeed}
+            onClose={war.stopPlayback}
+          />
         )}
 
         {selection && <DetailPanel selection={selection} onClose={() => setSelection(null)} />}

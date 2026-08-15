@@ -2776,9 +2776,243 @@ button {
     font-size: 18px;
   }
 
-  .rail-cell.optional {
-    display: none;
+/* ==========================================================================
+   4D BATTLE PLAYBACK & TIMELINE SCRUBBER HUD
+   ========================================================================== */
+
+.wg-playback-hud {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(540px, calc(100vw - 32px));
+  background: rgba(13, 19, 28, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: wg-hud-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes wg-hud-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.97);
   }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.wg-playback-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.wg-playback-clock-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wg-playback-clock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4DD0E1;
+  box-shadow: 0 0 8px #4DD0E1;
+}
+
+@keyframes wg-pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.wg-playback-clock {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--paper);
+  letter-spacing: 0.04em;
+}
+
+.wg-playback-status {
+  flex: 1;
+  font-size: 11px;
+  color: var(--paper-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.wg-playback-scrubber-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.wg-playback-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+  cursor: pointer;
+  margin: 4px 0;
+  transition: background 0.15s ease;
+}
+
+.wg-playback-slider:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.wg-playback-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #E4B363;
+  box-shadow: 0 0 10px rgba(228, 179, 99, 0.8);
+  cursor: grab;
+  transition: transform 0.1s ease;
+}
+
+.wg-playback-slider::-webkit-slider-thumb:active {
+  transform: scale(1.25);
+  cursor: grabbing;
+}
+
+.wg-playback-phase-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.wg-playback-chip {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--paper-dim);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.wg-playback-chip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--paper);
+}
+
+.wg-playback-chip.active {
+  background: color-mix(in srgb, var(--accent, #E8833A) 25%, transparent);
+  border-color: var(--accent, #E8833A);
+  color: var(--accent, #E8833A);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #E8833A) 35%, transparent);
+}
+
+.wg-playback-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wg-playback-ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.wg-playback-btn {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--paper);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.wg-playback-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.wg-playback-btn.primary {
+  background: var(--amber-dim, #E8833A);
+  color: #000000;
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.wg-playback-btn.primary:hover {
+  background: #FFA04D;
+  box-shadow: 0 0 10px rgba(232, 131, 58, 0.5);
+}
+
+.wg-playback-btn.icon-only {
+  padding: 2px 6px;
+  font-size: 11px;
+  background: none;
+  border: none;
+  color: var(--paper-dim);
+}
+
+.wg-playback-btn.icon-only:hover {
+  color: #FF6E6E;
+}
+
+.wg-playback-speed-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.wg-playback-speed-btn {
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--paper-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wg-playback-speed-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--paper);
+}
+
+.wg-playback-speed-btn.active {
+  background: #4DD0E1;
+  color: #000000;
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -251,12 +251,36 @@ function Result({ a }: { a: Assessment }) {
       {/* Chronological Battle Log */}
       {a.battleLog.length > 0 && (
         <div style={{ marginTop: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <h4 className="wg-sub" style={{ margin: 0 }}>
               Chronological Battle Sequence
             </h4>
             <span className="wg-tag">{a.battleLog.length} events</span>
           </div>
+
+          <button
+            className="wg-btn"
+            style={{
+              width: '100%',
+              padding: '7px 10px',
+              fontSize: '11px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: wg.playbackActive ? 'var(--amber-dim, #E8833A)' : 'var(--surface-hover)',
+              color: wg.playbackActive ? '#000000' : 'var(--paper)',
+              marginBottom: '10px',
+            }}
+            onClick={() => {
+              if (wg.playbackActive) wg.stopPlayback();
+              else wg.startPlayback();
+            }}
+          >
+            {wg.playbackActive ? '⏹ Stop Battle Playback' : '🎬 Launch 4D Battle Playback / Timeline'}
+          </button>
+
           <BattleLogTimeline log={a.battleLog} />
         </div>
       )}

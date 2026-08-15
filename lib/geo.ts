@@ -144,3 +144,14 @@ export function geodesicCircle(center: [number, number], radiusKm: number, steps
     coordinates: [geodesicRing(center, radiusKm, steps)],
   };
 }
+
+/** Initial bearing from point `a` to point `b` in degrees (0–360). */
+export function bearingDeg(a: [number, number], b: [number, number]): number {
+  const [lon1, lat1] = [toRad(a[0]), toRad(a[1])];
+  const [lon2, lat2] = [toRad(b[0]), toRad(b[1])];
+  const dLon = lon2 - lon1;
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  const brng = toDeg(Math.atan2(y, x));
+  return (brng + 360) % 360;
+}

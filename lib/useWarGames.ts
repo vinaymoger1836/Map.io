@@ -99,6 +99,7 @@ import {
   highlightUnit,
   installWarLayers,
   paintNations,
+  renderPlaybackFrame,
   restoreBasemapSymbols,
   setEnvelopes,
   setRaidPath,
@@ -107,6 +108,13 @@ import {
   type CoverageState,
   type EnvelopeHover,
 } from './warLayers';
+import {
+  buildRaidPlaybackModel,
+  buildTheaterPlaybackModel,
+  calculatePlaybackFrame,
+  type PlaybackModel,
+  type PlaybackFrame,
+} from './playback';
 
 export type Tool = 'select' | 'paint' | 'deploy';
 
@@ -255,6 +263,19 @@ export interface WarGames {
   theaterAttackers: CandidateAttacker[];
   theaterAssessment: TheaterAssessment | null;
 
+  /* 4D Battle Playback & Animation */
+  playbackActive: boolean;
+  playbackPlaying: boolean;
+  playbackTimeSec: number;
+  playbackSpeed: number;
+  playbackModel: PlaybackModel | null;
+  playbackFrame: PlaybackFrame | null;
+  startPlayback: () => void;
+  stopPlayback: () => void;
+  togglePlayPlayback: () => void;
+  seekPlayback: (timeSec: number) => void;
+  setPlaybackSpeed: (speed: number) => void;
+
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
   setCoverageMode: (mode: CoverageState['mode']) => void;
@@ -345,6 +366,12 @@ export function useWarGames({
   const [theaterTargetId, setTheaterTargetId] = useState<string | null>(null);
   const [theaterAttackerIso, setTheaterAttackerIso] = useState<string | null>(null);
   const [theaterPhases, setTheaterPhases] = useState<StrikePhaseTask[]>([]);
+
+  /* 4D Battle Playback State */
+  const [playbackActive, setPlaybackActive] = useState<boolean>(false);
+  const [playbackPlaying, setPlaybackPlaying] = useState<boolean>(false);
+  const [playbackTimeSec, setPlaybackTimeSec] = useState<number>(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(2);
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
@@ -1370,6 +1397,77 @@ export function useWarGames({
     });
   }, []);
 
+  /* ---------------- 4D battle playback ---------------- */
+
+  const playbackModel = useMemo<PlaybackModel | null>(() => {
+    if (theaterAssessment && theaterAssessment.phases.length > 0) {
+      return buildTheaterPlaybackModel(theaterAssessment);
+    }
+    if (assessment && !assessment.blocked) {
+      return buildRaidPlaybackModel(assessment);
+    }
+    return null;
+  }, [theaterAssessment, assessment]);
+
+  const playbackFrame = useMemo<PlaybackFrame | null>(() => {
+    if (!playbackModel || !playbackActive) return null;
+    return calculatePlaybackFrame(playbackModel, playbackTimeSec);
+  }, [playbackModel, playbackActive, playbackTimeSec]);
+
+  const startPlayback = useCallback(() => {
+    setPlaybackTimeSec(0);
+    setPlaybackPlaying(true);
+    setPlaybackActive(true);
+  }, []);
+
+  const stopPlayback = useCallback(() => {
+    setPlaybackPlaying(false);
+    setPlaybackActive(false);
+    setPlaybackTimeSec(0);
+  }, []);
+
+  const togglePlayPlayback = useCallback(() => {
+    setPlaybackPlaying((prev) => !prev);
+  }, []);
+
+  const seekPlayback = useCallback((timeSec: number) => {
+    setPlaybackTimeSec(timeSec);
+  }, []);
+
+  // Playback requestAnimationFrame animation loop
+  useEffect(() => {
+    if (!playbackActive || !playbackPlaying || !playbackModel) return;
+
+    let animId: number;
+    let lastTimestamp = performance.now();
+
+    const loop = (timestamp: number) => {
+      const deltaMs = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+
+      setPlaybackTimeSec((prev) => {
+        const next = prev + (deltaMs / 1000) * playbackSpeed;
+        if (next >= playbackModel.totalDurationSec) {
+          setPlaybackPlaying(false);
+          return playbackModel.totalDurationSec;
+        }
+        return next;
+      });
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [playbackActive, playbackPlaying, playbackModel, playbackSpeed]);
+
+  // Feed frame to MapLibre
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !hydratedRef.current) return;
+    renderPlaybackFrame(map, playbackFrame);
+  }, [playbackFrame, mapRef]);
+
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.
   useEffect(() => {
@@ -1502,6 +1600,17 @@ export function useWarGames({
     theaterUmbrella,
     theaterAttackers,
     theaterAssessment,
+    playbackActive,
+    playbackPlaying,
+    playbackTimeSec,
+    playbackSpeed,
+    playbackModel,
+    playbackFrame,
+    startPlayback,
+    stopPlayback,
+    togglePlayPlayback,
+    seekPlayback,
+    setPlaybackSpeed,
     coverage,
     setCoverageMode,
     toggleCoverageKind,
