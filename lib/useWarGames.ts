@@ -58,6 +58,7 @@ import {
   assessTheaterRaid,
   discoverAttackerAssets,
   discoverDefensiveUmbrella,
+  specOf,
   type CandidateAttacker,
   type DefensiveUmbrella,
   type StrikePhaseTask,

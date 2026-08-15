@@ -1,4 +1,143 @@
 {
-  "active": null,
-  "items": []
+  "active": "pacific-csg-defense",
+  "items": [
+    {
+      "id": "pacific-csg-defense",
+      "name": "Western Pacific — CSG Layered Fleet Defense vs Anti-Ship Saturation",
+      "note": "US Navy Carrier Strike Group (Nimitz CVN, Ticonderoga CG, 2x Arleigh Burke DDG, E-2D Hawkeye, F/A-18F & F-35C CAP) defended by 4-Tier Aegis/ESSM/Nulka screen against coastal and naval supersonic anti-ship missile saturation salvos.",
+      "savedAt": "2026-08-15T12:50:00Z",
+      "board": {
+        "nations": {
+          "840": {
+            "iso": "840",
+            "name": "United States",
+            "color": "#4DD0E1"
+          },
+          "156": {
+            "iso": "156",
+            "name": "China",
+            "color": "#FF8A65"
+          },
+          "643": {
+            "iso": "643",
+            "name": "Russia",
+            "color": "#D9534F"
+          }
+        },
+        "formations": [],
+        "units": [
+          {
+            "kind": "unit",
+            "id": "usn-cvn-reagan",
+            "iso": "840",
+            "lngLat": [133.5, 18.5],
+            "typeId": "carrier",
+            "echelonId": "regiment",
+            "systemId": "nimitz-class",
+            "count": 1
+          },
+          {
+            "kind": "unit",
+            "id": "usn-cg-shiloh",
+            "iso": "840",
+            "lngLat": [133.7, 18.6],
+            "typeId": "cruiser",
+            "echelonId": "battalion",
+            "systemId": "ticonderoga-class",
+            "count": 1
+          },
+          {
+            "kind": "unit",
+            "id": "usn-ddg-mccampbell",
+            "iso": "840",
+            "lngLat": [133.3, 18.4],
+            "typeId": "destroyer",
+            "echelonId": "battalion",
+            "systemId": "arleigh-burke-flight-iia",
+            "count": 1
+          },
+          {
+            "kind": "unit",
+            "id": "usn-ddg-mustin",
+            "iso": "840",
+            "lngLat": [133.6, 18.8],
+            "typeId": "destroyer",
+            "echelonId": "battalion",
+            "systemId": "arleigh-burke-flight-iii",
+            "count": 1
+          },
+          {
+            "kind": "unit",
+            "id": "usn-e2d-hawkeye",
+            "iso": "840",
+            "lngLat": [132.8, 19.2],
+            "typeId": "awacs",
+            "echelonId": "flight",
+            "systemId": "e-2d-hawkeye",
+            "count": 2
+          },
+          {
+            "kind": "unit",
+            "id": "usn-fa18f-cap",
+            "iso": "840",
+            "lngLat": [131.5, 20.2],
+            "typeId": "fighter",
+            "echelonId": "squadron",
+            "systemId": "fa-18f-super-hornet",
+            "count": 8
+          },
+          {
+            "kind": "unit",
+            "id": "usn-f35c-stealth",
+            "iso": "840",
+            "lngLat": [132.0, 20.8],
+            "typeId": "fighter",
+            "echelonId": "squadron",
+            "systemId": "f-35c-lightning-ii",
+            "count": 6
+          },
+          {
+            "kind": "unit",
+            "id": "red-coastal-tel",
+            "iso": "156",
+            "lngLat": [121.8, 24.5],
+            "typeId": "silo",
+            "echelonId": "brigade",
+            "systemId": "coastal-ashm-battery",
+            "count": 4
+          },
+          {
+            "kind": "unit",
+            "id": "red-bomber-wing",
+            "iso": "156",
+            "lngLat": [121.2, 28.5],
+            "typeId": "bomber",
+            "echelonId": "regiment",
+            "systemId": "h-6n-badger",
+            "count": 6
+          },
+          {
+            "kind": "unit",
+            "id": "red-type055-destroyer",
+            "iso": "156",
+            "lngLat": [126.5, 23.0],
+            "typeId": "destroyer",
+            "echelonId": "battalion",
+            "systemId": "type-055-cruiser",
+            "count": 2
+          },
+          {
+            "kind": "unit",
+            "id": "red-yasen-sub",
+            "iso": "643",
+            "lngLat": [128.5, 20.5],
+            "typeId": "submarine",
+            "echelonId": "battalion",
+            "systemId": "yasen-m-class",
+            "count": 1
+          }
+        ]
+      }
+    }
+  ]
 }
