@@ -27,6 +27,7 @@ import {
   reviveBoard,
   LEGACY_BOARD_KEY,
   nextUnitId,
+  unitLabel,
   unitLook,
   type BoardState,
   type Component,
