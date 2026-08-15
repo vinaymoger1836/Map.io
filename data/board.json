@@ -1,14 +1,14 @@
 {
   "nations": {
-    "356": {
-      "iso": "356",
-      "name": "India",
-      "color": "#D9534F"
+    "840": {
+      "iso": "840",
+      "name": "United States",
+      "color": "#4DD0E1"
     },
-    "392": {
-      "iso": "392",
-      "name": "Japan",
-      "color": "#8B6FD6"
+    "156": {
+      "iso": "156",
+      "name": "China",
+      "color": "#FF8A65"
     },
     "643": {
       "iso": "643",
@@ -16,224 +16,117 @@
       "color": "#D9534F"
     }
   },
+  "formations": [],
   "units": [
     {
-      "kind": "formation",
-      "id": "umsn46t261",
-      "iso": "392",
-      "lngLat": [
-        154.95410156249585,
-        34.293032256515986
-      ],
-      "formationId": "csg",
-      "composition": [
-        {
-          "typeId": "carrier-ship",
-          "count": 1
-        },
-        {
-          "typeId": "destroyer",
-          "count": 4
-        },
-        {
-          "typeId": "frigate",
-          "count": 2
-        },
-        {
-          "typeId": "submarine",
-          "count": 1
-        },
-        {
-          "typeId": "logistics-ship",
-          "count": 1
-        }
-      ]
-    },
-    {
-      "kind": "formation",
-      "id": "umsn4doc93",
-      "iso": "392",
-      "lngLat": [
-        145.80078125000352,
-        37.30953567186626
-      ],
-      "formationId": "custom-umsn4dmps2",
-      "composition": [
-        {
-          "typeId": "strike",
-          "count": 3
-        },
-        {
-          "typeId": "bomber",
-          "count": 1
-        },
-        {
-          "typeId": "awacs",
-          "count": 1
-        },
-        {
-          "typeId": "tanker",
-          "count": 1
-        }
-      ]
+      "kind": "unit",
+      "id": "usn-cvn-reagan",
+      "iso": "840",
+      "lngLat": [133.5, 18.5],
+      "typeId": "carrier",
+      "echelonId": "regiment",
+      "systemId": "nimitz-class",
+      "count": 1
     },
     {
       "kind": "unit",
-      "id": "umsn8eqvw1",
-      "iso": "392",
-      "lngLat": [
-        140.9003906249991,
-        36.8486295421404
-      ],
-      "typeId": "fighter",
-      "echelonId": "squadron",
-      "systemId": "f-16c",
-      "loadout": [
-        {
-          "id": "aim-120c-amraam"
-        },
-        {
-          "id": "aim-9x-sidewinder"
-        },
-        {
-          "id": "harpoon"
-        }
-      ],
-      "count": 12
-    },
-    {
-      "kind": "unit",
-      "id": "umsn94yi71",
-      "iso": "392",
-      "lngLat": [
-        20.107421875000597,
-        60.37143149033059
-      ],
-      "typeId": "sam-launcher",
+      "id": "usn-cg-shiloh",
+      "iso": "840",
+      "lngLat": [133.7, 18.6],
+      "typeId": "cruiser",
       "echelonId": "battalion",
-      "systemId": "s-400",
+      "systemId": "ticonderoga-class",
       "count": 1
     },
     {
       "kind": "unit",
-      "id": "umsn94zcv2",
-      "iso": "392",
-      "lngLat": [
-        20.10742187499929,
-        0.7470491450062866
-      ],
-      "typeId": "sam-launcher",
-      "echelonId": "battalion",
-      "systemId": "s-400",
-      "count": 1
-    },
-    {
-      "kind": "unit",
-      "id": "umsn95qqq3",
-      "iso": "392",
-      "lngLat": [
-        20.28320312499912,
-        0.5273363048134456
-      ],
-      "typeId": "sam-launcher",
-      "echelonId": "battalion",
-      "systemId": "s-400",
-      "count": 1
-    },
-    {
-      "kind": "unit",
-      "id": "umsomxfty1",
-      "iso": "392",
-      "lngLat": [
-        61.331466161078225,
-        32.24891881098934
-      ],
-      "typeId": "fighter",
-      "echelonId": "squadron",
-      "systemId": "f-35a",
-      "loadout": [
-        {
-          "id": "gbu-12",
-          "count": 2
-        },
-        {
-          "id": "kh-31"
-        }
-      ],
-      "count": 1
-    },
-    {
-      "kind": "unit",
-      "id": "umsomxgon2",
-      "iso": "392",
-      "lngLat": [
-        99.01100195337023,
-        -3.5768958357937066
-      ],
-      "typeId": "fighter",
-      "echelonId": "squadron",
-      "systemId": "f-35a",
-      "loadout": [
-        {
-          "id": "aim-120d-amraam"
-        }
-      ],
-      "count": 1
-    },
-    {
-      "kind": "unit",
-      "id": "umsonwayn1",
-      "iso": "392",
-      "lngLat": [
-        61.708261519056265,
-        8.074573383759699
-      ],
+      "id": "usn-ddg-mccampbell",
+      "iso": "840",
+      "lngLat": [133.3, 18.4],
       "typeId": "destroyer",
-      "echelonId": "ship",
-      "systemId": "arleigh-burke",
-      "loadout": [
-        {
-          "id": "harpoon",
-          "count": 3
-        },
-        {
-          "id": "aster-30",
-          "count": 3
-        },
-        {
-          "id": "brahmos"
-        },
-        {
-          "id": "cj-10"
-        }
-      ],
+      "echelonId": "battalion",
+      "systemId": "arleigh-burke-flight-iia",
       "count": 1
-    }
-  ],
-  "formations": [
+    },
     {
-      "id": "custom-umsn4dmps2",
-      "label": "Air strike package",
-      "abbr": "ASP",
-      "composition": [
-        {
-          "typeId": "strike",
-          "count": 3
-        },
-        {
-          "typeId": "bomber",
-          "count": 1
-        },
-        {
-          "typeId": "awacs",
-          "count": 1
-        },
-        {
-          "typeId": "tanker",
-          "count": 1
-        }
-      ],
-      "custom": true
+      "kind": "unit",
+      "id": "usn-ddg-mustin",
+      "iso": "840",
+      "lngLat": [133.6, 18.8],
+      "typeId": "destroyer",
+      "echelonId": "battalion",
+      "systemId": "arleigh-burke-flight-iii",
+      "count": 1
+    },
+    {
+      "kind": "unit",
+      "id": "usn-e2d-hawkeye",
+      "iso": "840",
+      "lngLat": [132.8, 19.2],
+      "typeId": "awacs",
+      "echelonId": "flight",
+      "systemId": "e-2d-hawkeye",
+      "count": 2
+    },
+    {
+      "kind": "unit",
+      "id": "usn-fa18f-cap",
+      "iso": "840",
+      "lngLat": [131.5, 20.2],
+      "typeId": "fighter",
+      "echelonId": "squadron",
+      "systemId": "fa-18f-super-hornet",
+      "count": 8
+    },
+    {
+      "kind": "unit",
+      "id": "usn-f35c-stealth",
+      "iso": "840",
+      "lngLat": [132.0, 20.8],
+      "typeId": "fighter",
+      "echelonId": "squadron",
+      "systemId": "f-35c-lightning-ii",
+      "count": 6
+    },
+    {
+      "kind": "unit",
+      "id": "red-coastal-tel",
+      "iso": "156",
+      "lngLat": [121.8, 24.5],
+      "typeId": "silo",
+      "echelonId": "brigade",
+      "systemId": "coastal-ashm-battery",
+      "count": 4
+    },
+    {
+      "kind": "unit",
+      "id": "red-bomber-wing",
+      "iso": "156",
+      "lngLat": [121.2, 28.5],
+      "typeId": "bomber",
+      "echelonId": "regiment",
+      "systemId": "h-6n-badger",
+      "count": 6
+    },
+    {
+      "kind": "unit",
+      "id": "red-type055-destroyer",
+      "iso": "156",
+      "lngLat": [126.5, 23.0],
+      "typeId": "destroyer",
+      "echelonId": "battalion",
+      "systemId": "type-055-cruiser",
+      "count": 2
+    },
+    {
+      "kind": "unit",
+      "id": "red-yasen-sub",
+      "iso": "643",
+      "lngLat": [128.5, 20.5],
+      "typeId": "submarine",
+      "echelonId": "battalion",
+      "systemId": "yasen-m-class",
+      "count": 1
     }
   ]
 }
