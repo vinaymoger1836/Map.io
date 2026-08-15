@@ -109,6 +109,82 @@ function BattleLogTimeline({ log }: { log: BattleLogEntry[] }) {
   );
 }
 
+function NavalFleetDefenseView({ nav }: { nav: NavalFleetAssessment }) {
+  return (
+    <div className="wg-tactical-card" style={{ marginTop: '10px', background: 'rgba(12, 22, 34, 0.85)', borderColor: '#4DD0E1' }}>
+      <div className="wg-tactical-title">
+        <span style={{ color: '#4DD0E1', fontWeight: 700 }}>⚓ Layered Fleet Air Defense (CSG Screen)</span>
+        <span className="wg-tag" style={{ background: '#4DD0E1', color: '#000000' }}>
+          4 Concentric Tiers
+        </span>
+      </div>
+
+      <div className="wg-tactical-body">
+        <p style={{ margin: '4px 0', fontSize: '11px' }}>
+          Defending Flagship: <strong>{nav.flagshipLabel}</strong> ({nav.flagshipType.toUpperCase()})
+        </p>
+
+        {/* Fleet Network Badges */}
+        <div className="wg-package-pills" style={{ marginTop: '4px', marginBottom: '8px' }}>
+          <span className={`wg-package-pill ${nav.hasAewCoverage ? 'on' : ''}`} style={{ color: nav.hasAewCoverage ? '#4DD0E1' : 'var(--paper-dim)' }}>
+            {nav.hasAewCoverage ? '✓ E-2D Hawkeye AEW Active' : '✕ No AEW Early Warning'}
+          </span>
+          <span className={`wg-package-pill ${nav.hasCecEnabled ? 'on' : ''}`} style={{ color: nav.hasCecEnabled ? '#3FB0A0' : 'var(--paper-dim)' }}>
+            {nav.hasCecEnabled ? '✓ Cooperative Engagement (CEC)' : '✕ Autonomous Radar'}
+          </span>
+          <span className={`wg-package-pill ${nav.hasSoftKillEw ? 'on' : ''}`} style={{ color: nav.hasSoftKillEw ? '#BA68C8' : 'var(--paper-dim)' }}>
+            {nav.hasSoftKillEw ? '✓ Nulka Active Decoys / SEWIP' : '✕ No Soft-Kill Decoys'}
+          </span>
+        </div>
+
+        {/* 4 Concentric Defense Tiers */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+          {nav.tierReports.map((t) => (
+            <div key={t.tierNumber} className="wg-tactical-card" style={{ padding: '6px 8px', background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                <span style={{ fontWeight: 700, color: t.tierNumber === 1 ? '#4DD0E1' : t.tierNumber === 2 ? '#4FC3F7' : t.tierNumber === 3 ? '#E8833A' : '#BA68C8' }}>
+                  Tier {t.tierNumber}: {t.tierName}
+                </span>
+                <span className="wg-tag" style={{ fontSize: '9px' }}>
+                  {km(t.rangeKm)} reach
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', marginTop: '3px', color: 'var(--paper-dim)' }}>
+                <span>Weapon: <strong>{t.weaponName}</strong></span>
+                <span>
+                  {t.missilesIntercepted > 0 && <strong style={{ color: '#4FA85F' }}>{t.missilesIntercepted} Intercepted </strong>}
+                  {t.missilesDecoyed > 0 && <strong style={{ color: '#BA68C8' }}>{t.missilesDecoyed} Decoyed </strong>}
+                  ({t.missilesLeaking} Leaking)
+                </span>
+              </div>
+
+              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                {t.details}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Flagship Survivability & Damage Banner */}
+        <div style={{ marginTop: '8px', padding: '6px 8px', borderRadius: '4px', background: nav.flagshipDamage === 'intact' ? 'rgba(79, 168, 95, 0.15)' : 'rgba(217, 83, 79, 0.18)', border: `1px solid ${nav.flagshipDamage === 'intact' ? '#4FA85F' : '#D9534F'}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: nav.flagshipDamage === 'intact' ? '#4FA85F' : '#D9534F' }}>
+              Flagship Hull Status: {nav.flagshipDamage.replace('_', ' ').toUpperCase()}
+            </span>
+            <span className="wg-tag" style={{ background: nav.flagshipDamage === 'intact' ? '#4FA85F' : '#D9534F', color: '#000000' }}>
+              {nav.totalImpacts === 0 ? '0 Hits (Shield Held)' : `${nav.totalImpacts} Warhead Impacts`}
+            </span>
+          </div>
+          <p style={{ margin: '3px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+            {nav.verdict}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
   const [showLayers, setShowLayers] = useState(false);
   const share = attrition(a);
@@ -117,8 +193,13 @@ function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
 
   return (
     <>
+      {/* Layered Fleet Air Defense View when target is a Naval Combatant */}
+      {wg.navalAssessment && (
+        <NavalFleetDefenseView nav={wg.navalAssessment} />
+      )}
+
       {/* Prominent After-Action Report (AAR) Banner */}
-      <div className={`wg-outcome-banner ${outcome.winner}`}>
+      <div className={`wg-outcome-banner ${outcome.winner}`} style={{ marginTop: wg.navalAssessment ? '10px' : '0' }}>
         <div className="wg-outcome-title">{outcome.verdictTitle}</div>
         <div className="wg-outcome-desc">{outcome.verdictDescription}</div>
 
