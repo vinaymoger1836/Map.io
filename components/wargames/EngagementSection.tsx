@@ -108,7 +108,7 @@ function BattleLogTimeline({ log }: { log: BattleLogEntry[] }) {
   );
 }
 
-function Result({ a }: { a: Assessment }) {
+function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
   const [showLayers, setShowLayers] = useState(false);
   const share = attrition(a);
   const isStandoff = Boolean(a.raid.standoff?.enabled);
@@ -733,7 +733,7 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
       {assessment && (
         <section className="wg-block">
           <h3 className="wg-h">Assessment & Battle Debrief</h3>
-          <Result a={assessment} />
+          <Result a={assessment} wg={wg} />
 
           {assessment.engagements.some((e) => e.cued) && (
             <p className="wg-note" style={{ marginTop: '10px' }}>
