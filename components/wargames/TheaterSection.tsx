@@ -628,6 +628,88 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
           </div>
         </section>
       )}
+
+      {/* Step 5: Two-Sided Campaign & Retaliatory Exchange */}
+      <section className="wg-block">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <h3 className="wg-h" style={{ margin: 0 }}>
+            5. Two-Sided Campaign & Counter-Strikes
+          </h3>
+          <span className="wg-tag" style={{ textTransform: 'capitalize' }}>
+            {wg.campaignBalance.escalationLevel} Exchange
+          </span>
+        </div>
+
+        {/* Live Balance of Power Meter */}
+        <div className="wg-tactical-card" style={{ marginTop: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>
+            <span style={{ color: '#4DD0E1' }}>
+              {wg.board.nations[wg.theaterAttackerIso ?? '']?.name ?? wg.theaterAttackerIso ?? 'Attacker'}: {Math.round(wg.campaignBalance.blueRatio * 100)}% ({wg.campaignBalance.blueActivePlatforms} ready)
+            </span>
+            <span style={{ color: '#FF8A65' }}>
+              {targetUnit ? (wg.board.nations[targetUnit.iso]?.name ?? targetUnit.iso) : 'Defender'}: {Math.round(wg.campaignBalance.redRatio * 100)}% ({wg.campaignBalance.redActivePlatforms} ready)
+            </span>
+          </div>
+
+          <div style={{ width: '100%', height: '8px', borderRadius: '4px', background: '#202632', display: 'flex', overflow: 'hidden' }}>
+            <div style={{ width: `${wg.campaignBalance.blueRatio * 100}%`, background: '#4DD0E1', transition: 'width 0.3s ease' }} />
+            <div style={{ width: `${wg.campaignBalance.redRatio * 100}%`, background: '#FF8A65', transition: 'width 0.3s ease' }} />
+          </div>
+        </div>
+
+        {/* Turn Execution & Auto-Retaliate Controls */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+          <button
+            className="wg-btn"
+            style={{ width: '100%', padding: '8px 10px', fontSize: '11px', fontWeight: 700, background: '#4DD0E1', color: '#000000' }}
+            disabled={!theaterAssessment}
+            onClick={wg.executeCampaignTurn}
+          >
+            ⚔️ Commit Current Strike as Turn {wg.campaignTurns.length + 1}
+          </button>
+
+          <button
+            className="wg-btn"
+            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', fontWeight: 600, background: 'var(--surface-hover)' }}
+            disabled={!theaterAssessment}
+            onClick={wg.autoGenerateRetaliationPlan}
+          >
+            ⚡ Auto-Generate Defender Retaliatory Counter-Strike
+          </button>
+
+          {wg.campaignTurns.length > 0 && (
+            <button
+              className="wg-btn"
+              style={{ width: '100%', padding: '5px 8px', fontSize: '10px', color: '#D9534F' }}
+              onClick={wg.resetCampaign}
+            >
+              🔄 Reset Campaign History ({wg.campaignTurns.length} turns recorded)
+            </button>
+          )}
+        </div>
+
+        {/* History of Completed Conflict Turns */}
+        {wg.campaignTurns.length > 0 && (
+          <div style={{ marginTop: '10px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 600 }}>Recorded Campaign Turns:</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+              {wg.campaignTurns.map((turn) => (
+                <div key={turn.turnNumber} className="wg-tactical-card" style={{ padding: '6px 8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                    <strong>{turn.title}</strong>
+                    <span className="wg-tag" style={{ background: turn.turnType === 'retaliatory' ? '#FF8A65' : '#4DD0E1', color: '#000000' }}>
+                      {turn.turnType.toUpperCase()}
+                    </span>
+                  </div>
+                  <p style={{ margin: '3px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                    Targeted <strong>{turn.targetLabel}</strong>. {turn.assessment?.primaryTargetStatus === 'destroyed' ? '🎯 Objective Destroyed' : turn.assessment?.primaryTargetStatus === 'damaged' ? '⚡ Objective Damaged' : '🛡️ Defended'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
     </>
   );
 }

@@ -62,6 +62,12 @@ import {
   type StrikePhaseTask,
   type TheaterAssessment,
 } from './theaterEngagement';
+import {
+  calculateBalanceOfPower,
+  generateAutoRetaliation,
+  type BalanceOfPower,
+  type CampaignTurn,
+} from './campaign';
 import { greatCirclePath } from './geo';
 import {
   EMPTY_FORCES,
@@ -276,6 +282,13 @@ export interface WarGames {
   seekPlayback: (timeSec: number) => void;
   setPlaybackSpeed: (speed: number) => void;
 
+  /* Two-Sided Campaign & Retaliatory Exchange */
+  campaignTurns: CampaignTurn[];
+  campaignBalance: BalanceOfPower;
+  executeCampaignTurn: () => void;
+  autoGenerateRetaliationPlan: () => void;
+  resetCampaign: () => void;
+
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
   setCoverageMode: (mode: CoverageState['mode']) => void;
@@ -372,6 +385,9 @@ export function useWarGames({
   const [playbackPlaying, setPlaybackPlaying] = useState<boolean>(false);
   const [playbackTimeSec, setPlaybackTimeSec] = useState<number>(0);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(2);
+
+  /* Two-Sided Campaign State */
+  const [campaignTurns, setCampaignTurns] = useState<CampaignTurn[]>([]);
 
   const [library, setLibrary] = useState<SystemSpec[]>([]);
   const [customSystems, setCustomSystems] = useState<SystemSpec[]>([]);
@@ -1468,6 +1484,94 @@ export function useWarGames({
     renderPlaybackFrame(map, playbackFrame);
   }, [playbackFrame, mapRef]);
 
+  /* ---------------- two-sided campaign ---------------- */
+
+  const campaignBalance = useMemo<BalanceOfPower>(() => {
+    const nationA = theaterAttackerIso ?? Object.keys(board.nations)[0] ?? 'USA';
+    const targetUnit = board.units.find((u) => u.id === theaterTargetId);
+    const nationB = targetUnit?.iso ?? Object.keys(board.nations)[1] ?? 'RUS';
+    const states = theaterAssessment?.unitFinalStates ?? new Map();
+    return calculateBalanceOfPower(nationA, nationB, board.units, states, boardContext);
+  }, [theaterAttackerIso, theaterTargetId, board.nations, board.units, theaterAssessment, boardContext]);
+
+  const executeCampaignTurn = useCallback(() => {
+    if (!theaterAssessment || !theaterTargetId || !theaterAttackerIso) return;
+    const targetUnit = board.units.find((u) => u.id === theaterTargetId);
+    if (!targetUnit) return;
+
+    const turnNum = campaignTurns.length + 1;
+    const prevTurn = campaignTurns[campaignTurns.length - 1];
+    const isRetaliatory = Boolean(prevTurn && prevTurn.initiatorIso !== theaterAttackerIso);
+
+    const balanceBefore = prevTurn ? prevTurn.balanceAfter : campaignBalance;
+    const balanceAfter = calculateBalanceOfPower(
+      theaterAttackerIso,
+      targetUnit.iso,
+      board.units,
+      theaterAssessment.unitFinalStates,
+      boardContext
+    );
+
+    const newTurn: CampaignTurn = {
+      turnNumber: turnNum,
+      initiatorIso: theaterAttackerIso,
+      defenderIso: targetUnit.iso,
+      turnType: isRetaliatory ? 'retaliatory' : 'offensive',
+      title: isRetaliatory
+        ? `Turn ${turnNum}: Retaliatory Counter-Strike by ${board.nations[theaterAttackerIso]?.name ?? theaterAttackerIso}`
+        : `Turn ${turnNum}: Strategic Offensive Strike by ${board.nations[theaterAttackerIso]?.name ?? theaterAttackerIso}`,
+      targetUnitId: theaterTargetId,
+      targetLabel: unitLabel(targetUnit, allFormations(board.formations), systems),
+      phases: [...theaterPhases],
+      assessment: theaterAssessment,
+      balanceBefore,
+      balanceAfter,
+    };
+
+    setCampaignTurns((prev) => [...prev, newTurn]);
+  }, [
+    theaterAssessment,
+    theaterTargetId,
+    theaterAttackerIso,
+    board.units,
+    board.nations,
+    campaignTurns,
+    campaignBalance,
+    boardContext,
+    board.formations,
+    systems,
+    theaterPhases,
+  ]);
+
+  const autoGenerateRetaliationPlan = useCallback(() => {
+    if (!theaterTargetId || !theaterAttackerIso) return;
+    const targetUnit = board.units.find((u) => u.id === theaterTargetId);
+    if (!targetUnit) return;
+
+    const defenderIso = targetUnit.iso;
+    const attackerIso = theaterAttackerIso;
+    const states = theaterAssessment?.unitFinalStates ?? new Map();
+
+    const plan = generateAutoRetaliation(
+      defenderIso,
+      attackerIso,
+      theaterAssessment,
+      board.units,
+      states,
+      boardContext
+    );
+
+    if (plan.targetUnit) {
+      setTheaterAttackerIso(defenderIso);
+      setTheaterTargetId(plan.targetUnit.id);
+      setTheaterPhases(plan.phases);
+    }
+  }, [theaterTargetId, theaterAttackerIso, board.units, theaterAssessment, boardContext]);
+
+  const resetCampaign = useCallback(() => {
+    setCampaignTurns([]);
+  }, []);
+
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.
   useEffect(() => {
@@ -1611,6 +1715,11 @@ export function useWarGames({
     togglePlayPlayback,
     seekPlayback,
     setPlaybackSpeed,
+    campaignTurns,
+    campaignBalance,
+    executeCampaignTurn,
+    autoGenerateRetaliationPlan,
+    resetCampaign,
     coverage,
     setCoverageMode,
     toggleCoverageKind,
