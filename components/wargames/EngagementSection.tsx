@@ -23,6 +23,7 @@ import {
 import { distanceKm } from '@/lib/geo';
 import { maxMunitionCapacity, standoffWeapons, TARGET_LABEL } from '@/lib/specs';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
+import type { NavalFleetAssessment } from '@/lib/navalEngagement';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 

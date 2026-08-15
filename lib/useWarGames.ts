@@ -69,6 +69,11 @@ import {
   type BalanceOfPower,
   type CampaignTurn,
 } from './campaign';
+import {
+  assessNavalFleetDefense,
+  isNavalCombatant,
+  type NavalFleetAssessment,
+} from './navalEngagement';
 import { greatCirclePath } from './geo';
 import {
   EMPTY_FORCES,
@@ -289,6 +294,9 @@ export interface WarGames {
   executeCampaignTurn: () => void;
   autoGenerateRetaliationPlan: () => void;
   resetCampaign: () => void;
+
+  /* Layered Naval Fleet Air Defense */
+  navalAssessment: NavalFleetAssessment | null;
 
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
@@ -1573,6 +1581,40 @@ export function useWarGames({
     setCampaignTurns([]);
   }, []);
 
+  /* ---------------- naval fleet defense ---------------- */
+
+  const navalAssessment = useMemo<NavalFleetAssessment | null>(() => {
+    if (!raidFromId || !raidToId) return null;
+    const attacker = board.units.find((u) => u.id === raidFromId);
+    const target = board.units.find((u) => u.id === raidToId);
+    if (!attacker || !target) return null;
+
+    const targetSpec = specOf(target, boardContext);
+    if (!targetSpec || !isNavalCombatant(targetSpec.typeId)) return null;
+
+    const unitCount = attacker.kind === 'unit' ? attacker.count : 1;
+    const salvo = salvoSize ?? (unitCount * 4);
+    const states = theaterAssessment?.unitFinalStates ?? new Map();
+
+    return assessNavalFleetDefense(
+      target,
+      attacker,
+      selectedWeaponIndex,
+      salvo,
+      board.units,
+      states,
+      boardContext
+    );
+  }, [
+    raidFromId,
+    raidToId,
+    board.units,
+    salvoSize,
+    selectedWeaponIndex,
+    theaterAssessment,
+    boardContext,
+  ]);
+
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.
   useEffect(() => {
@@ -1721,6 +1763,7 @@ export function useWarGames({
     executeCampaignTurn,
     autoGenerateRetaliationPlan,
     resetCampaign,
+    navalAssessment,
     coverage,
     setCoverageMode,
     toggleCoverageKind,
