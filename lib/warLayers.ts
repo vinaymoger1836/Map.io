@@ -310,8 +310,8 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
       paint: {
         'line-color': ['get', 'color'],
-        'line-width': 2.8,
-        'line-opacity': 0.95,
+        'line-width': 1.8,
+        'line-opacity': 0.85,
       },
     },
     firstSymbol
@@ -324,10 +324,10 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       source: 'wg-playback-interceptors',
       layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
       paint: {
-        'line-color': '#E8833A',
-        'line-width': 2.2,
-        'line-dasharray': [2, 1],
-        'line-opacity': 1,
+        'line-color': ['get', 'color'],
+        'line-width': 2.0,
+        'line-dasharray': [3, 2],
+        'line-opacity': 0.95,
       },
     },
     firstSymbol
@@ -356,10 +356,17 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       source: 'wg-playback-entities',
       layout: { visibility: 'none' },
       paint: {
-        'circle-radius': 9,
-        'circle-color': 'rgba(10, 15, 25, 0.9)',
+        'circle-radius': [
+          'case',
+          ['==', ['get', 'type'], 'aircraft'],
+          8.5,
+          ['==', ['get', 'type'], 'interceptor'],
+          4.5,
+          4.0,
+        ],
+        'circle-color': 'rgba(10, 15, 25, 0.85)',
         'circle-stroke-color': ['get', 'color'],
-        'circle-stroke-width': 2,
+        'circle-stroke-width': 1.5,
       },
     },
     firstSymbol
@@ -372,7 +379,14 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       source: 'wg-playback-entities',
       layout: { visibility: 'none' },
       paint: {
-        'circle-radius': 4.5,
+        'circle-radius': [
+          'case',
+          ['==', ['get', 'type'], 'aircraft'],
+          5.5,
+          ['==', ['get', 'type'], 'interceptor'],
+          2.8,
+          2.5,
+        ],
         'circle-color': ['get', 'color'],
       },
     },

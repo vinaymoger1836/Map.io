@@ -2,11 +2,12 @@
  * Interactive Battle Playback & Animation Engine
  *
  * Transforms static engagement assessments and multi-phase theater operations
- * into time-continuous 4D trajectories (aircraft ingress, standoff releases,
- * in-flight cruise missiles, SAM interceptor launches, flak bursts, and objective impacts).
+ * into time-continuous 4D trajectories (individual strike missiles in realistic salvo
+ * formations, individual high-speed SAM interceptors, aircraft ingress/egress,
+ * flak bursts, and target objective impacts).
  */
 
-import { distanceKm, interpolate, bearingDeg, greatCirclePath } from './geo';
+import { distanceKm, interpolate, bearingDeg, destination, greatCirclePath } from './geo';
 import { type Assessment } from './engagement';
 import { type TheaterAssessment } from './theaterEngagement';
 
@@ -142,18 +143,26 @@ export function buildRaidPlaybackModel(assessment: Assessment): PlaybackModel {
   const interceptions: TimelineSegment['interceptions'] = [];
   const events: PlaybackEvent[] = [];
 
+  const mainHeading = bearingDeg(assessment.raid.from, assessment.raid.to);
+  const perpHeading = (mainHeading + 90) % 360;
+
   // Map engagements
-  for (const eng of assessment.engagements) {
+  for (let engIdx = 0; engIdx < assessment.engagements.length; engIdx++) {
+    const eng = assessment.engagements[engIdx];
     if (eng.silent || eng.rounds <= 0) continue;
     const entryRatio = totalKm > 0 ? eng.entryKm / totalKm : 0;
     const tSec = entryRatio * impactTimeSec;
     const interceptLngLat = interpolate(assessment.raid.from, assessment.raid.to, entryRatio);
 
+    // Position the defending SAM battery at a realistic ground offset from the flight line
+    const samOffsetKm = ((engIdx % 2 === 0 ? 1 : -1) * (30 + engIdx * 15));
+    const samLngLat = destination(interceptLngLat, samOffsetKm, perpHeading);
+
     interceptions.push({
       timeSec: tSec,
       lngLat: interceptLngLat,
-      samLabel: eng.unitLabel,
-      samLngLat: interceptLngLat,
+      samLabel: eng.unitLabel || eng.systemName,
+      samLngLat,
       kills: Math.round(eng.killed),
     });
   }
@@ -214,7 +223,7 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
 
   const phaseNumbers = Array.from(new Set(assessment.phases.map((p) => p.phaseNumber))).sort((a, b) => a - b);
   let cumulativeTimeSec = 0;
-  const PHASE_DURATION_SEC = 90; // Each phase takes ~90 seconds of normalized mission time
+  const PHASE_DURATION_SEC = 90;
 
   for (const pNum of phaseNumbers) {
     const phaseStartSec = cumulativeTimeSec;
@@ -229,24 +238,26 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
       const targetLngLat = pathSpec?.targetPoint ?? [0, 0];
       const releaseLngLat = pathSpec?.releasePoint;
 
-      const distKm = distanceKm(originLngLat, targetLngLat);
       const isStandoff = Boolean(releaseLngLat);
-
       const ingressSec = isStandoff ? phaseStartSec + 35 : phaseStartSec;
       const impactTimeSec = phaseStartSec + 75;
       const egressEndTimeSec = isStandoff ? phaseStartSec + 90 : impactTimeSec;
 
       const interceptions: TimelineSegment['interceptions'] = [];
+      const heading = bearingDeg(originLngLat, targetLngLat);
+      const perpHeading = (heading + 90) % 360;
 
       // Interceptions from phase report
       if (rep.munitionsIntercepted > 0) {
         const midFrac = 0.65;
         const interceptLngLat = interpolate(originLngLat, targetLngLat, midFrac);
+        const samLngLat = destination(interceptLngLat, 35, perpHeading);
+
         interceptions.push({
           timeSec: phaseStartSec + 55,
           lngLat: interceptLngLat,
-          samLabel: 'Defending Air Defense',
-          samLngLat: interceptLngLat,
+          samLabel: 'Defending Fleet / SAM Umbrella',
+          samLngLat,
           kills: rep.munitionsIntercepted,
         });
       }
@@ -299,7 +310,7 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
 }
 
 /* ------------------------------------------------------------------ */
-/* Frame Calculation                                                  */
+/* Frame Calculation with Individual Missiles & Interceptor Salvos    */
 /* ------------------------------------------------------------------ */
 
 export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): PlaybackFrame {
@@ -317,7 +328,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
   for (const seg of model.segments) {
     if (clampedTime < seg.startTimeSec) continue;
 
-    // Determine phase number
+    // Determine active phase number
     if (clampedTime >= seg.startTimeSec && clampedTime <= seg.egressEndTimeSec) {
       activePhaseNumber = seg.phaseNumber;
       activeStatusText = `${seg.title} — Active`;
@@ -348,7 +359,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           status: 'ingress',
         });
 
-        // Trail
+        // Aircraft Ingress Trail
         const breadcrumb = greatCirclePath(originLngLat, currentCoord, 16);
         trails.push({
           id: `${seg.id}-trail-ingress`,
@@ -376,64 +387,121 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       }
     }
 
-    // 2. Munitions In-Flight
-    if (clampedTime >= seg.releaseTimeSec && clampedTime <= seg.impactTimeSec) {
-      const munitionStartSec = seg.releaseTimeSec;
-      const munitionTotalSec = seg.impactTimeSec - munitionStartSec;
-      const munitionFrac = munitionTotalSec > 0 ? (clampedTime - munitionStartSec) / munitionTotalSec : 1;
-
+    // 2. Individual Strike Munitions In-Flight (Attack Side)
+    if (clampedTime >= seg.releaseTimeSec && clampedTime <= seg.impactTimeSec + 1) {
       const launchCoord = isStandoff && releaseLngLat ? releaseLngLat : originLngLat;
-      const currentMunitionCoord = interpolate(launchCoord, targetLngLat, munitionFrac);
       const heading = bearingDeg(launchCoord, targetLngLat);
+      const perpBearing = (heading + 90) % 360;
 
-      entities.push({
-        id: `${seg.id}-munition`,
-        type: 'munition',
-        label: `${seg.weaponName} (${seg.salvoSize}x)`,
-        count: seg.salvoSize,
-        lngLat: currentMunitionCoord,
-        headingDeg: heading,
-        color: '#FFB020',
-        status: munitionFrac > 0.85 ? 'terminal' : 'munition-flight',
-      });
+      const salvoCount = Math.max(1, Math.min(36, seg.salvoSize));
+      const spreadWidthKm = Math.min(2.5, 14 / Math.max(1, salvoCount));
 
-      const munitionTrail = greatCirclePath(launchCoord, currentMunitionCoord, 16);
-      trails.push({
-        id: `${seg.id}-trail-munition`,
-        color: '#FFB020',
-        coordinates: munitionTrail,
-        type: 'strike',
-      });
+      // Calculate total kills across interceptions for kill attribution
+      let totalKills = 0;
+      for (const ic of seg.interceptions) {
+        totalKills += ic.kills;
+      }
+
+      // Map individual missiles in the wave
+      for (let m = 0; m < salvoCount; m++) {
+        const staggerSec = m * 0.15;
+        const mLaunchSec = seg.releaseTimeSec + staggerSec;
+
+        if (clampedTime < mLaunchSec) continue;
+
+        // Check if this missile gets intercepted
+        const isIntercepted = m < totalKills;
+        let killTimeSec = seg.impactTimeSec;
+        let killCoord = targetLngLat;
+
+        if (isIntercepted) {
+          // Attribute to corresponding interception event
+          let runningKills = 0;
+          for (const ic of seg.interceptions) {
+            runningKills += ic.kills;
+            if (m < runningKills) {
+              killTimeSec = ic.timeSec;
+              killCoord = ic.lngLat;
+              break;
+            }
+          }
+        }
+
+        // If missile was destroyed earlier, don't draw it past its kill time
+        if (isIntercepted && clampedTime > killTimeSec) continue;
+
+        // Calculate individual lateral offset path
+        const latOffsetKm = (m - (salvoCount - 1) / 2) * spreadWidthKm;
+        const mStart = destination(launchCoord, latOffsetKm, perpBearing);
+        const mEnd = destination(targetLngLat, latOffsetKm * 0.3, perpBearing);
+
+        const mTotalSec = (isIntercepted ? killTimeSec : seg.impactTimeSec) - mLaunchSec;
+        const mFrac = mTotalSec > 0 ? (clampedTime - mLaunchSec) / mTotalSec : 1;
+        const clampedFrac = Math.min(1, Math.max(0, mFrac));
+
+        const mCurrentCoord = interpolate(mStart, isIntercepted ? killCoord : mEnd, clampedFrac);
+
+        // Individual Munition Entity
+        entities.push({
+          id: `${seg.id}-m-${m}`,
+          type: 'munition',
+          label: m === 0 ? `${seg.weaponName} (${seg.salvoSize}x Salvo)` : '',
+          count: 1,
+          lngLat: mCurrentCoord,
+          headingDeg: heading,
+          color: '#FFB020',
+          status: clampedFrac > 0.88 ? 'terminal' : 'munition-flight',
+        });
+
+        // Individual Munition Trail
+        const mTrail = greatCirclePath(mStart, mCurrentCoord, 10);
+        trails.push({
+          id: `${seg.id}-trail-m-${m}`,
+          color: '#FFB020',
+          coordinates: mTrail,
+          type: 'strike',
+        });
+      }
     }
 
-    // 3. SAM Interception Trails & Bursts
+    // 3. Individual SAM Interceptors (Defense Side) & Flak Bursts
     for (let icIdx = 0; icIdx < seg.interceptions.length; icIdx++) {
       const ic = seg.interceptions[icIdx];
-      const interceptLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - 8);
+      const icCount = Math.max(2, Math.min(8, Math.round(ic.kills * 1.5) || 2));
+      const icHeading = bearingDeg(ic.samLngLat, ic.lngLat);
+      const icPerpBearing = (icHeading + 90) % 360;
 
-      if (clampedTime >= interceptLaunchSec && clampedTime <= ic.timeSec) {
-        // Interceptor missile rushing towards intercept coordinate
-        const icFrac = (clampedTime - interceptLaunchSec) / (ic.timeSec - interceptLaunchSec);
-        const currentIcCoord = interpolate(ic.samLngLat, ic.lngLat, icFrac);
-        const icHeading = bearingDeg(ic.samLngLat, ic.lngLat);
+      for (let j = 0; j < icCount; j++) {
+        const icStaggerSec = j * 0.25;
+        const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - 6 - icStaggerSec);
+        const icImpactSec = ic.timeSec;
 
-        entities.push({
-          id: `${seg.id}-ic-${icIdx}`,
-          type: 'interceptor',
-          label: `${ic.samLabel} Interceptor`,
-          count: 1,
-          lngLat: currentIcCoord,
-          headingDeg: icHeading,
-          color: '#E8833A',
-          status: 'terminal',
-        });
+        if (clampedTime >= icLaunchSec && clampedTime <= icImpactSec) {
+          const icFrac = (clampedTime - icLaunchSec) / (icImpactSec - icLaunchSec);
+          const icOffsetKm = (j - (icCount - 1) / 2) * 1.6;
 
-        trails.push({
-          id: `${seg.id}-ic-trail-${icIdx}`,
-          color: '#E8833A',
-          coordinates: [ic.samLngLat, currentIcCoord],
-          type: 'interceptor',
-        });
+          const icStart = destination(ic.samLngLat, icOffsetKm * 0.4, icPerpBearing);
+          const icEnd = destination(ic.lngLat, icOffsetKm, icPerpBearing);
+          const icCurrCoord = interpolate(icStart, icEnd, Math.min(1, Math.max(0, icFrac)));
+
+          entities.push({
+            id: `${seg.id}-ic-${icIdx}-${j}`,
+            type: 'interceptor',
+            label: j === 0 ? `${ic.samLabel} Interceptors (${icCount}x)` : '',
+            count: 1,
+            lngLat: icCurrCoord,
+            headingDeg: icHeading,
+            color: '#4DD0E1',
+            status: 'terminal',
+          });
+
+          trails.push({
+            id: `${seg.id}-ic-trail-${icIdx}-${j}`,
+            color: '#4DD0E1',
+            coordinates: [icStart, icCurrCoord],
+            type: 'interceptor',
+          });
+        }
       }
 
       // Explosion / Flak Burst when intercept occurs
@@ -446,7 +514,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           label: `💥 ${ic.kills} Intercepted`,
           ageSec: age,
           opacity: Math.max(0, 1 - age / 12),
-          radius: 8 + age * 2,
+          radius: 10 + age * 2.5,
         });
       }
     }
