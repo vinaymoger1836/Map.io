@@ -402,14 +402,12 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
     }
 
     // 2. Individual Strike Munitions In-Flight (Attack Side)
-    if (clampedTime >= seg.releaseTimeSec && clampedTime <= seg.impactTimeSec + 1) {
+    if (clampedTime >= seg.releaseTimeSec && clampedTime <= seg.impactTimeSec + 2) {
       const launchCoord = isStandoff && releaseLngLat ? releaseLngLat : originLngLat;
       const heading = bearingDeg(launchCoord, targetLngLat);
       const perpBearing = (heading + 90) % 360;
 
       const salvoCount = Math.max(1, Math.min(36, seg.salvoSize));
-      // Increase formation spacing so missiles are clearly separated on the map
-      const spreadSpacingKm = Math.max(10, Math.min(32, 220 / Math.max(1, salvoCount)));
 
       // Calculate total kills across interceptions for kill attribution
       let totalKills = 0;
@@ -417,12 +415,10 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         totalKills += ic.kills;
       }
 
-      // Map individual missiles in the wave in double-column / wide formation
+      // Map individual missiles in sequential ripple stream directly from the launching platform
       for (let m = 0; m < salvoCount; m++) {
-        // Lateral offset across flight corridor
-        const latOffsetKm = (m - (salvoCount - 1) / 2) * spreadSpacingKm;
-        // Longitudinal stagger delay
-        const staggerSec = (m % 4) * 0.35 + Math.floor(m / 4) * 0.7;
+        // Sequential ripple launch stagger (0.75s between VLS / rail launches)
+        const staggerSec = m * 0.75;
         const mLaunchSec = seg.releaseTimeSec + staggerSec;
 
         if (clampedTime < mLaunchSec) continue;
@@ -448,16 +444,23 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         // If missile was destroyed earlier, don't draw it past its kill time
         if (isIntercepted && clampedTime > killTimeSec) continue;
 
-        // Calculate individual lateral offset path
-        const mStart = destination(launchCoord, latOffsetKm, perpBearing);
-        const mEnd = destination(targetLngLat, latOffsetKm * 0.3, perpBearing);
+        // Base flight time from platform launch to destination/intercept
+        const mTotalSec = (isIntercepted ? killTimeSec : seg.impactTimeSec) - seg.releaseTimeSec;
+        const progress = mTotalSec > 0 ? (clampedTime - mLaunchSec) / mTotalSec : 1;
+        const clampedFrac = Math.min(1, Math.max(0, progress));
 
-        const mTotalSec = (isIntercepted ? killTimeSec : seg.impactTimeSec) - mLaunchSec;
-        const mFrac = mTotalSec > 0 ? (clampedTime - mLaunchSec) / mTotalSec : 1;
-        const clampedFrac = Math.min(1, Math.max(0, mFrac));
+        // Core path along great-circle attack corridor (100% anchored at ship launch coordinate)
+        const destCoord = isIntercepted ? killCoord : targetLngLat;
+        const corePoint = interpolate(launchCoord, destCoord, clampedFrac);
 
-        const mCurrentCoord = interpolate(mStart, isIntercepted ? killCoord : mEnd, clampedFrac);
-        const mHeading = bearingDeg(mStart, mEnd);
+        // Subtle lateral lane breathing (0 at ship launch, 0 at target impact)
+        const laneOffsetKm = ((m % 3) - 1) * 3.5 * Math.sin(clampedFrac * Math.PI);
+        const mCurrentCoord =
+          laneOffsetKm !== 0 && clampedFrac > 0.05 && clampedFrac < 0.95
+            ? destination(corePoint, laneOffsetKm, perpBearing)
+            : corePoint;
+
+        const mHeading = bearingDeg(launchCoord, destCoord);
 
         // Individual Munition Entity
         entities.push({
@@ -471,8 +474,8 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           status: clampedFrac > 0.88 ? 'terminal' : 'munition-flight',
         });
 
-        // Individual Munition Trail
-        const mTrail = greatCirclePath(mStart, mCurrentCoord, 10);
+        // Individual Munition Trail from launch platform to current location
+        const mTrail = greatCirclePath(launchCoord, mCurrentCoord, Math.max(4, Math.round(16 * clampedFrac)));
         trails.push({
           id: `${seg.id}-trail-m-${m}`,
           color: '#FFB020',
@@ -490,18 +493,19 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const icPerpBearing = (icHeading + 90) % 360;
 
       for (let j = 0; j < icCount; j++) {
-        const icStaggerSec = j * 0.3;
+        const icStaggerSec = j * 0.35;
         const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - 6 - icStaggerSec);
         const icImpactSec = ic.timeSec;
 
         if (clampedTime >= icLaunchSec && clampedTime <= icImpactSec) {
           const icFrac = (clampedTime - icLaunchSec) / (icImpactSec - icLaunchSec);
-          const icOffsetKm = (j - (icCount - 1) / 2) * 2.5;
+          const clampedIcFrac = Math.min(1, Math.max(0, icFrac));
 
-          const icStart = destination(ic.samLngLat, icOffsetKm * 0.4, icPerpBearing);
-          const icEnd = destination(ic.lngLat, icOffsetKm, icPerpBearing);
-          const icCurrCoord = interpolate(icStart, icEnd, Math.min(1, Math.max(0, icFrac)));
-          const interceptorHeading = bearingDeg(icStart, icEnd);
+          // Interceptors launch directly from the defending battery / warship (ic.samLngLat)
+          const coreIcPoint = interpolate(ic.samLngLat, ic.lngLat, clampedIcFrac);
+          const icLaneOffset = ((j % 2 === 0 ? 1 : -1) * (j * 1.2)) * Math.sin(clampedIcFrac * Math.PI);
+          const icCurrCoord =
+            icLaneOffset !== 0 ? destination(coreIcPoint, icLaneOffset, icPerpBearing) : coreIcPoint;
 
           entities.push({
             id: `${seg.id}-ic-${icIdx}-${j}`,
@@ -509,7 +513,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
             label: j === 0 ? `${ic.samLabel} Interceptors` : '',
             count: 1,
             lngLat: icCurrCoord,
-            headingDeg: interceptorHeading,
+            headingDeg: icHeading,
             color: '#4DD0E1',
             status: 'terminal',
           });
@@ -517,7 +521,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           trails.push({
             id: `${seg.id}-ic-trail-${icIdx}-${j}`,
             color: '#4DD0E1',
-            coordinates: [icStart, icCurrCoord],
+            coordinates: [ic.samLngLat, icCurrCoord],
             type: 'interceptor',
           });
         }
