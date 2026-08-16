@@ -1430,10 +1430,10 @@ export function useWarGames({
       return buildTheaterPlaybackModel(theaterAssessment);
     }
     if (assessment && !assessment.blocked) {
-      return buildRaidPlaybackModel(assessment);
+      return buildRaidPlaybackModel(assessment, board.units);
     }
     return null;
-  }, [theaterAssessment, assessment]);
+  }, [theaterAssessment, assessment, board.units]);
 
   const playbackFrame = useMemo<PlaybackFrame | null>(() => {
     if (!playbackModel || !playbackActive) return null;

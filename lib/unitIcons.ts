@@ -582,3 +582,144 @@ export function iconDataUrl(spec: IconSpec): string {
   paint(canvas, spec);
   return canvas.toDataURL();
 }
+
+/**
+ * Registers tactical 4D battle playback icons (cruise missiles, high-speed interceptors, strike aircraft).
+ */
+export function ensurePlaybackIcons(map: {
+  hasImage: (id: string) => boolean;
+  addImage: (id: string, image: ImageData, opts?: { pixelRatio?: number }) => void;
+}) {
+  if (typeof document === 'undefined') return;
+
+  const createIcon = (width: number, height: number, draw: (ctx: CanvasRenderingContext2D) => void): ImageData => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(2, 2);
+    draw(ctx);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  };
+
+  // 1. Cruise Missile / Standoff Munition Icon
+  if (!map.hasImage('wg-icon-missile')) {
+    const img = createIcon(24, 24, (ctx) => {
+      ctx.translate(12, 12);
+      ctx.shadowColor = '#FFB020';
+      ctx.shadowBlur = 4;
+
+      // Missile Body
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(0, -9);
+      ctx.lineTo(2.2, -4);
+      ctx.lineTo(2.2, 5.5);
+      ctx.lineTo(4.5, 7.5);
+      ctx.lineTo(1.5, 7.5);
+      ctx.lineTo(0, 6.5);
+      ctx.lineTo(-1.5, 7.5);
+      ctx.lineTo(-4.5, 7.5);
+      ctx.lineTo(-2.2, 5.5);
+      ctx.lineTo(-2.2, -4);
+      ctx.closePath();
+      ctx.fill();
+
+      // Wing Strakes
+      ctx.fillStyle = '#FFB020';
+      ctx.beginPath();
+      ctx.moveTo(0, -1);
+      ctx.lineTo(5.5, 2.5);
+      ctx.lineTo(5.5, 4);
+      ctx.lineTo(0, 1.8);
+      ctx.lineTo(-5.5, 4);
+      ctx.lineTo(-5.5, 2.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Rocket Exhaust Plume
+      ctx.fillStyle = '#FF5252';
+      ctx.beginPath();
+      ctx.moveTo(1.2, 7);
+      ctx.lineTo(0, 10.5);
+      ctx.lineTo(-1.2, 7);
+      ctx.closePath();
+      ctx.fill();
+    });
+    map.addImage('wg-icon-missile', img, { pixelRatio: 2 });
+  }
+
+  // 2. High-Speed SAM Interceptor Icon
+  if (!map.hasImage('wg-icon-interceptor')) {
+    const img = createIcon(24, 24, (ctx) => {
+      ctx.translate(12, 12);
+      ctx.shadowColor = '#4DD0E1';
+      ctx.shadowBlur = 4;
+
+      // Interceptor Needle Body
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(0, -10);
+      ctx.lineTo(1.8, -5);
+      ctx.lineTo(1.8, 6);
+      ctx.lineTo(3.8, 8.5);
+      ctx.lineTo(1.2, 8);
+      ctx.lineTo(0, 7);
+      ctx.lineTo(-1.2, 8);
+      ctx.lineTo(-3.8, 8.5);
+      ctx.lineTo(-1.8, 6);
+      ctx.lineTo(-1.8, -5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Canards
+      ctx.fillStyle = '#4DD0E1';
+      ctx.beginPath();
+      ctx.moveTo(0, -4);
+      ctx.lineTo(3.5, -2);
+      ctx.lineTo(0, -2.5);
+      ctx.lineTo(-3.5, -2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Rocket Flame
+      ctx.fillStyle = '#4DD0E1';
+      ctx.beginPath();
+      ctx.moveTo(1, 7.5);
+      ctx.lineTo(0, 11);
+      ctx.lineTo(-1, 7.5);
+      ctx.closePath();
+      ctx.fill();
+    });
+    map.addImage('wg-icon-interceptor', img, { pixelRatio: 2 });
+  }
+
+  // 3. Strike Aircraft Jet Silhouette
+  if (!map.hasImage('wg-icon-aircraft')) {
+    const img = createIcon(28, 28, (ctx) => {
+      ctx.translate(14, 14);
+      ctx.shadowColor = '#4DD0E1';
+      ctx.shadowBlur = 5;
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(0, -10);
+      ctx.lineTo(2, -4);
+      ctx.lineTo(9.5, 3);
+      ctx.lineTo(8.5, 5);
+      ctx.lineTo(3, 4);
+      ctx.lineTo(4, 8.5);
+      ctx.lineTo(1.5, 8.5);
+      ctx.lineTo(0, 7);
+      ctx.lineTo(-1.5, 8.5);
+      ctx.lineTo(-4, 8.5);
+      ctx.lineTo(-3, 4);
+      ctx.lineTo(-8.5, 5);
+      ctx.lineTo(-9.5, 3);
+      ctx.lineTo(-2, -4);
+      ctx.closePath();
+      ctx.fill();
+    });
+    map.addImage('wg-icon-aircraft', img, { pixelRatio: 2 });
+  }
+}

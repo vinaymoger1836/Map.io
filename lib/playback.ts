@@ -3,13 +3,14 @@
  *
  * Transforms static engagement assessments and multi-phase theater operations
  * into time-continuous 4D trajectories (individual strike missiles in realistic salvo
- * formations, individual high-speed SAM interceptors, aircraft ingress/egress,
- * flak bursts, and target objective impacts).
+ * formations, individual high-speed SAM interceptors from defender positions,
+ * aircraft ingress/egress, flak bursts, and target objective impacts).
  */
 
 import { distanceKm, interpolate, bearingDeg, destination, greatCirclePath } from './geo';
 import { type Assessment } from './engagement';
 import { type TheaterAssessment } from './theaterEngagement';
+import { type DeployedUnit } from './warGames';
 
 /* ------------------------------------------------------------------ */
 /* Types & Interfaces                                                  */
@@ -123,7 +124,7 @@ export function formatTimeSec(totalSec: number): string {
 /**
  * Builds a playback model from a Single-Raid Assessment.
  */
-export function buildRaidPlaybackModel(assessment: Assessment): PlaybackModel {
+export function buildRaidPlaybackModel(assessment: Assessment, boardUnits: DeployedUnit[] = []): PlaybackModel {
   const totalKm = assessment.distanceKm;
   const speedKmh = assessment.speedKmh || 900;
   const isStandoff = Boolean(assessment.raid.standoff?.enabled);
@@ -146,7 +147,7 @@ export function buildRaidPlaybackModel(assessment: Assessment): PlaybackModel {
   const mainHeading = bearingDeg(assessment.raid.from, assessment.raid.to);
   const perpHeading = (mainHeading + 90) % 360;
 
-  // Map engagements
+  // Map engagements to exact defender units on the board
   for (let engIdx = 0; engIdx < assessment.engagements.length; engIdx++) {
     const eng = assessment.engagements[engIdx];
     if (eng.silent || eng.rounds <= 0) continue;
@@ -154,9 +155,9 @@ export function buildRaidPlaybackModel(assessment: Assessment): PlaybackModel {
     const tSec = entryRatio * impactTimeSec;
     const interceptLngLat = interpolate(assessment.raid.from, assessment.raid.to, entryRatio);
 
-    // Position the defending SAM battery at a realistic ground offset from the flight line
-    const samOffsetKm = ((engIdx % 2 === 0 ? 1 : -1) * (30 + engIdx * 15));
-    const samLngLat = destination(interceptLngLat, samOffsetKm, perpHeading);
+    // Resolve real position of defender unit from the board
+    const defenderUnit = boardUnits.find((u) => u.id === eng.unitId);
+    const samLngLat = defenderUnit?.lngLat ?? destination(interceptLngLat, 35, perpHeading);
 
     interceptions.push({
       timeSec: tSec,
@@ -247,8 +248,21 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
       const heading = bearingDeg(originLngLat, targetLngLat);
       const perpHeading = (heading + 90) % 360;
 
-      // Interceptions from phase report
-      if (rep.munitionsIntercepted > 0) {
+      // Interceptions from phase report using actual defender unit coordinates
+      if (rep.interceptions && rep.interceptions.length > 0) {
+        for (let i = 0; i < rep.interceptions.length; i++) {
+          const icRec = rep.interceptions[i];
+          const midFrac = 0.55 + (i * 0.08);
+          const interceptLngLat = interpolate(originLngLat, targetLngLat, Math.min(0.85, midFrac));
+          interceptions.push({
+            timeSec: phaseStartSec + 50 + i * 5,
+            lngLat: interceptLngLat,
+            samLabel: icRec.defenderLabel,
+            samLngLat: icRec.defenderLngLat, // Exact real coordinates of enemy defender unit!
+            kills: icRec.kills,
+          });
+        }
+      } else if (rep.munitionsIntercepted > 0) {
         const midFrac = 0.65;
         const interceptLngLat = interpolate(originLngLat, targetLngLat, midFrac);
         const samLngLat = destination(interceptLngLat, 35, perpHeading);
@@ -256,7 +270,7 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
         interceptions.push({
           timeSec: phaseStartSec + 55,
           lngLat: interceptLngLat,
-          samLabel: 'Defending Fleet / SAM Umbrella',
+          samLabel: 'Defending Air Defense',
           samLngLat,
           kills: rep.munitionsIntercepted,
         });
@@ -394,7 +408,8 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const perpBearing = (heading + 90) % 360;
 
       const salvoCount = Math.max(1, Math.min(36, seg.salvoSize));
-      const spreadWidthKm = Math.min(2.5, 14 / Math.max(1, salvoCount));
+      // Increase formation spacing so missiles are clearly separated on the map
+      const spreadSpacingKm = Math.max(10, Math.min(32, 220 / Math.max(1, salvoCount)));
 
       // Calculate total kills across interceptions for kill attribution
       let totalKills = 0;
@@ -402,9 +417,12 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         totalKills += ic.kills;
       }
 
-      // Map individual missiles in the wave
+      // Map individual missiles in the wave in double-column / wide formation
       for (let m = 0; m < salvoCount; m++) {
-        const staggerSec = m * 0.15;
+        // Lateral offset across flight corridor
+        const latOffsetKm = (m - (salvoCount - 1) / 2) * spreadSpacingKm;
+        // Longitudinal stagger delay
+        const staggerSec = (m % 4) * 0.35 + Math.floor(m / 4) * 0.7;
         const mLaunchSec = seg.releaseTimeSec + staggerSec;
 
         if (clampedTime < mLaunchSec) continue;
@@ -431,7 +449,6 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         if (isIntercepted && clampedTime > killTimeSec) continue;
 
         // Calculate individual lateral offset path
-        const latOffsetKm = (m - (salvoCount - 1) / 2) * spreadWidthKm;
         const mStart = destination(launchCoord, latOffsetKm, perpBearing);
         const mEnd = destination(targetLngLat, latOffsetKm * 0.3, perpBearing);
 
@@ -440,6 +457,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         const clampedFrac = Math.min(1, Math.max(0, mFrac));
 
         const mCurrentCoord = interpolate(mStart, isIntercepted ? killCoord : mEnd, clampedFrac);
+        const mHeading = bearingDeg(mStart, mEnd);
 
         // Individual Munition Entity
         entities.push({
@@ -448,7 +466,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           label: m === 0 ? `${seg.weaponName} (${seg.salvoSize}x Salvo)` : '',
           count: 1,
           lngLat: mCurrentCoord,
-          headingDeg: heading,
+          headingDeg: mHeading,
           color: '#FFB020',
           status: clampedFrac > 0.88 ? 'terminal' : 'munition-flight',
         });
@@ -472,25 +490,26 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const icPerpBearing = (icHeading + 90) % 360;
 
       for (let j = 0; j < icCount; j++) {
-        const icStaggerSec = j * 0.25;
+        const icStaggerSec = j * 0.3;
         const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - 6 - icStaggerSec);
         const icImpactSec = ic.timeSec;
 
         if (clampedTime >= icLaunchSec && clampedTime <= icImpactSec) {
           const icFrac = (clampedTime - icLaunchSec) / (icImpactSec - icLaunchSec);
-          const icOffsetKm = (j - (icCount - 1) / 2) * 1.6;
+          const icOffsetKm = (j - (icCount - 1) / 2) * 2.5;
 
           const icStart = destination(ic.samLngLat, icOffsetKm * 0.4, icPerpBearing);
           const icEnd = destination(ic.lngLat, icOffsetKm, icPerpBearing);
           const icCurrCoord = interpolate(icStart, icEnd, Math.min(1, Math.max(0, icFrac)));
+          const interceptorHeading = bearingDeg(icStart, icEnd);
 
           entities.push({
             id: `${seg.id}-ic-${icIdx}-${j}`,
             type: 'interceptor',
-            label: j === 0 ? `${ic.samLabel} Interceptors (${icCount}x)` : '',
+            label: j === 0 ? `${ic.samLabel} Interceptors` : '',
             count: 1,
             lngLat: icCurrCoord,
-            headingDeg: icHeading,
+            headingDeg: interceptorHeading,
             color: '#4DD0E1',
             status: 'terminal',
           });

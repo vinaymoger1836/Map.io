@@ -106,6 +106,13 @@ export interface PhaseReport {
   targetDamageSummary: string;
   battleLog: PhaseBattleLogEvent[];
   pathSpec?: RaidPathSpec;
+  interceptions?: Array<{
+    defenderUnitId: string;
+    defenderLabel: string;
+    defenderLngLat: [number, number];
+    roundsFired: number;
+    kills: number;
+  }>;
 }
 
 export interface TheaterAssessment {
@@ -486,6 +493,13 @@ export function assessTheaterRaid(
       let munitionsSurviving = actualSalvo;
       let attackerLost = 0;
       let totalIntercepted = 0;
+      const phaseInterceptions: Array<{
+        defenderUnitId: string;
+        defenderLabel: string;
+        defenderLngLat: [number, number];
+        roundsFired: number;
+        kills: number;
+      }> = [];
 
       // Find defenders covering this route
       const defenders = allUnits.filter((u) => u.iso === targetUnit.iso);
@@ -548,6 +562,13 @@ export function assessTheaterRaid(
             munitionsSurviving = Math.max(0, munitionsSurviving - kills);
 
             const defLabel = unitLabel(def, ctx.formations, ctx.systems);
+            phaseInterceptions.push({
+              defenderUnitId: def.id,
+              defenderLabel: defLabel,
+              defenderLngLat: def.lngLat,
+              roundsFired,
+              kills,
+            });
             if (kills > 0) {
               battleLog.push({
                 id: nextEvt(),
@@ -670,6 +691,7 @@ export function assessTheaterRaid(
         targetDamageSummary: damageSummary,
         battleLog,
         pathSpec,
+        interceptions: phaseInterceptions,
       });
     }
   }

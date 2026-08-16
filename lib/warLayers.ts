@@ -35,7 +35,7 @@ import {
 } from './specs';
 import { buildMunitions, effectiveSpec } from './munitions';
 import { distanceKm, geodesicCircle } from './geo';
-import { unitIconId } from './unitIcons';
+import { unitIconId, ensurePlaybackIcons } from './unitIcons';
 import type { PlaybackFrame } from './playback';
 
 export const WAR_LAYERS = [
@@ -52,6 +52,7 @@ export const WAR_LAYERS = [
   'wg-playback-effect-pulse',
   'wg-playback-entity-halo',
   'wg-playback-entity',
+  'wg-playback-icon',
   'wg-playback-label',
   'wg-country-label',
   'wg-city-dot',
@@ -388,6 +389,40 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
           2.5,
         ],
         'circle-color': ['get', 'color'],
+      },
+    },
+    firstSymbol
+  );
+
+  ensurePlaybackIcons(map);
+
+  add(
+    {
+      id: 'wg-playback-icon',
+      type: 'symbol',
+      source: 'wg-playback-entities',
+      layout: {
+        visibility: 'none',
+        'icon-image': [
+          'case',
+          ['==', ['get', 'type'], 'munition'],
+          'wg-icon-missile',
+          ['==', ['get', 'type'], 'interceptor'],
+          'wg-icon-interceptor',
+          'wg-icon-aircraft',
+        ],
+        'icon-rotate': ['get', 'heading'],
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-size': [
+          'case',
+          ['==', ['get', 'type'], 'aircraft'],
+          0.85,
+          ['==', ['get', 'type'], 'interceptor'],
+          0.75,
+          0.8,
+        ],
       },
     },
     firstSymbol
