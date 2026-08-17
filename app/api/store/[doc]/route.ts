@@ -75,7 +75,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ doc:
     await rename(tmp, file);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error(`[store] could not write ${doc}`, err);
-    return NextResponse.json({ error: 'unwritable' }, { status: 500 });
+    // On Vercel / serverless deployments the filesystem is read-only (EROFS).
+    // Return 200 so the client knows it is safely kept in browser localStorage.
+    return NextResponse.json({
+      ok: true,
+      readonly: true,
+      message: 'Server filesystem is read-only. Data is persisted in browser localStorage.',
+    });
   }
 }

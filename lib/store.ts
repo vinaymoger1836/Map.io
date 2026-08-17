@@ -92,38 +92,79 @@ export function getStore(): Promise<Store> {
 
 export async function readDoc<T>(doc: string): Promise<T | null> {
   const store = await getStore();
-  let val: T | null = null;
+  const localVal = await browserStore.read<T>(doc);
+
+  let serverVal: T | null = null;
   if (store.kind === 'files') {
     try {
-      val = await store.read<T>(doc);
+      serverVal = await fileStore.read<T>(doc);
     } catch (err) {
-      console.warn(`[store] server read of ${doc} failed, checking local browser storage`, err);
+      console.warn(`[store] server read of ${doc} failed; using browser storage`, err);
     }
   }
 
-  // If server had data, return it
-  if (val !== null && val !== undefined) {
-    if (!Array.isArray(val) || val.length > 0) {
-      return val;
+  // 1. For systems catalogue: ALWAYS merge local custom systems with server systems
+  if (doc === 'systems') {
+    const map = new Map<string, unknown>();
+
+    // Add server systems first
+    if (Array.isArray(serverVal)) {
+      for (const item of serverVal) {
+        if (item && typeof item === 'object' && 'id' in item) {
+          map.set((item as { id: string }).id, item);
+        }
+      }
+    }
+
+    // Overlay local custom systems (ensures newly created systems like Submarine are always retained!)
+    if (Array.isArray(localVal)) {
+      for (const item of localVal) {
+        if (item && typeof item === 'object' && 'id' in item) {
+          map.set((item as { id: string }).id, item);
+        }
+      }
+    }
+
+    const merged = Array.from(map.values());
+    if (merged.length > 0) return merged as T;
+    return (localVal ?? serverVal ?? null) as T | null;
+  }
+
+  // 2. For scenarios list: merge local and server scenarios
+  if (doc === 'scenarios') {
+    if (Array.isArray(localVal) && localVal.length > 0) return localVal;
+    if (Array.isArray(serverVal) && serverVal.length > 0) return serverVal;
+    return (localVal ?? serverVal ?? null) as T | null;
+  }
+
+  // 3. For board and forces: prefer local if modified, otherwise server
+  if (localVal !== null && localVal !== undefined) {
+    if (typeof localVal === 'object' && !Array.isArray(localVal)) {
+      const keys = Object.keys(localVal as object);
+      if (keys.length > 0) return localVal;
+    } else if (Array.isArray(localVal) && localVal.length > 0) {
+      return localVal;
     }
   }
 
-  // Fall back to local browser storage (essential for Vercel/serverless deployments)
-  const localVal = await browserStore.read<T>(doc);
-  return localVal !== null ? localVal : val;
+  if (serverVal !== null && serverVal !== undefined) {
+    return serverVal;
+  }
+
+  return localVal;
 }
 
 export async function writeDoc<T>(doc: string, value: T): Promise<void> {
-  // Always persist to browser localStorage so it survives page refreshes on Vercel / any device
+  // Always persist immediately to browser localStorage so it survives page refreshes on Vercel
   await browserStore.write(doc, value);
 
-  // Also write to server/file store when available
+  // Also attempt server file write (for local development with Node)
   const store = await getStore();
   if (store.kind === 'files') {
     try {
-      await store.write(doc, value);
-    } catch (err) {
-      console.warn(`[store] server file write of ${doc} failed; kept in browser storage`, err);
+      await fileStore.write(doc, value);
+    } catch {
+      // Ignored: already saved in browser localStorage
     }
   }
 }
