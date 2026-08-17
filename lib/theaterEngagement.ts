@@ -12,7 +12,7 @@
  * 5. Multi-Vector Map Pathing & Chronological Theater Battle Debrief.
  */
 
-import { distanceKm, interpolate, greatCirclePath } from './geo';
+import { distanceKm, interpolate, greatCirclePath, crossing } from './geo';
 import { effectiveSpec, type MunitionCatalogue } from './munitions';
 import {
   effectiveDetectionKm,
@@ -90,6 +90,16 @@ export interface PhaseBattleLogEvent {
   };
 }
 
+export interface PhaseInterceptionRecord {
+  defenderUnitId: string;
+  defenderLabel: string;
+  defenderLngLat: [number, number];
+  interceptLngLat: [number, number];
+  entryFraction: number;
+  roundsFired: number;
+  kills: number;
+}
+
 export interface PhaseReport {
   task: StrikePhaseTask;
   phaseNumber: number;
@@ -106,13 +116,7 @@ export interface PhaseReport {
   targetDamageSummary: string;
   battleLog: PhaseBattleLogEvent[];
   pathSpec?: RaidPathSpec;
-  interceptions?: Array<{
-    defenderUnitId: string;
-    defenderLabel: string;
-    defenderLngLat: [number, number];
-    roundsFired: number;
-    kills: number;
-  }>;
+  interceptions?: PhaseInterceptionRecord[];
 }
 
 export interface TheaterAssessment {
@@ -493,16 +497,29 @@ export function assessTheaterRaid(
       let munitionsSurviving = actualSalvo;
       let attackerLost = 0;
       let totalIntercepted = 0;
-      const phaseInterceptions: Array<{
-        defenderUnitId: string;
-        defenderLabel: string;
-        defenderLngLat: [number, number];
-        roundsFired: number;
-        kills: number;
-      }> = [];
+      const phaseInterceptions: PhaseInterceptionRecord[] = [];
+
+      // Flight corridor geometry for this specific task
+      const flightOrigin = releaseLngLat ?? attackerUnit.lngLat;
+      const flightTarget = targetUnit.lngLat;
+      const corridorDistKm = distanceKm(flightOrigin, flightTarget);
 
       // Find defenders covering this route
       const defenders = allUnits.filter((u) => u.iso === targetUnit.iso);
+
+      type DefEngagementCandidate = {
+        def: DeployedUnit;
+        defState: UnitPersistentState;
+        defSpec: SystemSpec;
+        defWeapon: WeaponFacet;
+        wIdx: number;
+        entryKm: number;
+        exitKm: number;
+        entryFraction: number;
+        interceptLngLat: [number, number];
+      };
+
+      const candidates: DefEngagementCandidate[] = [];
 
       for (const def of defenders) {
         const defState = unitStates.get(def.id);
@@ -516,76 +533,102 @@ export function assessTheaterRaid(
           continue;
         }
 
-        const isSuppressed = defState.status === 'suppressed';
         const defWeapons = defSpec.weapons ?? [];
-
         for (let wIdx = 0; wIdx < defWeapons.length; wIdx++) {
           const defWeapon = defWeapons[wIdx];
           if (!defWeapon.rangeKm || defWeapon.rangeKm <= 0) continue;
           if (defWeapon.engages && !defWeapon.engages.includes('air')) continue;
 
-          // Check if SAM envelope covers corridor
-          const distToTargetNode = distanceKm(def.lngLat, targetUnit.lngLat);
-          if (distToTargetNode > defWeapon.rangeKm + 30) continue;
+          // Check great-circle crossing of this defender's envelope along the flight path
+          const cross = crossing(flightOrigin, flightTarget, def.lngLat, defWeapon.rangeKm, corridorDistKm);
+          if (!cross) continue;
 
-          // Check defender remaining magazine
-          const readyRounds = defState.magazines.get(wIdx) ?? 0;
-          if (readyRounds <= 0) {
+          const interceptKm = Math.max(0, Math.min(corridorDistKm, (cross.entryKm + cross.exitKm) / 2));
+          const entryFraction = corridorDistKm > 0 ? interceptKm / corridorDistKm : 0.5;
+          const interceptLngLat = interpolate(flightOrigin, flightTarget, entryFraction);
+
+          candidates.push({
+            def,
+            defState,
+            defSpec,
+            defWeapon,
+            wIdx,
+            entryKm: cross.entryKm,
+            exitKm: cross.exitKm,
+            entryFraction,
+            interceptLngLat,
+          });
+        }
+      }
+
+      // Sort candidate defense engagements by corridor entry distance (outer layer engages first)
+      candidates.sort((a, b) => a.entryKm - b.entryKm);
+
+      for (const cand of candidates) {
+        if (munitionsSurviving <= 0) break;
+
+        const { def, defState, defSpec, defWeapon, wIdx, entryFraction, interceptLngLat } = cand;
+        const isSuppressed = defState.status === 'suppressed';
+
+        // Check defender remaining magazine
+        const readyRounds = defState.magazines.get(wIdx) ?? 0;
+        if (readyRounds <= 0) {
+          battleLog.push({
+            id: nextEvt(),
+            timeFormatted: 'T+12m',
+            title: `${unitLabel(def, ctx.formations, ctx.systems)} Magazine Dry`,
+            detail: `Defending battery in range, but ready magazine was depleted in prior waves (0 ready interceptors).`,
+            badge: { text: 'Magazine Dry', variant: 'neutral' },
+          });
+          continue;
+        }
+
+        // Fire Channels & Interception Math
+        let channels = defSpec.sensor?.engagements ?? 4;
+        if (isSuppressed) channels = Math.max(1, Math.floor(channels / 2));
+        channels = channels * defState.aliveCount;
+
+        const wantedRounds = Math.min(munitionsSurviving, channels) * (defWeapon.salvo ?? 2);
+        const roundsFired = Math.min(readyRounds, wantedRounds);
+
+        // Deduct from defender persistent magazine
+        defState.magazines.set(wIdx, readyRounds - roundsFired);
+
+        const basePk = defWeapon.pk ?? 0.75;
+        const effectivePk = isSuppressed ? basePk * 0.65 : basePk;
+        const targetsEngaged = Math.floor(roundsFired / (defWeapon.salvo ?? 2));
+        const kills = Math.min(munitionsSurviving, Math.round(targetsEngaged * effectivePk));
+
+        if (roundsFired > 0) {
+          totalIntercepted += kills;
+          munitionsSurviving = Math.max(0, munitionsSurviving - kills);
+
+          const defLabel = unitLabel(def, ctx.formations, ctx.systems);
+          phaseInterceptions.push({
+            defenderUnitId: def.id,
+            defenderLabel: defLabel,
+            defenderLngLat: def.lngLat,
+            interceptLngLat,
+            entryFraction,
+            roundsFired,
+            kills,
+          });
+          if (kills > 0) {
             battleLog.push({
               id: nextEvt(),
-              timeFormatted: 'T+12m',
-              title: `${unitLabel(def, ctx.formations, ctx.systems)} Magazine Dry`,
-              detail: `Defending battery in range, but ready magazine was depleted in prior waves (0 ready interceptors).`,
-              badge: { text: 'Magazine Dry', variant: 'neutral' },
+              timeFormatted: 'T+18m',
+              title: `${defLabel} Interception`,
+              detail: `${defLabel} fired ${roundsFired} × ${defWeapon.name ?? 'SAM'} interceptors (Remaining Magazine: ${defState.magazines.get(wIdx)}). Intercepted ${kills} incoming munitions.`,
+              badge: { text: `${kills} Intercepted`, variant: 'loss' },
             });
-            continue;
-          }
-
-          // Fire Channels & Interception Math
-          let channels = defSpec.sensor?.engagements ?? 4;
-          if (isSuppressed) channels = Math.max(1, Math.floor(channels / 2));
-          channels = channels * defState.aliveCount;
-
-          const wantedRounds = Math.min(munitionsSurviving, channels) * (defWeapon.salvo ?? 2);
-          const roundsFired = Math.min(readyRounds, wantedRounds);
-
-          // Deduct from defender persistent magazine
-          defState.magazines.set(wIdx, readyRounds - roundsFired);
-
-          const basePk = defWeapon.pk ?? 0.75;
-          const effectivePk = isSuppressed ? basePk * 0.65 : basePk;
-          const targetsEngaged = Math.floor(roundsFired / (defWeapon.salvo ?? 2));
-          const kills = Math.min(munitionsSurviving, Math.round(targetsEngaged * effectivePk));
-
-          if (roundsFired > 0) {
-            totalIntercepted += kills;
-            munitionsSurviving = Math.max(0, munitionsSurviving - kills);
-
-            const defLabel = unitLabel(def, ctx.formations, ctx.systems);
-            phaseInterceptions.push({
-              defenderUnitId: def.id,
-              defenderLabel: defLabel,
-              defenderLngLat: def.lngLat,
-              roundsFired,
-              kills,
+          } else {
+            battleLog.push({
+              id: nextEvt(),
+              timeFormatted: 'T+18m',
+              title: `${defLabel} Salvo Evaded`,
+              detail: `${defLabel} fired ${roundsFired} interceptors, but strike salvo used ECM/chaff to evade. 0 hits.`,
+              badge: { text: 'Evaded', variant: 'success' },
             });
-            if (kills > 0) {
-              battleLog.push({
-                id: nextEvt(),
-                timeFormatted: 'T+18m',
-                title: `${defLabel} Interception`,
-                detail: `${defLabel} fired ${roundsFired} × ${defWeapon.name ?? 'SAM'} interceptors (Remaining Magazine: ${defState.magazines.get(wIdx)}). Intercepted ${kills} incoming munitions.`,
-                badge: { text: `${kills} Intercepted`, variant: 'loss' },
-              });
-            } else {
-              battleLog.push({
-                id: nextEvt(),
-                timeFormatted: 'T+18m',
-                title: `${defLabel} Salvo Evaded`,
-                detail: `${defLabel} fired ${roundsFired} interceptors, but strike salvo used ECM/chaff to evade. 0 hits.`,
-                badge: { text: 'Evaded', variant: 'success' },
-              });
-            }
           }
         }
       }

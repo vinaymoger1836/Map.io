@@ -155,3 +155,34 @@ export function bearingDeg(a: [number, number], b: [number, number]): number {
   const brng = toDeg(Math.atan2(y, x));
   return (brng + 360) % 360;
 }
+
+/**
+ * Determines whether the great-circle path from `from` to `to` enters a circle of `radiusKm` around `at`.
+ * Returns the entry and exit distance along the flight path in kilometres from `from`.
+ */
+export function crossing(
+  from: [number, number],
+  to: [number, number],
+  at: [number, number],
+  radiusKm: number,
+  totalKm: number
+): { entryKm: number; exitKm: number } | null {
+  if (totalKm <= 0 || radiusKm <= 0) return null;
+  const steps = Math.min(1_000, Math.max(48, Math.ceil(totalKm / 5)));
+  let entry: number | null = null;
+  let exit: number | null = null;
+
+  for (let i = 0; i <= steps; i++) {
+    const fraction = i / steps;
+    const inside = distanceKm(interpolate(from, to, fraction), at) <= radiusKm;
+    if (inside && entry === null) entry = fraction * totalKm;
+    if (!inside && entry !== null) {
+      exit = fraction * totalKm;
+      break;
+    }
+  }
+
+  if (entry === null) return null;
+  return { entryKm: entry, exitKm: exit ?? totalKm };
+}
+

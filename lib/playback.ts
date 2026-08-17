@@ -252,11 +252,12 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
       if (rep.interceptions && rep.interceptions.length > 0) {
         for (let i = 0; i < rep.interceptions.length; i++) {
           const icRec = rep.interceptions[i];
-          const midFrac = 0.55 + (i * 0.08);
-          const interceptLngLat = interpolate(originLngLat, targetLngLat, Math.min(0.85, midFrac));
+          const launchBaseSec = isStandoff ? ingressSec : phaseStartSec;
+          const flightWindowSec = impactTimeSec - launchBaseSec;
+          const tSec = launchBaseSec + (icRec.entryFraction ?? 0.6) * flightWindowSec;
           interceptions.push({
-            timeSec: phaseStartSec + 50 + i * 5,
-            lngLat: interceptLngLat,
+            timeSec: tSec,
+            lngLat: icRec.interceptLngLat ?? interpolate(originLngLat, targetLngLat, 0.65),
             samLabel: icRec.defenderLabel,
             samLngLat: icRec.defenderLngLat, // Exact real coordinates of enemy defender unit!
             kills: icRec.kills,
