@@ -625,9 +625,9 @@ export function assessTheaterRaid(
             battleLog.push({
               id: nextEvt(),
               timeFormatted: 'T+18m',
-              title: `${defLabel} Salvo Evaded`,
-              detail: `${defLabel} fired ${roundsFired} interceptors, but strike salvo used ECM/chaff to evade. 0 hits.`,
-              badge: { text: 'Evaded', variant: 'success' },
+              title: `${defLabel} Salvo Missed`,
+              detail: `${defLabel} fired ${roundsFired} × ${defWeapon.name ?? 'SAM'} interceptors, but high-velocity strike salvo penetrated without sustaining hits. 0 hits.`,
+              badge: { text: 'Evaded / Missed', variant: 'success' },
             });
           }
         }

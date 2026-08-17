@@ -275,20 +275,24 @@ function lossesFrom(
   isSuppressed = false,
   isJammed = false
 ): { killed: number; rounds: number } {
+  const intFacing = Math.round(facing);
+  if (intFacing <= 0) return { killed: 0, rounds: 0 };
+
   const salvo = Math.max(1, Math.round(weapon.salvo ?? 1));
   let channels =
-    spec.sensor?.engagements === undefined ? facing : spec.sensor.engagements * count;
+    spec.sensor?.engagements === undefined ? intFacing : spec.sensor.engagements * count;
   if (isSuppressed) {
     channels = Math.max(1, Math.floor(channels / 2));
   }
-  const wanted = Math.min(facing, Math.max(1, channels));
+  const wanted = Math.min(intFacing, Math.max(1, channels));
   const affordable = Math.floor(roundsLeft / salvo);
   const engaged = Math.min(wanted, affordable);
   if (engaged <= 0) return { killed: 0, rounds: 0 };
 
   const effectivePk = isJammed ? pk * 0.75 : pk;
   const perTarget = 1 - (1 - effectivePk) ** salvo;
-  return { killed: Math.min(facing, engaged * perTarget), rounds: engaged * salvo };
+  const rawKills = engaged * perTarget;
+  return { killed: Math.min(intFacing, rawKills), rounds: engaged * salvo };
 }
 
 /* ------------------------------------------------------------------ */
@@ -584,6 +588,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
 
       const exposureSec = ((layer.exitKm - layer.entryKm) / activeSpeed) * 3_600;
       const facing = phase === 'munition-flight' ? Math.max(0, munitionsAlive) : Math.max(0, aircraftAlive);
+      const intFacing = Math.round(facing);
 
       let killed = 0;
       let rounds = 0;
@@ -593,7 +598,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
 
       if (layer.blind) {
         silent = layer.stealthBypassed ? 'stealth-bypassed' : 'blind';
-      } else if (facing <= 0) {
+      } else if (intFacing <= 0) {
         silent = 'nothing-left';
       } else if (exposureSec < reactionTime) {
         silent = 'too-fast';
@@ -859,10 +864,22 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
 
       const killedInt = Math.round(eng.killed);
       const roundsInt = Math.round(eng.rounds);
-      const targetNoun = eng.targetType === 'standoff-munition' ? (killedInt === 1 ? 'stand-off missile' : 'stand-off missiles') : (killedInt === 1 ? 'aircraft' : 'aircraft');
+      const isMunition = eng.targetType === 'standoff-munition';
+      const targetNoun = isMunition ? (killedInt === 1 ? 'stand-off missile' : 'stand-off missiles') : (killedInt === 1 ? 'aircraft' : 'aircraft');
 
-      if (killedInt > 0) {
-        detailDesc += `${eng.unitLabel} fired ${roundsInt} × ${eng.weaponName} salvo at incoming ${eng.targetType === 'standoff-munition' ? 'missiles' : 'aircraft'}, destroying ${killedInt} ${targetNoun}.`;
+      if (roundsInt <= 0) {
+        battleLog.push({
+          id: nextEvtId(),
+          timeFormatted,
+          distanceKm: Math.round(eng.entryKm),
+          phase: eng.phase === 'munition-flight' ? 'terminal' : 'ingress',
+          category: 'neutral',
+          title: `Sector Clear — ${eng.systemName}`,
+          detail: `${eng.unitLabel} radar scanned sector. All incoming strike elements were already neutralized by earlier defence layers.`,
+          badge: { text: 'Sector Clear', variant: 'neutral' },
+        });
+      } else if (killedInt > 0) {
+        detailDesc += `${eng.unitLabel} fired ${roundsInt} × ${eng.weaponName} salvo at incoming ${isMunition ? 'missiles' : 'aircraft'}, destroying ${killedInt} ${targetNoun}.`;
         battleLog.push({
           id: nextEvtId(),
           timeFormatted,
@@ -874,7 +891,11 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
           badge: { text: `${killedInt} Destroyed`, variant: 'loss' },
         });
       } else {
-        detailDesc += `${eng.unitLabel} fired ${roundsInt} × ${eng.weaponName}, but target successfully deployed chaff/flares and evasive maneuvers. 0 hits.`;
+        if (isMunition) {
+          detailDesc += `${eng.unitLabel} fired ${roundsInt} × ${eng.weaponName} interceptors, but high-velocity strike munitions bypassed proximity fuze threshold. 0 hits.`;
+        } else {
+          detailDesc += `${eng.unitLabel} fired ${roundsInt} × ${eng.weaponName}, but aircraft deployed chaff/flares and evasive maneuvers. 0 hits.`;
+        }
         battleLog.push({
           id: nextEvtId(),
           timeFormatted,
@@ -883,7 +904,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
           category: 'sam',
           title: `SAM Salvo Evaded — ${eng.systemName}`,
           detail: detailDesc,
-          badge: { text: 'Evaded / Decoyed', variant: 'success' },
+          badge: { text: isMunition ? 'Fuze Miss / Evaded' : 'Evaded / Decoyed', variant: 'success' },
         });
       }
     }
