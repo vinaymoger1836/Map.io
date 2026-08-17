@@ -20,6 +20,7 @@ import {
 import { INTERACTIVE_LAYERS, applyVisibility, installLayers } from '@/lib/mapLayers';
 import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
 import { PlaybackHUD } from './wargames/PlaybackHUD';
+import { ConfigurationSuite } from './wargames/ConfigurationSuite';
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -97,6 +98,7 @@ export default function EurasiaMap() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [mode, setMode] = useState<Mode>('situation');
+  const [configOpen, setConfigOpen] = useState(false);
 
   const modeRef = useRef(mode);
   const warHydrateRef = useRef<((map: MLMap) => void) | null>(null);
@@ -452,6 +454,9 @@ export default function EurasiaMap() {
               <button className="action" onClick={() => switchMode('situation')}>
                 Situation map
               </button>
+              <button className="action accent" onClick={() => setConfigOpen(true)}>
+                ⚙️ Configuration
+              </button>
             </>
           )}
           <button
@@ -472,7 +477,7 @@ export default function EurasiaMap() {
         {panelOpen ? (
           <div className={`panel${mode === 'wargames' ? ' panel-wide' : ''}`}>
             {mode === 'wargames' ? (
-              <WarGamesPanel {...war} />
+              <WarGamesPanel {...war} onOpenConfiguration={() => setConfigOpen(true)} />
             ) : (
               <ControlPanel
                 state={visibility}
@@ -512,6 +517,13 @@ export default function EurasiaMap() {
             onSeek={war.seekPlayback}
             onSetSpeed={war.setPlaybackSpeed}
             onClose={war.stopPlayback}
+          />
+        )}
+
+        {configOpen && (
+          <ConfigurationSuite
+            wg={war}
+            onClose={() => setConfigOpen(false)}
           />
         )}
 

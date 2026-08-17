@@ -22,7 +22,11 @@ import { ScenariosSection } from './wargames/ScenariosSection';
 import { SectionNav, type Section } from './wargames/SectionNav';
 import { NEUTRAL } from './wargames/icons';
 
-export default function WarGamesPanel(wg: WarGames) {
+export interface WarGamesPanelProps extends WarGames {
+  onOpenConfiguration?: () => void;
+}
+
+export default function WarGamesPanel({ onOpenConfiguration, ...wg }: WarGamesPanelProps) {
   const [section, setSection] = useState<Section>('map');
   const activeColor = wg.activeNation?.color ?? wg.color;
   const paintColor = wg.activeIso ? activeColor : NEUTRAL;
@@ -34,17 +38,14 @@ export default function WarGamesPanel(wg: WarGames) {
         onChange={setSection}
         counts={{
           map: undefined,
-          armaments: wg.systems.length,
-          forces: wg.board.units.length,
           raid: undefined,
           theater: wg.theaterPhases.length || undefined,
           boards: wg.scenarios.length || undefined,
         }}
+        onOpenConfiguration={onOpenConfiguration}
       />
 
       {section === 'map' && <MapSection wg={wg} color={paintColor} />}
-      {section === 'armaments' && <ArmamentsSection wg={wg} color={paintColor} />}
-      {section === 'forces' && <ForcesSection wg={wg} />}
       {section === 'raid' && <EngagementSection wg={wg} />}
       {section === 'theater' && <TheaterSection wg={wg} />}
       {section === 'boards' && <ScenariosSection wg={wg} />}
