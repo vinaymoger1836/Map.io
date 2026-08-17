@@ -134,6 +134,8 @@ export const UNIT_TYPES: UnitType[] = [
   unit('artillery', 'Artillery', 'ground', 'artillery', GROUND_ECHELONS, 'battalion'),
   unit('rocket', 'Rocket artillery / MLRS', 'ground', 'rocket', GROUND_ECHELONS, 'battalion'),
   unit('missile', 'Ballistic missile', 'ground', 'missile', ['battery', 'battalion', 'regiment', 'brigade'], 'battalion'),
+  unit('cruise-missile', 'Cruise missile battery (GLCM)', 'ground', 'missile', ['battery', 'battalion', 'regiment', 'brigade'], 'battery'),
+  unit('coastal-missile', 'Coastal anti-ship missile battery', 'site', 'rocket', SITE_ECHELONS, 'battery'),
   unit('mobile-ad', 'Mobile air defence', 'ground', 'airdefence', GROUND_ECHELONS, 'battalion'),
   unit('engineer', 'Engineers', 'ground', 'engineer', GROUND_ECHELONS, 'battalion'),
   unit('ew', 'Electronic warfare', 'ground', 'ew', GROUND_ECHELONS, 'company'),
