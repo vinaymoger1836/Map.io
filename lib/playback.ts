@@ -351,6 +351,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
 
     const { originLngLat, targetLngLat, releaseLngLat } = seg;
     const isStandoff = Boolean(releaseLngLat);
+    const launchCoord = isStandoff && releaseLngLat ? releaseLngLat : originLngLat;
 
     // 1. Aircraft Ingress / Egress
     if (clampedTime <= seg.egressEndTimeSec) {
@@ -404,7 +405,6 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
 
     // 2. Individual Strike Munitions In-Flight (Attack Side)
     if (clampedTime >= seg.releaseTimeSec && clampedTime <= seg.impactTimeSec + 2) {
-      const launchCoord = isStandoff && releaseLngLat ? releaseLngLat : originLngLat;
       const heading = bearingDeg(launchCoord, targetLngLat);
       const perpBearing = (heading + 90) % 360;
 
