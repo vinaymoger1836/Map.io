@@ -28,6 +28,17 @@ import { SpecSheet } from './SpecSheet';
 
 const BLANK: SystemSpec = { id: '', name: '', typeId: 'fighter', custom: true };
 
+/** Interactive info tooltip component */
+export function FieldInfo({ hint }: { hint?: string }) {
+  if (!hint) return null;
+  return (
+    <span className="wg-field-tooltip" title={hint} tabIndex={0} aria-label={hint}>
+      ℹ
+      <span className="wg-field-tooltip-popover">{hint}</span>
+    </span>
+  );
+}
+
 /** A number input that treats an empty box as "not recorded", not as zero. */
 function NumberField({
   label,
@@ -35,18 +46,21 @@ function NumberField({
   onChange,
   unit,
   step,
+  tooltip,
 }: {
   label: string;
   value: number | undefined;
   onChange: (v: number | undefined) => void;
   unit?: string;
   step?: number;
+  tooltip?: string;
 }) {
   return (
     <label className="wg-field">
       <span>
         {label}
         {unit ? <em> {unit}</em> : null}
+        {tooltip && <FieldInfo hint={tooltip} />}
       </span>
       <input
         type="number"
@@ -131,7 +145,10 @@ export function SystemForm({
     <div className="wg-form">
       <div className="wg-form-top">
         <label className="wg-field wide">
-          <span>Name</span>
+          <span>
+            Name
+            <FieldInfo hint="System or platform designation, e.g. S-400 Triumf, F-35A Lightning II, Arleigh Burke class." />
+          </span>
           <input
             value={draft.name}
             placeholder="e.g. S-400 Triumf"
@@ -140,7 +157,10 @@ export function SystemForm({
         </label>
 
         <label className="wg-field wide">
-          <span>Unit type — decides the map symbol</span>
+          <span>
+            Unit type — decides the map symbol
+            <FieldInfo hint="Core operational classification (fighter, SAM battery, destroyer, submarine) used to draw the tactical symbol." />
+          </span>
           <select value={draft.typeId} onChange={(e) => patch({ typeId: e.target.value })}>
             {DOMAINS.map((d) => (
               <optgroup key={d.id} label={d.label}>
@@ -155,7 +175,10 @@ export function SystemForm({
         </label>
 
         <label className="wg-field">
-          <span>Origin</span>
+          <span>
+            Origin
+            <FieldInfo hint="Country of manufacture or operating nation (e.g. United States, China, Russia, Sweden)." />
+          </span>
           <input
             value={draft.origin ?? ''}
             placeholder="e.g. Russia"
@@ -164,7 +187,10 @@ export function SystemForm({
         </label>
 
         <label className="wg-field">
-          <span>Signature</span>
+          <span>
+            Signature
+            <FieldInfo hint="Radar Cross Section (RCS) observable level. Low/VLO stealth delays hostile radar lock onset." />
+          </span>
           <select
             value={draft.signature ?? ''}
             onChange={(e) =>
@@ -172,14 +198,17 @@ export function SystemForm({
             }
           >
             <option value="">Not recorded</option>
-            <option value="low">Low — stealthy</option>
+            <option value="low">Low — stealthy (VLO)</option>
             <option value="medium">Medium</option>
             <option value="high">High — conventional</option>
           </select>
         </label>
 
         <label className="wg-field wide">
-          <span>Note — variant, service dates, anything that qualifies the figures</span>
+          <span>
+            Note — variant, service dates, anything that qualifies the figures
+            <FieldInfo hint="Historical context, block variants (e.g. Block IIA), or specific sensor/loadout assumptions." />
+          </span>
           <textarea
             rows={2}
             value={draft.note ?? ''}
@@ -214,6 +243,7 @@ export function SystemForm({
                 <label className="wg-field">
                   <span>
                     Munition id<em> shared</em>
+                    <FieldInfo hint="Shared identifier (e.g. sm-6, atacms-m39). Allows the same round to be carried on multiple platforms and swapped in custom loadouts." />
                   </span>
                   <input
                     value={w.id ?? ''}
@@ -221,15 +251,58 @@ export function SystemForm({
                     onChange={(e) => setWeapon(i, { id: e.target.value || undefined })}
                   />
                 </label>
-                <NumberField label="Range" unit="km" value={w.rangeKm} onChange={(v) => setWeapon(i, { rangeKm: v ?? 0 })} />
-                <NumberField label="Min range" unit="km" value={w.minRangeKm} onChange={(v) => setWeapon(i, { minRangeKm: v })} />
-                <NumberField label="Launch mass" unit="kg" value={w.massKg} onChange={(v) => setWeapon(i, { massKg: v })} />
-                <NumberField label="Ready rounds" value={w.magazine} onChange={(v) => setWeapon(i, { magazine: v })} />
-                <NumberField label="Salvo" value={w.salvo} onChange={(v) => setWeapon(i, { salvo: v })} />
-                <NumberField label="Kill prob." step={0.05} value={w.pk} onChange={(v) => setWeapon(i, { pk: v })} />
-                <NumberField label="Reaction" unit="s" value={w.reactionSec} onChange={(v) => setWeapon(i, { reactionSec: v })} />
+                <NumberField
+                  label="Range"
+                  unit="km"
+                  value={w.rangeKm}
+                  onChange={(v) => setWeapon(i, { rangeKm: v ?? 0 })}
+                  tooltip="Maximum aerodynamic or ballistic engagement reach under standard profile."
+                />
+                <NumberField
+                  label="Min range"
+                  unit="km"
+                  value={w.minRangeKm}
+                  onChange={(v) => setWeapon(i, { minRangeKm: v })}
+                  tooltip="Minimum engagement distance inside of which the booster or seeker cannot lock."
+                />
+                <NumberField
+                  label="Launch mass"
+                  unit="kg"
+                  value={w.massKg}
+                  onChange={(v) => setWeapon(i, { massKg: v })}
+                  tooltip="All-up mass of single round in kilograms for payload capacity calculations."
+                />
+                <NumberField
+                  label="Ready rounds"
+                  value={w.magazine}
+                  onChange={(v) => setWeapon(i, { magazine: v })}
+                  tooltip="Total ready-to-fire ammunition capacity (rails, VLS cells, or internal magazine) before reloading."
+                />
+                <NumberField
+                  label="Salvo"
+                  value={w.salvo}
+                  onChange={(v) => setWeapon(i, { salvo: v })}
+                  tooltip="Number of rounds fired concurrently per target (e.g. 2 for standard shoot-look-shoot SAM doctrine)."
+                />
+                <NumberField
+                  label="Kill prob."
+                  step={0.05}
+                  value={w.pk}
+                  onChange={(v) => setWeapon(i, { pk: v })}
+                  tooltip="Single-shot probability of kill (0.00 to 1.00) against an unjammed standard target."
+                />
+                <NumberField
+                  label="Reaction"
+                  unit="s"
+                  value={w.reactionSec}
+                  onChange={(v) => setWeapon(i, { reactionSec: v })}
+                  tooltip="Reaction time in seconds from lock to weapon release. Fast targets traversing the envelope quicker than this cannot be engaged."
+                />
               </div>
-              <span className="wg-field-label">Engages</span>
+              <span className="wg-field-label">
+                Engages
+                <FieldInfo hint="Target classifications this weapon is capable of intercepting." />
+              </span>
               <TargetPicker value={w.engages} onChange={(v) => setWeapon(i, { engages: v })} />
             </div>
           ))}
@@ -256,10 +329,27 @@ export function SystemForm({
               onChange={(v) =>
                 patch({ sensor: v === undefined ? undefined : { ...draft.sensor, detectionKm: v } })
               }
+              tooltip="Maximum instrumented search / track acquisition range against a standard 3m² RCS target."
             />
-            <NumberField label="Tracks held" value={draft.sensor?.tracks} onChange={(v) => sensor({ tracks: v })} />
-            <NumberField label="Fire channels" value={draft.sensor?.engagements} onChange={(v) => sensor({ engagements: v })} />
-            <NumberField label="Antenna height" unit="m" value={draft.sensor?.antennaM} onChange={(v) => sensor({ antennaM: v })} />
+            <NumberField
+              label="Tracks held"
+              value={draft.sensor?.tracks}
+              onChange={(v) => sensor({ tracks: v })}
+              tooltip="Maximum simultaneous radar track files the fire control computer can maintain."
+            />
+            <NumberField
+              label="Fire channels"
+              value={draft.sensor?.engagements}
+              onChange={(v) => sensor({ engagements: v })}
+              tooltip="Maximum concurrent target engagements and missile guidance uplinks this system can conduct."
+            />
+            <NumberField
+              label="Antenna height"
+              unit="m"
+              value={draft.sensor?.antennaM}
+              onChange={(v) => sensor({ antennaM: v })}
+              tooltip="Radar antenna elevation in meters above terrain/sea level, used for radar horizon curvature calculations."
+            />
           </div>
           <label className="wg-check">
             <input
@@ -268,13 +358,17 @@ export function SystemForm({
               onChange={(e) => sensor({ horizonLimited: e.target.checked })}
             />
             Limited by the radar horizon
+            <FieldInfo hint="Applies Earth curvature limits against sea-skimming missiles or low-flying aircraft." />
           </label>
           <p className="wg-note">
             Tick that for anything on the ground or at sea. Its detection range will then be cut to
             what the earth’s curve actually allows against the altitude you are asking about — the
             antenna height above decides how much is left.
           </p>
-          <span className="wg-field-label">Sees</span>
+          <span className="wg-field-label">
+            Sees
+            <FieldInfo hint="Target classifications detectable by this sensor array." />
+          </span>
           <TargetPicker value={draft.sensor?.sees} onChange={(v) => sensor({ sees: v })} />
         </>
       )}
@@ -288,57 +382,67 @@ export function SystemForm({
             unit="km"
             value={draft.platform?.combatRadiusKm}
             onChange={(v) => patch({ platform: { ...draft.platform, combatRadiusKm: v } })}
+            tooltip="Operational combat radius with weapon payload and unrefuelled return to base."
           />
           <NumberField
             label="Refuelled radius"
             unit="km"
             value={draft.platform?.refuelledRadiusKm}
             onChange={(v) => patch({ platform: { ...draft.platform, refuelledRadiusKm: v } })}
+            tooltip="Extended radius achievable with one aerial tanker refuelling cycle."
           />
           <NumberField
             label="Ferry range"
             unit="km"
             value={draft.platform?.ferryRangeKm}
             onChange={(v) => patch({ platform: { ...draft.platform, ferryRangeKm: v } })}
+            tooltip="Maximum one-way transit range with auxiliary fuel tanks and zero ordnance."
           />
           <NumberField
             label="Speed"
             unit="km/h"
             value={draft.platform?.speedKmh}
             onChange={(v) => patch({ platform: { ...draft.platform, speedKmh: v } })}
+            tooltip="Maximum sustained combat speed in km/h (1225 km/h ≈ Mach 1.0)."
           />
           <NumberField
             label="Payload"
             unit="kg"
             value={draft.platform?.payloadKg}
             onChange={(v) => patch({ platform: { ...draft.platform, payloadKg: v } })}
+            tooltip="Maximum external and internal weapon ordnance carriage capacity in kilograms."
           />
           <NumberField
             label="VLS cells"
             value={draft.platform?.vls}
             onChange={(v) => patch({ platform: { ...draft.platform, vls: v } })}
+            tooltip="Total vertical launch system (VLS) cells for SAMs, cruise missiles, and ASW rockets."
           />
           <NumberField
             label="Aircraft"
             value={draft.platform?.aircraft}
             onChange={(v) => patch({ platform: { ...draft.platform, aircraft: v } })}
+            tooltip="Embarked air wing capacity (fixed-wing and rotary) for carriers and amphibious ships."
           />
           <NumberField
             label="Displacement"
             unit="t"
             value={draft.platform?.displacementT}
             onChange={(v) => patch({ platform: { ...draft.platform, displacementT: v } })}
+            tooltip="Full load naval displacement in metric tons."
           />
           <NumberField
             label="Endurance"
             unit="days"
             value={draft.platform?.enduranceDays}
             onChange={(v) => patch({ platform: { ...draft.platform, enduranceDays: v } })}
+            tooltip="Autonomous mission duration at sea before requiring replenishment."
           />
           <NumberField
             label="Crew"
             value={draft.platform?.crew}
             onChange={(v) => patch({ platform: { ...draft.platform, crew: v } })}
+            tooltip="Operating personnel complement required for full readiness."
           />
         </div>
       )}

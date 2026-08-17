@@ -1967,6 +1967,64 @@ button {
   opacity: 0.7;
 }
 
+.wg-field-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  margin-left: 5px;
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-style: normal;
+  border-radius: 50%;
+  background: rgba(77, 208, 225, 0.15);
+  border: 1px solid rgba(77, 208, 225, 0.4);
+  color: #4DD0E1;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.wg-field-tooltip:hover {
+  background: #4DD0E1;
+  color: #000000;
+}
+
+.wg-field-tooltip-popover {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 250px;
+  padding: 6px 10px;
+  background: #111A28;
+  border: 1px solid rgba(77, 208, 225, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: #E2E8F0;
+  text-transform: none;
+  letter-spacing: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 10000;
+  white-space: normal;
+  text-align: left;
+}
+
+.wg-field-tooltip:hover .wg-field-tooltip-popover,
+.wg-field-tooltip:focus .wg-field-tooltip-popover {
+  opacity: 1;
+  visibility: visible;
+}
+
 .wg-field input,
 .wg-field select,
 .wg-inline-select {
