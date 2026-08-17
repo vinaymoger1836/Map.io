@@ -728,7 +728,7 @@ export function ConfigurationSuite({
             </div>
           }
         >
-          <SystemForm draft={editingSystem} setDraft={setEditingSystem} />
+          <SystemForm draft={editingSystem} setDraft={setEditingSystem} availableSystems={wg.systems} />
         </Modal>
       )}
     </div>

@@ -111,13 +111,31 @@ function TargetPicker({
 export function SystemForm({
   draft,
   setDraft,
+  availableSystems = [],
 }: {
   draft: SystemSpec;
   setDraft: (s: SystemSpec) => void;
+  availableSystems?: SystemSpec[];
 }) {
   const [open, setOpen] = useState<'sensor' | 'weapons' | 'platform' | null>('weapons');
   const patch = (p: Partial<SystemSpec>) => setDraft({ ...draft, ...p });
   const weapons = draft.weapons ?? [];
+
+  // Extract all unique munitions / missiles across all systems
+  const existingMunitions = useMemo(() => {
+    const map = new Map<string, WeaponFacet>();
+    for (const s of availableSystems) {
+      for (const w of s.weapons ?? []) {
+        if (w.name) {
+          const key = (w.id || w.name).toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, w);
+          }
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+  }, [availableSystems]);
 
   const setWeapon = (i: number, p: Partial<WeaponFacet>) =>
     patch({ weapons: weapons.map((w, idx) => (idx === i ? { ...w, ...p } : w)) });
@@ -239,6 +257,50 @@ export function SystemForm({
                   ×
                 </button>
               </div>
+
+              {/* Quick Preset Selector for Existing Missiles */}
+              {existingMunitions.length > 0 && (
+                <div style={{ marginBottom: '8px' }}>
+                  <label className="wg-field">
+                    <span>
+                      Autofill from Existing Missile / Weapon
+                      <FieldInfo hint="Select an existing missile from the arsenal catalogue to instantly autofill range, Pk, salvo, mass, and targets." />
+                    </span>
+                    <select
+                      className="wg-inline-select"
+                      value={w.id ?? ''}
+                      onChange={(e) => {
+                        const sel = e.target.value;
+                        const matched = existingMunitions.find(
+                          (m) => (m.id || m.name?.toLowerCase()) === sel
+                        );
+                        if (matched) {
+                          setWeapon(i, {
+                            id: matched.id,
+                            name: matched.name,
+                            rangeKm: matched.rangeKm,
+                            minRangeKm: matched.minRangeKm,
+                            massKg: matched.massKg,
+                            salvo: matched.salvo ?? 2,
+                            pk: matched.pk ?? 0.8,
+                            reactionSec: matched.reactionSec ?? 5,
+                            engages: matched.engages ? [...matched.engages] : undefined,
+                            magazine: w.magazine ?? matched.magazine ?? 8,
+                          });
+                        }
+                      }}
+                    >
+                      <option value="">-- Custom Weapon / Choose Preset Missile --</option>
+                      {existingMunitions.map((m, mIdx) => (
+                        <option key={mIdx} value={m.id || m.name?.toLowerCase()}>
+                          {m.name} ({m.rangeKm ? `${m.rangeKm} km` : 'Direct'}{m.pk ? `, Pk ${m.pk}` : ''})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+
               <div className="wg-fields">
                 <label className="wg-field">
                   <span>
@@ -311,9 +373,56 @@ export function SystemForm({
             the loadout editor offers when you swap armament on a deployed unit. Give the same
             munition the same id everywhere.
           </p>
-          <button className="wg-btn" onClick={() => patch({ weapons: [...weapons, { rangeKm: 0 }] })}>
-            Add weapon
-          </button>
+          <div className="wg-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button className="wg-btn" type="button" onClick={() => patch({ weapons: [...weapons, { rangeKm: 0 }] })}>
+              + Add Custom Weapon
+            </button>
+            {existingMunitions.length > 0 && (
+              <select
+                className="wg-btn"
+                style={{
+                  background: 'rgba(77, 208, 225, 0.12)',
+                  borderColor: 'rgba(77, 208, 225, 0.35)',
+                  color: '#4DD0E1',
+                  cursor: 'pointer',
+                  maxWidth: '280px',
+                }}
+                value=""
+                onChange={(e) => {
+                  const sel = e.target.value;
+                  const matched = existingMunitions.find(
+                    (m) => (m.id || m.name?.toLowerCase()) === sel
+                  );
+                  if (matched) {
+                    patch({
+                      weapons: [
+                        ...weapons,
+                        {
+                          id: matched.id,
+                          name: matched.name,
+                          rangeKm: matched.rangeKm,
+                          minRangeKm: matched.minRangeKm,
+                          massKg: matched.massKg,
+                          salvo: matched.salvo ?? 2,
+                          pk: matched.pk ?? 0.8,
+                          reactionSec: matched.reactionSec ?? 5,
+                          engages: matched.engages ? [...matched.engages] : undefined,
+                          magazine: matched.magazine ?? 8,
+                        },
+                      ],
+                    });
+                  }
+                }}
+              >
+                <option value="">+ Add Existing Missile / Munition...</option>
+                {existingMunitions.map((m, mIdx) => (
+                  <option key={mIdx} value={m.id || m.name?.toLowerCase()}>
+                    {m.name} ({m.rangeKm ? `${m.rangeKm} km` : 'Direct'})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </>
       )}
 
@@ -610,7 +719,7 @@ export function ArmamentsSection({ wg, color }: { wg: WarGames; color: string })
             </>
           }
         >
-          <SystemForm draft={draft} setDraft={setDraft} />
+          <SystemForm draft={draft} setDraft={setDraft} availableSystems={wg.systems} />
         </Modal>
       )}
     </>
