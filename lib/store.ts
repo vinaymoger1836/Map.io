@@ -92,20 +92,39 @@ export function getStore(): Promise<Store> {
 
 export async function readDoc<T>(doc: string): Promise<T | null> {
   const store = await getStore();
-  try {
-    return await store.read<T>(doc);
-  } catch (err) {
-    console.error(`[store] read of ${doc} failed`, err);
-    return null;
+  let val: T | null = null;
+  if (store.kind === 'files') {
+    try {
+      val = await store.read<T>(doc);
+    } catch (err) {
+      console.warn(`[store] server read of ${doc} failed, checking local browser storage`, err);
+    }
   }
+
+  // If server had data, return it
+  if (val !== null && val !== undefined) {
+    if (!Array.isArray(val) || val.length > 0) {
+      return val;
+    }
+  }
+
+  // Fall back to local browser storage (essential for Vercel/serverless deployments)
+  const localVal = await browserStore.read<T>(doc);
+  return localVal !== null ? localVal : val;
 }
 
 export async function writeDoc<T>(doc: string, value: T): Promise<void> {
+  // Always persist to browser localStorage so it survives page refreshes on Vercel / any device
+  await browserStore.write(doc, value);
+
+  // Also write to server/file store when available
   const store = await getStore();
-  try {
-    await store.write(doc, value);
-  } catch (err) {
-    console.error(`[store] write of ${doc} failed`, err);
+  if (store.kind === 'files') {
+    try {
+      await store.write(doc, value);
+    } catch (err) {
+      console.warn(`[store] server file write of ${doc} failed; kept in browser storage`, err);
+    }
   }
 }
 
