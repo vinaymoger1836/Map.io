@@ -493,13 +493,21 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const icHeading = bearingDeg(ic.samLngLat, ic.lngLat);
       const icPerpBearing = (icHeading + 90) % 360;
 
+      // Smooth, realistic interceptor flight duration (1.5x to 2x cruise speed, not instantaneous flash)
+      const icDistKm = distanceKm(ic.samLngLat, ic.lngLat);
+      const strikeDistKm = distanceKm(launchCoord, targetLngLat);
+      const strikeDurationSec = Math.max(20, seg.impactTimeSec - seg.releaseTimeSec);
+      const distRatio = strikeDistKm > 0 ? icDistKm / strikeDistKm : 0.4;
+      const icFlightDurationSec = Math.max(14, Math.min(28, distRatio * strikeDurationSec * 1.2 + 12));
+
       for (let j = 0; j < icCount; j++) {
-        const icStaggerSec = j * 0.35;
-        const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - 6 - icStaggerSec);
+        const icStaggerSec = j * 0.5;
+        const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - icFlightDurationSec - icStaggerSec);
         const icImpactSec = ic.timeSec;
 
         if (clampedTime >= icLaunchSec && clampedTime <= icImpactSec) {
-          const icFrac = (clampedTime - icLaunchSec) / (icImpactSec - icLaunchSec);
+          const icTotalSec = icImpactSec - icLaunchSec;
+          const icFrac = icTotalSec > 0 ? (clampedTime - icLaunchSec) / icTotalSec : 1;
           const clampedIcFrac = Math.min(1, Math.max(0, icFrac));
 
           // Interceptors launch directly from the defending battery / warship (ic.samLngLat)
