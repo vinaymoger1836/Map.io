@@ -579,8 +579,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                     color: waypointPlacingActive ? '#000000' : 'var(--paper)',
                     fontWeight: waypointPlacingActive ? 600 : 400,
                   }}
-                  disabled={!newAttackerId || !newTargetId}
-                  onClick={() => setWaypointPlacingActive(!waypointPlacingActive)}
+                  disabled={!targetUnit}
+                  onClick={() => setWaypointPlacingActive(!waypointPlacingActive, 'theater')}
                   title="Click anywhere on the tactical map to drop dogleg waypoints for this task"
                 >
                   {waypointPlacingActive ? '📍 Click Map to Drop WP (Active)' : '+ Click Map to Add WP'}

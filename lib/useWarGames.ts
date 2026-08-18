@@ -273,7 +273,8 @@ export interface WarGames {
   clearRaidWaypoints: () => void;
   autoAvoidanceWaypoints: () => void;
   waypointPlacingActive: boolean;
-  setWaypointPlacingActive: (active: boolean) => void;
+  waypointPlacingMode: 'raid' | 'theater';
+  setWaypointPlacingActive: (active: boolean, mode?: 'raid' | 'theater') => void;
 
   /* Theater Multi-Phase Raid Operations */
   theaterTargetId: string | null;
@@ -403,16 +404,30 @@ export function useWarGames({
   const [selectedEwEscortId, setSelectedEwEscortId] = useState<string | null>(null);
   const [selectedSeadEscortId, setSelectedSeadEscortId] = useState<string | null>(null);
   const [raidWaypoints, setRaidWaypoints] = useState<[number, number][]>([]);
-  const [waypointPlacingActive, setWaypointPlacingActive] = useState<boolean>(false);
+  const [waypointPlacingActive, setWaypointPlacingActiveState] = useState<boolean>(false);
+  const [waypointPlacingMode, setWaypointPlacingMode] = useState<'raid' | 'theater'>('raid');
 
   const waypointPlacingRef = useRef(waypointPlacingActive);
   waypointPlacingRef.current = waypointPlacingActive;
+  const waypointPlacingModeRef = useRef(waypointPlacingMode);
+  waypointPlacingModeRef.current = waypointPlacingMode;
 
   /* Theater Raid State */
   const [theaterTargetId, setTheaterTargetId] = useState<string | null>(null);
+  const theaterTargetIdRef = useRef(theaterTargetId);
+  theaterTargetIdRef.current = theaterTargetId;
+
   const [theaterAttackerIso, setTheaterAttackerIso] = useState<string | null>(null);
+  const theaterAttackerIsoRef = useRef(theaterAttackerIso);
+  theaterAttackerIsoRef.current = theaterAttackerIso;
+
   const [theaterPhases, setTheaterPhases] = useState<StrikePhaseTask[]>([]);
   const [theaterTaskWaypoints, setTheaterTaskWaypoints] = useState<[number, number][]>([]);
+
+  const setWaypointPlacingActive = useCallback((active: boolean, mode: 'raid' | 'theater' = 'raid') => {
+    setWaypointPlacingMode(mode);
+    setWaypointPlacingActiveState(active);
+  }, []);
 
   /* 4D Battle Playback State */
   const [playbackActive, setPlaybackActive] = useState<boolean>(false);
@@ -1180,7 +1195,7 @@ export function useWarGames({
       if (drag?.moved) return;
 
       if (waypointPlacingRef.current) {
-        if (theaterTargetId) {
+        if (waypointPlacingModeRef.current === 'theater' || theaterTargetIdRef.current) {
           setTheaterTaskWaypoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
         } else {
           setRaidWaypoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
@@ -1880,6 +1895,7 @@ export function useWarGames({
     clearRaidWaypoints,
     autoAvoidanceWaypoints,
     waypointPlacingActive,
+    waypointPlacingMode,
     setWaypointPlacingActive,
     theaterTargetId,
     setTheaterTargetId,
