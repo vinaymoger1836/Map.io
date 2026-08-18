@@ -11,7 +11,7 @@
  * 5. Master Theater After-Action Report (AAR) & Chronological Battle Debrief.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { WarGames } from '@/lib/useWarGames';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
@@ -240,6 +240,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     setTheaterTaskWaypoints,
     removeTheaterTaskWaypoint,
     clearTheaterTaskWaypoints,
+    setTheaterDraftingAttackerId,
+    setTheaterDraftingTargetId,
     waypointPlacingActive,
     setWaypointPlacingActive,
     theaterUmbrella,
@@ -254,6 +256,27 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
   const [newSalvo, setNewSalvo] = useState<number>(4);
+
+  // Sync drafting selections with map preview
+  useEffect(() => {
+    setTheaterDraftingAttackerId(newAttackerId || null);
+  }, [newAttackerId, setTheaterDraftingAttackerId]);
+
+  useEffect(() => {
+    setTheaterDraftingTargetId(newTargetId || null);
+  }, [newTargetId, setTheaterDraftingTargetId]);
+
+  useEffect(() => {
+    if (!newAttackerId && theaterAttackers.length > 0) {
+      setNewAttackerId(theaterAttackers[0].unit.id);
+    }
+  }, [theaterAttackers, newAttackerId]);
+
+  useEffect(() => {
+    if (theaterTargetId && !newTargetId) {
+      setNewTargetId(theaterTargetId);
+    }
+  }, [theaterTargetId, newTargetId]);
 
   // Targets candidates: all units on board
   const targetCandidates = board.units;

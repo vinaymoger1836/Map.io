@@ -291,6 +291,10 @@ export interface WarGames {
   addTheaterTaskWaypoint: (coord: [number, number]) => void;
   removeTheaterTaskWaypoint: (index: number) => void;
   clearTheaterTaskWaypoints: () => void;
+  theaterDraftingAttackerId: string | null;
+  setTheaterDraftingAttackerId: (id: string | null) => void;
+  theaterDraftingTargetId: string | null;
+  setTheaterDraftingTargetId: (id: string | null) => void;
   theaterUmbrella: DefensiveUmbrella | null;
   theaterAttackers: CandidateAttacker[];
   theaterAssessment: TheaterAssessment | null;
@@ -423,6 +427,8 @@ export function useWarGames({
 
   const [theaterPhases, setTheaterPhases] = useState<StrikePhaseTask[]>([]);
   const [theaterTaskWaypoints, setTheaterTaskWaypoints] = useState<[number, number][]>([]);
+  const [theaterDraftingAttackerId, setTheaterDraftingAttackerId] = useState<string | null>(null);
+  const [theaterDraftingTargetId, setTheaterDraftingTargetId] = useState<string | null>(null);
 
   const setWaypointPlacingActive = useCallback((active: boolean, mode: 'raid' | 'theater' = 'raid') => {
     setWaypointPlacingMode(mode);
@@ -1728,10 +1734,12 @@ export function useWarGames({
     if (theaterAssessment && theaterAssessment.pathSpecs.length > 0) {
       let allSpecs = [...theaterAssessment.pathSpecs];
       if (theaterTaskWaypoints.length > 0) {
-        const targetUnit = board.units.find((u) => u.id === theaterTargetId);
-        const defaultAttacker = board.units.find((u) => u.iso === theaterAttackerIso);
-        if (targetUnit && defaultAttacker) {
-          const previewRoute: [number, number][] = [defaultAttacker.lngLat, ...theaterTaskWaypoints, targetUnit.lngLat];
+        const targetUnit = board.units.find((u) => u.id === (theaterDraftingTargetId || theaterTargetId));
+        const attackerUnit =
+          board.units.find((u) => u.id === theaterDraftingAttackerId) ??
+          board.units.find((u) => u.iso === theaterAttackerIso);
+        if (targetUnit && attackerUnit) {
+          const previewRoute: [number, number][] = [attackerUnit.lngLat, ...theaterTaskWaypoints, targetUnit.lngLat];
           allSpecs.push({
             ingress: multiLegGreatCirclePath(previewRoute, 32),
             targetPoint: targetUnit.lngLat,
@@ -1742,11 +1750,13 @@ export function useWarGames({
       }
       setRaidPath(map, allSpecs);
       return;
-    } else if (theaterTargetId && theaterTaskWaypoints.length > 0) {
-      const targetUnit = board.units.find((u) => u.id === theaterTargetId);
-      const defaultAttacker = board.units.find((u) => u.iso === theaterAttackerIso);
-      if (targetUnit && defaultAttacker) {
-        const previewRoute: [number, number][] = [defaultAttacker.lngLat, ...theaterTaskWaypoints, targetUnit.lngLat];
+    } else if ((theaterTargetId || theaterDraftingTargetId) && theaterTaskWaypoints.length > 0) {
+      const targetUnit = board.units.find((u) => u.id === (theaterDraftingTargetId || theaterTargetId));
+      const attackerUnit =
+        board.units.find((u) => u.id === theaterDraftingAttackerId) ??
+        board.units.find((u) => u.iso === theaterAttackerIso);
+      if (targetUnit && attackerUnit) {
+        const previewRoute: [number, number][] = [attackerUnit.lngLat, ...theaterTaskWaypoints, targetUnit.lngLat];
         setRaidPath(map, [
           {
             ingress: multiLegGreatCirclePath(previewRoute, 32),
@@ -1799,6 +1809,8 @@ export function useWarGames({
     theaterTaskWaypoints,
     theaterTargetId,
     theaterAttackerIso,
+    theaterDraftingAttackerId,
+    theaterDraftingTargetId,
     raidFromId,
     raidWaypoints,
     board.nations,
@@ -1915,6 +1927,10 @@ export function useWarGames({
     addTheaterTaskWaypoint,
     removeTheaterTaskWaypoint,
     clearTheaterTaskWaypoints,
+    theaterDraftingAttackerId,
+    setTheaterDraftingAttackerId,
+    theaterDraftingTargetId,
+    setTheaterDraftingTargetId,
     theaterUmbrella,
     theaterAttackers,
     theaterAssessment,
