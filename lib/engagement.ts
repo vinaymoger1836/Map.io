@@ -10,7 +10,13 @@
  * with whole-integer casualty counting (no fractional aircraft).
  */
 
-import { distanceKm, interpolate } from './geo';
+import {
+  distanceKm,
+  interpolate,
+  interpolateRouteDistance,
+  routeCrossing,
+  routeTotalDistanceKm,
+} from './geo';
 import { effectiveSpec, type MunitionCatalogue } from './munitions';
 import {
   domainOf,
@@ -121,6 +127,7 @@ export interface Raid {
   count: number;
   from: [number, number];
   to: [number, number];
+  waypoints?: [number, number][];
   altitudeM: number;
   signature?: 'low' | 'medium' | 'high';
   standoff?: StandoffConfig;
@@ -198,6 +205,7 @@ export interface BattleOutcome {
 export interface Assessment {
   raid: Raid;
   distanceKm: number;
+  routePoints?: [number, number][];
   threat: TargetClass;
   speedKmh: number | null;
   engagements: Engagement[];
@@ -223,42 +231,17 @@ export interface Assessment {
 
 const speedOf = (spec: SystemSpec): number | null => spec.platform?.speedKmh ?? null;
 
-function crossing(
-  from: [number, number],
-  to: [number, number],
-  at: [number, number],
-  radiusKm: number,
-  totalKm: number
-): { entryKm: number; exitKm: number } | null {
-  const steps = Math.min(2_000, Math.max(64, Math.ceil(totalKm / 5)));
-  let entry: number | null = null;
-  let exit: number | null = null;
-  for (let i = 0; i <= steps; i++) {
-    const fraction = i / steps;
-    const inside = distanceKm(interpolate(from, to, fraction), at) <= radiusKm;
-    if (inside && entry === null) entry = fraction * totalKm;
-    if (!inside && entry !== null) {
-      exit = fraction * totalKm;
-      break;
-    }
-  }
-  if (entry === null) return null;
-  return { entryKm: entry, exitKm: exit ?? totalKm };
-}
-
 function onsetFor(
   spec: SystemSpec,
   at: [number, number],
-  from: [number, number],
-  to: [number, number],
+  routePoints: [number, number][],
   altitudeM: number,
   signature: 'low' | 'medium' | 'high' | undefined,
-  isJammed: boolean,
-  totalKm: number
+  isJammed: boolean
 ): number | null {
   const reach = effectiveDetectionKm(spec, altitudeM, signature, isJammed);
   if (!reach || reach <= 0) return null;
-  return crossing(from, to, at, reach, totalKm)?.entryKm ?? null;
+  return routeCrossing(routePoints, at, reach)?.entryKm ?? null;
 }
 
 function engagesThreat(weapon: WeaponFacet, threat: TargetClass): boolean {
@@ -301,12 +284,16 @@ function lossesFrom(
 
 export function assess(raid: Raid, defenders: Defender[]): Assessment {
   const threat = threatClassOf(raid.spec);
-  const totalKm = distanceKm(raid.from, raid.to);
+  const routePoints: [number, number][] =
+    raid.waypoints && raid.waypoints.length > 0
+      ? [raid.from, ...raid.waypoints, raid.to]
+      : [raid.from, raid.to];
+  const totalKm = routeTotalDistanceKm(routePoints);
   const isStandoff = Boolean(raid.standoff?.enabled && raid.standoff.rangeKm > 0);
   const standoffRange = isStandoff ? raid.standoff!.rangeKm : 0;
   const releaseKm = isStandoff ? Math.max(0, totalKm - standoffRange) : totalKm;
-  const releaseFraction = totalKm > 0 ? releaseKm / totalKm : 0;
-  const releaseLngLat = isStandoff ? interpolate(raid.from, raid.to, releaseFraction) : undefined;
+  const releaseResult = interpolateRouteDistance(routePoints, releaseKm);
+  const releaseLngLat = isStandoff ? releaseResult.coord : undefined;
 
   const rawSpeed = speedOf(raid.spec);
   const speedKmh = rawSpeed ?? (isStandoff ? raid.standoff?.munitionSpeedKmh ?? 900 : null);
@@ -324,6 +311,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
   const base: Assessment = {
     raid,
     distanceKm: totalKm,
+    routePoints,
     threat,
     speedKmh,
     engagements: [],
@@ -374,12 +362,10 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
         ? onsetFor(
             def.spec,
             def.at,
-            raid.from,
-            raid.to,
+            routePoints,
             raid.altitudeM,
             raid.signature,
-            hasEwJammer,
-            totalKm
+            hasEwJammer
           )
         : null;
       ownOnset.set(def.unitId, onset);
@@ -393,7 +379,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
       for (let index = 0; index < weapons.length; index++) {
         const weapon = weapons[index];
         if (!weapon.rangeKm || !engagesThreat(weapon, threat)) continue;
-        const cross = crossing(raid.from, raid.to, defender.at, weapon.rangeKm, totalKm);
+        const cross = routeCrossing(routePoints, defender.at, weapon.rangeKm);
         if (!cross) continue;
 
         if (cross.entryKm >= ingressLimitKm) continue;
@@ -471,12 +457,10 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
         ? onsetFor(
             def.spec,
             def.at,
-            raid.from,
-            raid.to,
+            routePoints,
             raid.altitudeM,
             munitionSig,
-            false,
-            totalKm
+            false
           )
         : null;
       ownOnsetMunition.set(def.unitId, onset);
@@ -490,7 +474,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
       for (let index = 0; index < weapons.length; index++) {
         const weapon = weapons[index];
         if (!weapon.rangeKm || !engagesThreat(weapon, munitionThreat)) continue;
-        const cross = crossing(raid.from, raid.to, defender.at, weapon.rangeKm, totalKm);
+        const cross = routeCrossing(routePoints, defender.at, weapon.rangeKm);
         if (!cross) continue;
 
         if (cross.exitKm <= releaseKm) continue;
@@ -1120,6 +1104,7 @@ export interface RaidOptions {
   salvoSize?: number;
   ewUnitId?: string | null;
   seadUnitId?: string | null;
+  waypoints?: [number, number][];
 }
 
 export function raidFrom(
@@ -1256,6 +1241,7 @@ export function raidFrom(
     count,
     from: unit.lngLat,
     to,
+    waypoints: options.waypoints,
     altitudeM,
     signature: spec.signature,
     standoff,

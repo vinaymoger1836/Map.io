@@ -186,3 +186,180 @@ export function crossing(
   return { entryKm: entry, exitKm: exit ?? totalKm };
 }
 
+/* ------------------------------------------------------------------ */
+/* Multi-Waypoint Flight Route Geometry & Radar Avoidance Engine      */
+/* ------------------------------------------------------------------ */
+
+/** Total cumulative distance along a multi-waypoint route in kilometres. */
+export function routeTotalDistanceKm(points: [number, number][]): number {
+  if (points.length < 2) return 0;
+  let sum = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    sum += distanceKm(points[i], points[i + 1]);
+  }
+  return sum;
+}
+
+/** Distance of each individual leg along a multi-waypoint route. */
+export function routeSegmentDistancesKm(points: [number, number][]): number[] {
+  if (points.length < 2) return [];
+  const dists: number[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    dists.push(distanceKm(points[i], points[i + 1]));
+  }
+  return dists;
+}
+
+/** Interpolates coordinate and heading at a specific cumulative distance along a multi-leg route. */
+export function interpolateRouteDistance(
+  points: [number, number][],
+  distanceAlongKm: number
+): { coord: [number, number]; heading: number; legIndex: number } {
+  if (points.length < 2) {
+    return { coord: points[0] || [0, 0], heading: 0, legIndex: 0 };
+  }
+  if (distanceAlongKm <= 0) {
+    const heading = bearingDeg(points[0], points[1]);
+    return { coord: points[0], heading, legIndex: 0 };
+  }
+
+  let accumulated = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const legDist = distanceKm(points[i], points[i + 1]);
+    if (distanceAlongKm <= accumulated + legDist || i === points.length - 2) {
+      const legRemaining = Math.max(0, distanceAlongKm - accumulated);
+      const frac = legDist > 0 ? Math.min(1, legRemaining / legDist) : 0;
+      const coord = interpolate(points[i], points[i + 1], frac);
+      const heading = bearingDeg(points[i], points[i + 1]);
+      return { coord, heading, legIndex: i };
+    }
+    accumulated += legDist;
+  }
+
+  const lastIdx = points.length - 1;
+  const heading = bearingDeg(points[lastIdx - 1], points[lastIdx]);
+  return { coord: points[lastIdx], heading, legIndex: lastIdx - 1 };
+}
+
+/**
+ * High-resolution great-circle polyline passing through all multi-waypoint legs,
+ * preserving accurate curvature across high-latitude map projections.
+ */
+export function multiLegGreatCirclePath(
+  points: [number, number][],
+  stepsPerLeg = 24
+): [number, number][] {
+  if (points.length === 0) return [];
+  if (points.length === 1) return [points[0]];
+
+  const out: [number, number][] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const leg = greatCirclePath(points[i], points[i + 1], stepsPerLeg);
+    if (i > 0) leg.shift(); // Avoid duplicating the shared waypoint vertex
+    out.push(...leg);
+  }
+  return out;
+}
+
+/**
+ * Determines whether a multi-waypoint route enters a radar/SAM engagement zone of `radiusKm` around `at`.
+ * Returns cumulative entryKm and exitKm along the entire multi-leg flight path.
+ */
+export function routeCrossing(
+  points: [number, number][],
+  at: [number, number],
+  radiusKm: number
+): { entryKm: number; exitKm: number; legIndex: number } | null {
+  if (points.length < 2 || radiusKm <= 0) return null;
+  const totalKm = routeTotalDistanceKm(points);
+  if (totalKm <= 0) return null;
+
+  let accumulated = 0;
+  let firstEntryKm: number | null = null;
+  let lastExitKm: number | null = null;
+  let entryLegIndex = 0;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const legDist = distanceKm(points[i], points[i + 1]);
+    if (legDist > 0) {
+      const legCross = crossing(points[i], points[i + 1], at, radiusKm, legDist);
+      if (legCross) {
+        const legEntry = accumulated + legCross.entryKm;
+        const legExit = accumulated + legCross.exitKm;
+        if (firstEntryKm === null) {
+          firstEntryKm = legEntry;
+          entryLegIndex = i;
+        }
+        lastExitKm = legExit;
+      }
+    }
+    accumulated += legDist;
+  }
+
+  if (firstEntryKm === null) return null;
+  return { entryKm: firstEntryKm, exitKm: lastExitKm ?? totalKm, legIndex: entryLegIndex };
+}
+
+/**
+ * Automated Radar Avoidance Dogleg Generator:
+ * Evaluates the direct great-circle flight path against hostile radar/SAM threat zones.
+ * If threat zones block the corridor, calculates optimal lateral standoff dogleg waypoints
+ * (port or starboard) around the radar envelopes to penetrate via clean air corridors.
+ */
+export function calculateRadarAvoidanceDogleg(
+  from: [number, number],
+  to: [number, number],
+  threatZones: { at: [number, number]; radiusKm: number }[]
+): [number, number][] {
+  const directDist = distanceKm(from, to);
+  if (directDist < 50 || threatZones.length === 0) return [];
+
+  // 1. Identify which threat zones intersect the direct straight line
+  const directCrossingThreats: { at: [number, number]; radiusKm: number; entryKm: number; exitKm: number }[] = [];
+  for (const zone of threatZones) {
+    const c = crossing(from, to, zone.at, zone.radiusKm, directDist);
+    if (c) {
+      directCrossingThreats.push({ ...zone, entryKm: c.entryKm, exitKm: c.exitKm });
+    }
+  }
+
+  if (directCrossingThreats.length === 0) {
+    return []; // Direct line is already 100% clear of radar threats!
+  }
+
+  // 2. Sort threat zones by entry along flight corridor
+  directCrossingThreats.sort((a, b) => a.entryKm - b.entryKm);
+
+  // 3. For each cluster of overlapping threat zones, generate an avoidance waypoint
+  const waypoints: [number, number][] = [];
+  const baseBearing = bearingDeg(from, to);
+
+  for (const threat of directCrossingThreats) {
+    const threatDistFromOrigin = (threat.entryKm + threat.exitKm) / 2;
+    const centerPointOnCorridor = interpolate(from, to, threatDistFromOrigin / directDist);
+
+    // Calculate left (port: -90°) and right (starboard: +90°) lateral bypass coordinates
+    const safetyBufferKm = threat.radiusKm + 25; // 25 km safety margin outside SAM envelope
+    const portWaypoint = destination(centerPointOnCorridor, safetyBufferKm, (baseBearing - 90 + 360) % 360);
+    const starWaypoint = destination(centerPointOnCorridor, safetyBufferKm, (baseBearing + 90) % 360);
+
+    // Score port vs starboard: count secondary threat intersections and route detour length
+    let portViolations = 0;
+    let starViolations = 0;
+
+    for (const other of threatZones) {
+      if (distanceKm(portWaypoint, other.at) < other.radiusKm) portViolations++;
+      if (distanceKm(starWaypoint, other.at) < other.radiusKm) starViolations++;
+    }
+
+    const chosen = portViolations <= starViolations ? portWaypoint : starWaypoint;
+
+    // Avoid duplicate waypoints in close proximity
+    if (waypoints.length === 0 || distanceKm(waypoints[waypoints.length - 1], chosen) > 80) {
+      waypoints.push(chosen);
+    }
+  }
+
+  return waypoints;
+}
+
