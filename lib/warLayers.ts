@@ -1125,6 +1125,23 @@ export function renderPlaybackFrame(map: MLMap, frame: PlaybackFrame | null) {
   const entitySrc = map.getSource('wg-playback-entities') as { setData?: (d: unknown) => void } | undefined;
   const effectSrc = map.getSource('wg-playback-effects') as { setData?: (d: unknown) => void } | undefined;
 
+  const PLAYBACK_LAYERS = [
+    'wg-playback-trail',
+    'wg-playback-interceptor',
+    'wg-playback-effect-pulse',
+    'wg-playback-entity-halo',
+    'wg-playback-entity',
+    'wg-playback-icon',
+    'wg-playback-label',
+  ];
+
+  const targetVis = frame ? 'visible' : 'none';
+  for (const lyr of PLAYBACK_LAYERS) {
+    if (map.getLayer(lyr)) {
+      map.setLayoutProperty(lyr, 'visibility', targetVis);
+    }
+  }
+
   if (!frame) {
     trailSrc?.setData?.(emptyCollection());
     icSrc?.setData?.(emptyCollection());

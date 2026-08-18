@@ -52,6 +52,40 @@ export interface TacticalLesson {
   impact: 'positive' | 'negative' | 'critical' | 'neutral';
 }
 
+export interface AarTimelineDetail {
+  attackMunitions?: Array<{
+    launcher: string;
+    weaponName: string;
+    count: number;
+    target: string;
+  }>;
+  defenseLayers?: Array<{
+    defender: string;
+    interceptorWeapon: string;
+    roundsFired: number;
+    targetMissileName: string;
+    interceptedCount: number;
+    leakedCount: number;
+    summary: string;
+  }>;
+  impacts?: Array<{
+    target: string;
+    missileName: string;
+    hits: number;
+    damageVerdict: string;
+  }>;
+}
+
+export interface AarTimelineEntry {
+  timeFormatted: string;
+  phaseNumber?: number;
+  title: string;
+  detail: string;
+  badgeText?: string;
+  badgeVariant?: 'success' | 'loss' | 'neutral' | 'stealth' | 'standoff' | 'sead';
+  breakdown?: AarTimelineDetail;
+}
+
 export interface ComprehensiveAarReport {
   id: string;
   timestamp: string;
@@ -74,12 +108,7 @@ export interface ComprehensiveAarReport {
   munitionMatrix: MunitionExpenditureEntry[];
   casualtyRegistry: PlatformCasualtyEntry[];
   tacticalLessons: TacticalLesson[];
-  chronologicalLog: Array<{
-    timeFormatted: string;
-    title: string;
-    detail: string;
-    badgeText?: string;
-  }>;
+  chronologicalLog: AarTimelineEntry[];
 
   // Raw Markdown Intelligence Briefing text
   markdownBriefing: string;
@@ -170,44 +199,43 @@ export function generateSingleRaidAar(
     }
   }
 
-  // Attacker Platform Casualties
+  // Attacker Platform Casualties (Only losses / damaged assets)
   for (const loss of outcome.attackerLosses) {
-    casualtyRegistry.push({
-      side: 'attacker',
-      unitLabel: loss.name,
-      typeLabel: 'Strike Aircraft / Platform',
-      domain: 'air',
-      initialCount: loss.count,
-      lostCount: loss.count,
-      survivingCount: 0,
-      status: 'destroyed',
-    });
-  }
-  for (const surv of outcome.attackerSurvivors) {
-    casualtyRegistry.push({
-      side: 'attacker',
-      unitLabel: surv.name,
-      typeLabel: 'Strike Aircraft / Platform',
-      domain: 'air',
-      initialCount: surv.count,
-      lostCount: 0,
-      survivingCount: surv.count,
-      status: 'intact',
-    });
+    if (loss.count > 0) {
+      casualtyRegistry.push({
+        side: 'attacker',
+        unitLabel: loss.name,
+        typeLabel: 'Strike Aircraft / Platform',
+        domain: 'air',
+        initialCount: loss.count,
+        lostCount: loss.count,
+        survivingCount: 0,
+        status: 'destroyed',
+      });
+    }
   }
 
-  // Defender Target Casualties
+  // Defender Target Casualties (Only suppressed, damaged, or destroyed assets)
   for (const def of outcome.defenderLosses) {
-    casualtyRegistry.push({
-      side: 'defender',
-      unitLabel: def.name,
-      typeLabel: 'Defensive Battery / Site',
-      domain: 'ground',
-      initialCount: def.count,
-      lostCount: def.status === 'destroyed' ? def.count : 0,
-      survivingCount: def.status === 'destroyed' ? 0 : def.count,
-      status: def.status === 'destroyed' ? 'destroyed' : def.status === 'suppressed' ? 'suppressed' : def.status === 'damaged' ? 'damaged' : 'intact',
-    });
+    if (def.status !== 'held' && def.count > 0) {
+      casualtyRegistry.push({
+        side: 'defender',
+        unitLabel: def.name,
+        typeLabel: 'Defensive Battery / Site',
+        domain: 'ground',
+        initialCount: def.count,
+        lostCount: def.status === 'destroyed' ? def.count : 0,
+        survivingCount: def.status === 'destroyed' ? 0 : def.count,
+        status:
+          def.status === 'destroyed'
+            ? 'destroyed'
+            : def.status === 'suppressed'
+              ? 'suppressed'
+              : def.status === 'damaged'
+                ? 'damaged'
+                : 'intact',
+      });
+    }
   }
 
   // Tactical Lessons Generation
@@ -339,16 +367,19 @@ export function generateTheaterAar(
         finalStatus = 'sunk';
       }
 
-      casualtyRegistry.push({
-        side,
-        unitLabel: label,
-        typeLabel: u.kind === 'unit' ? u.typeId.toUpperCase() : 'Unit Formation',
-        domain,
-        initialCount: uState.initialCount,
-        lostCount: lost,
-        survivingCount: surv,
-        status: finalStatus,
-      });
+      // Only record units that took damage, suppression, loss, or destruction (exclude intact platforms)
+      if (lost > 0 || finalStatus !== 'intact') {
+        casualtyRegistry.push({
+          side,
+          unitLabel: label,
+          typeLabel: u.kind === 'unit' ? u.typeId.toUpperCase() : 'Unit Formation',
+          domain,
+          initialCount: uState.initialCount,
+          lostCount: lost,
+          survivingCount: surv,
+          status: finalStatus,
+        });
+      }
     }
   }
 
@@ -362,7 +393,8 @@ export function generateTheaterAar(
     let phaseImpacts = 0;
     const attackerDetails: string[] = [];
     const targetNames = Array.from(new Set(tasksInPhase.map((t) => t.targetLabel)));
-    const defenderInterceptors: string[] = [];
+    const attackMunitionsBreakdown: NonNullable<AarTimelineDetail['attackMunitions']> = [];
+    const defenseLayersBreakdown: NonNullable<AarTimelineDetail['defenseLayers']> = [];
 
     for (const phase of tasksInPhase) {
       phaseFired += phase.salvoCommitted;
@@ -374,6 +406,13 @@ export function generateTheaterAar(
       totalImpacts += phase.munitionsImpacted;
 
       attackerDetails.push(`${phase.attackerLabel} (${phase.salvoCommitted} × ${phase.weaponName})`);
+
+      attackMunitionsBreakdown.push({
+        launcher: phase.attackerLabel,
+        weaponName: phase.weaponName,
+        count: phase.salvoCommitted,
+        target: phase.targetLabel,
+      });
 
       munitionMatrix.push({
         side: 'attacker',
@@ -392,10 +431,48 @@ export function generateTheaterAar(
           phase.salvoCommitted > 0 ? Math.round((phase.munitionsImpacted / phase.salvoCommitted) * 100) : 0,
       });
 
-      // Collect defender interceptor munitions
-      if (phase.interceptions && phase.interceptions.length > 0) {
+      // Collect structured defender interceptor tiers
+      if (phase.navalAssessment && phase.navalAssessment.kind === 'asuw') {
+        for (const tier of phase.navalAssessment.tierReports) {
+          const intercepted = tier.missilesIntercepted;
+          const rounds = tier.roundsExpended;
+          const missileName = phase.weaponName;
+          const defenderName = tier.defendersActive.join(', ') || phase.targetLabel;
+          const leaked = Math.max(0, tier.missilesFacing - intercepted - tier.missilesDecoyed);
+          const layerSummary =
+            intercepted > 0
+              ? `${intercepted} × ${missileName} intercepted by ${defenderName} (${tier.weaponName})` +
+                (leaked > 0 ? ` (${leaked} leakers bypassed to next tier)` : ` (Layer held)`)
+              : `0 × ${missileName} intercepted (${tier.missilesFacing} passed through ${tier.tierName})`;
+
+          defenseLayersBreakdown.push({
+            defender: defenderName,
+            interceptorWeapon: `${tier.weaponName} (${tier.tierName})`,
+            roundsFired: rounds,
+            targetMissileName: missileName,
+            interceptedCount: intercepted,
+            leakedCount: leaked,
+            summary: layerSummary,
+          });
+        }
+      } else if (phase.interceptions && phase.interceptions.length > 0) {
         for (const ic of phase.interceptions) {
-          defenderInterceptors.push(`${ic.defenderLabel} (${ic.roundsFired} rounds, ${ic.kills} kills)`);
+          const leaked = Math.max(0, phase.salvoCommitted - ic.kills);
+          const layerSummary =
+            ic.kills > 0
+              ? `${ic.kills} × ${phase.weaponName} intercepted by ${ic.defenderLabel}` +
+                (leaked > 0 ? ` (${leaked} leakers penetrated)` : ` (All intercepted)`)
+              : `Failed to intercept incoming missiles`;
+
+          defenseLayersBreakdown.push({
+            defender: ic.defenderLabel,
+            interceptorWeapon: ic.defenderLabel,
+            roundsFired: ic.roundsFired,
+            targetMissileName: phase.weaponName,
+            interceptedCount: ic.kills,
+            leakedCount: leaked,
+            summary: layerSummary,
+          });
         }
       }
     }
@@ -403,32 +480,43 @@ export function generateTheaterAar(
     // Consolidated T+00m Launch Event
     chronologicalLog.push({
       timeFormatted: 'T+00m',
+      phaseNumber: pNum,
       title: `[Phase ${pNum}] Coordinated Time-on-Target Salvo Launch`,
       detail:
         tasksInPhase.length === 1
           ? `${attackerDetails[0]} launched at ${targetNames.join(', ')}.`
           : `Simultaneous Coordinated Strike: ${attackerDetails.join(' + ')} launched at ${targetNames.join(', ')} (Total: ${phaseFired} committed).`,
-      badgeText: `${phaseFired} Committed`,
+      badgeText: `${phaseFired} Inbound`,
+      badgeVariant: 'standoff',
+      breakdown: {
+        attackMunitions: attackMunitionsBreakdown,
+      },
     });
 
     // Consolidated T+18m Interception Event
     if (phaseIntercepted > 0) {
-      const defDetail =
-        defenderInterceptors.length > 0
-          ? defenderInterceptors.join('; ')
-          : `Defending air defense umbrella intercepted ${phaseIntercepted} incoming missiles.`;
       chronologicalLog.push({
         timeFormatted: 'T+18m',
+        phaseNumber: pNum,
         title: `[Phase ${pNum}] Layered Defensive Interceptions`,
-        detail: `${defDetail} (${phaseFired - phaseIntercepted} leakers penetrated).`,
+        detail: `Defending fire control engaged incoming strike salvos: ${phaseIntercepted} intercepted across active defense tiers (${phaseFired - phaseIntercepted} penetrated).`,
         badgeText: `${phaseIntercepted} Intercepted`,
+        badgeVariant: phaseFired - phaseIntercepted === 0 ? 'success' : 'neutral',
+        breakdown: {
+          defenseLayers: defenseLayersBreakdown,
+        },
       });
     } else {
       chronologicalLog.push({
         timeFormatted: 'T+18m',
+        phaseNumber: pNum,
         title: `[Phase ${pNum}] Defensive Interception Window`,
-        detail: `No defending interceptors engaged. Entire salvo of ${phaseFired} missiles penetrated directly toward target complex.`,
+        detail: `No defending interceptors engaged. Entire salvo of ${phaseFired} munitions penetrated directly toward target complex.`,
         badgeText: '0 Intercepted',
+        badgeVariant: 'loss',
+        breakdown: {
+          defenseLayers: defenseLayersBreakdown,
+        },
       });
     }
 
@@ -437,9 +525,19 @@ export function generateTheaterAar(
     const isPhaseSuccess = tasksInPhase.some((t) => t.targetDestroyed || t.targetSuppressed);
     chronologicalLog.push({
       timeFormatted: 'T+30m',
-      title: `[Phase ${pNum}] Phase Outcome Resolution`,
+      phaseNumber: pNum,
+      title: `[Phase ${pNum}] Phase Outcome & Strike Resolution`,
       detail: damageSummaries.join(' | '),
-      badgeText: isPhaseSuccess ? 'Objective Struck' : 'Shield Held',
+      badgeText: isPhaseSuccess ? `${phaseImpacts} Hits Struck` : 'Shield Held',
+      badgeVariant: isPhaseSuccess ? 'success' : 'loss',
+      breakdown: {
+        impacts: tasksInPhase.map((t) => ({
+          target: t.targetLabel,
+          missileName: t.weaponName,
+          hits: t.munitionsImpacted,
+          damageVerdict: t.targetDamageSummary,
+        })),
+      },
     });
   }
 
@@ -532,13 +630,17 @@ export function renderAarMarkdown(aar: ComprehensiveAarReport): string {
   lines.push(`---`);
   lines.push(``);
   lines.push(`## 3. PLATFORM CASUALTY & DAMAGE REGISTRY`);
-  lines.push(`| Side | Platform / Objective | Domain | Force Size | Losses | Surviving | Final Status |`);
-  lines.push(`|:-----|:---------------------|:-------|-----------:|-------:|----------:|:-------------|`);
+  if (aar.casualtyRegistry.length === 0) {
+    lines.push(`*Zero platform casualties or structural damage recorded. All participating units survived intact with 0 losses.*`);
+  } else {
+    lines.push(`| Side | Platform / Objective | Domain | Force Size | Losses | Surviving | Final Status |`);
+    lines.push(`|:-----|:---------------------|:-------|-----------:|-------:|----------:|:-------------|`);
 
-  for (const c of aar.casualtyRegistry) {
-    lines.push(
-      `| **${c.side.toUpperCase()}** | ${c.unitLabel} | ${c.domain} | ${c.initialCount} | ${c.lostCount} | ${c.survivingCount} | **${c.status.toUpperCase()}** |`
-    );
+    for (const c of aar.casualtyRegistry) {
+      lines.push(
+        `| **${c.side.toUpperCase()}** | ${c.unitLabel} | ${c.domain} | ${c.initialCount} | ${c.lostCount} | ${c.survivingCount} | **${c.status.toUpperCase()}** |`
+      );
+    }
   }
   lines.push(``);
   lines.push(`---`);
@@ -557,6 +659,21 @@ export function renderAarMarkdown(aar: ComprehensiveAarReport): string {
   lines.push(`## 5. CHRONOLOGICAL COMBAT TIMELINE (KILL CHAIN DEBRIEF)`);
   for (const evt of aar.chronologicalLog) {
     lines.push(`* **\`${evt.timeFormatted}\`** — **${evt.title}**: ${evt.detail} ${evt.badgeText ? `[\`${evt.badgeText}\`]` : ''}`);
+    if (evt.breakdown?.attackMunitions && evt.breakdown.attackMunitions.length > 0) {
+      for (const m of evt.breakdown.attackMunitions) {
+        lines.push(`  * 🚀 **${m.launcher}** launched ${m.count} × ${m.weaponName} at *${m.target}*`);
+      }
+    }
+    if (evt.breakdown?.defenseLayers && evt.breakdown.defenseLayers.length > 0) {
+      for (const d of evt.breakdown.defenseLayers) {
+        lines.push(`  * 🛡️ **${d.defender}** (\`${d.interceptorWeapon}\`): ${d.summary}`);
+      }
+    }
+    if (evt.breakdown?.impacts && evt.breakdown.impacts.length > 0) {
+      for (const imp of evt.breakdown.impacts) {
+        lines.push(`  * 💥 **${imp.target}**: ${imp.hits} impacts from ${imp.missileName} — *${imp.damageVerdict}*`);
+      }
+    }
   }
   lines.push(``);
   lines.push(`---`);

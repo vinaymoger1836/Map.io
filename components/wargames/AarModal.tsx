@@ -34,6 +34,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set([0, 1]));
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,15 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const toggleExpand = (idx: number) => {
+    setExpandedIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -256,7 +266,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
             onClick={() => setActiveTab('casualties')}
             style={{ padding: '8px 14px', fontSize: '11.5px', fontWeight: activeTab === 'casualties' ? 700 : 400 }}
           >
-            🎖 Casualties & Losses
+            🎖 Casualties & Losses ({report.casualtyRegistry.length})
           </button>
           <button
             className={`wg-tab-btn ${activeTab === 'lessons' ? 'active' : ''}`}
@@ -390,40 +400,68 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
           {/* TAB 3: CASUALTIES & LOSSES */}
           {activeTab === 'casualties' && (
             <div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--paper-dim)' }}>
-                    <th style={{ padding: '6px 8px' }}>Side</th>
-                    <th style={{ padding: '6px 8px' }}>Platform / Objective</th>
-                    <th style={{ padding: '6px 8px' }}>Domain</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>Committed</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>Losses</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>Surviving</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.casualtyRegistry.map((c, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700, color: c.side === 'attacker' ? '#E8833A' : '#4DD0E1' }}>
-                        {c.side.toUpperCase()}
-                      </td>
-                      <td style={{ padding: '6px 8px', fontWeight: 600 }}>{c.unitLabel}</td>
-                      <td style={{ padding: '6px 8px', color: 'var(--paper-dim)' }}>{c.domain}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right' }}>{c.initialCount}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: c.lostCount > 0 ? '#D9534F' : 'var(--paper-dim)', fontWeight: 700 }}>
-                        {c.lostCount}
-                      </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4FA85F' }}>{c.survivingCount}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                        <span className={`wg-tag ${c.status === 'destroyed' || c.status === 'sunk' ? 'loss' : c.status === 'intact' ? 'success' : 'neutral'}`}>
-                          {c.status.toUpperCase()}
-                        </span>
-                      </td>
+              {report.casualtyRegistry.length === 0 ? (
+                <div className="wg-tactical-card" style={{ padding: '24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>🛡️</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#4FA85F' }}>
+                    Zero Platform Casualties Recorded
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--paper-dim)', marginTop: '4px' }}>
+                    All friendly and hostile combat platforms survived intact with 0 hull or structural losses.
+                  </div>
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--paper-dim)' }}>
+                      <th style={{ padding: '6px 8px' }}>Side</th>
+                      <th style={{ padding: '6px 8px' }}>Platform / Objective</th>
+                      <th style={{ padding: '6px 8px' }}>Domain</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Force Size</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Losses</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Surviving</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {report.casualtyRegistry.map((c, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 700, color: c.side === 'attacker' ? '#E8833A' : '#4DD0E1' }}>
+                          {c.side.toUpperCase()}
+                        </td>
+                        <td style={{ padding: '6px 8px', fontWeight: 600 }}>{c.unitLabel}</td>
+                        <td style={{ padding: '6px 8px', color: 'var(--paper-dim)', textTransform: 'capitalize' }}>{c.domain}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>{c.initialCount}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: c.lostCount > 0 ? '#D9534F' : 'var(--paper-dim)', fontWeight: 700 }}>
+                          {c.lostCount}
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4FA85F' }}>{c.survivingCount}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                          <span
+                            className={`wg-tag ${
+                              c.status === 'destroyed' || c.status === 'sunk'
+                                ? 'loss'
+                                : c.status === 'suppressed' || c.status === 'damaged'
+                                  ? 'neutral'
+                                  : 'success'
+                            }`}
+                            style={{
+                              color:
+                                c.status === 'destroyed' || c.status === 'sunk'
+                                  ? '#D9534F'
+                                  : c.status === 'suppressed' || c.status === 'damaged'
+                                    ? '#E8833A'
+                                    : '#4FA85F',
+                            }}
+                          >
+                            {c.status.toUpperCase()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
@@ -451,21 +489,171 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
           {/* TAB 5: CHRONOLOGICAL TIMELINE */}
           {activeTab === 'timeline' && (
             <ol className="wg-battlelog" style={{ margin: 0, padding: 0 }}>
-              {report.chronologicalLog.map((evt, idx) => (
-                <li key={idx} className="wg-battlelog-item">
-                  <span className="wg-battlelog-dot neutral" />
-                  <div className="wg-battlelog-card">
-                    <div className="wg-battlelog-header">
-                      <div className="wg-battlelog-meta">
-                        <span className="wg-battlelog-time">{evt.timeFormatted}</span>
-                        <span className="wg-battlelog-title">{evt.title}</span>
+              {report.chronologicalLog.map((evt, idx) => {
+                const isExpanded = expandedIndices.has(idx);
+                const hasBreakdown =
+                  Boolean(evt.breakdown?.attackMunitions?.length) ||
+                  Boolean(evt.breakdown?.defenseLayers?.length) ||
+                  Boolean(evt.breakdown?.impacts?.length);
+
+                return (
+                  <li key={idx} className="wg-battlelog-item">
+                    <span className={`wg-battlelog-dot ${evt.badgeVariant ?? 'neutral'}`} />
+                    <div
+                      className="wg-battlelog-card"
+                      style={{ cursor: hasBreakdown ? 'pointer' : 'default' }}
+                      onClick={() => {
+                        if (hasBreakdown) toggleExpand(idx);
+                      }}
+                    >
+                      <div className="wg-battlelog-header">
+                        <div className="wg-battlelog-meta">
+                          <span className="wg-battlelog-time">{evt.timeFormatted}</span>
+                          <span className="wg-battlelog-title">{evt.title}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {evt.badgeText && (
+                            <span className={`wg-tag ${evt.badgeVariant ?? 'neutral'}`}>
+                              {evt.badgeText}
+                            </span>
+                          )}
+                          {hasBreakdown && (
+                            <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                              {isExpanded ? '▲' : '▼'}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {evt.badgeText && <span className="wg-tag">{evt.badgeText}</span>}
+                      <p className="wg-battlelog-detail" style={{ margin: '4px 0' }}>
+                        {evt.detail}
+                      </p>
+
+                      {hasBreakdown && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span style={{ fontSize: '10px', color: '#E8833A', fontWeight: 600 }}>
+                            {isExpanded ? 'Hide Details' : 'Click to view missile-by-missile & layer details'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Structured Accordion Details */}
+                      {isExpanded && evt.breakdown && (
+                        <div
+                          style={{
+                            marginTop: '8px',
+                            padding: '8px 10px',
+                            background: 'rgba(0,0,0,0.3)',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            fontSize: '11px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* 1. Attack Munitions */}
+                          {evt.breakdown.attackMunitions && evt.breakdown.attackMunitions.length > 0 && (
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  color: '#E8833A',
+                                  textTransform: 'uppercase',
+                                  marginBottom: '3px',
+                                }}
+                              >
+                                🚀 Attack Munitions Launched
+                              </div>
+                              <ul style={{ margin: 0, paddingLeft: '14px', color: 'var(--paper-dim)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {evt.breakdown.attackMunitions.map((m, mIdx) => (
+                                  <li key={mIdx}>
+                                    <strong style={{ color: 'var(--paper)' }}>{m.launcher}</strong> launched{' '}
+                                    <strong style={{ color: '#FFB020' }}>{m.count} × {m.weaponName}</strong> against{' '}
+                                    <em>{m.target}</em>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* 2. Defense Interceptor Tiers */}
+                          {evt.breakdown.defenseLayers && evt.breakdown.defenseLayers.length > 0 && (
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  color: '#4DD0E1',
+                                  textTransform: 'uppercase',
+                                  marginBottom: '3px',
+                                }}
+                              >
+                                🛡️ Layer-by-Layer Interception Breakdown
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {evt.breakdown.defenseLayers.map((d, dIdx) => (
+                                  <div
+                                    key={dIdx}
+                                    style={{
+                                      padding: '5px 8px',
+                                      background: 'rgba(77, 208, 225, 0.06)',
+                                      borderLeft: '3px solid #4DD0E1',
+                                      borderRadius: '2px',
+                                    }}
+                                  >
+                                    <div style={{ fontWeight: 600, color: 'var(--paper)' }}>
+                                      {d.defender} — <span style={{ color: '#4DD0E1' }}>{d.interceptorWeapon}</span>
+                                    </div>
+                                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', marginTop: '2px' }}>
+                                      {d.summary}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 3. Terminal Impacts */}
+                          {evt.breakdown.impacts && evt.breakdown.impacts.length > 0 && (
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  color: '#FFD54F',
+                                  textTransform: 'uppercase',
+                                  marginBottom: '3px',
+                                }}
+                              >
+                                💥 Terminal Strike Resolution
+                              </div>
+                              <ul style={{ margin: 0, paddingLeft: '14px', color: 'var(--paper-dim)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {evt.breakdown.impacts.map((imp, impIdx) => (
+                                  <li key={impIdx}>
+                                    <strong style={{ color: 'var(--paper)' }}>{imp.target}</strong>:{' '}
+                                    {imp.hits > 0 ? (
+                                      <span style={{ color: '#D9534F', fontWeight: 700 }}>
+                                        {imp.hits} direct impacts from {imp.missileName}
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: '#4FA85F', fontWeight: 700 }}>
+                                        0 impacts (Defenses held)
+                                      </span>
+                                    )}{' '}
+                                    — {imp.damageVerdict}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <p className="wg-battlelog-detail">{evt.detail}</p>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ol>
           )}
 
