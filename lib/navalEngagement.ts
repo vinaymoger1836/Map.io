@@ -323,13 +323,20 @@ export function assessNavalFleetDefense(
     tierNumber++;
 
     const facingBefore = currentSalvo;
-    const salvoCommit = Math.max(1, Math.min(cand.weapon.salvo ?? 4, 12));
-    const roundsToFire = Math.min(cand.availableMagazine, Math.min(facingBefore * 2, salvoCommit * 2));
+    const candSpec = specOf(cand.unit, ctx);
+    const fireChannels = candSpec?.sensor?.engagements ?? 16;
+
+    // Defending combatant engages up to fire channels with 2-missile doctrine per inbound target
+    const targetsToEngage = Math.min(facingBefore, fireChannels);
+    const roundsPerTarget = Math.max(1, cand.weapon.salvo ?? 2);
+    const wantedRounds = targetsToEngage * roundsPerTarget;
+    const roundsToFire = Math.min(cand.availableMagazine, wantedRounds);
     if (roundsToFire <= 0) continue;
 
-    const effPk = cand.pk * (missileSpeedMach > 2.0 ? 0.7 : 0.85);
-    const perTargetPk = 1 - Math.pow(1 - effPk, Math.max(1, Math.round(roundsToFire / facingBefore)));
-    let kills = Math.min(facingBefore, Math.min(roundsToFire, Math.round(facingBefore * perTargetPk)));
+    const actualTargetsEngaged = Math.min(targetsToEngage, Math.max(1, Math.floor(roundsToFire / roundsPerTarget)));
+    const effPk = cand.pk * (missileSpeedMach > 2.0 ? 0.75 : 0.90);
+    const perTargetKillProb = 1 - Math.pow(1 - effPk, Math.max(1, Math.round(roundsToFire / actualTargetsEngaged)));
+    let kills = Math.min(facingBefore, Math.round(actualTargetsEngaged * perTargetKillProb));
     if (kills === 0 && roundsToFire >= 2 && effPk >= 0.7) {
       kills = Math.min(facingBefore, 1);
     }

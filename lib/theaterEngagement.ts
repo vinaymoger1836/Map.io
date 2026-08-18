@@ -600,8 +600,14 @@ export function assessTheaterRaid(
           if (!defWeapon.rangeKm || defWeapon.rangeKm <= 0) continue;
           if (defWeapon.engages && !defWeapon.engages.includes('air')) continue;
 
+          // A SAM battery can only engage targets within its actual radar detection reach (horizon-limited)
+          const targetAltM = isStandoff || task.category === 'asuw' ? 25 : 5000;
+          const detReach = effectiveDetectionKm(defSpec, targetAltM, 'medium', false);
+          const maxEngagementReachKm = Math.min(defWeapon.rangeKm, detReach ?? defWeapon.rangeKm);
+          if (maxEngagementReachKm <= 0) continue;
+
           // Check multi-waypoint geodesic crossing of this defender's envelope along the flight path
-          const cross = routeCrossing(activeEvaluationRoute, def.lngLat, defWeapon.rangeKm);
+          const cross = routeCrossing(activeEvaluationRoute, def.lngLat, maxEngagementReachKm);
           if (!cross) continue;
 
           const interceptPos = interpolateRouteDistance(activeEvaluationRoute, cross.entryKm);
