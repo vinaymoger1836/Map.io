@@ -75,7 +75,7 @@ import {
   isNavalCombatant,
   type NavalFleetAssessment,
 } from './navalEngagement';
-import { greatCirclePath } from './geo';
+import { calculateRadarAvoidanceDogleg, greatCirclePath, multiLegGreatCirclePath } from './geo';
 import {
   EMPTY_FORCES,
   canAfford,
@@ -250,7 +250,7 @@ export interface WarGames {
   /** What the defence does to it. Null until both ends are chosen. */
   assessment: Assessment | null;
 
-  /* Enhanced Engagement Configuration */
+  /* Enhanced Engagement & Multi-Waypoint Flight Planning */
   standoffEnabled: boolean;
   setStandoffEnabled: (v: boolean) => void;
   selectedWeaponIndex: number;
@@ -261,6 +261,14 @@ export interface WarGames {
   setSelectedEwEscortId: (id: string | null) => void;
   selectedSeadEscortId: string | null;
   setSelectedSeadEscortId: (id: string | null) => void;
+  raidWaypoints: [number, number][];
+  setRaidWaypoints: React.Dispatch<React.SetStateAction<[number, number][]>>;
+  addRaidWaypoint: (coord: [number, number]) => void;
+  removeRaidWaypoint: (index: number) => void;
+  clearRaidWaypoints: () => void;
+  autoAvoidanceWaypoints: () => void;
+  waypointPlacingActive: boolean;
+  setWaypointPlacingActive: (active: boolean) => void;
 
   /* Theater Multi-Phase Raid Operations */
   theaterTargetId: string | null;

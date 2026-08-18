@@ -47,6 +47,8 @@ export const WAR_LAYERS = [
   'wg-envelope-hit',
   'wg-raid-line',
   'wg-raid-head',
+  'wg-raid-waypoint-circle',
+  'wg-raid-waypoint-label',
   'wg-playback-trail',
   'wg-playback-interceptor',
   'wg-playback-effect-pulse',
@@ -289,13 +291,55 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
       id: 'wg-raid-head',
       type: 'circle',
       source: 'wg-raid',
-      filter: ['==', ['geometry-type'], 'Point'],
+      filter: ['==', ['get', 'kind'], 'target'],
       layout: { visibility: 'none' },
       paint: {
         'circle-radius': 5,
         'circle-color': 'rgba(0,0,0,0)',
         'circle-stroke-color': ['get', 'color'],
         'circle-stroke-width': 2,
+      },
+    },
+    firstSymbol
+  );
+
+  // Waypoint pins along the dogleg route
+  add(
+    {
+      id: 'wg-raid-waypoint-circle',
+      type: 'circle',
+      source: 'wg-raid',
+      filter: ['==', ['get', 'kind'], 'waypoint'],
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': 6,
+        'circle-color': '#0F1A24',
+        'circle-stroke-color': ['coalesce', ['get', 'color'], '#4DD0E1'],
+        'circle-stroke-width': 2,
+      },
+    },
+    firstSymbol
+  );
+
+  add(
+    {
+      id: 'wg-raid-waypoint-label',
+      type: 'symbol',
+      source: 'wg-raid',
+      filter: ['==', ['get', 'kind'], 'waypoint'],
+      layout: {
+        visibility: 'none',
+        'text-field': ['get', 'label'],
+        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+        'text-size': 10,
+        'text-offset': [0, -1.3],
+        'text-anchor': 'bottom',
+        'text-allow-overlap': true,
+      },
+      paint: {
+        'text-color': '#FFFFFF',
+        'text-halo-color': '#000000',
+        'text-halo-width': 1.5,
       },
     },
     firstSymbol
@@ -608,13 +652,14 @@ export interface RaidPathSpec {
   munition?: [number, number][];
   releasePoint?: [number, number];
   targetPoint: [number, number];
+  waypoints?: [number, number][];
   color: string;
   munitionColor?: string;
 }
 
 /**
  * Draws the raid's path, or clears it.
- * Supports single continuous paths or multi-phase standoff ingress + munition runs.
+ * Supports single continuous paths, multi-leg waypoint doglegs, or multi-phase standoff ingress + munition runs.
  */
 export function setRaidPath(
   map: MLMap,
@@ -642,7 +687,7 @@ export function setRaidPath(
         },
         {
           type: 'Feature',
-          properties: { color },
+          properties: { color, kind: 'target' },
           geometry: { type: 'Point', coordinates: coords[coords.length - 1] },
         },
       ],
@@ -653,7 +698,7 @@ export function setRaidPath(
   const specs = (Array.isArray(pathData) ? pathData : [pathData]) as RaidPathSpec[];
   const features: Array<{
     type: 'Feature';
-    properties: { color: string; kind?: string };
+    properties: { color: string; kind?: string; label?: string };
     geometry: { type: 'LineString' | 'Point'; coordinates: [number, number][] | [number, number] };
   }> = [];
 
@@ -663,6 +708,17 @@ export function setRaidPath(
         type: 'Feature',
         properties: { color: spec.color, kind: 'ingress' },
         geometry: { type: 'LineString', coordinates: spec.ingress },
+      });
+    }
+
+    // Render Waypoint pins
+    if (spec.waypoints && spec.waypoints.length > 0) {
+      spec.waypoints.forEach((wp, wpIdx) => {
+        features.push({
+          type: 'Feature',
+          properties: { color: spec.color, kind: 'waypoint', label: `WP ${wpIdx + 1}` },
+          geometry: { type: 'Point', coordinates: wp },
+        });
       });
     }
 
