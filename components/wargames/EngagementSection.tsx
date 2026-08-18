@@ -23,7 +23,7 @@ import {
 import { distanceKm } from '@/lib/geo';
 import { maxMunitionCapacity, standoffWeapons, TARGET_LABEL } from '@/lib/specs';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
-import type { NavalFleetAssessment } from '@/lib/navalEngagement';
+import type { NavalFleetAssessment, NavalAswAssessment, NavalAssessment } from '@/lib/navalEngagement';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -185,6 +185,113 @@ function NavalFleetDefenseView({ nav }: { nav: NavalFleetAssessment }) {
   );
 }
 
+function NavalAswDefenseView({ asw }: { asw: NavalAswAssessment }) {
+  const { sonarProfile, torpedoReport } = asw;
+  const isIntact = asw.targetCasualty === 'intact';
+  const isDamaged = asw.targetCasualty === 'flooding_controlled' || asw.targetCasualty === 'sonar_dome_damaged';
+  const casualtyColor = isIntact ? '#4FA85F' : isDamaged ? '#E8833A' : '#D9534F';
+
+  return (
+    <div className="wg-tactical-card" style={{ marginTop: '10px', background: 'rgba(10, 24, 38, 0.9)', borderColor: '#00BCD4' }}>
+      <div className="wg-tactical-title">
+        <span style={{ color: '#00BCD4', fontWeight: 700 }}>🌊 Subsurface Anti-Submarine Warfare (ASW) Console</span>
+        <span className="wg-tag" style={{ background: '#00BCD4', color: '#000000' }}>
+          Acoustic & Torpedo
+        </span>
+      </div>
+
+      <div className="wg-tactical-body">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
+          <span>ASW Hunter: <strong>{asw.hunterLabel}</strong></span>
+          <span>Target Sub: <strong style={{ color: '#FFB020' }}>{asw.targetLabel}</strong></span>
+        </div>
+
+        {/* Acoustic Bathymetry & Sensor Cross-Section */}
+        <div
+          style={{
+            background: 'linear-gradient(180deg, rgba(0, 188, 212, 0.08) 0%, rgba(2, 35, 60, 0.4) 40%, rgba(1, 15, 30, 0.9) 100%)',
+            border: '1px solid rgba(0, 188, 212, 0.25)',
+            borderRadius: '4px',
+            padding: '8px',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#4DD0E1' }}>
+              📡 Ocean Acoustic Profile & Thermocline
+            </span>
+            <span
+              className="wg-tag"
+              style={{
+                fontSize: '9px',
+                background: sonarProfile.acousticDetectionConfidencePct >= 70 ? 'rgba(79, 168, 95, 0.25)' : 'rgba(232, 131, 58, 0.25)',
+                color: sonarProfile.acousticDetectionConfidencePct >= 70 ? '#4FA85F' : '#E8833A',
+              }}
+            >
+              {sonarProfile.acousticDetectionConfidencePct}% Track Confidence
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '10px', color: 'var(--paper-dim)' }}>
+            <div>Active Sensor: <strong style={{ color: 'var(--paper)' }}>{sonarProfile.hunterSensorLabel}</strong></div>
+            <div>Acoustic State: <strong style={{ color: 'var(--paper)' }}>{sonarProfile.targetAcousticLabel}</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Thermocline Gradient: <strong>{sonarProfile.thermoclineDepthM}m Depth</strong></span>
+              <span>Sub Depth: <strong style={{ color: '#00BCD4' }}>{sonarProfile.targetSubmarineDepthM}m</strong> ({sonarProfile.isTargetBelowLayer ? 'Below Layer' : 'Surface Duct'})</span>
+            </div>
+          </div>
+
+          {sonarProfile.layerShadowAdvantage && (
+            <div style={{ marginTop: '5px', padding: '3px 6px', background: 'rgba(186, 104, 200, 0.15)', border: '1px solid #BA68C8', borderRadius: '3px', fontSize: '9.5px', color: '#BA68C8' }}>
+              ⚠️ Thermal Shadow Zone: Sound rays deflected upward by temperature gradient.
+            </div>
+          )}
+        </div>
+
+        {/* Torpedo Defense & Countermeasures Report */}
+        <div className="wg-tactical-card" style={{ padding: '6px 8px', background: 'rgba(255,255,255,0.03)', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+            <span style={{ fontWeight: 700, color: '#FFB020' }}>
+              🎯 {torpedoReport.torpedoName}
+            </span>
+            <span className="wg-tag" style={{ fontSize: '9px' }}>
+              {torpedoReport.torpedoSpeedKnots} kts speed
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', marginTop: '4px', color: 'var(--paper-dim)' }}>
+            <span>Salvo: <strong>{torpedoReport.torpedoesLaunched} Torpedoes</strong></span>
+            <span>
+              {torpedoReport.torpedoesDecoyed > 0 && <strong style={{ color: '#BA68C8' }}>{torpedoReport.torpedoesDecoyed} Decoyed </strong>}
+              {torpedoReport.thermalLayerEvasions > 0 && <strong style={{ color: '#4DD0E1' }}>{torpedoReport.thermalLayerEvasions} Evaded </strong>}
+              <strong style={{ color: casualtyColor }}>({torpedoReport.torpedoImpacts} Impacts)</strong>
+            </span>
+          </div>
+
+          <p style={{ margin: '3px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+            {torpedoReport.details}
+          </p>
+        </div>
+
+        {/* Submarine Damage Status Banner */}
+        <div style={{ padding: '6px 8px', borderRadius: '4px', background: isIntact ? 'rgba(79, 168, 95, 0.15)' : isDamaged ? 'rgba(232, 131, 58, 0.18)' : 'rgba(217, 83, 79, 0.22)', border: `1px solid ${casualtyColor}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: casualtyColor }}>
+              Subsurface Pressure Hull: {asw.targetCasualty.replace(/_/g, ' ').toUpperCase()}
+            </span>
+            <span className="wg-tag" style={{ background: casualtyColor, color: '#000000', fontWeight: 700 }}>
+              {torpedoReport.torpedoImpacts === 0 ? '0 Hits (Evaded)' : `${torpedoReport.torpedoImpacts} Hydrostatic Hits`}
+            </span>
+          </div>
+          <p style={{ margin: '3px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+            {asw.verdict}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
   const [showLayers, setShowLayers] = useState(false);
   const share = attrition(a);
@@ -193,9 +300,13 @@ function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
 
   return (
     <>
-      {/* Layered Fleet Air Defense View when target is a Naval Combatant */}
+      {/* Layered Fleet Air Defense (ASuW) or Subsurface (ASW) View when target is a Naval / Subsurface Combatant */}
       {wg.navalAssessment && (
-        <NavalFleetDefenseView nav={wg.navalAssessment} />
+        wg.navalAssessment.kind === 'asuw' ? (
+          <NavalFleetDefenseView nav={wg.navalAssessment} />
+        ) : (
+          <NavalAswDefenseView asw={wg.navalAssessment} />
+        )
       )}
 
       {/* Prominent After-Action Report (AAR) Banner */}

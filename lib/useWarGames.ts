@@ -71,9 +71,9 @@ import {
   type CampaignTurn,
 } from './campaign';
 import {
-  assessNavalFleetDefense,
+  assessNavalCombat,
   isNavalCombatant,
-  type NavalFleetAssessment,
+  type NavalAssessment,
 } from './navalEngagement';
 import {
   calculateRadarAvoidanceDogleg,
@@ -319,8 +319,8 @@ export interface WarGames {
   autoGenerateRetaliationPlan: () => void;
   resetCampaign: () => void;
 
-  /* Layered Naval Fleet Air Defense */
-  navalAssessment: NavalFleetAssessment | null;
+  /* Multi-Layered Naval ASuW & Subsurface ASW Combat */
+  navalAssessment: NavalAssessment | null;
 
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
@@ -1691,9 +1691,9 @@ export function useWarGames({
     setCampaignTurns([]);
   }, []);
 
-  /* ---------------- naval fleet defense ---------------- */
+  /* ---------------- naval ASuW & subsurface ASW combat ---------------- */
 
-  const navalAssessment = useMemo<NavalFleetAssessment | null>(() => {
+  const navalAssessment = useMemo<NavalAssessment | null>(() => {
     if (!raidFromId || !raidToId) return null;
     const attacker = board.units.find((u) => u.id === raidFromId);
     const target = board.units.find((u) => u.id === raidToId);
@@ -1706,9 +1706,9 @@ export function useWarGames({
     const salvo = salvoSize ?? (unitCount * 4);
     const states = theaterAssessment?.unitFinalStates ?? new Map();
 
-    return assessNavalFleetDefense(
-      target,
+    return assessNavalCombat(
       attacker,
+      target,
       selectedWeaponIndex,
       salvo,
       board.units,

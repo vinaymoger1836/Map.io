@@ -157,7 +157,24 @@ export interface BoardContext {
 /* ------------------------------------------------------------------ */
 
 const isStrikeType = (typeId: string): boolean =>
-  ['strike', 'bomber', 'fighter', 'uav', 'attack-heli', 'missile', 'silo', 'destroyer', 'cruiser', 'corvette', 'submarine'].includes(typeId);
+  [
+    'strike',
+    'bomber',
+    'fighter',
+    'uav',
+    'attack-heli',
+    'missile',
+    'silo',
+    'destroyer',
+    'cruiser',
+    'frigate',
+    'corvette',
+    'carrier-ship',
+    'carrier',
+    'submarine',
+    'ssbn',
+    'mpa',
+  ].includes(typeId);
 
 export const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | undefined => {
   if (unit.kind === 'unit') {
