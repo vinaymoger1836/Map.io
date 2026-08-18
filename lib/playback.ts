@@ -16,10 +16,12 @@ import {
   interpolateRouteDistance,
   multiLegGreatCirclePath,
   routeTotalDistanceKm,
+  splitRouteAtDistance,
 } from './geo';
 import { type Assessment } from './engagement';
 import { type TheaterAssessment } from './theaterEngagement';
 import { type DeployedUnit } from './warGames';
+import { domainOf } from './specs';
 
 /* ------------------------------------------------------------------ */
 /* Types & Interfaces                                                  */
@@ -37,6 +39,9 @@ export interface TimelineSegment {
   targetLngLat: [number, number];
   releaseLngLat?: [number, number];
   routePoints?: [number, number][];
+  isAirPlatform?: boolean;
+  ingressRoute?: [number, number][];
+  munitionRoute?: [number, number][];
 
   // Time boundaries in seconds
   startTimeSec: number;
@@ -136,26 +141,66 @@ export function formatTimeSec(totalSec: number): string {
  */
 export function buildRaidPlaybackModel(assessment: Assessment, boardUnits: DeployedUnit[] = []): PlaybackModel {
   const totalKm = assessment.distanceKm;
-  const speedKmh = assessment.speedKmh || 900;
-  const isStandoff = Boolean(assessment.raid.standoff?.enabled);
-  const releaseKm = assessment.releaseKm ?? totalKm;
-  const standoffRange = totalKm - releaseKm;
-
-  const aircraftSpeedKmh = speedKmh;
-  const munitionSpeedKmh = assessment.raid.standoff?.munitionSpeedKmh ?? 950;
-
-  const ingressSec = releaseKm > 0 ? (releaseKm / aircraftSpeedKmh) * 3600 : 0;
-  const munitionSec = isStandoff && standoffRange > 0 ? (standoffRange / munitionSpeedKmh) * 3600 : (totalKm / speedKmh) * 3600;
-  const impactTimeSec = isStandoff ? ingressSec + munitionSec : ingressSec || munitionSec;
-  const egressEndTimeSec = isStandoff && releaseKm > 0 ? ingressSec * 2 : impactTimeSec;
-
-  const totalDurationSec = Math.max(impactTimeSec + 30, egressEndTimeSec);
-
   const routePoints =
     assessment.routePoints ??
     (assessment.raid.waypoints?.length
       ? [assessment.raid.from, ...assessment.raid.waypoints, assessment.raid.to]
       : [assessment.raid.from, assessment.raid.to]);
+
+  const isAirAttacker =
+    assessment.raid.spec.typeId === 'fighter' ||
+    assessment.raid.spec.typeId === 'strike' ||
+    assessment.raid.spec.typeId === 'bomber' ||
+    assessment.raid.spec.typeId === 'drone' ||
+    assessment.raid.spec.typeId === 'ew' ||
+    domainOf(assessment.raid.spec) === 'air';
+
+  const isStandoff = isAirAttacker && Boolean(assessment.raid.standoff?.enabled);
+  const releaseKm = assessment.releaseKm ?? (isStandoff ? Math.max(0, totalKm - (assessment.raid.standoff?.rangeKm ?? 0)) : totalKm);
+  const standoffRange = totalKm - releaseKm;
+
+  const aircraftSpeedKmh = assessment.speedKmh || 900;
+  const munitionSpeedKmh = assessment.raid.standoff?.munitionSpeedKmh ?? 950;
+
+  let ingressRoute: [number, number][] = [];
+  let munitionRoute: [number, number][] = [];
+
+  let ingressSec = 0;
+  let munitionSec = 0;
+  let releaseTimeSec = 0;
+  let impactTimeSec = 0;
+  let egressEndTimeSec = 0;
+
+  if (isAirAttacker) {
+    if (isStandoff && releaseKm > 0 && releaseKm < totalKm) {
+      const split = splitRouteAtDistance(routePoints, releaseKm);
+      ingressRoute = split.before;
+      munitionRoute = split.after;
+      ingressSec = (releaseKm / aircraftSpeedKmh) * 3600;
+      munitionSec = standoffRange > 0 ? (standoffRange / munitionSpeedKmh) * 3600 : 0;
+      releaseTimeSec = ingressSec;
+      impactTimeSec = ingressSec + munitionSec;
+      egressEndTimeSec = ingressSec * 2;
+    } else {
+      ingressRoute = routePoints;
+      munitionRoute = [];
+      ingressSec = (totalKm / aircraftSpeedKmh) * 3600;
+      releaseTimeSec = ingressSec;
+      impactTimeSec = ingressSec;
+      egressEndTimeSec = impactTimeSec;
+    }
+  } else {
+    // Ship / Submarine / Ground battery
+    ingressRoute = [];
+    munitionRoute = routePoints;
+    ingressSec = 0;
+    releaseTimeSec = 0;
+    munitionSec = (totalKm / munitionSpeedKmh) * 3600;
+    impactTimeSec = munitionSec;
+    egressEndTimeSec = munitionSec;
+  }
+
+  const totalDurationSec = Math.max(impactTimeSec + 30, egressEndTimeSec);
 
   const interceptions: TimelineSegment['interceptions'] = [];
   const events: PlaybackEvent[] = [];
@@ -212,10 +257,13 @@ export function buildRaidPlaybackModel(assessment: Assessment, boardUnits: Deplo
     weaponName: assessment.raid.standoff?.weaponName ?? assessment.raid.spec.name,
     originLngLat: assessment.raid.from,
     targetLngLat: assessment.raid.to,
-    releaseLngLat: assessment.releaseLngLat,
+    releaseLngLat: isAirAttacker ? assessment.releaseLngLat : undefined,
     routePoints,
+    isAirPlatform: isAirAttacker,
+    ingressRoute,
+    munitionRoute,
     startTimeSec: 0,
-    releaseTimeSec: ingressSec,
+    releaseTimeSec,
     impactTimeSec,
     egressEndTimeSec,
     salvoSize: assessment.standoffLaunched ?? assessment.raid.count,
@@ -371,19 +419,16 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
     const isStandoff = Boolean(releaseLngLat);
     const launchCoord = isStandoff && releaseLngLat ? releaseLngLat : originLngLat;
 
-    // 1. Aircraft Ingress / Egress
-    if (clampedTime <= seg.egressEndTimeSec) {
+    // 1. Aircraft Ingress / Egress (Only for airborne strike platforms)
+    const isAir = seg.isAirPlatform ?? true;
+    const ingressRoute = seg.ingressRoute && seg.ingressRoute.length >= 2 ? seg.ingressRoute : (isAir ? seg.routePoints : undefined);
+
+    if (isAir && ingressRoute && ingressRoute.length >= 2 && clampedTime <= seg.egressEndTimeSec) {
       const ingressTotalSec = seg.releaseTimeSec - seg.startTimeSec;
 
       if (clampedTime <= seg.releaseTimeSec && ingressTotalSec > 0) {
         // Ingressing towards release point / target along multi-leg flight path
         const ingressFrac = (clampedTime - seg.startTimeSec) / ingressTotalSec;
-        const ingressRoute =
-          seg.routePoints && seg.routePoints.length >= 2
-            ? isStandoff && releaseLngLat
-              ? [...seg.routePoints.slice(0, -1), releaseLngLat]
-              : seg.routePoints
-            : [originLngLat, isStandoff && releaseLngLat ? releaseLngLat : targetLngLat];
         const totalIngressDist = routeTotalDistanceKm(ingressRoute);
         const currentDist = ingressFrac * totalIngressDist;
         const pos = interpolateRouteDistance(ingressRoute, currentDist);
@@ -416,7 +461,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         // Egressing safely back to origin
         const egressTotalSec = seg.egressEndTimeSec - seg.releaseTimeSec;
         const egressFrac = (clampedTime - seg.releaseTimeSec) / egressTotalSec;
-        const egressRoute = [releaseLngLat, ...(seg.routePoints ? [...seg.routePoints].reverse().slice(1) : [originLngLat])];
+        const egressRoute = [...ingressRoute].reverse();
         const totalEgressDist = routeTotalDistanceKm(egressRoute);
         const pos = interpolateRouteDistance(egressRoute, egressFrac * totalEgressDist);
         const currentCoord = pos.coord;
@@ -444,6 +489,13 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       for (const ic of seg.interceptions) {
         totalKills += ic.kills;
       }
+
+      const munitionBaseRoute =
+        seg.munitionRoute && seg.munitionRoute.length >= 2
+          ? seg.munitionRoute
+          : seg.routePoints && seg.routePoints.length >= 2
+          ? seg.routePoints
+          : [launchCoord, targetLngLat];
 
       // Map individual missiles in sequential ripple stream directly from the launching platform
       for (let m = 0; m < salvoCount; m++) {
@@ -480,15 +532,12 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         const clampedFrac = Math.min(1, Math.max(0, progress));
 
         // Core path along attack corridor
-        const destCoord = isIntercepted ? killCoord : targetLngLat;
-        const munitionRoute =
-          seg.routePoints && seg.routePoints.length > 2
-            ? isStandoff && releaseLngLat
-              ? [launchCoord, ...seg.routePoints.slice(1, -1), destCoord]
-              : [launchCoord, ...seg.routePoints.slice(1, -1), destCoord]
-            : [launchCoord, destCoord];
-        const mTotalDist = routeTotalDistanceKm(munitionRoute);
-        const mPos = interpolateRouteDistance(munitionRoute, clampedFrac * mTotalDist);
+        const activeMunitionRoute = isIntercepted
+          ? [...munitionBaseRoute.slice(0, -1), killCoord]
+          : munitionBaseRoute;
+
+        const mTotalDist = routeTotalDistanceKm(activeMunitionRoute);
+        const mPos = interpolateRouteDistance(activeMunitionRoute, clampedFrac * mTotalDist);
         const corePoint = mPos.coord;
         const mHeading = mPos.heading;
         const mPerpBearing = (mHeading + 90) % 360;
@@ -514,7 +563,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
 
         // Individual Munition Trail from launch platform to current location
         const mTrail = multiLegGreatCirclePath([
-          ...munitionRoute.slice(0, mPos.legIndex + 1),
+          ...activeMunitionRoute.slice(0, mPos.legIndex + 1),
           mCurrentCoord,
         ]);
         trails.push({

@@ -75,7 +75,12 @@ import {
   isNavalCombatant,
   type NavalFleetAssessment,
 } from './navalEngagement';
-import { calculateRadarAvoidanceDogleg, greatCirclePath, multiLegGreatCirclePath } from './geo';
+import {
+  calculateRadarAvoidanceDogleg,
+  greatCirclePath,
+  multiLegGreatCirclePath,
+  splitRouteAtDistance,
+} from './geo';
 import {
   EMPTY_FORCES,
   canAfford,
@@ -1692,10 +1697,13 @@ export function useWarGames({
     const color = board.nations[board.units.find((u) => u.id === raidFromId)?.iso ?? '']?.color ?? '#E4B363';
     const waypoints = assessment.raid.waypoints ?? [];
 
-    if (assessment.releaseLngLat) {
-      const ingressPoints = [from, ...waypoints, assessment.releaseLngLat];
-      const ingress = multiLegGreatCirclePath(ingressPoints, 32);
-      const munition = greatCirclePath(assessment.releaseLngLat, to, 48);
+    const fullRoute: [number, number][] =
+      assessment.routePoints ?? (waypoints.length > 0 ? [from, ...waypoints, to] : [from, to]);
+
+    if (assessment.releaseLngLat && assessment.releaseKm && assessment.releaseKm > 0 && assessment.releaseKm < assessment.distanceKm) {
+      const split = splitRouteAtDistance(fullRoute, assessment.releaseKm);
+      const ingress = multiLegGreatCirclePath(split.before, 32);
+      const munition = multiLegGreatCirclePath(split.after, 32);
       setRaidPath(map, {
         ingress,
         munition,
@@ -1706,8 +1714,7 @@ export function useWarGames({
         munitionColor: '#FFB020',
       });
     } else {
-      const fullPoints = [from, ...waypoints, to];
-      const ingress = multiLegGreatCirclePath(fullPoints, 32);
+      const ingress = multiLegGreatCirclePath(fullRoute, 32);
       setRaidPath(map, {
         ingress,
         targetPoint: to,

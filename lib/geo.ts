@@ -242,6 +242,32 @@ export function interpolateRouteDistance(
 }
 
 /**
+ * Splits a multi-waypoint route at a specific cumulative distance along the path into
+ * two sub-routes: `before` (ingress up to split) and `after` (continuation from split).
+ */
+export function splitRouteAtDistance(
+  points: [number, number][],
+  splitDistanceKm: number
+): { before: [number, number][]; after: [number, number][] } {
+  if (points.length < 2) {
+    return { before: points, after: points };
+  }
+  const total = routeTotalDistanceKm(points);
+  if (splitDistanceKm <= 0) {
+    return { before: [points[0]], after: points };
+  }
+  if (splitDistanceKm >= total) {
+    return { before: points, after: [points[points.length - 1]] };
+  }
+
+  const { coord, legIndex } = interpolateRouteDistance(points, splitDistanceKm);
+  const before: [number, number][] = [...points.slice(0, legIndex + 1), coord];
+  const after: [number, number][] = [coord, ...points.slice(legIndex + 1)];
+
+  return { before, after };
+}
+
+/**
  * High-resolution great-circle polyline passing through all multi-waypoint legs,
  * preserving accurate curvature across high-latitude map projections.
  */

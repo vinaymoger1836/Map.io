@@ -283,20 +283,37 @@ function lossesFrom(
 /* ------------------------------------------------------------------ */
 
 export function assess(raid: Raid, defenders: Defender[]): Assessment {
-  const threat = threatClassOf(raid.spec);
+  const isAirAttacker =
+    raid.spec.typeId === 'fighter' ||
+    raid.spec.typeId === 'strike' ||
+    raid.spec.typeId === 'bomber' ||
+    raid.spec.typeId === 'drone' ||
+    raid.spec.typeId === 'ew' ||
+    domainOf(raid.spec) === 'air';
+
+  const threat: TargetClass = isAirAttacker
+    ? threatClassOf(raid.spec)
+    : raid.standoff?.rangeKm && raid.standoff.rangeKm > 1000
+    ? 'ballistic-short'
+    : 'air';
+
   const routePoints: [number, number][] =
     raid.waypoints && raid.waypoints.length > 0
       ? [raid.from, ...raid.waypoints, raid.to]
       : [raid.from, raid.to];
   const totalKm = routeTotalDistanceKm(routePoints);
-  const isStandoff = Boolean(raid.standoff?.enabled && raid.standoff.rangeKm > 0);
+  const isStandoff = isAirAttacker && Boolean(raid.standoff?.enabled && raid.standoff.rangeKm > 0);
   const standoffRange = isStandoff ? raid.standoff!.rangeKm : 0;
-  const releaseKm = isStandoff ? Math.max(0, totalKm - standoffRange) : totalKm;
+  const releaseKm = isAirAttacker
+    ? isStandoff
+      ? Math.max(0, totalKm - standoffRange)
+      : totalKm
+    : 0;
   const releaseResult = interpolateRouteDistance(routePoints, releaseKm);
-  const releaseLngLat = isStandoff ? releaseResult.coord : undefined;
+  const releaseLngLat = isAirAttacker && isStandoff ? releaseResult.coord : undefined;
 
-  const rawSpeed = speedOf(raid.spec);
-  const speedKmh = rawSpeed ?? (isStandoff ? raid.standoff?.munitionSpeedKmh ?? 900 : null);
+  const rawSpeed = isAirAttacker ? speedOf(raid.spec) : null;
+  const speedKmh = rawSpeed ?? (raid.standoff?.munitionSpeedKmh ?? 950);
 
   const defaultOutcome: BattleOutcome = {
     winner: 'unopposed',
@@ -403,7 +420,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
             weapon,
             index,
             phase: isStandoff ? 'aircraft-ingress' : 'direct',
-            targetType: 'aircraft',
+            targetType: isAirAttacker ? 'aircraft' : 'standoff-munition',
             entryKm: cross.entryKm,
             exitKm: passExit,
             nominalEntryKm: cross.entryKm,
@@ -429,7 +446,7 @@ export function assess(raid: Raid, defenders: Defender[]): Assessment {
           weapon,
           index,
           phase: isStandoff ? 'aircraft-ingress' : 'direct',
-          targetType: 'aircraft',
+          targetType: isAirAttacker ? 'aircraft' : 'standoff-munition',
           entryKm: opensAt,
           exitKm: passExit,
           nominalEntryKm: cross.entryKm,
