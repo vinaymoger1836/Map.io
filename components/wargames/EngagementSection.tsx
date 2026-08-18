@@ -624,6 +624,112 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
           }
         />
 
+        {/* Multi-Waypoint Flight Corridor & Radar Avoidance Planner */}
+        {attacker && target && (
+          <div className="wg-tactical-card" style={{ marginTop: '10px' }}>
+            <div className="wg-tactical-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 700, color: '#4DD0E1' }}>
+                📍 Flight Route & Radar Avoidance
+              </span>
+              {wg.raidWaypoints.length > 0 && (
+                <span className="wg-tag" style={{ background: 'rgba(77, 208, 225, 0.2)', color: '#4DD0E1' }}>
+                  {wg.raidWaypoints.length} {wg.raidWaypoints.length === 1 ? 'Waypoint' : 'Waypoints'} (Dogleg)
+                </span>
+              )}
+            </div>
+
+            <div className="wg-tactical-body" style={{ marginTop: '6px' }}>
+              <p style={{ margin: '0 0 6px 0', fontSize: '11px', color: 'var(--paper-dim)' }}>
+                Route strike packages around hostile SAM & radar rings to penetrate via blind spots.
+              </p>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  className="wg-btn"
+                  style={{
+                    flex: 1,
+                    padding: '5px 8px',
+                    fontSize: '11px',
+                    background: 'rgba(77, 208, 225, 0.15)',
+                    borderColor: 'rgba(77, 208, 225, 0.4)',
+                    color: '#4DD0E1',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => wg.autoAvoidanceWaypoints()}
+                  title="Detects SAM/radar threats intersecting direct line and computes optimal lateral standoff doglegs"
+                >
+                  ⚡ Auto Radar Avoidance
+                </button>
+
+                <button
+                  type="button"
+                  className={`wg-btn ${wg.waypointPlacingActive ? 'accent' : ''}`}
+                  style={{ padding: '5px 10px', fontSize: '11px' }}
+                  onClick={() => wg.setWaypointPlacingActive(!wg.waypointPlacingActive)}
+                >
+                  {wg.waypointPlacingActive ? '✓ Click Map to Drop WP' : '+ Click Map to Add WP'}
+                </button>
+
+                {wg.raidWaypoints.length > 0 && (
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ padding: '5px 8px', fontSize: '11px', color: '#D9534F' }}
+                    onClick={() => wg.clearRaidWaypoints()}
+                    title="Reset to straight direct flight corridor"
+                  >
+                    ↺ Reset Direct
+                  </button>
+                )}
+              </div>
+
+              {/* Waypoint List Sequence */}
+              {wg.raidWaypoints.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(0,0,0,0.25)', padding: '6px', borderRadius: '4px' }}>
+                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#4FA85F', fontWeight: 700 }}>● Origin:</span> {attacker.lngLat[1].toFixed(2)}°N, {attacker.lngLat[0].toFixed(2)}°E
+                  </div>
+
+                  {wg.raidWaypoints.map((wp, wpIdx) => (
+                    <div
+                      key={wpIdx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '11px',
+                        padding: '3px 6px',
+                        background: 'rgba(77, 208, 225, 0.08)',
+                        border: '1px solid rgba(77, 208, 225, 0.2)',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      <span style={{ color: '#4DD0E1', fontWeight: 600 }}>
+                        WP {wpIdx + 1}: {wp[1].toFixed(2)}°N, {wp[0].toFixed(2)}°E
+                      </span>
+                      <button
+                        type="button"
+                        className="wg-comp-del"
+                        style={{ width: '16px', height: '16px', fontSize: '12px' }}
+                        onClick={() => wg.removeRaidWaypoint(wpIdx)}
+                        title="Remove waypoint"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#D9534F', fontWeight: 700 }}>● Target:</span> {target.lngLat[1].toFixed(2)}°N, {target.lngLat[0].toFixed(2)}°E
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Stand-Off Weapon Controls & Salvo Sizing */}
         {availableStandoff.length > 0 && (
           <div className="wg-tactical-card">

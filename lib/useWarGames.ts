@@ -392,6 +392,11 @@ export function useWarGames({
   const [salvoSize, setSalvoSize] = useState<number | null>(null);
   const [selectedEwEscortId, setSelectedEwEscortId] = useState<string | null>(null);
   const [selectedSeadEscortId, setSelectedSeadEscortId] = useState<string | null>(null);
+  const [raidWaypoints, setRaidWaypoints] = useState<[number, number][]>([]);
+  const [waypointPlacingActive, setWaypointPlacingActive] = useState<boolean>(false);
+
+  const waypointPlacingRef = useRef(waypointPlacingActive);
+  waypointPlacingRef.current = waypointPlacingActive;
 
   /* Theater Raid State */
   const [theaterTargetId, setTheaterTargetId] = useState<string | null>(null);
@@ -1163,6 +1168,11 @@ export function useWarGames({
       // A click that ended a drag is a move, not a selection.
       if (drag?.moved) return;
 
+      if (waypointPlacingRef.current) {
+        setRaidWaypoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
+        return;
+      }
+
       if (toolRef.current === 'deploy') {
         deploy([e.lngLat.lng, e.lngLat.lat]);
         return;
@@ -1319,8 +1329,9 @@ export function useWarGames({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !active) return;
-    map.getCanvas().style.cursor = tool === 'deploy' ? 'crosshair' : tool === 'paint' ? 'copy' : '';
-  }, [tool, active, mapRef]);
+    map.getCanvas().style.cursor =
+      waypointPlacingActive || tool === 'deploy' ? 'crosshair' : tool === 'paint' ? 'copy' : '';
+  }, [tool, waypointPlacingActive, active, mapRef]);
 
   const selectedUnit = useMemo(
     () => board.units.find((u) => u.id === selectedId) ?? null,
@@ -1344,6 +1355,42 @@ export function useWarGames({
     [board.units, boardContext]
   );
 
+  const addRaidWaypoint = useCallback((coord: [number, number]) => {
+    setRaidWaypoints((prev) => [...prev, coord]);
+  }, []);
+
+  const removeRaidWaypoint = useCallback((index: number) => {
+    setRaidWaypoints((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const clearRaidWaypoints = useCallback(() => {
+    setRaidWaypoints([]);
+  }, []);
+
+  const autoAvoidanceWaypoints = useCallback(() => {
+    const attacker = board.units.find((u) => u.id === raidFromId);
+    const target = board.units.find((u) => u.id === raidToId);
+    if (!attacker || !target) return;
+
+    const defenders = defendersFrom(board.units, attacker.iso, boardContext);
+    const threatZones: { at: [number, number]; radiusKm: number }[] = [];
+
+    for (const def of defenders) {
+      const maxReach = Math.max(
+        def.spec.sensor?.detectionKm ?? 0,
+        ...(def.spec.weapons ?? []).map((w) => w.rangeKm ?? 0)
+      );
+      if (maxReach > 30) {
+        threatZones.push({ at: def.at, radiusKm: maxReach });
+      }
+    }
+
+    const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones);
+    if (doglegs.length > 0) {
+      setRaidWaypoints(doglegs);
+    }
+  }, [board.units, raidFromId, raidToId, boardContext]);
+
   const assessment = useMemo(() => {
     const attacker = board.units.find((u) => u.id === raidFromId);
     const target = board.units.find((u) => u.id === raidToId);
@@ -1364,6 +1411,7 @@ export function useWarGames({
         salvoSize: salvoSize ?? undefined,
         ewUnitId: selectedEwEscortId,
         seadUnitId: selectedSeadEscortId,
+        waypoints: raidWaypoints.length > 0 ? raidWaypoints : undefined,
       }
     );
     if (!raid) return null;
@@ -1372,6 +1420,7 @@ export function useWarGames({
     board.units,
     raidFromId,
     raidToId,
+    raidWaypoints,
     boardContext,
     coverage.targetAltM,
     standoffEnabled,
@@ -1641,22 +1690,32 @@ export function useWarGames({
     }
     const { from, to } = assessment.raid;
     const color = board.nations[board.units.find((u) => u.id === raidFromId)?.iso ?? '']?.color ?? '#E4B363';
+    const waypoints = assessment.raid.waypoints ?? [];
 
     if (assessment.releaseLngLat) {
-      const ingress = greatCirclePath(from, assessment.releaseLngLat, 64);
-      const munition = greatCirclePath(assessment.releaseLngLat, to, 64);
+      const ingressPoints = [from, ...waypoints, assessment.releaseLngLat];
+      const ingress = multiLegGreatCirclePath(ingressPoints, 32);
+      const munition = greatCirclePath(assessment.releaseLngLat, to, 48);
       setRaidPath(map, {
         ingress,
         munition,
         releasePoint: assessment.releaseLngLat,
         targetPoint: to,
+        waypoints,
         color,
         munitionColor: '#FFB020',
       });
     } else {
-      setRaidPath(map, greatCirclePath(from, to, 128), color);
+      const fullPoints = [from, ...waypoints, to];
+      const ingress = multiLegGreatCirclePath(fullPoints, 32);
+      setRaidPath(map, {
+        ingress,
+        targetPoint: to,
+        waypoints,
+        color,
+      });
     }
-  }, [assessment, theaterAssessment, raidFromId, board.nations, board.units, mapRef]);
+  }, [assessment, theaterAssessment, raidFromId, raidWaypoints, board.nations, board.units, mapRef]);
 
   // A raid whose ends have left the board is not a raid — and neither is one
   // aimed at its own side, which is what changing the raider to a unit of the
@@ -1744,6 +1803,14 @@ export function useWarGames({
     setSelectedEwEscortId,
     selectedSeadEscortId,
     setSelectedSeadEscortId,
+    raidWaypoints,
+    setRaidWaypoints,
+    addRaidWaypoint,
+    removeRaidWaypoint,
+    clearRaidWaypoints,
+    autoAvoidanceWaypoints,
+    waypointPlacingActive,
+    setWaypointPlacingActive,
     theaterTargetId,
     setTheaterTargetId,
     theaterAttackerIso,
