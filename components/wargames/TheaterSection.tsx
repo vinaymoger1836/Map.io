@@ -21,6 +21,8 @@ import {
   type DefensiveUmbrella,
 } from '@/lib/theaterEngagement';
 import { calculateRadarAvoidanceDogleg } from '@/lib/geo';
+import { generateTheaterAar } from '@/lib/aarReport';
+import { AarModal } from './AarModal';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -274,6 +276,12 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
   const [newSalvo, setNewSalvo] = useState<number>(4);
+  const [aarModalOpen, setAarModalOpen] = useState(false);
+
+  const theaterAarReport = useMemo(() => {
+    if (!theaterAssessment) return null;
+    return generateTheaterAar(theaterAssessment, wg.board.units, wg.board.nations);
+  }, [theaterAssessment, wg.board.units, wg.board.nations]);
 
   // Sync drafting selections with map preview
   useEffect(() => {
@@ -810,7 +818,37 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                 </ul>
               </div>
             </div>
+
+            {/* Master Theater AAR & Scenario Export Button */}
+            <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                className="wg-btn"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 10px',
+                  background: 'rgba(232, 131, 58, 0.15)',
+                  border: '1px solid #E8833A',
+                  color: '#E8833A',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+                onClick={() => setAarModalOpen(true)}
+              >
+                📋 Master Theater After-Action Intelligence Report (AAR) & Export
+              </button>
+            </div>
           </div>
+
+          {aarModalOpen && theaterAarReport && (
+            <AarModal
+              report={theaterAarReport}
+              wg={wg}
+              isOpen={aarModalOpen}
+              onClose={() => setAarModalOpen(false)}
+            />
+          )}
         </section>
       )}
 

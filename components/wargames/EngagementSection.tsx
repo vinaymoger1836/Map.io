@@ -25,6 +25,8 @@ import { maxMunitionCapacity, standoffWeapons, TARGET_LABEL } from '@/lib/specs'
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
 import type { NavalFleetAssessment, NavalAswAssessment, NavalAssessment } from '@/lib/navalEngagement';
 import type { BallisticDefenseAssessment } from '@/lib/ballisticEngagement';
+import { generateSingleRaidAar } from '@/lib/aarReport';
+import { AarModal } from './AarModal';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -402,9 +404,20 @@ function BallisticDefenseView({ bmd }: { bmd: BallisticDefenseAssessment }) {
 
 function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
   const [showLayers, setShowLayers] = useState(false);
+  const [aarModalOpen, setAarModalOpen] = useState(false);
   const share = attrition(a);
   const isStandoff = Boolean(a.raid.standoff?.enabled);
   const outcome = a.battleOutcome;
+
+  const aarReport = useMemo(() => {
+    return generateSingleRaidAar(
+      a,
+      wg.navalAssessment,
+      wg.bmdAssessment,
+      wg.board.units,
+      wg.board.nations
+    );
+  }, [a, wg.navalAssessment, wg.bmdAssessment, wg.board.units, wg.board.nations]);
 
   return (
     <>
@@ -469,7 +482,37 @@ function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
             </ul>
           </div>
         </div>
+
+        {/* AAR Intelligence Briefing Modal Button */}
+        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button
+            className="wg-btn"
+            style={{
+              fontSize: '11px',
+              padding: '4px 10px',
+              background: 'rgba(232, 131, 58, 0.15)',
+              border: '1px solid #E8833A',
+              color: '#E8833A',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+            }}
+            onClick={() => setAarModalOpen(true)}
+          >
+            📋 Master After-Action Intelligence Report (AAR) & Export
+          </button>
+        </div>
       </div>
+
+      {aarModalOpen && (
+        <AarModal
+          report={aarReport}
+          wg={wg}
+          isOpen={aarModalOpen}
+          onClose={() => setAarModalOpen(false)}
+        />
+      )}
 
       {!a.blocked && (
         <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
