@@ -10,7 +10,8 @@
  * 6. One-Click Scenario JSON Export/Import & Markdown Report Downloads
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { type ComprehensiveAarReport } from '@/lib/aarReport';
 import {
   downloadFile,
@@ -32,11 +33,16 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'munitions' | 'casualties' | 'lessons' | 'timeline' | 'io'>('summary');
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const handleCopy = async () => {
     const ok = await copyTextToClipboard(report.markdownBriefing);
@@ -115,7 +121,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
 
   const isSuccess = report.missionSuccess;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -123,9 +129,11 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
         left: 0,
         right: 0,
         bottom: 0,
+        width: '100vw',
+        height: '100vh',
         background: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(8px)',
-        zIndex: 99999,
+        zIndex: 999999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -512,6 +520,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
