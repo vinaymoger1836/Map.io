@@ -447,7 +447,7 @@ export function generateTheaterAar(
 
           defenseLayersBreakdown.push({
             defender: defenderName,
-            interceptorWeapon: `${tier.weaponName} (${tier.tierName})`,
+            interceptorWeapon: tier.tierName,
             roundsFired: rounds,
             targetMissileName: missileName,
             interceptedCount: intercepted,

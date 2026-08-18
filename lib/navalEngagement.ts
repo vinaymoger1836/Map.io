@@ -231,26 +231,6 @@ export function assessNavalFleetDefense(
   const escorts = discoverFleetEscorts(flagship, allUnits);
   const allFleetUnits = [flagship, ...escorts];
 
-  // Check AEW (E-2D Hawkeye) & CAP in theater
-  const sameNationUnits = allUnits.filter((u) => u.iso === flagship.iso);
-  const aewUnit = sameNationUnits.find((u) => {
-    const s = specOf(u, ctx);
-    return (
-      s?.typeId === 'awacs' ||
-      s?.name?.toLowerCase().includes('e-2') ||
-      s?.name?.toLowerCase().includes('hawkeye')
-    );
-  });
-  const capUnit = sameNationUnits.find((u) => {
-    const s = specOf(u, ctx);
-    return (
-      (s?.typeId === 'fighter' || s?.typeId === 'interceptor') &&
-      distanceKm(u.lngLat, flagship.lngLat) <= 400
-    );
-  });
-
-  const hasAewCoverage = Boolean(aewUnit);
-  const hasCecEnabled = hasAewCoverage || escorts.length > 0;
   const hasSoftKillEw = allFleetUnits.some((u) => {
     const s = specOf(u, ctx);
     return s?.typeId === 'destroyer' || s?.typeId === 'cruiser' || s?.typeId === 'carrier-ship' || s?.typeId === 'carrier';
@@ -275,178 +255,132 @@ export function assessNavalFleetDefense(
   let totalDecoyed = 0;
 
   // -------------------------------------------------------------
-  // TIER 1: Outer CAP Screen & AEW Early Warning (300 km – 450 km)
+  // DYNAMIC DEFENSE TIERS: Use ONLY Deployed Weapons & Persistent Magazines
   // -------------------------------------------------------------
-  if (capUnit && currentSalvo > 0) {
-    const capLabel = unitLabel(capUnit, ctx.formations, ctx.systems);
-    const capCount = capUnit.kind === 'unit' ? capUnit.count : 4;
-    const aamKills = Math.min(currentSalvo, Math.round(capCount * (hasAewCoverage ? 1.8 : 1.2)));
+  interface DefendingWeaponCandidate {
+    unit: DeployedUnit;
+    unitLabel: string;
+    weapon: any;
+    weaponIndex: number;
+    rangeKm: number;
+    pk: number;
+    availableMagazine: number;
+  }
 
-    if (aamKills > 0) {
-      currentSalvo = Math.max(0, currentSalvo - aamKills);
-      totalIntercepted += aamKills;
+  const defendingWeapons: DefendingWeaponCandidate[] = [];
 
-      addLog(
-        'T+08m',
-        `Tier 1: Outer CAP Interception`,
-        `${capLabel} cued by ${hasAewCoverage ? 'E-2D Hawkeye AEW' : 'Shipboard Radar'} engaged inbound missile stream with BVR missiles. Splashed ${aamKills} missiles.`,
-        { text: `${aamKills} Splashed`, variant: 'success' }
-      );
+  for (const ship of allFleetUnits) {
+    const sSpec = specOf(ship, ctx);
+    if (!sSpec) continue;
+    const sLabel = unitLabel(ship, ctx.formations, ctx.systems);
+    const sState = unitStates.get(ship.id);
 
-      tierReports.push({
-        tierNumber: 1,
-        tierName: 'Outer CAP & AEW Screen',
-        weaponName: 'AIM-120D / Meteor BVR Missiles',
-        rangeKm: 350,
-        missilesFacing: salvoSize,
-        missilesIntercepted: aamKills,
-        missilesDecoyed: 0,
-        missilesLeaking: currentSalvo,
-        defendersActive: [capLabel],
-        roundsExpended: aamKills * 2,
-        details: `${capLabel} splashed ${aamKills} missiles at long range.`,
+    (sSpec.weapons ?? []).forEach((w, wIdx) => {
+      const wName = (w.name ?? '').toLowerCase();
+      const engages = (w.engages ?? []) as string[];
+
+      const isAntiAirCapable =
+        engages.includes('air') ||
+        engages.includes('missile') ||
+        engages.includes('cruise') ||
+        (!engages.length &&
+          !wName.includes('torpedo') &&
+          !wName.includes('anti-ship') &&
+          !wName.includes('jsm') &&
+          !wName.includes('exocet') &&
+          !wName.includes('mdcn') &&
+          !wName.includes('tomahawk') &&
+          !wName.includes('kalibr') &&
+          !wName.includes('onyx') &&
+          !wName.includes('brahmos') &&
+          !wName.includes('zircon') &&
+          (w.pk ?? 0) > 0 &&
+          (w.rangeKm ?? 0) > 0);
+
+      if (!isAntiAirCapable) return;
+
+      const availMag = sState?.magazines.get(wIdx) ?? w.magazine ?? (w.salvo ? w.salvo * 4 : 16);
+      if (availMag <= 0) return;
+
+      defendingWeapons.push({
+        unit: ship,
+        unitLabel: sLabel,
+        weapon: w,
+        weaponIndex: wIdx,
+        rangeKm: w.rangeKm ?? 20,
+        pk: w.pk ?? 0.75,
+        availableMagazine: availMag,
       });
+    });
+  }
+
+  // Sort descending by range (Long range outer defense -> medium area -> close point defense)
+  defendingWeapons.sort((a, b) => b.rangeKm - a.rangeKm);
+
+  let tierNumber = 0;
+  for (const cand of defendingWeapons) {
+    if (currentSalvo <= 0) break;
+    tierNumber++;
+
+    const facingBefore = currentSalvo;
+    const salvoCommit = Math.max(1, Math.min(cand.weapon.salvo ?? 4, 12));
+    const roundsToFire = Math.min(cand.availableMagazine, Math.min(facingBefore * 2, salvoCommit * 2));
+    if (roundsToFire <= 0) continue;
+
+    const effPk = cand.pk * (missileSpeedMach > 2.0 ? 0.7 : 0.85);
+    const perTargetPk = 1 - Math.pow(1 - effPk, Math.max(1, Math.round(roundsToFire / facingBefore)));
+    let kills = Math.min(facingBefore, Math.min(roundsToFire, Math.round(facingBefore * perTargetPk)));
+    if (kills === 0 && roundsToFire >= 2 && effPk >= 0.7) {
+      kills = Math.min(facingBefore, 1);
     }
-  } else {
+
+    currentSalvo = Math.max(0, currentSalvo - kills);
+    totalIntercepted += kills;
+
+    // Deduct rounds from persistent unit magazine
+    const sState = unitStates.get(cand.unit.id);
+    if (sState) {
+      sState.magazines.set(cand.weaponIndex, Math.max(0, cand.availableMagazine - roundsToFire));
+    }
+    cand.availableMagazine -= roundsToFire;
+
+    const tierName =
+      cand.rangeKm >= 300
+        ? 'Long-Range Area Defense'
+        : cand.rangeKm >= 60
+          ? 'Medium-Range Fleet Defense'
+          : 'Point Defense / CIWS';
+
+    const tMinutes = Math.min(29, 6 + tierNumber * 6);
     addLog(
-      'T+08m',
-      `Tier 1: Outer Screen Bypassed`,
-      `No Combat Air Patrol (CAP) was positioned along the ingress corridor. Inbound salvo penetrates to Aegis area defense tier.`,
-      { text: 'Bypassed', variant: 'neutral' }
+      `T+${String(tMinutes).padStart(2, '0')}m`,
+      `Tier ${tierNumber}: ${cand.unitLabel} (${cand.weapon.name})`,
+      `${cand.unitLabel} fired ${roundsToFire} × ${cand.weapon.name} (Pk ${cand.pk.toFixed(2)}). Intercepted ${kills} × ${missileName} (${cand.availableMagazine} rounds remaining).`,
+      { text: `${kills} Intercepted`, variant: kills > 0 ? 'success' : 'neutral' }
     );
-  }
-
-  // -------------------------------------------------------------
-  // TIER 2: Long-Range Aegis Area Defense (SM-6 / SM-2, 100 km – 240 km)
-  // -------------------------------------------------------------
-  if (currentSalvo > 0) {
-    const aegisShips = allFleetUnits.filter((u) => {
-      const s = specOf(u, ctx);
-      return s?.typeId === 'destroyer' || s?.typeId === 'cruiser';
-    });
-
-    const activeAegis = aegisShips.map((u) => unitLabel(u, ctx.formations, ctx.systems));
-    const fireChannels = Math.max(4, aegisShips.length * (hasCecEnabled ? 6 : 4));
-    const smSalvoCommitted = Math.min(currentSalvo * 2, fireChannels * 2);
-    const smKills = Math.min(currentSalvo, Math.round(smSalvoCommitted * (hasCecEnabled ? 0.42 : 0.35)));
-
-    if (smKills > 0) {
-      currentSalvo = Math.max(0, currentSalvo - smKills);
-      totalIntercepted += smKills;
-
-      addLog(
-        'T+18m',
-        `Tier 2: Aegis Area Air Defense Interception`,
-        `${activeAegis.join(', ') || flagLabel} fired ${smSalvoCommitted} × SM-6/SM-2 interceptors via ${hasCecEnabled ? 'Cooperative Engagement Capability (CEC)' : 'Local SPY-1 Radar'}. Destroyed ${smKills} anti-ship missiles.`,
-        { text: `${smKills} Intercepted`, variant: 'success' }
-      );
-    }
 
     tierReports.push({
-      tierNumber: 2,
-      tierName: 'Aegis Area Defense',
-      weaponName: 'RIM-174 SM-6 / SM-2 Block IV',
-      rangeKm: 240,
-      missilesFacing: currentSalvo + smKills,
-      missilesIntercepted: smKills,
+      tierNumber: (Math.min(4, Math.max(1, tierNumber)) as 1 | 2 | 3 | 4),
+      tierName: `${cand.weapon.name} (${tierName})`,
+      weaponName: cand.weapon.name,
+      rangeKm: cand.rangeKm,
+      missilesFacing: facingBefore,
+      missilesIntercepted: kills,
       missilesDecoyed: 0,
       missilesLeaking: currentSalvo,
-      defendersActive: activeAegis.length > 0 ? activeAegis : [flagLabel],
-      roundsExpended: smSalvoCommitted,
-      details: `Aegis fleet defense network intercepted ${smKills} missiles in outer missile engagement zone.`,
+      defendersActive: [cand.unitLabel],
+      roundsExpended: roundsToFire,
+      details: `${cand.unitLabel} fired ${roundsToFire} × ${cand.weapon.name}. Splashed ${kills} inbound munitions.`,
     });
   }
 
-  // -------------------------------------------------------------
-  // TIER 3: Medium-Range Local Air Defense (ESSM / CAMM, 25 km – 50 km)
-  // -------------------------------------------------------------
-  if (currentSalvo > 0) {
-    const essmFacing = currentSalvo;
-    const essmChannels = allFleetUnits.length * 4;
-    const essmRounds = Math.min(essmFacing * 2, essmChannels);
-    const essmKills = Math.min(currentSalvo, Math.round(essmRounds * (missileSpeedMach > 2.0 ? 0.35 : 0.48)));
-
-    if (essmKills > 0) {
-      currentSalvo = Math.max(0, currentSalvo - essmKills);
-      totalIntercepted += essmKills;
-
-      addLog(
-        'T+24m',
-        `Tier 3: ESSM Local Defense Interception`,
-        `Fleet VLS cells ripple-fired ${essmRounds} × RIM-162 ESSM quad-packed interceptors at sea-skimmers. Splashed ${essmKills} missiles.`,
-        { text: `${essmKills} Splashed`, variant: 'success' }
-      );
-    }
-
-    tierReports.push({
-      tierNumber: 3,
-      tierName: 'Medium-Range Fleet Defense',
-      weaponName: 'RIM-162 ESSM (Quad-Packed)',
-      rangeKm: 50,
-      missilesFacing: essmFacing,
-      missilesIntercepted: essmKills,
-      missilesDecoyed: 0,
-      missilesLeaking: currentSalvo,
-      defendersActive: [flagLabel, ...escorts.map((e) => unitLabel(e, ctx.formations, ctx.systems))],
-      roundsExpended: essmRounds,
-      details: `Quad-packed ESSMs engaged terminal sea-skimmers, destroying ${essmKills} missiles.`,
-    });
-  }
-
-  // -------------------------------------------------------------
-  // TIER 4: Terminal Point Defense & Soft-Kill EW (0 km – 15 km)
-  // -------------------------------------------------------------
-  if (currentSalvo > 0) {
-    const tier4Facing = currentSalvo;
-
-    // 1. Soft-Kill EW & Decoys (Nulka / SEWIP)
-    let decoyedCount = 0;
-    if (hasSoftKillEw) {
-      decoyedCount = Math.min(currentSalvo, Math.round(currentSalvo * 0.38));
-      currentSalvo = Math.max(0, currentSalvo - decoyedCount);
-      totalDecoyed += decoyedCount;
-
-      if (decoyedCount > 0) {
-        addLog(
-          'T+28m',
-          `Tier 4: Soft-Kill EW & Nulka Decoy Seduction`,
-          `Nulka active hovering decoys and SEWIP Block III electronic attack beams seduced ${decoyedCount} missile radar seekers off-target into the open water.`,
-          { text: `${decoyedCount} Decoyed`, variant: 'jammed' }
-        );
-      }
-    }
-
-    // 2. Hard-Kill CIWS (RAM & Phalanx 20mm Gatling)
-    let ciwsKills = 0;
-    if (currentSalvo > 0) {
-      const ciwsPotential = (flagSpec.typeId === 'carrier-ship' || flagSpec.typeId === 'carrier' ? 4 : 2) + escorts.length * 2;
-      ciwsKills = Math.min(currentSalvo, Math.round(ciwsPotential * (missileSpeedMach > 2.0 ? 0.3 : 0.5)));
-      currentSalvo = Math.max(0, currentSalvo - ciwsKills);
-      totalIntercepted += ciwsKills;
-
-      if (ciwsKills > 0) {
-        addLog(
-          'T+29m',
-          `Tier 4: Phalanx CIWS & RAM Terminal Barrage`,
-          `Phalanx 20mm rotary cannons and RIM-116 RAM launchers engaged terminal leakers at 2 km. Shredded ${ciwsKills} missiles.`,
-          { text: `${ciwsKills} Shredded`, variant: 'success' }
-        );
-      }
-    }
-
-    tierReports.push({
-      tierNumber: 4,
-      tierName: 'Terminal CIWS & Soft-Kill EW',
-      weaponName: 'Nulka Decoys / SEWIP / Phalanx 20mm',
-      rangeKm: 12,
-      missilesFacing: tier4Facing,
-      missilesIntercepted: ciwsKills,
-      missilesDecoyed: decoyedCount,
-      missilesLeaking: currentSalvo,
-      defendersActive: [flagLabel],
-      roundsExpended: 1500,
-      details: `Nulka decoys seduced ${decoyedCount} missiles; Phalanx CIWS shredded ${ciwsKills} leakers.`,
-    });
+  if (defendingWeapons.length === 0) {
+    addLog(
+      'T+15m',
+      `Defensive Screen Inactive`,
+      `${flagLabel} has no active air-defense armaments or available magazines to engage incoming ${missileName} salvo.`,
+      { text: 'No Air Defense', variant: 'loss' }
+    );
   }
 
   // -------------------------------------------------------------
@@ -516,8 +450,8 @@ export function assessNavalFleetDefense(
     missileSpeedMach,
     isSeaSkimmer,
     salvoLaunched: salvoSize,
-    hasAewCoverage,
-    hasCecEnabled,
+    hasAewCoverage: false,
+    hasCecEnabled: escorts.length > 0,
     hasSoftKillEw,
     tierReports,
     totalIntercepted,

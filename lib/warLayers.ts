@@ -427,12 +427,14 @@ export function installWarLayers(map: MLMap, world: WorldData, font: string[], d
         'circle-radius': [
           'case',
           ['==', ['get', 'type'], 'aircraft'],
-          5.5,
+          6.5,
           ['==', ['get', 'type'], 'interceptor'],
-          2.8,
-          2.5,
+          3.8,
+          4.2,
         ],
         'circle-color': ['get', 'color'],
+        'circle-stroke-color': '#FFFFFF',
+        'circle-stroke-width': 1.5,
       },
     },
     firstSymbol
@@ -1140,6 +1142,10 @@ export function renderPlaybackFrame(map: MLMap, frame: PlaybackFrame | null) {
     if (map.getLayer(lyr)) {
       map.setLayoutProperty(lyr, 'visibility', targetVis);
     }
+  }
+
+  if (frame) {
+    ensurePlaybackIcons(map);
   }
 
   if (!frame) {

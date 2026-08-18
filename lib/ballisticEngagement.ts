@@ -341,26 +341,32 @@ export function assessBallisticMissileDefense(
       currentSalvo = Math.max(0, currentSalvo - exoKills);
       totalIntercepted += exoKills;
 
+      const exoSpec = specOf(exoLead, ctx);
+      const exoWpName = exoSpec?.weapons?.[0]?.name ?? 'Exo-Atmospheric Interceptor';
+
       addLog(
         'T+06m',
         `Tier 1: Exo-Atmospheric Kinetic Kill in Space`,
-        `${exoLeadLabel} fired ${exoRounds} × Exo-Atmospheric Kill Vehicles (EKV). Obliterated ${exoKills} ballistic warheads in space at ${Math.round(trajectory.apogeeAltitudeKm * 0.85)} km altitude via direct kinetic collision.`,
+        `${exoLeadLabel} fired ${exoRounds} × ${exoWpName}. Obliterated ${exoKills} ballistic warheads in space at ${Math.round(trajectory.apogeeAltitudeKm * 0.85)} km altitude via direct kinetic collision.`,
         { text: `${exoKills} Hit-to-Kill in Space`, variant: 'success' }
       );
     }
+
+    const exoLeadSpec = specOf(exoDefenders[0], ctx);
+    const exoWpName = exoLeadSpec?.weapons?.[0]?.name ?? 'Exo-Atmospheric Interceptor';
 
     tierReports.push({
       tierNumber: 1,
       tierName: 'Exo-Atmospheric Midcourse Defense',
       altitudeZone: '> 100 km (Space Vacuum)',
-      weaponName: 'RIM-161 SM-3 Block IIA / Arrow-3 EKV',
+      weaponName: exoWpName,
       interceptorsLaunched: exoRounds,
       missilesFacing: exoFacing,
       missilesIntercepted: exoKills,
       missilesLeaking: currentSalvo,
       defendersActive: exoDefenders.map((d) => unitLabel(d, ctx.formations, ctx.systems)),
       engagementMethod: 'kinetic_ekv_hit_to_kill',
-      details: `Kinetic Exo-Atmospheric Kill Vehicles intercepted ${exoKills} warheads during midcourse coast.`,
+      details: `${exoDefenders.map((d) => unitLabel(d, ctx.formations, ctx.systems)).join(', ')} intercepted ${exoKills} warheads during midcourse coast using ${exoWpName}.`,
     });
   } else if (trajectory.hasHypersonicSkipping && exoDefenders.length > 0) {
     addLog(
@@ -396,6 +402,9 @@ export function assessBallisticMissileDefense(
     const endoPk = trajectory.hasHypersonicSkipping ? 0.38 : hasBmdEarlyWarningRadar ? 0.58 : 0.45;
     const endoKills = Math.min(currentSalvo, Math.round(endoRounds * endoPk));
 
+    const endoLeadSpec = specOf(endoLead, ctx);
+    const endoWpName = endoLeadSpec?.weapons?.[0]?.name ?? 'High-Altitude Endo Interceptor';
+
     if (endoKills > 0) {
       currentSalvo = Math.max(0, currentSalvo - endoKills);
       totalIntercepted += endoKills;
@@ -403,7 +412,7 @@ export function assessBallisticMissileDefense(
       addLog(
         'T+09m',
         `Tier 2: High-Altitude Endo Interception`,
-        `${endoLeadLabel} ripple-fired ${endoRounds} × THAAD / Aster 30NT interceptors into the upper stratosphere (40 km altitude). Splashed ${endoKills} hypersonic warheads.`,
+        `${endoLeadLabel} ripple-fired ${endoRounds} × ${endoWpName} into the upper stratosphere (40 km altitude). Splashed ${endoKills} hypersonic warheads.`,
         { text: `${endoKills} Splashed (Stratosphere)`, variant: 'success' }
       );
     }
@@ -412,14 +421,14 @@ export function assessBallisticMissileDefense(
       tierNumber: 2,
       tierName: 'High-Altitude Endo-Atmospheric Defense',
       altitudeZone: '20 km – 100 km (Upper Stratosphere)',
-      weaponName: 'THAAD / Aster 30 Block 1NT / S-500',
+      weaponName: endoWpName,
       interceptorsLaunched: endoRounds,
       missilesFacing: endoFacing,
       missilesIntercepted: endoKills,
       missilesLeaking: currentSalvo,
       defendersActive: endoDefenders.map((d) => unitLabel(d, ctx.formations, ctx.systems)),
       engagementMethod: 'endo_divert_attitude',
-      details: `High-altitude divert thruster interceptors engaged re-entering warheads at 40 km altitude.`,
+      details: `${endoDefenders.map((d) => unitLabel(d, ctx.formations, ctx.systems)).join(', ')} engaged re-entering warheads using ${endoWpName}.`,
     });
   }
 
@@ -439,6 +448,8 @@ export function assessBallisticMissileDefense(
 
   if (currentSalvo > 0 && terminalDefenders.length > 0) {
     const termLead = terminalDefenders[0];
+    const termLeadSpec = specOf(termLead, ctx);
+    const termWpName = termLeadSpec?.weapons?.[0]?.name ?? 'Terminal Hit-to-Kill Interceptor';
     const termLeadLabel = unitLabel(termLead, ctx.formations, ctx.systems);
     const termFacing = currentSalvo;
     const termChannels = terminalDefenders.length * 6;
@@ -455,7 +466,7 @@ export function assessBallisticMissileDefense(
       addLog(
         'T+11m',
         `Tier 3: Terminal Point Defense Hit-to-Kill`,
-        `${termLeadLabel} fired ${termRounds} × PAC-3 MSE / 9M96 hit-to-kill missiles with pulse attitude motors. Directly shredded ${termKills} incoming warheads at 12 km altitude.`,
+        `${termLeadLabel} fired ${termRounds} × ${termWpName} with pulse attitude motors. Directly shredded ${termKills} incoming warheads at 12 km altitude.`,
         { text: `${termKills} Hit-to-Kill (Terminal)`, variant: 'success' }
       );
     }
@@ -464,14 +475,14 @@ export function assessBallisticMissileDefense(
       tierNumber: 3,
       tierName: 'Terminal Point Defense',
       altitudeZone: '< 25 km (Troposphere Point Defense)',
-      weaponName: 'Patriot PAC-3 MSE / S-400 9M96E2',
+      weaponName: termWpName,
       interceptorsLaunched: termRounds,
       missilesFacing: termFacing,
       missilesIntercepted: termKills,
       missilesLeaking: currentSalvo,
       defendersActive: terminalDefenders.map((d) => unitLabel(d, ctx.formations, ctx.systems)),
       engagementMethod: 'terminal_acm_hit_to_kill',
-      details: `Direct body-to-body hit-to-kill kinetic collision destroyed ${termKills} warheads seconds before ground impact.`,
+      details: `Direct body-to-body hit-to-kill kinetic collision using ${termWpName} destroyed ${termKills} warheads seconds before ground impact.`,
     });
   }
 
