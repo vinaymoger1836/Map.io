@@ -182,6 +182,15 @@ function PhaseCard({
           Fired <strong>{report.salvoCommitted} × {report.weaponName}</strong>. {report.munitionsImpacted} impacted objective ({report.munitionsIntercepted} intercepted).
         </p>
 
+        {report.navalAssessment && (
+          <div style={{ margin: '4px 0', padding: '4px 6px', background: 'rgba(0, 188, 212, 0.08)', border: '1px solid rgba(0, 188, 212, 0.3)', borderRadius: '3px', fontSize: '10px' }}>
+            <span style={{ color: '#00BCD4', fontWeight: 600 }}>
+              {report.navalAssessment.kind === 'asuw' ? '⚓ Fleet Air Defense (4 Tiers): ' : '🌊 Subsurface ASW Acoustic Hunt: '}
+            </span>
+            <span style={{ color: 'var(--paper)' }}>{report.navalAssessment.headline}</span>
+          </div>
+        )}
+
         <p className="wg-note" style={{ color: isSuccess ? '#4FA85F' : '#D9534F', marginTop: '3px' }}>
           ✦ {report.targetDamageSummary}
         </p>
@@ -251,7 +260,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
 
   // New Phase Form State
   const [selectedPhaseNum, setSelectedPhaseNum] = useState<number | 'new'>('new');
-  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike'>('sead');
+  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike' | 'asuw' | 'asw'>('sead');
   const [newAttackerId, setNewAttackerId] = useState<string>('');
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
@@ -344,6 +353,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     let defaultTitle = 'Main Objective Saturation Strike';
     if (newCategory === 'oca') defaultTitle = 'Offensive Counter-Air (CAP Sweep)';
     if (newCategory === 'sead') defaultTitle = 'SEAD Anti-Radiation SAM Strike';
+    if (newCategory === 'asuw') defaultTitle = 'Naval Surface Strike (ASuW Fleet Attack)';
+    if (newCategory === 'asw') defaultTitle = 'Anti-Submarine Warfare (ASW Torpedo Hunt)';
 
     const targetPhaseNumber = selectedPhaseNum === 'new' ? nextPhaseNumber : selectedPhaseNum;
 
@@ -486,6 +497,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                 >
                   <option value="oca">Fighter Sweep (OCA)</option>
                   <option value="sead">SEAD (SAM Radar Strike)</option>
+                  <option value="asuw">Naval Surface Strike (ASuW)</option>
+                  <option value="asw">Anti-Submarine Hunt (ASW)</option>
                   <option value="strike">Main Strike (Saturation)</option>
                 </select>
               </label>

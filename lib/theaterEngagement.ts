@@ -380,7 +380,7 @@ export function assessTheaterRaid(
 
     // Sort tasks in this phase so Offensive Counter-Air (OCA) resolves first, then SEAD, then Main Strikes
     const sortedTasks = [...tasksInPhase].sort((a, b) => {
-      const order = { oca: 1, sead: 2, standoff: 3, strike: 4 };
+      const order: Record<string, number> = { oca: 1, sead: 2, asw: 3, asuw: 3, standoff: 3, strike: 4 };
       return (order[a.category] ?? 3) - (order[b.category] ?? 3);
     });
 
@@ -690,8 +690,9 @@ export function assessTheaterRaid(
       }
 
       // Target Impact & Damage Resolution
-      const isTargetNaval = isNavalCombatant(targetSpec.typeId);
-      const isTargetSub = isSubsurfaceUnit(targetSpec.typeId);
+      const targetSpec = specOf(targetUnit, ctx);
+      const isTargetNaval = targetSpec ? isNavalCombatant(targetSpec.typeId) : false;
+      const isTargetSub = targetSpec ? isSubsurfaceUnit(targetSpec.typeId) : false;
       let navalAss: NavalAssessment | null = null;
 
       if (isTargetNaval || isTargetSub || task.category === 'asuw' || task.category === 'asw') {
@@ -713,7 +714,7 @@ export function assessTheaterRaid(
 
       if (navalAss) {
         if (navalAss.kind === 'asuw') {
-          munitionsIntercepted = navalAss.totalIntercepted + navalAss.totalDecoyed;
+          totalIntercepted = navalAss.totalIntercepted + navalAss.totalDecoyed;
           hits = navalAss.totalImpacts;
           targetDestroyed = navalAss.flagshipDamage === 'sunk';
           targetSuppressed = navalAss.flagshipDamage === 'mission_kill';
@@ -728,7 +729,7 @@ export function assessTheaterRaid(
             targetState.status = 'damaged';
           }
         } else {
-          munitionsIntercepted = navalAss.torpedoReport.torpedoesDecoyed + navalAss.torpedoReport.thermalLayerEvasions;
+          totalIntercepted = navalAss.torpedoReport.torpedoesDecoyed + navalAss.torpedoReport.thermalLayerEvasions;
           hits = navalAss.torpedoReport.torpedoImpacts;
           targetDestroyed =
             navalAss.targetCasualty === 'keel_broken_sunk' ||
