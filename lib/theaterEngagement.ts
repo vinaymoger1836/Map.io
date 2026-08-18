@@ -597,6 +597,15 @@ export function assessTheaterRaid(
         const defSpec = specOf(def, ctx);
         if (!defSpec) continue;
 
+        // When target is a ship at sea, mainland ground SAMs far away cannot engage
+        if (isTargetNaval) {
+          const defDomain = domainOf(defSpec);
+          if (defDomain === 'ground') {
+            const distKm = routeTotalDistanceKm([def.lngLat, targetUnit.lngLat]);
+            if (distKm > 40) continue; // Out of reach of coastal horizon
+          }
+        }
+
         // If defending CAP was neutralized/pinned and this unit is a fighter, skip
         if (capFightersPinnedInThisPhase && (defSpec.typeId === 'fighter' || defSpec.typeId === 'interceptor')) {
           continue;
@@ -959,23 +968,47 @@ export function assessTheaterRaid(
   }
 
   // Master Theater Debrief
+  const targetIdsInPhases = Array.from(new Set(phases.map((p) => p.targetUnitId)));
+  const destroyedTargets: string[] = [];
+  const damagedTargets: string[] = [];
+  const totalTargetsEngaged = targetIdsInPhases.length;
+
+  for (const tId of targetIdsInPhases) {
+    const tState = unitStates.get(tId);
+    const tUnit = allUnits.find((u) => u.id === tId);
+    const tName = tUnit ? unitLabel(tUnit, ctx.formations, ctx.systems) : 'Target';
+    if (tState?.status === 'destroyed' || (tState?.aliveCount === 0 && (tState?.initialCount ?? 0) > 0)) {
+      destroyedTargets.push(tName);
+    } else if (tState?.status === 'damaged' || tState?.status === 'suppressed') {
+      damagedTargets.push(tName);
+    }
+  }
+
   const primaryTargetState = unitStates.get(targetUnitId);
+  const primaryTargetDestroyed =
+    primaryTargetState?.status === 'destroyed' ||
+    (primaryTargetState?.aliveCount === 0 && (primaryTargetState?.initialCount ?? 0) > 0);
+  const primaryTargetDamaged =
+    primaryTargetState?.status === 'damaged' || primaryTargetState?.status === 'suppressed';
   const primaryTargetStatus =
-    primaryTargetState?.status === 'destroyed' ? 'destroyed' : primaryTargetState?.status === 'damaged' ? 'damaged' : 'held';
+    primaryTargetDestroyed ? 'destroyed' : primaryTargetDamaged ? 'damaged' : 'held';
 
-  const overallHeadline =
-    primaryTargetStatus === 'destroyed'
-      ? 'THEATER MISSION ACCOMPLISHED — Primary Objective Destroyed'
-      : primaryTargetStatus === 'damaged'
-        ? 'CONTESTED THEATER STRIKE — Primary Objective Heavily Damaged'
-        : 'DEFENDER VICTORY — Primary Objective Protected by Integrated Network';
+  let overallHeadline: string;
+  let overallVerdict: string;
 
-  const overallVerdict =
-    primaryTargetStatus === 'destroyed'
-      ? `Coordinated multi-phase strikes successfully suppressed defensive radar umbrellas and delivered decisive saturation against ${targetLabel}.`
-      : primaryTargetStatus === 'damaged'
-        ? `Strike waves penetrated defensive layers and inflicted substantial structural damage on ${targetLabel}, but some defences held.`
-        : `Defending integrated SAM and CAP network intercepted incoming strike salvos and preserved the operational readiness of ${targetLabel}.`;
+  if (destroyedTargets.length === totalTargetsEngaged && totalTargetsEngaged > 0) {
+    overallHeadline = 'THEATER DECISIVE VICTORY — All Target Objectives Destroyed';
+    overallVerdict = `Coordinated multi-phase strikes overwhelmed enemy integrated defenses and annihilated all target objectives (${destroyedTargets.join(', ')}).`;
+  } else if (destroyedTargets.length > 0) {
+    overallHeadline = `THEATER TACTICAL VICTORY — Strategic Targets Neutralized (${destroyedTargets.join(', ')})`;
+    overallVerdict = `Strike forces successfully penetrated enemy air defense umbrellas and destroyed ${destroyedTargets.join(', ')}${damagedTargets.length > 0 ? `, heavily damaging ${damagedTargets.join(', ')}` : ''}.`;
+  } else if (damagedTargets.length > 0 || primaryTargetDamaged) {
+    overallHeadline = 'CONTESTED THEATER ENGAGEMENT — Targets Sustained Heavy Damage';
+    overallVerdict = `Strike salvos penetrated defensive screens and inflicted critical damage on ${damagedTargets.join(', ') || targetLabel}, but defenses prevented complete destruction.`;
+  } else {
+    overallHeadline = 'DEFENDER VICTORY — Strike Repulsed by Integrated Defenses';
+    overallVerdict = `Defending air and fleet defense networks intercepted all incoming strike salvos and preserved the operational readiness of ${targetLabel}.`;
+  }
 
   const cumulativeAttackerLosses: TheaterAssessment['cumulativeAttackerLosses'] = [];
   const cumulativeAttackerSurvivors: TheaterAssessment['cumulativeAttackerSurvivors'] = [];

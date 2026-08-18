@@ -672,8 +672,10 @@ export function generateTheaterAar(
       });
     }
 
-    // Consolidated T+30m Impact / Damage Event
-    const damageSummaries = tasksInPhase.map((t) => `${t.targetLabel}: ${t.targetDamageSummary}`);
+    // Consolidated T+30m Impact / Damage Event (Deduplicated per target)
+    const damageSummaries = Array.from(
+      new Set(tasksInPhase.map((t) => `${t.targetLabel}: ${t.targetDamageSummary}`))
+    );
     const isPhaseSuccess = tasksInPhase.some((t) => t.targetDestroyed || t.targetSuppressed);
     chronologicalLog.push({
       timeFormatted: 'T+30m',
@@ -719,8 +721,41 @@ export function generateTheaterAar(
     });
   }
 
-  const isMissionSuccess = theaterAss.primaryTargetStatus === 'destroyed';
+  const isMissionSuccess =
+    theaterAss.overallHeadline.includes('VICTORY') ||
+    theaterAss.primaryTargetStatus === 'destroyed' ||
+    casualtyRegistry.some((c) => c.side === 'defender' && (c.status === 'sunk' || c.status === 'destroyed'));
+
   const ratio = totalImpacts > 0 ? `1 : ${Math.max(1, Math.round(totalImpacts * 3.2))}` : '0 : 1';
+
+  // Filter unitSpecs strictly to active participating combatants
+  const participatingUnitIds = new Set<string>();
+  for (const p of theaterAss.phases) {
+    if (p.task.attackerUnitId) participatingUnitIds.add(p.task.attackerUnitId);
+    if (p.task.targetUnitId) participatingUnitIds.add(p.task.targetUnitId);
+    if (p.interceptions) {
+      for (const ic of p.interceptions) {
+        if (ic.defenderUnitId) participatingUnitIds.add(ic.defenderUnitId);
+      }
+    }
+    if (p.navalAssessment) {
+      if (p.navalAssessment.kind === 'asuw') {
+        if (p.navalAssessment.flagshipUnit?.id) participatingUnitIds.add(p.navalAssessment.flagshipUnit.id);
+        if (p.navalAssessment.attackerUnit?.id) participatingUnitIds.add(p.navalAssessment.attackerUnit.id);
+        for (const esc of p.navalAssessment.escortUnits ?? []) {
+          participatingUnitIds.add(esc.id);
+        }
+      } else {
+        if (p.navalAssessment.hunterUnit?.id) participatingUnitIds.add(p.navalAssessment.hunterUnit.id);
+        if (p.navalAssessment.targetUnit?.id) participatingUnitIds.add(p.navalAssessment.targetUnit.id);
+      }
+    }
+  }
+
+  const activeParticipatingUnits =
+    participatingUnitIds.size > 0
+      ? units.filter((u) => participatingUnitIds.has(u.id))
+      : units.filter((u) => u.iso === attIso || u.iso === defIso);
 
   const report: ComprehensiveAarReport = {
     id: `aar-theater-${Date.now()}`,
@@ -740,7 +775,7 @@ export function generateTheaterAar(
     tacticalLessons,
     chronologicalLog,
     unitSpecs: buildUnitSpecsLedger(
-      units.filter((u) => u.iso === attIso || u.iso === defIso),
+      activeParticipatingUnits,
       nations,
       theaterAss.unitFinalStates,
       attIso,
