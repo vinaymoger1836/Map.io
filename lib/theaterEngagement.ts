@@ -44,6 +44,12 @@ import {
 } from './warGames';
 import { type RaidPathSpec } from './warLayers';
 import { threatClassOf, type SilentReason } from './engagement';
+import {
+  assessNavalCombat,
+  isNavalCombatant,
+  isSubsurfaceUnit,
+  type NavalAssessment,
+} from './navalEngagement';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -72,7 +78,7 @@ export interface StrikePhaseTask {
   id: string;
   phaseNumber: number; // 1, 2, 3...
   title: string;
-  category: 'oca' | 'sead' | 'strike' | 'standoff';
+  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw';
   attackerUnitId: string;
   targetUnitId: string;
   weaponIndex: number;
@@ -129,6 +135,7 @@ export interface PhaseReport {
   battleLog: PhaseBattleLogEvent[];
   pathSpec?: RaidPathSpec;
   interceptions?: PhaseInterceptionRecord[];
+  navalAssessment?: NavalAssessment;
 }
 
 export interface TheaterAssessment {
@@ -683,12 +690,71 @@ export function assessTheaterRaid(
       }
 
       // Target Impact & Damage Resolution
-      const hits = munitionsSurviving;
+      const isTargetNaval = isNavalCombatant(targetSpec.typeId);
+      const isTargetSub = isSubsurfaceUnit(targetSpec.typeId);
+      let navalAss: NavalAssessment | null = null;
+
+      if (isTargetNaval || isTargetSub || task.category === 'asuw' || task.category === 'asw') {
+        navalAss = assessNavalCombat(
+          attackerUnit,
+          targetUnit,
+          task.weaponIndex,
+          actualSalvo,
+          allUnits,
+          unitStates,
+          ctx
+        );
+      }
+
+      let hits = munitionsSurviving;
       let targetDestroyed = false;
       let targetSuppressed = false;
       let damageSummary = '';
 
-      if (hits > 0) {
+      if (navalAss) {
+        if (navalAss.kind === 'asuw') {
+          munitionsIntercepted = navalAss.totalIntercepted + navalAss.totalDecoyed;
+          hits = navalAss.totalImpacts;
+          targetDestroyed = navalAss.flagshipDamage === 'sunk';
+          targetSuppressed = navalAss.flagshipDamage === 'mission_kill';
+          damageSummary = navalAss.verdict;
+
+          if (navalAss.flagshipDamage === 'sunk') {
+            targetState.status = 'destroyed';
+            targetState.aliveCount = 0;
+          } else if (navalAss.flagshipDamage === 'mission_kill') {
+            targetState.status = 'suppressed';
+          } else if (navalAss.flagshipDamage === 'superstructure_damaged') {
+            targetState.status = 'damaged';
+          }
+        } else {
+          munitionsIntercepted = navalAss.torpedoReport.torpedoesDecoyed + navalAss.torpedoReport.thermalLayerEvasions;
+          hits = navalAss.torpedoReport.torpedoImpacts;
+          targetDestroyed =
+            navalAss.targetCasualty === 'keel_broken_sunk' ||
+            navalAss.targetCasualty === 'pressure_hull_ruptured';
+          targetSuppressed = navalAss.targetCasualty === 'flooding_controlled';
+          damageSummary = navalAss.verdict;
+
+          if (targetDestroyed) {
+            targetState.status = 'destroyed';
+            targetState.aliveCount = 0;
+          } else if (targetSuppressed) {
+            targetState.status = 'damaged';
+          }
+        }
+
+        battleLog.push({
+          id: nextEvt(),
+          timeFormatted: 'T+30m',
+          title: navalAss.headline,
+          detail: damageSummary,
+          badge: {
+            text: targetDestroyed ? 'Sunk / Destroyed' : targetSuppressed ? 'Mission Kill' : hits > 0 ? 'Damaged' : 'Shield Held',
+            variant: targetDestroyed ? 'loss' : hits > 0 ? 'loss' : 'success',
+          },
+        });
+      } else if (hits > 0) {
         if (task.category === 'sead') {
           targetState.status = hits >= 2 ? 'destroyed' : 'suppressed';
           targetDestroyed = targetState.status === 'destroyed';
@@ -786,6 +852,7 @@ export function assessTheaterRaid(
         battleLog,
         pathSpec,
         interceptions: phaseInterceptions,
+        navalAssessment: navalAss ?? undefined,
       });
     }
   }

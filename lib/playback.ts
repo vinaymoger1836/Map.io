@@ -530,8 +530,8 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
 
       // Map individual missiles in sequential ripple stream directly from the launching platform
       for (let m = 0; m < salvoCount; m++) {
-        // Sequential ripple launch stagger (0.75s between VLS / rail launches)
-        const staggerSec = m * 0.75;
+        // Sequential ripple launch stagger (0.5s between VLS / rail launches)
+        const staggerSec = m * 0.5;
         const mLaunchSec = seg.releaseTimeSec + staggerSec;
 
         if (clampedTime < mLaunchSec) continue;
@@ -575,18 +575,32 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         const mHeading = mPos.heading;
         const mPerpBearing = (mHeading + 90) % 360;
 
-        // Subtle lateral lane breathing (0 at ship launch, 0 at target impact)
-        const laneOffsetKm = ((m % 3) - 1) * 3.5 * Math.sin(clampedFrac * Math.PI);
-        const mCurrentCoord =
-          laneOffsetKm !== 0 && clampedFrac > 0.05 && clampedFrac < 0.95
-            ? destination(corePoint, laneOffsetKm, mPerpBearing)
-            : corePoint;
+        // Distinct tactical formation spread:
+        // Calculate lateral echelon / wedge lanes so all N missiles are clearly visible side-by-side
+        const laneIndex = salvoCount > 1 ? m - (salvoCount - 1) / 2 : 0;
+        const lateralSpreadFactor = Math.sin(Math.pow(clampedFrac, 0.7) * Math.PI);
+        const laneOffsetKm = laneIndex * 6.5 * lateralSpreadFactor;
+
+        // Longitudinal ripple stagger (each missile flying slightly staggered in the formation)
+        const longitudinalOffsetKm = (m % 2 === 0 ? 0 : -2.5) * lateralSpreadFactor;
+
+        let mCurrentCoord = corePoint;
+        if (laneOffsetKm !== 0 && clampedFrac > 0.02 && clampedFrac < 0.98) {
+          mCurrentCoord = destination(corePoint, laneOffsetKm, mPerpBearing);
+        }
+        if (longitudinalOffsetKm !== 0 && clampedFrac > 0.05 && clampedFrac < 0.95) {
+          mCurrentCoord = destination(
+            mCurrentCoord,
+            Math.abs(longitudinalOffsetKm),
+            (mHeading + (longitudinalOffsetKm > 0 ? 0 : 180)) % 360
+          );
+        }
 
         // Individual Munition Entity
         entities.push({
           id: `${seg.id}-m-${m}`,
           type: 'munition',
-          label: m === 0 ? `${seg.weaponName} (${seg.salvoSize}x Salvo)` : '',
+          label: m === 0 ? `${seg.weaponName} (${salvoCount}x Salvo)` : `M-${m + 1}`,
           count: 1,
           lngLat: mCurrentCoord,
           headingDeg: mHeading,
