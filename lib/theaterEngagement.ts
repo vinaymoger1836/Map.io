@@ -749,6 +749,22 @@ export function assessTheaterRaid(
           targetSuppressed = navalAss.flagshipDamage === 'mission_kill';
           damageSummary = navalAss.verdict;
 
+          for (const tier of navalAss.tierReports) {
+            if (tier.missilesIntercepted > 0) {
+              const frac =
+                tier.tierNumber === 1 ? 0.45 : tier.tierNumber === 2 ? 0.65 : tier.tierNumber === 3 ? 0.82 : 0.94;
+              phaseInterceptions.push({
+                defenderUnitId: targetUnit.id,
+                defenderLabel: `${phaseTargetLabel} (${tier.tierName})`,
+                defenderLngLat: targetUnit.lngLat,
+                interceptLngLat: interpolate(attackerUnit.lngLat, targetUnit.lngLat, frac),
+                entryFraction: frac,
+                roundsFired: tier.roundsExpended,
+                kills: tier.missilesIntercepted,
+              });
+            }
+          }
+
           if (navalAss.flagshipDamage === 'sunk') {
             targetState.status = 'destroyed';
             targetState.aliveCount = 0;
@@ -778,10 +794,10 @@ export function assessTheaterRaid(
           id: nextEvt(),
           timeFormatted: 'T+30m',
           title: navalAss.headline,
-          detail: damageSummary,
+          detail: navalAss.verdict,
           badge: {
-            text: targetDestroyed ? 'Sunk / Destroyed' : targetSuppressed ? 'Mission Kill' : hits > 0 ? 'Damaged' : 'Shield Held',
-            variant: targetDestroyed ? 'loss' : hits > 0 ? 'loss' : 'success',
+            text: navalAss.kind === 'asuw' ? (targetDestroyed ? 'Sunk' : hits > 0 ? `${hits} Hits` : 'Shield Held') : (targetDestroyed ? 'Sunk' : 'Torpedo Evaded'),
+            variant: targetDestroyed ? 'loss' : hits > 0 ? 'success' : 'neutral',
           },
         });
       } else if (bmdAss) {
@@ -790,6 +806,21 @@ export function assessTheaterRaid(
         targetDestroyed = bmdAss.targetDamageStatus === 'obliterated';
         targetSuppressed = bmdAss.targetDamageStatus === 'cratered_suppressed';
         damageSummary = bmdAss.verdict;
+
+        for (const tier of bmdAss.tierReports) {
+          if (tier.missilesIntercepted > 0) {
+            const frac = tier.tierNumber === 1 ? 0.5 : tier.tierNumber === 2 ? 0.75 : 0.92;
+            phaseInterceptions.push({
+              defenderUnitId: targetUnit.id,
+              defenderLabel: `${phaseTargetLabel} (${tier.tierName})`,
+              defenderLngLat: targetUnit.lngLat,
+              interceptLngLat: interpolate(attackerUnit.lngLat, targetUnit.lngLat, frac),
+              entryFraction: frac,
+              roundsFired: tier.interceptorsLaunched,
+              kills: tier.missilesIntercepted,
+            });
+          }
+        }
 
         if (targetDestroyed) {
           targetState.status = 'destroyed';
@@ -884,9 +915,11 @@ export function assessTheaterRaid(
       } else {
         pathSpec = {
           ingress: multiLegGreatCirclePath(fullRoute, 32),
+          munition: multiLegGreatCirclePath(fullRoute, 32),
           targetPoint: targetUnit.lngLat,
           waypoints,
           color: phaseColor,
+          munitionColor: '#FFB020',
         };
       }
       pathSpecs.push(pathSpec);

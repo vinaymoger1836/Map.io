@@ -297,30 +297,150 @@ export function generateTheaterAar(
   let totalIntercepted = 0;
   let totalImpacts = 0;
 
-  for (const phase of theaterAss.phases) {
-    totalFired += phase.salvoCommitted;
-    totalIntercepted += phase.munitionsIntercepted;
-    totalImpacts += phase.munitionsImpacted;
+  // 1. Populate Platform Casualty Registry from persistent unit states
+  if (theaterAss.unitFinalStates && theaterAss.unitFinalStates.size > 0) {
+    for (const [uId, uState] of theaterAss.unitFinalStates.entries()) {
+      const u = units.find((unit) => unit.id === uId);
+      if (!u) continue;
+      const side: 'attacker' | 'defender' = u.iso === theaterAss.attackerIso ? 'attacker' : 'defender';
+      const label = unitLabel(u, [], []);
+      const typeId = (u.kind === 'unit' ? u.typeId : 'formation').toLowerCase();
 
-    munitionMatrix.push({
-      side: 'attacker',
-      weaponName: `${phase.weaponName} (Phase ${phase.phaseNumber})`,
-      category: phase.task.category === 'bmd' ? 'ballistic' : phase.task.category === 'asw' ? 'torpedo' : 'cruise_missile',
-      fired: phase.salvoCommitted,
-      intercepted: phase.munitionsIntercepted,
-      decoyedOrJammed: 0,
-      impacted: phase.munitionsImpacted,
-      effectivenessPercent: phase.salvoCommitted > 0 ? Math.round((phase.munitionsImpacted / phase.salvoCommitted) * 100) : 0,
-    });
+      let domain: PlatformCasualtyEntry['domain'] = 'ground';
+      if (
+        typeId.includes('ship') ||
+        typeId === 'destroyer' ||
+        typeId === 'frigate' ||
+        typeId === 'carrier' ||
+        typeId === 'corvette' ||
+        typeId === 'cruiser'
+      ) {
+        domain = 'naval';
+      } else if (typeId === 'submarine' || typeId === 'ssbn' || typeId === 'midget-sub') {
+        domain = 'subsurface';
+      } else if (
+        typeId === 'fighter' ||
+        typeId === 'strike' ||
+        typeId === 'bomber' ||
+        typeId === 'drone' ||
+        typeId === 'ew' ||
+        typeId === 'mpa' ||
+        typeId === 'helicopter'
+      ) {
+        domain = 'air';
+      } else if (typeId === 'radar') {
+        domain = 'radar';
+      }
 
-    for (const evt of phase.battleLog) {
-      chronologicalLog.push({
-        timeFormatted: evt.timeFormatted,
-        title: `[Phase ${phase.phaseNumber}] ${evt.title}`,
-        detail: evt.detail,
-        badgeText: evt.badge?.text,
+      const lost = uState.destroyedCount || (uState.status === 'destroyed' ? uState.initialCount : 0);
+      const surv = uState.aliveCount;
+      let finalStatus: PlatformCasualtyEntry['status'] = uState.status;
+      if (domain === 'naval' && (uState.status === 'destroyed' || uState.aliveCount === 0)) {
+        finalStatus = 'sunk';
+      }
+
+      casualtyRegistry.push({
+        side,
+        unitLabel: label,
+        typeLabel: u.kind === 'unit' ? u.typeId.toUpperCase() : 'Unit Formation',
+        domain,
+        initialCount: uState.initialCount,
+        lostCount: lost,
+        survivingCount: surv,
+        status: finalStatus,
       });
     }
+  }
+
+  // 2. Munitions Matrix and Merged Phase Timeline
+  const phaseNumbers = Array.from(new Set(theaterAss.phases.map((p) => p.phaseNumber))).sort((a, b) => a - b);
+
+  for (const pNum of phaseNumbers) {
+    const tasksInPhase = theaterAss.phases.filter((p) => p.phaseNumber === pNum);
+    let phaseFired = 0;
+    let phaseIntercepted = 0;
+    let phaseImpacts = 0;
+    const attackerDetails: string[] = [];
+    const targetNames = Array.from(new Set(tasksInPhase.map((t) => t.targetLabel)));
+    const defenderInterceptors: string[] = [];
+
+    for (const phase of tasksInPhase) {
+      phaseFired += phase.salvoCommitted;
+      phaseIntercepted += phase.munitionsIntercepted;
+      phaseImpacts += phase.munitionsImpacted;
+
+      totalFired += phase.salvoCommitted;
+      totalIntercepted += phase.munitionsIntercepted;
+      totalImpacts += phase.munitionsImpacted;
+
+      attackerDetails.push(`${phase.attackerLabel} (${phase.salvoCommitted} × ${phase.weaponName})`);
+
+      munitionMatrix.push({
+        side: 'attacker',
+        weaponName: `${phase.weaponName} (Phase ${phase.phaseNumber})`,
+        category:
+          phase.task.category === 'bmd'
+            ? 'ballistic'
+            : phase.task.category === 'asw'
+              ? 'torpedo'
+              : 'cruise_missile',
+        fired: phase.salvoCommitted,
+        intercepted: phase.munitionsIntercepted,
+        decoyedOrJammed: 0,
+        impacted: phase.munitionsImpacted,
+        effectivenessPercent:
+          phase.salvoCommitted > 0 ? Math.round((phase.munitionsImpacted / phase.salvoCommitted) * 100) : 0,
+      });
+
+      // Collect defender interceptor munitions
+      if (phase.interceptions && phase.interceptions.length > 0) {
+        for (const ic of phase.interceptions) {
+          defenderInterceptors.push(`${ic.defenderLabel} (${ic.roundsFired} rounds, ${ic.kills} kills)`);
+        }
+      }
+    }
+
+    // Consolidated T+00m Launch Event
+    chronologicalLog.push({
+      timeFormatted: 'T+00m',
+      title: `[Phase ${pNum}] Coordinated Time-on-Target Salvo Launch`,
+      detail:
+        tasksInPhase.length === 1
+          ? `${attackerDetails[0]} launched at ${targetNames.join(', ')}.`
+          : `Simultaneous Coordinated Strike: ${attackerDetails.join(' + ')} launched at ${targetNames.join(', ')} (Total: ${phaseFired} committed).`,
+      badgeText: `${phaseFired} Committed`,
+    });
+
+    // Consolidated T+18m Interception Event
+    if (phaseIntercepted > 0) {
+      const defDetail =
+        defenderInterceptors.length > 0
+          ? defenderInterceptors.join('; ')
+          : `Defending air defense umbrella intercepted ${phaseIntercepted} incoming missiles.`;
+      chronologicalLog.push({
+        timeFormatted: 'T+18m',
+        title: `[Phase ${pNum}] Layered Defensive Interceptions`,
+        detail: `${defDetail} (${phaseFired - phaseIntercepted} leakers penetrated).`,
+        badgeText: `${phaseIntercepted} Intercepted`,
+      });
+    } else {
+      chronologicalLog.push({
+        timeFormatted: 'T+18m',
+        title: `[Phase ${pNum}] Defensive Interception Window`,
+        detail: `No defending interceptors engaged. Entire salvo of ${phaseFired} missiles penetrated directly toward target complex.`,
+        badgeText: '0 Intercepted',
+      });
+    }
+
+    // Consolidated T+30m Impact / Damage Event
+    const damageSummaries = tasksInPhase.map((t) => `${t.targetLabel}: ${t.targetDamageSummary}`);
+    const isPhaseSuccess = tasksInPhase.some((t) => t.targetDestroyed || t.targetSuppressed);
+    chronologicalLog.push({
+      timeFormatted: 'T+30m',
+      title: `[Phase ${pNum}] Phase Outcome Resolution`,
+      detail: damageSummaries.join(' | '),
+      badgeText: isPhaseSuccess ? 'Objective Struck' : 'Shield Held',
+    });
   }
 
   // Tactical Lessons
@@ -337,6 +457,14 @@ export function generateTheaterAar(
       category: 'saturation',
       title: 'Combat Air Patrol (CAP) Sweep Established',
       detail: 'Offensive Counter-Air fighter sweeps eliminated defending interceptor flights before strike bombers entered weapons release envelopes.',
+      impact: 'positive',
+    });
+  }
+  if (theaterAss.phases.some((p) => (p.navalAssessment && p.navalAssessment.kind === 'asuw' && p.navalAssessment.flagshipDamage === 'sunk'))) {
+    tacticalLessons.push({
+      category: 'naval_asw',
+      title: 'Naval Surface Strike Saturation Breach',
+      detail: 'Coordinated multi-vector anti-ship missile saturation penetrated all 4 fleet defense tiers, resulting in catastrophic hull loss.',
       impact: 'positive',
     });
   }

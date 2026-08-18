@@ -311,10 +311,12 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
         waypoints.length > 0 ? [originLngLat, ...waypoints, targetLngLat] : [originLngLat, targetLngLat];
 
       const isAirPlatform =
-        task.category === 'oca' || task.category === 'sead' || (rep.attackerPlatformsSurviving !== undefined && rep.attackerPlatformsSurviving > 0);
+        task.category === 'oca' ||
+        task.category === 'sead' ||
+        (task.category === 'strike' && Boolean(releaseLngLat));
       const isStandoff = isAirPlatform && Boolean(releaseLngLat);
       const ingressSec = isStandoff ? phaseStartSec + 35 : phaseStartSec;
-      const impactTimeSec = phaseStartSec + 75;
+      const impactTimeSec = phaseStartSec + (isAirPlatform ? 75 : 45);
       const egressEndTimeSec = isStandoff ? phaseStartSec + 90 : impactTimeSec;
 
       let ingressRoute: [number, number][] = [];
@@ -327,7 +329,7 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
           munitionRoute = split.after;
         } else {
           ingressRoute = fullRoute;
-          munitionRoute = [];
+          munitionRoute = fullRoute;
         }
       } else {
         ingressRoute = [];
