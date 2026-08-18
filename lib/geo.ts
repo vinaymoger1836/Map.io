@@ -335,14 +335,22 @@ export function routeCrossing(
 export function calculateRadarAvoidanceDogleg(
   from: [number, number],
   to: [number, number],
-  threatZones: { at: [number, number]; radiusKm: number }[]
+  threatZones: { at: [number, number]; radiusKm: number }[],
+  maxRangeKm?: number
 ): [number, number][] {
   const directDist = distanceKm(from, to);
-  if (directDist < 50 || threatZones.length === 0) return [];
+  if (directDist < 30 || threatZones.length === 0) return [];
+
+  // Filter and normalize threat zones: Cap oversized zones to realistic air defense radii (max 300 km)
+  const realisticThreats = threatZones
+    .filter((z) => z.radiusKm >= 15)
+    .map((z) => ({ at: z.at, radiusKm: Math.min(300, z.radiusKm) }));
+
+  if (realisticThreats.length === 0) return [];
 
   // 1. Identify which threat zones intersect the direct straight line
   const directCrossingThreats: { at: [number, number]; radiusKm: number; entryKm: number; exitKm: number }[] = [];
-  for (const zone of threatZones) {
+  for (const zone of realisticThreats) {
     const c = crossing(from, to, zone.at, zone.radiusKm, directDist);
     if (c) {
       directCrossingThreats.push({ ...zone, entryKm: c.entryKm, exitKm: c.exitKm });
@@ -364,16 +372,23 @@ export function calculateRadarAvoidanceDogleg(
     const threatDistFromOrigin = (threat.entryKm + threat.exitKm) / 2;
     const centerPointOnCorridor = interpolate(from, to, threatDistFromOrigin / directDist);
 
+    // Calculate actual distance from corridor line to threat emitter
+    const distToEmitter = distanceKm(centerPointOnCorridor, threat.at);
+
+    // Lateral displacement required to clear the threat circle with a 20 km safety buffer
+    const clearanceNeeded = Math.max(30, (threat.radiusKm - distToEmitter) + 20);
+    // Tightly clamp lateral doglegs so waypoints stay realistic (35 to 90 km from center track)
+    const lateralOffsetKm = Math.min(90, Math.max(35, clearanceNeeded));
+
     // Calculate left (port: -90°) and right (starboard: +90°) lateral bypass coordinates
-    const safetyBufferKm = threat.radiusKm + 25; // 25 km safety margin outside SAM envelope
-    const portWaypoint = destination(centerPointOnCorridor, safetyBufferKm, (baseBearing - 90 + 360) % 360);
-    const starWaypoint = destination(centerPointOnCorridor, safetyBufferKm, (baseBearing + 90) % 360);
+    const portWaypoint = destination(centerPointOnCorridor, lateralOffsetKm, (baseBearing - 90 + 360) % 360);
+    const starWaypoint = destination(centerPointOnCorridor, lateralOffsetKm, (baseBearing + 90) % 360);
 
     // Score port vs starboard: count secondary threat intersections and route detour length
     let portViolations = 0;
     let starViolations = 0;
 
-    for (const other of threatZones) {
+    for (const other of realisticThreats) {
       if (distanceKm(portWaypoint, other.at) < other.radiusKm) portViolations++;
       if (distanceKm(starWaypoint, other.at) < other.radiusKm) starViolations++;
     }
@@ -381,8 +396,17 @@ export function calculateRadarAvoidanceDogleg(
     const chosen = portViolations <= starViolations ? portWaypoint : starWaypoint;
 
     // Avoid duplicate waypoints in close proximity
-    if (waypoints.length === 0 || distanceKm(waypoints[waypoints.length - 1], chosen) > 80) {
-      waypoints.push(chosen);
+    if (waypoints.length === 0 || distanceKm(waypoints[waypoints.length - 1], chosen) > 60) {
+      // Check range budget constraint if maxRangeKm is provided
+      if (maxRangeKm && maxRangeKm > 0) {
+        const testRoute = [from, ...waypoints, chosen, to];
+        const testDist = routeTotalDistanceKm(testRoute);
+        if (testDist <= maxRangeKm * 0.98) {
+          waypoints.push(chosen);
+        }
+      } else {
+        waypoints.push(chosen);
+      }
     }
   }
 

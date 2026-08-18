@@ -1415,11 +1415,15 @@ export function useWarGames({
       }
     }
 
-    const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones);
+    const attackerSpec = specOf(attacker, boardContext);
+    const weaponRange = standoffEnabled && attackerSpec?.weapons?.[selectedWeaponIndex]?.rangeKm;
+    const maxReach = weaponRange || attackerSpec?.platform?.combatRadiusKm;
+
+    const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones, maxReach);
     if (doglegs.length > 0) {
       setRaidWaypoints(doglegs);
     }
-  }, [board.units, raidFromId, raidToId, boardContext]);
+  }, [board.units, raidFromId, raidToId, boardContext, standoffEnabled, selectedWeaponIndex]);
 
   const assessment = useMemo(() => {
     const attacker = board.units.find((u) => u.id === raidFromId);

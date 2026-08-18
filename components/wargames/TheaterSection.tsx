@@ -304,14 +304,12 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     const threatZones: { at: [number, number]; radiusKm: number }[] = [];
     if (theaterUmbrella) {
       for (const s of theaterUmbrella.samDefenders) {
-        threatZones.push({ at: s.unit.lngLat, radiusKm: s.rangeKm });
-      }
-      for (const c of theaterUmbrella.capDefenders) {
-        threatZones.push({ at: c.unit.lngLat, radiusKm: c.combatRadiusKm });
+        threatZones.push({ at: s.unit.lngLat, radiusKm: Math.min(250, s.rangeKm) });
       }
     }
 
-    const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones);
+    const maxReach = activeWeapon?.weapon.rangeKm ?? 600;
+    const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones, maxReach);
     if (doglegs.length > 0) {
       setTheaterTaskWaypoints(doglegs);
     }
