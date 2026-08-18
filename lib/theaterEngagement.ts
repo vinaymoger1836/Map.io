@@ -50,6 +50,10 @@ import {
   isSubsurfaceUnit,
   type NavalAssessment,
 } from './navalEngagement';
+import {
+  assessBallisticMissileDefense,
+  type BallisticDefenseAssessment,
+} from './ballisticEngagement';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -78,7 +82,7 @@ export interface StrikePhaseTask {
   id: string;
   phaseNumber: number; // 1, 2, 3...
   title: string;
-  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw';
+  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw' | 'bmd';
   attackerUnitId: string;
   targetUnitId: string;
   weaponIndex: number;
@@ -136,6 +140,7 @@ export interface PhaseReport {
   pathSpec?: RaidPathSpec;
   interceptions?: PhaseInterceptionRecord[];
   navalAssessment?: NavalAssessment;
+  bmdAssessment?: BallisticDefenseAssessment;
 }
 
 export interface TheaterAssessment {
@@ -694,6 +699,7 @@ export function assessTheaterRaid(
       const isTargetNaval = targetSpec ? isNavalCombatant(targetSpec.typeId) : false;
       const isTargetSub = targetSpec ? isSubsurfaceUnit(targetSpec.typeId) : false;
       let navalAss: NavalAssessment | null = null;
+      let bmdAss: BallisticDefenseAssessment | null = null;
 
       if (isTargetNaval || isTargetSub || task.category === 'asuw' || task.category === 'asw') {
         navalAss = assessNavalCombat(
@@ -705,6 +711,29 @@ export function assessTheaterRaid(
           unitStates,
           ctx
         );
+      } else {
+        const isBallistic =
+          task.category === 'bmd' ||
+          attackerSpec.typeId === 'silo' ||
+          attackerSpec.typeId === 'missile' ||
+          weaponName.toLowerCase().includes('ballistic') ||
+          weaponName.toLowerCase().includes('iskander') ||
+          weaponName.toLowerCase().includes('atacms') ||
+          weaponName.toLowerCase().includes('df-') ||
+          weaponName.toLowerCase().includes('hgv') ||
+          weaponName.toLowerCase().includes('kinzhal') ||
+          weaponName.toLowerCase().includes('zircon');
+
+        if (isBallistic) {
+          bmdAss = assessBallisticMissileDefense(
+            attackerUnit,
+            targetUnit,
+            task.weaponIndex,
+            actualSalvo,
+            allUnits,
+            ctx
+          );
+        }
       }
 
       let hits = munitionsSurviving;
@@ -752,6 +781,32 @@ export function assessTheaterRaid(
           detail: damageSummary,
           badge: {
             text: targetDestroyed ? 'Sunk / Destroyed' : targetSuppressed ? 'Mission Kill' : hits > 0 ? 'Damaged' : 'Shield Held',
+            variant: targetDestroyed ? 'loss' : hits > 0 ? 'loss' : 'success',
+          },
+        });
+      } else if (bmdAss) {
+        totalIntercepted = bmdAss.totalIntercepted;
+        hits = bmdAss.totalImpacts;
+        targetDestroyed = bmdAss.targetDamageStatus === 'obliterated';
+        targetSuppressed = bmdAss.targetDamageStatus === 'cratered_suppressed';
+        damageSummary = bmdAss.verdict;
+
+        if (targetDestroyed) {
+          targetState.status = 'destroyed';
+          targetState.aliveCount = 0;
+        } else if (targetSuppressed) {
+          targetState.status = 'suppressed';
+        } else if (bmdAss.targetDamageStatus === 'superficial_damage') {
+          targetState.status = 'damaged';
+        }
+
+        battleLog.push({
+          id: nextEvt(),
+          timeFormatted: 'T+30m',
+          title: bmdAss.headline,
+          detail: damageSummary,
+          badge: {
+            text: targetDestroyed ? 'Obliterated' : targetSuppressed ? 'Cratered' : hits > 0 ? 'Damaged' : 'BMD Held',
             variant: targetDestroyed ? 'loss' : hits > 0 ? 'loss' : 'success',
           },
         });
@@ -854,6 +909,7 @@ export function assessTheaterRaid(
         pathSpec,
         interceptions: phaseInterceptions,
         navalAssessment: navalAss ?? undefined,
+        bmdAssessment: bmdAss ?? undefined,
       });
     }
   }

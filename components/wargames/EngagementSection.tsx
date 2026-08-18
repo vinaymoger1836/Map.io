@@ -24,6 +24,7 @@ import { distanceKm } from '@/lib/geo';
 import { maxMunitionCapacity, standoffWeapons, TARGET_LABEL } from '@/lib/specs';
 import { unitLabel, type DeployedUnit } from '@/lib/warGames';
 import type { NavalFleetAssessment, NavalAswAssessment, NavalAssessment } from '@/lib/navalEngagement';
+import type { BallisticDefenseAssessment } from '@/lib/ballisticEngagement';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -292,6 +293,113 @@ function NavalAswDefenseView({ asw }: { asw: NavalAswAssessment }) {
   );
 }
 
+function BallisticDefenseView({ bmd }: { bmd: BallisticDefenseAssessment }) {
+  const { trajectory, tierReports } = bmd;
+  const isIntact = bmd.targetDamageStatus === 'intact';
+  const isSuperficial = bmd.targetDamageStatus === 'superficial_damage';
+  const statusColor = isIntact ? '#4FA85F' : isSuperficial ? '#FFB020' : '#D9534F';
+
+  return (
+    <div className="wg-tactical-card" style={{ marginTop: '10px', background: 'rgba(24, 16, 32, 0.9)', borderColor: '#BA68C8' }}>
+      <div className="wg-tactical-title">
+        <span style={{ color: '#BA68C8', fontWeight: 700 }}>🚀 Multi-Tier Ballistic Missile Defense (BMD) HUD</span>
+        <span className="wg-tag" style={{ background: '#BA68C8', color: '#000000', fontWeight: 700 }}>
+          {trajectory.kind.toUpperCase()} Space & Endo
+        </span>
+      </div>
+
+      <div className="wg-tactical-body">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
+          <span>Attacker: <strong>{bmd.attackerLabel}</strong></span>
+          <span>Target: <strong>{bmd.targetLabel}</strong></span>
+        </div>
+
+        {/* Trajectory Cross-Section Profile */}
+        <div
+          style={{
+            background: 'linear-gradient(180deg, rgba(186, 104, 200, 0.12) 0%, rgba(30, 15, 45, 0.5) 50%, rgba(10, 5, 20, 0.9) 100%)',
+            border: '1px solid rgba(186, 104, 200, 0.3)',
+            borderRadius: '4px',
+            padding: '8px',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#E1BEE7' }}>
+              🌌 Aerothermal Trajectory & Apogee Profile
+            </span>
+            <span className="wg-tag" style={{ fontSize: '9px', background: 'rgba(186, 104, 200, 0.25)', color: '#BA68C8' }}>
+              Mach {trajectory.burnoutMach.toFixed(1)} Boost · Mach {trajectory.reentryMach.toFixed(1)} Re-entry
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '10px', color: 'var(--paper-dim)' }}>
+            <div>Threat Class: <strong style={{ color: 'var(--paper)' }}>{trajectory.kindLabel}</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Peak Apogee: <strong style={{ color: '#BA68C8' }}>{trajectory.apogeeAltitudeKm} km</strong> ({trajectory.isExoAtmospheric ? 'Exo-Atmospheric Space' : 'Endo Glide'})</span>
+              <span>Flight Time: <strong>{Math.round(trajectory.flightDurationSec / 60)}m {trajectory.flightDurationSec % 60}s</strong></span>
+            </div>
+            <div>
+              Early Warning: <strong style={{ color: bmd.hasBmdEarlyWarningRadar ? '#4FA85F' : 'var(--paper-dim)' }}>
+                {bmd.hasBmdEarlyWarningRadar ? '✓ X-Band Radar (AN/TPY-2 / SPY-6) Locked' : '✕ No Forward BMD Radar Cueing'}
+              </strong>
+            </div>
+          </div>
+
+          {trajectory.hasHypersonicSkipping && (
+            <div style={{ marginTop: '5px', padding: '3px 6px', background: 'rgba(255, 176, 32, 0.15)', border: '1px solid #FFB020', borderRadius: '3px', fontSize: '9.5px', color: '#FFB020' }}>
+              ⚡ Hypersonic Skipping Active: Skipping at 35–55 km altitude beneath exo-atmospheric kill vehicles.
+            </div>
+          )}
+        </div>
+
+        {/* 3 Concentric BMD Tiers */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+          {tierReports.map((t) => (
+            <div key={t.tierNumber} className="wg-tactical-card" style={{ padding: '6px 8px', background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                <span style={{ fontWeight: 700, color: t.tierNumber === 1 ? '#BA68C8' : t.tierNumber === 2 ? '#4DD0E1' : '#E8833A' }}>
+                  Tier {t.tierNumber}: {t.tierName}
+                </span>
+                <span className="wg-tag" style={{ fontSize: '9px' }}>
+                  {t.altitudeZone}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', marginTop: '3px', color: 'var(--paper-dim)' }}>
+                <span>Interceptor: <strong>{t.weaponName}</strong></span>
+                <span>
+                  {t.missilesIntercepted > 0 && <strong style={{ color: '#4FA85F' }}>{t.missilesIntercepted} Intercepted </strong>}
+                  ({t.missilesLeaking} Leaking)
+                </span>
+              </div>
+
+              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                {t.details}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* BMD Shield Damage Banner */}
+        <div style={{ padding: '6px 8px', borderRadius: '4px', background: isIntact ? 'rgba(79, 168, 95, 0.15)' : isSuperficial ? 'rgba(255, 176, 32, 0.18)' : 'rgba(217, 83, 79, 0.22)', border: `1px solid ${statusColor}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: statusColor }}>
+              Target Facility Status: {bmd.targetDamageStatus.replace(/_/g, ' ').toUpperCase()}
+            </span>
+            <span className="wg-tag" style={{ background: statusColor, color: '#000000', fontWeight: 700 }}>
+              {bmd.totalImpacts === 0 ? '0 Hits (Shield Held)' : `${bmd.totalImpacts} Warhead Impacts`}
+            </span>
+          </div>
+          <p style={{ margin: '3px 0 0 0', fontSize: '10px', color: 'var(--paper-dim)' }}>
+            {bmd.verdict}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
   const [showLayers, setShowLayers] = useState(false);
   const share = attrition(a);
@@ -300,7 +408,7 @@ function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
 
   return (
     <>
-      {/* Layered Fleet Air Defense (ASuW) or Subsurface (ASW) View when target is a Naval / Subsurface Combatant */}
+      {/* Layered Fleet Air Defense (ASuW) or Subsurface (ASW) View */}
       {wg.navalAssessment && (
         wg.navalAssessment.kind === 'asuw' ? (
           <NavalFleetDefenseView nav={wg.navalAssessment} />
@@ -309,8 +417,13 @@ function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
         )
       )}
 
+      {/* Multi-Tier Ballistic Missile Defense (BMD) & Hypersonic HUD */}
+      {wg.bmdAssessment && (
+        <BallisticDefenseView bmd={wg.bmdAssessment} />
+      )}
+
       {/* Prominent After-Action Report (AAR) Banner */}
-      <div className={`wg-outcome-banner ${outcome.winner}`} style={{ marginTop: wg.navalAssessment ? '10px' : '0' }}>
+      <div className={`wg-outcome-banner ${outcome.winner}`} style={{ marginTop: (wg.navalAssessment || wg.bmdAssessment) ? '10px' : '0' }}>
         <div className="wg-outcome-title">{outcome.verdictTitle}</div>
         <div className="wg-outcome-desc">{outcome.verdictDescription}</div>
 

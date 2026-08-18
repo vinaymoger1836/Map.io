@@ -191,6 +191,15 @@ function PhaseCard({
           </div>
         )}
 
+        {report.bmdAssessment && (
+          <div style={{ margin: '4px 0', padding: '4px 6px', background: 'rgba(186, 104, 200, 0.08)', border: '1px solid rgba(186, 104, 200, 0.3)', borderRadius: '3px', fontSize: '10px' }}>
+            <span style={{ color: '#BA68C8', fontWeight: 600 }}>
+              🚀 Multi-Tier BMD & Space Shield: 
+            </span>
+            <span style={{ color: 'var(--paper)' }}>{report.bmdAssessment.headline}</span>
+          </div>
+        )}
+
         <p className="wg-note" style={{ color: isSuccess ? '#4FA85F' : '#D9534F', marginTop: '3px' }}>
           ✦ {report.targetDamageSummary}
         </p>
@@ -260,7 +269,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
 
   // New Phase Form State
   const [selectedPhaseNum, setSelectedPhaseNum] = useState<number | 'new'>('new');
-  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike' | 'asuw' | 'asw'>('sead');
+  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike' | 'asuw' | 'asw' | 'bmd'>('sead');
   const [newAttackerId, setNewAttackerId] = useState<string>('');
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
@@ -355,6 +364,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     if (newCategory === 'sead') defaultTitle = 'SEAD Anti-Radiation SAM Strike';
     if (newCategory === 'asuw') defaultTitle = 'Naval Surface Strike (ASuW Fleet Attack)';
     if (newCategory === 'asw') defaultTitle = 'Anti-Submarine Warfare (ASW Torpedo Hunt)';
+    if (newCategory === 'bmd') defaultTitle = 'Ballistic / Hypersonic Missile Strike';
 
     const targetPhaseNumber = selectedPhaseNum === 'new' ? nextPhaseNumber : selectedPhaseNum;
 
@@ -499,6 +509,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                   <option value="sead">SEAD (SAM Radar Strike)</option>
                   <option value="asuw">Naval Surface Strike (ASuW)</option>
                   <option value="asw">Anti-Submarine Hunt (ASW)</option>
+                  <option value="bmd">Ballistic / Hypersonic Strike (BMD)</option>
                   <option value="strike">Main Strike (Saturation)</option>
                 </select>
               </label>

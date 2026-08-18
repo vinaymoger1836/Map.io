@@ -76,6 +76,10 @@ import {
   type NavalAssessment,
 } from './navalEngagement';
 import {
+  assessBallisticMissileDefense,
+  type BallisticDefenseAssessment,
+} from './ballisticEngagement';
+import {
   calculateRadarAvoidanceDogleg,
   greatCirclePath,
   multiLegGreatCirclePath,
@@ -321,6 +325,8 @@ export interface WarGames {
 
   /* Multi-Layered Naval ASuW & Subsurface ASW Combat */
   navalAssessment: NavalAssessment | null;
+  /* Multi-Tier Ballistic Missile Defense (BMD) & Hypersonic Simulation */
+  bmdAssessment: BallisticDefenseAssessment | null;
 
   /** Which reaches are drawn, and what they are judged against. */
   coverage: CoverageState;
@@ -1725,6 +1731,51 @@ export function useWarGames({
     boardContext,
   ]);
 
+  /* ---------------- ballistic missile defense (BMD) ---------------- */
+
+  const bmdAssessment = useMemo<BallisticDefenseAssessment | null>(() => {
+    if (!raidFromId || !raidToId) return null;
+    const attacker = board.units.find((u) => u.id === raidFromId);
+    const target = board.units.find((u) => u.id === raidToId);
+    if (!attacker || !target) return null;
+
+    const attackerSpec = specOf(attacker, boardContext);
+    const weapon = attackerSpec?.weapons?.[selectedWeaponIndex];
+    const weaponName = weapon?.name ?? '';
+    const isBallisticWeapon =
+      attackerSpec?.typeId === 'silo' ||
+      attackerSpec?.typeId === 'missile' ||
+      weaponName.toLowerCase().includes('ballistic') ||
+      weaponName.toLowerCase().includes('iskander') ||
+      weaponName.toLowerCase().includes('atacms') ||
+      weaponName.toLowerCase().includes('df-') ||
+      weaponName.toLowerCase().includes('hgv') ||
+      weaponName.toLowerCase().includes('kinzhal') ||
+      weaponName.toLowerCase().includes('zircon') ||
+      (weapon?.engages ?? []).some((c) => c.startsWith('ballistic'));
+
+    if (!isBallisticWeapon) return null;
+
+    const unitCount = attacker.kind === 'unit' ? attacker.count : 1;
+    const salvo = salvoSize ?? (unitCount * (weapon?.salvo ?? 2));
+
+    return assessBallisticMissileDefense(
+      attacker,
+      target,
+      selectedWeaponIndex,
+      salvo,
+      board.units,
+      boardContext
+    );
+  }, [
+    raidFromId,
+    raidToId,
+    board.units,
+    salvoSize,
+    selectedWeaponIndex,
+    boardContext,
+  ]);
+
   // The drawn path is the assessed path — same great circle, same resolution —
   // so a belt the line visibly crosses is a belt the numbers counted.
   useEffect(() => {
@@ -1951,6 +2002,7 @@ export function useWarGames({
     autoGenerateRetaliationPlan,
     resetCampaign,
     navalAssessment,
+    bmdAssessment,
     coverage,
     setCoverageMode,
     toggleCoverageKind,
