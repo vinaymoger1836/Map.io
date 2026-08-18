@@ -30,6 +30,7 @@ export interface AarModalProps {
 
 export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'munitions' | 'casualties' | 'lessons' | 'timeline' | 'io'>('summary');
+  const [isFullScreen, setIsFullScreen] = useState(true);
   const [copied, setCopied] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
@@ -122,25 +123,26 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(6px)',
+        background: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
         zIndex: 99999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: isFullScreen ? 0 : '20px',
       }}
       onClick={onClose}
     >
       <div
         style={{
-          width: '900px',
-          maxWidth: '96vw',
-          maxHeight: '90vh',
+          width: isFullScreen ? '100vw' : '1050px',
+          height: isFullScreen ? '100vh' : '90vh',
+          maxWidth: isFullScreen ? '100vw' : '96vw',
+          maxHeight: isFullScreen ? '100vh' : '92vh',
           background: 'var(--panel)',
-          border: '1px solid var(--border)',
-          borderRadius: '8px',
-          boxShadow: '0 12px 48px rgba(0,0,0,0.6)',
+          border: isFullScreen ? 'none' : '1px solid var(--border)',
+          borderRadius: isFullScreen ? '0px' : '8px',
+          boxShadow: '0 12px 48px rgba(0,0,0,0.75)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -151,7 +153,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
         {/* Modal Header */}
         <div
           style={{
-            padding: '12px 18px',
+            padding: '14px 20px',
             background: 'var(--sidebar)',
             borderBottom: '1px solid var(--border)',
             display: 'flex',
@@ -161,23 +163,23 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: '#E8833A' }}>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: '#E8833A' }}>
                 📋 After-Action Intelligence Report (AAR)
               </span>
-              <span className={`wg-tag ${isSuccess ? 'success' : 'loss'}`}>
+              <span className={`wg-tag ${isSuccess ? 'success' : 'loss'}`} style={{ fontSize: '10.5px' }}>
                 {isSuccess ? 'OBJECTIVE ACCOMPLISHED' : 'MISSION REPULSED'}
               </span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--paper-dim)', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--paper-dim)', marginTop: '3px' }}>
               {report.title} · {report.timestamp}
             </div>
           </div>
 
           {/* Quick Action Toolbar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               className="wg-btn"
-              style={{ fontSize: '10.5px', padding: '4px 8px', background: copied ? '#4FA85F' : undefined }}
+              style={{ fontSize: '11px', padding: '5px 10px', background: copied ? '#4FA85F' : undefined }}
               onClick={handleCopy}
               title="Copy formatted markdown report"
             >
@@ -185,7 +187,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
             </button>
             <button
               className="wg-btn"
-              style={{ fontSize: '10.5px', padding: '4px 8px' }}
+              style={{ fontSize: '11px', padding: '5px 10px' }}
               onClick={handleDownloadMarkdown}
               title="Download markdown briefing (.md)"
             >
@@ -193,7 +195,7 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
             </button>
             <button
               className="wg-btn"
-              style={{ fontSize: '10.5px', padding: '4px 8px' }}
+              style={{ fontSize: '11px', padding: '5px 10px' }}
               onClick={handleExportScenarioJson}
               title="Export complete scenario (.json)"
             >
@@ -201,9 +203,17 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
             </button>
             <button
               className="wg-salvo-btn"
-              style={{ width: '26px', height: '26px', fontSize: '14px', marginLeft: '6px' }}
+              style={{ width: '28px', height: '28px', fontSize: '13px', marginLeft: '4px' }}
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              title={isFullScreen ? 'Restore Windowed View' : 'Maximize Full Screen'}
+            >
+              {isFullScreen ? '🗗' : '⛶'}
+            </button>
+            <button
+              className="wg-salvo-btn"
+              style={{ width: '28px', height: '28px', fontSize: '15px' }}
               onClick={onClose}
-              title="Close modal"
+              title="Close full-screen report"
             >
               ✕
             </button>
