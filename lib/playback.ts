@@ -55,6 +55,7 @@ export interface TimelineSegment {
 
   interceptions: Array<{
     timeSec: number;
+    entryKm?: number;
     lngLat: [number, number];
     samLabel: string;
     samLngLat: [number, number];
@@ -223,6 +224,7 @@ export function buildRaidPlaybackModel(assessment: Assessment, boardUnits: Deplo
 
     interceptions.push({
       timeSec: tSec,
+      entryKm: eng.entryKm,
       lngLat: interceptLngLat,
       samLabel: eng.unitLabel || eng.systemName,
       samLngLat,
@@ -419,6 +421,13 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
     const isStandoff = Boolean(releaseLngLat);
     const launchCoord = isStandoff && releaseLngLat ? releaseLngLat : originLngLat;
 
+    const munitionBaseRoute =
+      seg.munitionRoute && seg.munitionRoute.length >= 2
+        ? seg.munitionRoute
+        : seg.routePoints && seg.routePoints.length >= 2
+        ? seg.routePoints
+        : [launchCoord, targetLngLat];
+
     // 1. Aircraft Ingress / Egress (Only for airborne strike platforms)
     const isAir = seg.isAirPlatform ?? true;
     const ingressRoute = seg.ingressRoute && seg.ingressRoute.length >= 2 ? seg.ingressRoute : (isAir ? seg.routePoints : undefined);
@@ -490,13 +499,6 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         totalKills += ic.kills;
       }
 
-      const munitionBaseRoute =
-        seg.munitionRoute && seg.munitionRoute.length >= 2
-          ? seg.munitionRoute
-          : seg.routePoints && seg.routePoints.length >= 2
-          ? seg.routePoints
-          : [launchCoord, targetLngLat];
-
       // Map individual missiles in sequential ripple stream directly from the launching platform
       for (let m = 0; m < salvoCount; m++) {
         // Sequential ripple launch stagger (0.75s between VLS / rail launches)
@@ -509,6 +511,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         const isIntercepted = m < totalKills;
         let killTimeSec = seg.impactTimeSec;
         let killCoord = targetLngLat;
+        let killDistKm = routeTotalDistanceKm(munitionBaseRoute);
 
         if (isIntercepted) {
           // Attribute to corresponding interception event
@@ -518,6 +521,7 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
             if (m < runningKills) {
               killTimeSec = ic.timeSec;
               killCoord = ic.lngLat;
+              killDistKm = ic.entryKm ?? routeTotalDistanceKm(munitionBaseRoute);
               break;
             }
           }
@@ -531,9 +535,9 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         const progress = mTotalSec > 0 ? (clampedTime - mLaunchSec) / mTotalSec : 1;
         const clampedFrac = Math.min(1, Math.max(0, progress));
 
-        // Core path along attack corridor
+        // Core path along attack corridor up to kill location
         const activeMunitionRoute = isIntercepted
-          ? [...munitionBaseRoute.slice(0, -1), killCoord]
+          ? splitRouteAtDistance(munitionBaseRoute, killDistKm).before
           : munitionBaseRoute;
 
         const mTotalDist = routeTotalDistanceKm(activeMunitionRoute);
@@ -582,15 +586,16 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const icHeading = bearingDeg(ic.samLngLat, ic.lngLat);
       const icPerpBearing = (icHeading + 90) % 360;
 
-      // Smooth, realistic interceptor flight duration (1.5x to 2x cruise speed, not instantaneous flash)
+      // Realistic SAM interceptor flight duration (Mach 3.5-4.5 rocket flight)
       const icDistKm = distanceKm(ic.samLngLat, ic.lngLat);
-      const strikeDistKm = distanceKm(launchCoord, targetLngLat);
-      const strikeDurationSec = Math.max(20, seg.impactTimeSec - seg.releaseTimeSec);
-      const distRatio = strikeDistKm > 0 ? icDistKm / strikeDistKm : 0.4;
-      const icFlightDurationSec = Math.max(14, Math.min(28, distRatio * strikeDurationSec * 1.2 + 12));
+      const strikeDurationSec = Math.max(15, seg.impactTimeSec - seg.releaseTimeSec);
+      const munitionTotalDistKm = Math.max(1, routeTotalDistanceKm(munitionBaseRoute));
+      const distRatio = munitionTotalDistKm > 0 ? icDistKm / munitionTotalDistKm : 0.2;
+      // SAM interceptor flies ~3x faster than subsonic cruise missile
+      const icFlightDurationSec = Math.max(6, Math.min(16, (distRatio / 3) * strikeDurationSec + 5));
 
       for (let j = 0; j < icCount; j++) {
-        const icStaggerSec = j * 0.5;
+        const icStaggerSec = j * 0.4;
         const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - icFlightDurationSec - icStaggerSec);
         const icImpactSec = ic.timeSec;
 
