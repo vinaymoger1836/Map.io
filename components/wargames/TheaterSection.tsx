@@ -20,6 +20,7 @@ import {
   type PhaseReport,
   type DefensiveUmbrella,
 } from '@/lib/theaterEngagement';
+import { calculateRadarAvoidanceDogleg } from '@/lib/geo';
 
 const km = (n: number) => `${Math.round(n).toLocaleString()} km`;
 
@@ -127,9 +128,14 @@ function PhaseCard({
   return (
     <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
       <div className="wg-tactical-title">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span className="wg-tag" style={{ background: 'var(--ink)' }}>Phase {report.phaseNumber}</span>
           <span style={{ fontWeight: 600 }}>{report.task.title}</span>
+          {report.task.waypoints && report.task.waypoints.length > 0 && (
+            <span className="wg-tag" style={{ background: 'color-mix(in srgb, #FFB020 30%, transparent)', color: '#FFB020', border: '1px solid #FFB020' }}>
+              📍 {report.task.waypoints.length} WP Dogleg
+            </span>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -242,6 +248,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
   const [newSalvo, setNewSalvo] = useState<number>(4);
+  const [taskWaypoints, setTaskWaypoints] = useState<[number, number][]>([]);
 
   // Targets candidates: all units on board
   const targetCandidates = board.units;
@@ -284,6 +291,27 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const activeWeapon = availableWeapons[newWeaponIndex] ?? availableWeapons[0];
   const maxMag = activeWeapon?.maxMagazine ?? 24;
 
+  const handleAutoTaskAvoidance = () => {
+    const attacker = board.units.find((u) => u.id === newAttackerId);
+    const target = board.units.find((u) => u.id === newTargetId);
+    if (!attacker || !target) return;
+
+    const threatZones: { at: [number, number]; radiusKm: number }[] = [];
+    if (theaterUmbrella) {
+      for (const s of theaterUmbrella.samDefenders) {
+        threatZones.push({ at: s.unit.lngLat, radiusKm: s.rangeKm });
+      }
+      for (const c of theaterUmbrella.capDefenders) {
+        threatZones.push({ at: c.unit.lngLat, radiusKm: c.combatRadiusKm });
+      }
+    }
+
+    const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones);
+    if (doglegs.length > 0) {
+      setTaskWaypoints(doglegs);
+    }
+  };
+
   const handleAddPhase = () => {
     if (!newAttackerId || !newTargetId) return;
 
@@ -302,7 +330,9 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
       weaponIndex: newWeaponIndex,
       salvoSize: Math.min(maxMag, Math.max(1, newSalvo)),
       altitudeM: 3000,
+      waypoints: taskWaypoints.length > 0 ? taskWaypoints : undefined,
     });
+    setTaskWaypoints([]);
   };
 
   return (
@@ -512,6 +542,91 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                   {newSalvo} missiles committed for this wave
                 </div>
               </div>
+            </div>
+
+            {/* Flight Route & Radar Avoidance */}
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '8px',
+                background: 'color-mix(in srgb, var(--ink) 40%, var(--surface))',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--paper)' }}>
+                  📍 Task Flight Route & Radar Avoidance
+                </span>
+                <span className="wg-tag" style={{ fontSize: '9px' }}>
+                  {taskWaypoints.length > 0 ? `${taskWaypoints.length} Doglegs Active` : 'Direct Path'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  className="wg-btn"
+                  style={{
+                    fontSize: '10px',
+                    padding: '4px 8px',
+                    background: 'var(--amber-dim, #E8833A)',
+                    color: '#000000',
+                    fontWeight: 600,
+                  }}
+                  disabled={!newAttackerId || !newTargetId}
+                  onClick={handleAutoTaskAvoidance}
+                  title="Compute optimal dogleg to fly around enemy air defense envelopes"
+                >
+                  ⚡ Auto Radar Avoidance
+                </button>
+
+                {taskWaypoints.length > 0 && (
+                  <button
+                    className="wg-btn"
+                    style={{ fontSize: '10px', padding: '4px 8px', color: '#D9534F' }}
+                    onClick={() => setTaskWaypoints([])}
+                  >
+                    ↺ Reset Direct
+                  </button>
+                )}
+              </div>
+
+              {taskWaypoints.length > 0 && (
+                <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {taskWaypoints.map((wp, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '10px',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        padding: '2px 6px',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      <span style={{ color: '#FFB020' }}>
+                        WP {idx + 1}: {wp[1].toFixed(2)}°N, {wp[0].toFixed(2)}°E
+                      </span>
+                      <button
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#D9534F',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          padding: '0 4px',
+                        }}
+                        onClick={() => setTaskWaypoints(taskWaypoints.filter((_, i) => i !== idx))}
+                        title="Remove waypoint"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button

@@ -12,9 +12,20 @@
  * 5. Multi-Vector Map Pathing & Chronological Theater Battle Debrief.
  */
 
-import { distanceKm, interpolate, greatCirclePath, crossing } from './geo';
+import {
+  distanceKm,
+  interpolate,
+  greatCirclePath,
+  crossing,
+  routeTotalDistanceKm,
+  splitRouteAtDistance,
+  routeCrossing,
+  multiLegGreatCirclePath,
+  interpolateRouteDistance,
+} from './geo';
 import { effectiveSpec, type MunitionCatalogue } from './munitions';
 import {
+  domainOf,
   effectiveDetectionKm,
   maxMunitionCapacity,
   radarHorizonKm,
@@ -67,6 +78,7 @@ export interface StrikePhaseTask {
   weaponIndex: number;
   salvoSize: number;
   altitudeM: number;
+  waypoints?: [number, number][];
 }
 
 export interface UnitPersistentState {
@@ -467,12 +479,33 @@ export function assessTheaterRaid(
       // Deduct from attacker magazine
       attackerState.magazines.set(task.weaponIndex, Math.max(0, curAttackerMag - actualSalvo));
 
-      const totalDistKm = distanceKm(attackerUnit.lngLat, targetUnit.lngLat);
-      const isStandoff = (weapon.rangeKm ?? 0) > 0;
+      const isAirAttacker =
+        attackerSpec.typeId === 'fighter' ||
+        attackerSpec.typeId === 'strike' ||
+        attackerSpec.typeId === 'bomber' ||
+        attackerSpec.typeId === 'drone' ||
+        attackerSpec.typeId === 'ew' ||
+        domainOf(attackerSpec) === 'air';
+
+      const waypoints = task.waypoints ?? [];
+      const fullRoute: [number, number][] =
+        waypoints.length > 0
+          ? [attackerUnit.lngLat, ...waypoints, targetUnit.lngLat]
+          : [attackerUnit.lngLat, targetUnit.lngLat];
+
+      const totalDistKm = routeTotalDistanceKm(fullRoute);
+      const isStandoff = isAirAttacker && (weapon.rangeKm ?? 0) > 0;
       const standoffDistKm = isStandoff ? Math.min(weapon.rangeKm, totalDistKm) : 0;
       const releaseDistKm = isStandoff ? Math.max(0, totalDistKm - standoffDistKm) : totalDistKm;
       const releaseLngLat =
-        isStandoff && totalDistKm > 0 ? interpolate(attackerUnit.lngLat, targetUnit.lngLat, releaseDistKm / totalDistKm) : undefined;
+        isStandoff && releaseDistKm > 0 && releaseDistKm < totalDistKm
+          ? interpolateRouteDistance(fullRoute, releaseDistKm).coord
+          : undefined;
+
+      const { before: ingressRoute, after: munitionRoute } =
+        isAirAttacker && releaseLngLat
+          ? splitRouteAtDistance(fullRoute, releaseDistKm)
+          : { before: fullRoute, after: fullRoute };
 
       // Log Launch
       battleLog.push({
@@ -499,10 +532,9 @@ export function assessTheaterRaid(
       let totalIntercepted = 0;
       const phaseInterceptions: PhaseInterceptionRecord[] = [];
 
-      // Flight corridor geometry for this specific task
-      const flightOrigin = releaseLngLat ?? attackerUnit.lngLat;
-      const flightTarget = targetUnit.lngLat;
-      const corridorDistKm = distanceKm(flightOrigin, flightTarget);
+      // Route to evaluate against defending air defense envelopes
+      const activeEvaluationRoute = isAirAttacker && isStandoff ? munitionRoute : fullRoute;
+      const corridorDistKm = routeTotalDistanceKm(activeEvaluationRoute);
 
       // Find defenders covering this route
       const defenders = allUnits.filter((u) => u.iso === targetUnit.iso);
@@ -539,13 +571,13 @@ export function assessTheaterRaid(
           if (!defWeapon.rangeKm || defWeapon.rangeKm <= 0) continue;
           if (defWeapon.engages && !defWeapon.engages.includes('air')) continue;
 
-          // Check great-circle crossing of this defender's envelope along the flight path
-          const cross = crossing(flightOrigin, flightTarget, def.lngLat, defWeapon.rangeKm, corridorDistKm);
+          // Check multi-waypoint geodesic crossing of this defender's envelope along the flight path
+          const cross = routeCrossing(activeEvaluationRoute, def.lngLat, defWeapon.rangeKm);
           if (!cross) continue;
 
-          const interceptKm = Math.max(0, Math.min(corridorDistKm, (cross.entryKm + cross.exitKm) / 2));
-          const entryFraction = corridorDistKm > 0 ? interceptKm / corridorDistKm : 0.5;
-          const interceptLngLat = interpolate(flightOrigin, flightTarget, entryFraction);
+          const interceptPos = interpolateRouteDistance(activeEvaluationRoute, cross.entryKm);
+          const interceptLngLat = interceptPos.coord;
+          const entryFraction = corridorDistKm > 0 ? cross.entryKm / corridorDistKm : 0.5;
 
           candidates.push({
             def,
@@ -700,19 +732,21 @@ export function assessTheaterRaid(
       // Path Spec for Map
       const phaseColor = PHASE_COLORS[(pNum - 1) % PHASE_COLORS.length];
       let pathSpec: RaidPathSpec | undefined;
-      if (releaseLngLat) {
+      if (isAirAttacker && releaseLngLat) {
         pathSpec = {
-          ingress: greatCirclePath(attackerUnit.lngLat, releaseLngLat, 32),
-          munition: greatCirclePath(releaseLngLat, targetUnit.lngLat, 32),
+          ingress: multiLegGreatCirclePath(ingressRoute, 32),
+          munition: multiLegGreatCirclePath(munitionRoute, 32),
           releasePoint: releaseLngLat,
           targetPoint: targetUnit.lngLat,
+          waypoints,
           color: phaseColor,
           munitionColor: '#FFB020',
         };
       } else {
         pathSpec = {
-          ingress: greatCirclePath(attackerUnit.lngLat, targetUnit.lngLat, 48),
+          ingress: multiLegGreatCirclePath(fullRoute, 32),
           targetPoint: targetUnit.lngLat,
+          waypoints,
           color: phaseColor,
         };
       }

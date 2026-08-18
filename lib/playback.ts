@@ -306,11 +306,33 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
       const originLngLat = pathSpec?.ingress?.[0] ?? [0, 0];
       const targetLngLat = pathSpec?.targetPoint ?? [0, 0];
       const releaseLngLat = pathSpec?.releasePoint;
+      const waypoints = task.waypoints ?? [];
+      const fullRoute: [number, number][] =
+        waypoints.length > 0 ? [originLngLat, ...waypoints, targetLngLat] : [originLngLat, targetLngLat];
 
-      const isStandoff = Boolean(releaseLngLat);
+      const isAirPlatform =
+        task.category === 'oca' || task.category === 'sead' || (rep.attackerPlatformsSurviving !== undefined && rep.attackerPlatformsSurviving > 0);
+      const isStandoff = isAirPlatform && Boolean(releaseLngLat);
       const ingressSec = isStandoff ? phaseStartSec + 35 : phaseStartSec;
       const impactTimeSec = phaseStartSec + 75;
       const egressEndTimeSec = isStandoff ? phaseStartSec + 90 : impactTimeSec;
+
+      let ingressRoute: [number, number][] = [];
+      let munitionRoute: [number, number][] = [];
+
+      if (isAirPlatform) {
+        if (isStandoff && releaseLngLat) {
+          const split = splitRouteAtDistance(fullRoute, routeTotalDistanceKm(fullRoute) * 0.45);
+          ingressRoute = split.before;
+          munitionRoute = split.after;
+        } else {
+          ingressRoute = fullRoute;
+          munitionRoute = [];
+        }
+      } else {
+        ingressRoute = [];
+        munitionRoute = fullRoute;
+      }
 
       const interceptions: TimelineSegment['interceptions'] = [];
       const heading = bearingDeg(originLngLat, targetLngLat);
@@ -325,6 +347,7 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
           const tSec = launchBaseSec + (icRec.entryFraction ?? 0.6) * flightWindowSec;
           interceptions.push({
             timeSec: tSec,
+            entryKm: routeTotalDistanceKm(fullRoute) * (icRec.entryFraction ?? 0.6),
             lngLat: icRec.interceptLngLat ?? interpolate(originLngLat, targetLngLat, 0.65),
             samLabel: icRec.defenderLabel,
             samLngLat: icRec.defenderLngLat, // Exact real coordinates of enemy defender unit!
@@ -333,11 +356,13 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
         }
       } else if (rep.munitionsIntercepted > 0) {
         const midFrac = 0.65;
-        const interceptLngLat = interpolate(originLngLat, targetLngLat, midFrac);
+        const interceptPos = interpolateRouteDistance(fullRoute, routeTotalDistanceKm(fullRoute) * midFrac);
+        const interceptLngLat = interceptPos.coord;
         const samLngLat = destination(interceptLngLat, 35, perpHeading);
 
         interceptions.push({
           timeSec: phaseStartSec + 55,
+          entryKm: routeTotalDistanceKm(fullRoute) * midFrac,
           lngLat: interceptLngLat,
           samLabel: 'Defending Air Defense',
           samLngLat,
@@ -369,6 +394,10 @@ export function buildTheaterPlaybackModel(assessment: TheaterAssessment): Playba
         originLngLat,
         targetLngLat,
         releaseLngLat,
+        routePoints: fullRoute,
+        isAirPlatform,
+        ingressRoute,
+        munitionRoute,
         startTimeSec: phaseStartSec,
         releaseTimeSec: ingressSec,
         impactTimeSec,
