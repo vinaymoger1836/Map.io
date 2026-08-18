@@ -561,6 +561,11 @@ export function assessTheaterRaid(
       let totalIntercepted = 0;
       const phaseInterceptions: PhaseInterceptionRecord[] = [];
 
+      // Target Spec and Domain classification
+      const targetSpec = specOf(targetUnit, ctx);
+      const isTargetNaval = targetSpec ? isNavalCombatant(targetSpec.typeId) : false;
+      const isTargetSub = targetSpec ? isSubsurfaceUnit(targetSpec.typeId) : false;
+
       // Route to evaluate against defending air defense envelopes
       const activeEvaluationRoute = isAirAttacker && isStandoff ? munitionRoute : fullRoute;
       const corridorDistKm = routeTotalDistanceKm(activeEvaluationRoute);
@@ -583,6 +588,9 @@ export function assessTheaterRaid(
       const candidates: DefEngagementCandidate[] = [];
 
       for (const def of defenders) {
+        // When engaging a naval combatant, the ship's defense is handled in assessNavalCombat
+        if (isTargetNaval && def.id === targetUnit.id) continue;
+
         const defState = unitStates.get(def.id);
         if (!defState || defState.status === 'destroyed' || defState.aliveCount <= 0) continue;
 
@@ -701,9 +709,6 @@ export function assessTheaterRaid(
       }
 
       // Target Impact & Damage Resolution
-      const targetSpec = specOf(targetUnit, ctx);
-      const isTargetNaval = targetSpec ? isNavalCombatant(targetSpec.typeId) : false;
-      const isTargetSub = targetSpec ? isSubsurfaceUnit(targetSpec.typeId) : false;
       let navalAss: NavalAssessment | null = null;
       let bmdAss: BallisticDefenseAssessment | null = null;
 

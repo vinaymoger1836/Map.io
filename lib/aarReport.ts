@@ -14,14 +14,49 @@
  */
 
 import { type Assessment } from './engagement';
-import { type TheaterAssessment } from './theaterEngagement';
+import { type TheaterAssessment, specOf, type BoardContext } from './theaterEngagement';
 import { type NavalAssessment } from './navalEngagement';
 import { type BallisticDefenseAssessment } from './ballisticEngagement';
 import { unitLabel, type DeployedUnit, type Formation } from './warGames';
+import { maxMunitionCapacity, domainOf, type SystemSpec, type WeaponFacet } from './specs';
 
 /* ------------------------------------------------------------------ */
 /* Types & Interfaces                                                  */
 /* ------------------------------------------------------------------ */
+
+export interface WeaponSpecStatus {
+  id?: string;
+  name: string;
+  rangeKm: number;
+  pk?: number;
+  engages?: string[];
+  initialMagazine: number;
+  expended: number;
+  remainingMagazine: number;
+  status: 'ready' | 'low' | 'depleted';
+}
+
+export interface UnitSpecLedgerEntry {
+  unitId: string;
+  unitLabel: string;
+  side: 'attacker' | 'defender';
+  nationName: string;
+  iso: string;
+  domain: 'air' | 'naval' | 'subsurface' | 'ground' | 'radar';
+  typeId: string;
+  speedKmh?: number;
+  displacementT?: number;
+  crew?: number;
+  signature?: 'low' | 'medium' | 'high';
+  sensor?: {
+    detectionKm?: number;
+    tracks?: number;
+    engagements?: number; // Concurrent fire channels
+    horizonLimited?: boolean;
+  };
+  weapons: WeaponSpecStatus[];
+  finalStatus: 'intact' | 'damaged' | 'suppressed' | 'destroyed' | 'sunk';
+}
 
 export interface MunitionExpenditureEntry {
   side: 'attacker' | 'defender';
@@ -109,9 +144,115 @@ export interface ComprehensiveAarReport {
   casualtyRegistry: PlatformCasualtyEntry[];
   tacticalLessons: TacticalLesson[];
   chronologicalLog: AarTimelineEntry[];
+  unitSpecs: UnitSpecLedgerEntry[];
 
   // Raw Markdown Intelligence Briefing text
   markdownBriefing: string;
+}
+
+export function buildUnitSpecsLedger(
+  units: DeployedUnit[],
+  nations: Record<string, { name: string }>,
+  unitStates: Map<string, any> | undefined,
+  attackerIso: string,
+  ctx?: BoardContext
+): UnitSpecLedgerEntry[] {
+  const ledger: UnitSpecLedgerEntry[] = [];
+  const dummyCtx: BoardContext = ctx ?? { systems: [], munitions: new Map(), formations: [] };
+
+  for (const u of units) {
+    const spec = specOf(u, dummyCtx);
+    if (!spec) continue;
+
+    const side: 'attacker' | 'defender' = u.iso === attackerIso ? 'attacker' : 'defender';
+    const nationName = nations[u.iso]?.name ?? u.iso;
+    const uLabel = unitLabel(u, dummyCtx.formations, dummyCtx.systems);
+    const uState = unitStates?.get(u.id);
+
+    const typeId = (u.kind === 'unit' ? u.typeId : 'formation').toLowerCase();
+    let domain: UnitSpecLedgerEntry['domain'] = 'ground';
+    if (
+      typeId.includes('ship') ||
+      typeId === 'destroyer' ||
+      typeId === 'frigate' ||
+      typeId === 'carrier' ||
+      typeId === 'corvette' ||
+      typeId === 'cruiser'
+    ) {
+      domain = 'naval';
+    } else if (typeId === 'submarine' || typeId === 'ssbn' || typeId === 'midget-sub') {
+      domain = 'subsurface';
+    } else if (
+      typeId === 'fighter' ||
+      typeId === 'strike' ||
+      typeId === 'bomber' ||
+      typeId === 'drone' ||
+      typeId === 'ew' ||
+      typeId === 'mpa' ||
+      typeId === 'helicopter' ||
+      typeId === 'awacs'
+    ) {
+      domain = 'air';
+    } else if (typeId === 'radar') {
+      domain = 'radar';
+    }
+
+    const finalStatus: UnitSpecLedgerEntry['finalStatus'] = uState?.status ?? 'intact';
+
+    const weapons: WeaponSpecStatus[] = (spec.weapons ?? []).map((w: WeaponFacet, wIdx: number) => {
+      const loadoutCount = u.kind === 'unit' ? u.loadout?.find((l) => l.id === w.id)?.count : undefined;
+      const initialMagazine = maxMunitionCapacity(spec, w, u.kind === 'unit' ? u.count : 1, loadoutCount);
+      const remainingMagazine =
+        uState && uState.magazines && typeof uState.magazines.get === 'function'
+          ? (uState.magazines.get(wIdx) ?? initialMagazine)
+          : initialMagazine;
+      const expended = Math.max(0, initialMagazine - remainingMagazine);
+      const status: WeaponSpecStatus['status'] =
+        remainingMagazine <= 0
+          ? 'depleted'
+          : remainingMagazine <= Math.max(1, Math.round(initialMagazine * 0.25))
+            ? 'low'
+            : 'ready';
+
+      return {
+        id: w.id,
+        name: w.name ?? 'Munition',
+        rangeKm: w.rangeKm ?? 0,
+        pk: w.pk,
+        engages: (w.engages ?? []) as string[],
+        initialMagazine,
+        expended,
+        remainingMagazine,
+        status,
+      };
+    });
+
+    ledger.push({
+      unitId: u.id,
+      unitLabel: uLabel,
+      side,
+      nationName,
+      iso: u.iso,
+      domain,
+      typeId: spec.typeId,
+      speedKmh: spec.platform?.speedKmh,
+      displacementT: spec.platform?.displacementT,
+      crew: spec.platform?.crew,
+      signature: spec.signature,
+      sensor: spec.sensor
+        ? {
+            detectionKm: spec.sensor.detectionKm,
+            tracks: spec.sensor.tracks,
+            engagements: spec.sensor.engagements,
+            horizonLimited: spec.sensor.horizonLimited,
+          }
+        : undefined,
+      weapons,
+      finalStatus,
+    });
+  }
+
+  return ledger;
 }
 
 /* ------------------------------------------------------------------ */
@@ -123,7 +264,8 @@ export function generateSingleRaidAar(
   navalAss: NavalAssessment | null,
   bmdAss: BallisticDefenseAssessment | null,
   units: DeployedUnit[],
-  nations: Record<string, { name: string }>
+  nations: Record<string, { name: string }>,
+  ctx?: BoardContext
 ): ComprehensiveAarReport {
   const raid = assessment.raid;
   const attackerUnit = units.find((u) => u.id === raid.unitId);
@@ -282,6 +424,14 @@ export function generateSingleRaidAar(
   const isMissionSuccess = outcome.winner === 'attacker' || attImpacts > 0;
   const ratio = attImpacts > 0 ? `1 : ${Math.max(1, Math.round(attImpacts * 2.5))}` : '0 : 1';
 
+  const unitSpecs = buildUnitSpecsLedger(
+    units.filter((u) => u.iso === attIso || u.iso === defIso),
+    nations,
+    undefined,
+    attIso,
+    ctx
+  );
+
   const report: ComprehensiveAarReport = {
     id: `aar-${Date.now()}`,
     timestamp: new Date().toUTCString(),
@@ -299,6 +449,7 @@ export function generateSingleRaidAar(
     casualtyRegistry,
     tacticalLessons,
     chronologicalLog,
+    unitSpecs,
     markdownBriefing: '',
   };
 
@@ -309,7 +460,8 @@ export function generateSingleRaidAar(
 export function generateTheaterAar(
   theaterAss: TheaterAssessment,
   units: DeployedUnit[],
-  nations: Record<string, { name: string }>
+  nations: Record<string, { name: string }>,
+  ctx?: BoardContext
 ): ComprehensiveAarReport {
   const attIso = theaterAss.attackerIso;
   const defIso = units.find((u) => u.id === theaterAss.mainTargetId)?.iso ?? 'XX';
@@ -587,6 +739,13 @@ export function generateTheaterAar(
     casualtyRegistry,
     tacticalLessons,
     chronologicalLog,
+    unitSpecs: buildUnitSpecsLedger(
+      units.filter((u) => u.iso === attIso || u.iso === defIso),
+      nations,
+      theaterAss.unitFinalStates,
+      attIso,
+      ctx
+    ),
     markdownBriefing: '',
   };
 
@@ -675,6 +834,40 @@ export function renderAarMarkdown(aar: ComprehensiveAarReport): string {
       }
     }
   }
+
+  // 6. Unit Specifications & Armament Ledger
+  if (aar.unitSpecs && aar.unitSpecs.length > 0) {
+    lines.push(``);
+    lines.push(`---`);
+    lines.push(``);
+    lines.push(`## 6. COMBATANT PLATFORM SPECIFICATIONS & ARMAMENT LEDGER`);
+
+    for (const u of aar.unitSpecs) {
+      lines.push(``);
+      lines.push(`### **${u.unitLabel}** (\`${u.side.toUpperCase()}\` — ${u.nationName}, Status: **${u.finalStatus.toUpperCase()}**)`);
+      const sensorDetails = u.sensor
+        ? `${u.sensor.detectionKm ?? 0} km radar reach | ${u.sensor.engagements ?? 1} concurrent fire channels`
+        : 'Passive / Visual detection';
+      lines.push(`* **Sensors & Radar Profile:** ${sensorDetails}`);
+      if (u.speedKmh || u.signature) {
+        lines.push(`* **Platform Attributes:** Speed: ${u.speedKmh ?? '—'} km/h | Radar Signature: ${(u.signature ?? 'medium').toUpperCase()}${u.displacementT ? ` | Displacement: ${u.displacementT} t` : ''}${u.crew ? ` | Crew: ${u.crew}` : ''}`);
+      }
+
+      if (u.weapons.length > 0) {
+        lines.push(`* **Armament & Magazine Ledger:**`);
+        lines.push(`| Weapon System | Target Envelope | Max Range | Single-Shot Pk | Initial Mag | Expended | Remaining | Status |`);
+        lines.push(`|:---|:---|:---:|:---:|:---:|:---:|:---:|:---|`);
+        for (const w of u.weapons) {
+          const engagesStr = w.engages && w.engages.length > 0 ? w.engages.join(', ') : 'multipurpose';
+          const pkStr = w.pk !== undefined ? w.pk.toFixed(2) : '—';
+          lines.push(`| **${w.name}** | ${engagesStr} | ${w.rangeKm} km | ${pkStr} | ${w.initialMagazine} | ${w.expended} | **${w.remainingMagazine}** | \`${w.status.toUpperCase()}\` |`);
+        }
+      } else {
+        lines.push(`*No active strike or defensive armaments listed.*`);
+      }
+    }
+  }
+
   lines.push(``);
   lines.push(`---`);
   lines.push(`*CLASSIFIED DEFENSE SIMULATION REPORT — Map.io Tactical Wargame Engine*`);

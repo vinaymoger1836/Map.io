@@ -30,7 +30,7 @@ export interface AarModalProps {
 }
 
 export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'munitions' | 'casualties' | 'lessons' | 'timeline' | 'io'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'munitions' | 'casualties' | 'lessons' | 'timeline' | 'specs' | 'io'>('summary');
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -281,6 +281,13 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
             style={{ padding: '8px 14px', fontSize: '11.5px', fontWeight: activeTab === 'timeline' ? 700 : 400 }}
           >
             ⏱ Timeline Log ({report.chronologicalLog.length})
+          </button>
+          <button
+            className={`wg-tab-btn ${activeTab === 'specs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('specs')}
+            style={{ padding: '8px 14px', fontSize: '11.5px', fontWeight: activeTab === 'specs' ? 700 : 400 }}
+          >
+            ⚙️ Systems & Specs ({report.unitSpecs?.length ?? 0})
           </button>
           <button
             className={`wg-tab-btn ${activeTab === 'io' ? 'active' : ''}`}
@@ -655,6 +662,191 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
                 );
               })}
             </ol>
+          )}
+
+          {/* TAB: SYSTEM SPECS & ARMS LEDGER */}
+          {activeTab === 'specs' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {(!report.unitSpecs || report.unitSpecs.length === 0) ? (
+                <div className="wg-tactical-card" style={{ padding: '16px', textAlign: 'center', color: 'var(--paper-dim)' }}>
+                  No deployed system specifications recorded for this engagement.
+                </div>
+              ) : (
+                report.unitSpecs.map((u) => {
+                  const isAttacker = u.side === 'attacker';
+                  const statusBadge =
+                    u.finalStatus === 'intact'
+                      ? { text: 'INTACT', color: '#4FA85F' }
+                      : u.finalStatus === 'damaged'
+                        ? { text: 'DAMAGED', color: '#FFB020' }
+                        : u.finalStatus === 'suppressed'
+                          ? { text: 'SUPPRESSED', color: '#E8833A' }
+                          : { text: u.finalStatus.toUpperCase(), color: '#D9534F' };
+
+                  return (
+                    <div
+                      key={u.unitId}
+                      className="wg-tactical-card"
+                      style={{
+                        padding: '14px',
+                        borderLeft: `4px solid ${isAttacker ? '#E8833A' : '#4DD0E1'}`,
+                        background: 'rgba(255, 255, 255, 0.02)',
+                      }}
+                    >
+                      {/* Header: Label, Domain, Nation, Status */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          borderBottom: '1px solid var(--border)',
+                          paddingBottom: '8px',
+                          marginBottom: '10px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--paper)' }}>
+                            {u.unitLabel}
+                          </span>
+                          <span
+                            className="wg-tag"
+                            style={{
+                              fontSize: '10px',
+                              background: isAttacker ? 'rgba(232, 131, 58, 0.15)' : 'rgba(77, 208, 225, 0.15)',
+                              color: isAttacker ? '#E8833A' : '#4DD0E1',
+                              border: `1px solid ${isAttacker ? '#E8833A' : '#4DD0E1'}`,
+                            }}
+                          >
+                            {u.side.toUpperCase()} · {u.nationName}
+                          </span>
+                          <span className="wg-tag" style={{ fontSize: '10px' }}>
+                            {u.domain.toUpperCase()} ({u.typeId})
+                          </span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '3px',
+                            background: `${statusBadge.color}22`,
+                            color: statusBadge.color,
+                            border: `1px solid ${statusBadge.color}`,
+                          }}
+                        >
+                          {statusBadge.text}
+                        </span>
+                      </div>
+
+                      {/* Platform & Sensor Attributes Grid */}
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                          gap: '8px',
+                          marginBottom: '12px',
+                          padding: '8px 10px',
+                          background: 'var(--sidebar)',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <div>
+                          <span style={{ color: 'var(--paper-dim)' }}>Radar / Sensor Reach: </span>
+                          <strong style={{ color: '#4DD0E1' }}>
+                            {u.sensor?.detectionKm ? `${u.sensor.detectionKm} km` : 'Visual / Passive'}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: 'var(--paper-dim)' }}>Fire Channels: </span>
+                          <strong style={{ color: '#FFB020' }}>
+                            {u.sensor?.engagements ? `${u.sensor.engagements} concurrent` : '1 channel'}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: 'var(--paper-dim)' }}>Max Speed: </span>
+                          <strong style={{ color: 'var(--paper)' }}>
+                            {u.speedKmh ? `${u.speedKmh} km/h` : '—'}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: 'var(--paper-dim)' }}>Radar Signature: </span>
+                          <strong style={{ color: 'var(--paper)', textTransform: 'uppercase' }}>
+                            {u.signature ?? 'Medium'}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Armament & Magazine Table */}
+                      {u.weapons.length > 0 ? (
+                        <div style={{ overflowX: 'auto' }}>
+                          <table className="wg-aar-table" style={{ width: '100%', fontSize: '11px' }}>
+                            <thead>
+                              <tr>
+                                <th style={{ textAlign: 'left' }}>Weapon System</th>
+                                <th style={{ textAlign: 'left' }}>Target Role</th>
+                                <th style={{ textAlign: 'center' }}>Range</th>
+                                <th style={{ textAlign: 'center' }}>Pk</th>
+                                <th style={{ textAlign: 'center' }}>Initial Mag</th>
+                                <th style={{ textAlign: 'center' }}>Expended</th>
+                                <th style={{ textAlign: 'center' }}>Remaining Mag</th>
+                                <th style={{ textAlign: 'center' }}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {u.weapons.map((w, wIdx) => {
+                                const engagesStr = w.engages && w.engages.length > 0 ? w.engages.join(', ') : 'multipurpose';
+                                const magColor =
+                                  w.status === 'depleted'
+                                    ? '#D9534F'
+                                    : w.status === 'low'
+                                      ? '#FFB020'
+                                      : '#4FA85F';
+
+                                return (
+                                  <tr key={wIdx}>
+                                    <td style={{ fontWeight: 600, color: 'var(--paper)' }}>{w.name}</td>
+                                    <td style={{ color: 'var(--paper-dim)' }}>{engagesStr}</td>
+                                    <td style={{ textAlign: 'center' }}>{w.rangeKm} km</td>
+                                    <td style={{ textAlign: 'center' }}>{w.pk !== undefined ? w.pk.toFixed(2) : '—'}</td>
+                                    <td style={{ textAlign: 'center', color: 'var(--paper-dim)' }}>{w.initialMagazine}</td>
+                                    <td style={{ textAlign: 'center', color: w.expended > 0 ? '#E8833A' : 'var(--paper-dim)' }}>
+                                      {w.expended}
+                                    </td>
+                                    <td style={{ textAlign: 'center', fontWeight: 700, color: magColor }}>
+                                      {w.remainingMagazine}
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                      <span
+                                        style={{
+                                          fontSize: '10px',
+                                          fontWeight: 700,
+                                          padding: '1px 6px',
+                                          borderRadius: '3px',
+                                          background: `${magColor}22`,
+                                          color: magColor,
+                                          border: `1px solid ${magColor}`,
+                                        }}
+                                      >
+                                        {w.status.toUpperCase()}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '11px', color: 'var(--paper-dim)', fontStyle: 'italic' }}>
+                          No active weapon suites or munitions mounted on platform.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
           )}
 
           {/* TAB 6: SCENARIO I/O */}

@@ -431,19 +431,20 @@ export function assessNavalFleetDefense(
     );
   }
 
+  const usedWeapons = Array.from(new Set(tierReports.map((t) => t.weaponName))).join(', ');
   const headline =
     flagshipDamage === 'intact'
-      ? `CARRIER STRIKE GROUP SHIELD HELD — 0 Missile Impacts`
+      ? `FLEET AIR DEFENSE SHIELD HELD — 0 Impacts on ${flagLabel}`
       : flagshipDamage === 'superstructure_damaged'
-        ? `CSG AIR DEFENSE PENETRATED — Minor Damage on ${flagLabel}`
+        ? `FLEET DEFENSE PENETRATED — Superstructure Damaged on ${flagLabel}`
         : flagshipDamage === 'mission_kill'
-          ? `CRITICAL FLEET MISSION KILL — ${flagLabel} Disabled by Saturation`
-          : `FLEET FLAGSHIP SUNK — Massive Anti-Ship Missile Saturation`;
+          ? `MISSION KILL — ${flagLabel} Disabled by Saturation Strike`
+          : `COMBAT LOSS — ${flagLabel} Sunk by Anti-Ship Missiles`;
 
   const verdict =
     flagshipDamage === 'intact'
-      ? `Layered Aegis fleet defenses (SM-6, ESSM, Nulka EW decoys, and CIWS) successfully neutralized all ${salvoSize} incoming missiles.`
-      : `${totalImpacts} out of ${salvoSize} anti-ship missiles penetrated the 4-tier fleet air defense screen, inflicting ${flagshipDamage.replace('_', ' ').toUpperCase()} on ${flagLabel}.`;
+      ? `Layered fleet air defenses (${usedWeapons || 'SAM interceptors'}) successfully neutralized all ${salvoSize} incoming missiles.`
+      : `${totalImpacts} out of ${salvoSize} anti-ship missiles penetrated the fleet air defense screen, inflicting ${flagshipDamage.replace('_', ' ').toUpperCase()} on ${flagLabel}.`;
 
   return {
     kind: 'asuw',

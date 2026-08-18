@@ -280,8 +280,12 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
 
   const theaterAarReport = useMemo(() => {
     if (!theaterAssessment) return null;
-    return generateTheaterAar(theaterAssessment, wg.board.units, wg.board.nations);
-  }, [theaterAssessment, wg.board.units, wg.board.nations]);
+    return generateTheaterAar(theaterAssessment, wg.board.units, wg.board.nations, {
+      systems: wg.systems,
+      munitions: wg.munitions,
+      formations: wg.board.formations,
+    });
+  }, [theaterAssessment, wg.board.units, wg.board.nations, wg.systems, wg.munitions, wg.board.formations]);
 
   // Sync drafting selections with map preview
   useEffect(() => {

@@ -415,9 +415,14 @@ function Result({ a, wg }: { a: Assessment; wg: WarGames }) {
       wg.navalAssessment,
       wg.bmdAssessment,
       wg.board.units,
-      wg.board.nations
+      wg.board.nations,
+      {
+        systems: wg.systems,
+        munitions: wg.munitions,
+        formations: wg.board.formations,
+      }
     );
-  }, [a, wg.navalAssessment, wg.bmdAssessment, wg.board.units, wg.board.nations]);
+  }, [a, wg.navalAssessment, wg.bmdAssessment, wg.board.units, wg.board.nations, wg.systems, wg.munitions, wg.board.formations]);
 
   return (
     <>
