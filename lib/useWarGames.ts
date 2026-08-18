@@ -285,6 +285,11 @@ export interface WarGames {
   addTheaterPhase: (phase: Omit<StrikePhaseTask, 'id' | 'order'>) => void;
   removeTheaterPhase: (id: string) => void;
   reorderTheaterPhase: (fromIndex: number, toIndex: number) => void;
+  theaterTaskWaypoints: [number, number][];
+  setTheaterTaskWaypoints: React.Dispatch<React.SetStateAction<[number, number][]>>;
+  addTheaterTaskWaypoint: (coord: [number, number]) => void;
+  removeTheaterTaskWaypoint: (index: number) => void;
+  clearTheaterTaskWaypoints: () => void;
   theaterUmbrella: DefensiveUmbrella | null;
   theaterAttackers: CandidateAttacker[];
   theaterAssessment: TheaterAssessment | null;
@@ -407,6 +412,7 @@ export function useWarGames({
   const [theaterTargetId, setTheaterTargetId] = useState<string | null>(null);
   const [theaterAttackerIso, setTheaterAttackerIso] = useState<string | null>(null);
   const [theaterPhases, setTheaterPhases] = useState<StrikePhaseTask[]>([]);
+  const [theaterTaskWaypoints, setTheaterTaskWaypoints] = useState<[number, number][]>([]);
 
   /* 4D Battle Playback State */
   const [playbackActive, setPlaybackActive] = useState<boolean>(false);
@@ -1174,7 +1180,11 @@ export function useWarGames({
       if (drag?.moved) return;
 
       if (waypointPlacingRef.current) {
-        setRaidWaypoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
+        if (theaterTargetId) {
+          setTheaterTaskWaypoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
+        } else {
+          setRaidWaypoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
+        }
         return;
       }
 
@@ -1485,6 +1495,18 @@ export function useWarGames({
     });
   }, []);
 
+  const addTheaterTaskWaypoint = useCallback((coord: [number, number]) => {
+    setTheaterTaskWaypoints((prev) => [...prev, coord]);
+  }, []);
+
+  const removeTheaterTaskWaypoint = useCallback((index: number) => {
+    setTheaterTaskWaypoints((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const clearTheaterTaskWaypoints = useCallback(() => {
+    setTheaterTaskWaypoints([]);
+  }, []);
+
   /* ---------------- 4D battle playback ---------------- */
 
   const playbackModel = useMemo<PlaybackModel | null>(() => {
@@ -1685,8 +1707,37 @@ export function useWarGames({
     if (!map || !hydratedRef.current) return;
 
     if (theaterAssessment && theaterAssessment.pathSpecs.length > 0) {
-      setRaidPath(map, theaterAssessment.pathSpecs);
+      let allSpecs = [...theaterAssessment.pathSpecs];
+      if (theaterTaskWaypoints.length > 0) {
+        const targetUnit = board.units.find((u) => u.id === theaterTargetId);
+        const defaultAttacker = board.units.find((u) => u.iso === theaterAttackerIso);
+        if (targetUnit && defaultAttacker) {
+          const previewRoute: [number, number][] = [defaultAttacker.lngLat, ...theaterTaskWaypoints, targetUnit.lngLat];
+          allSpecs.push({
+            ingress: multiLegGreatCirclePath(previewRoute, 32),
+            targetPoint: targetUnit.lngLat,
+            waypoints: theaterTaskWaypoints,
+            color: '#FFB020',
+          });
+        }
+      }
+      setRaidPath(map, allSpecs);
       return;
+    } else if (theaterTargetId && theaterTaskWaypoints.length > 0) {
+      const targetUnit = board.units.find((u) => u.id === theaterTargetId);
+      const defaultAttacker = board.units.find((u) => u.iso === theaterAttackerIso);
+      if (targetUnit && defaultAttacker) {
+        const previewRoute: [number, number][] = [defaultAttacker.lngLat, ...theaterTaskWaypoints, targetUnit.lngLat];
+        setRaidPath(map, [
+          {
+            ingress: multiLegGreatCirclePath(previewRoute, 32),
+            targetPoint: targetUnit.lngLat,
+            waypoints: theaterTaskWaypoints,
+            color: '#FFB020',
+          },
+        ]);
+        return;
+      }
     }
 
     if (!assessment || assessment.blocked) {
@@ -1720,9 +1771,21 @@ export function useWarGames({
         targetPoint: to,
         waypoints,
         color,
+        munitionColor: '#FFB020',
       });
     }
-  }, [assessment, theaterAssessment, raidFromId, raidWaypoints, board.nations, board.units, mapRef]);
+  }, [
+    assessment,
+    theaterAssessment,
+    theaterTaskWaypoints,
+    theaterTargetId,
+    theaterAttackerIso,
+    raidFromId,
+    raidWaypoints,
+    board.nations,
+    board.units,
+    mapRef,
+  ]);
 
   // A raid whose ends have left the board is not a raid — and neither is one
   // aimed at its own side, which is what changing the raider to a unit of the
@@ -1827,6 +1890,11 @@ export function useWarGames({
     addTheaterPhase,
     removeTheaterPhase,
     reorderTheaterPhase,
+    theaterTaskWaypoints,
+    setTheaterTaskWaypoints,
+    addTheaterTaskWaypoint,
+    removeTheaterTaskWaypoint,
+    clearTheaterTaskWaypoints,
     theaterUmbrella,
     theaterAttackers,
     theaterAssessment,

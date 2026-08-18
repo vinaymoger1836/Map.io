@@ -615,16 +615,16 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const icHeading = bearingDeg(ic.samLngLat, ic.lngLat);
       const icPerpBearing = (icHeading + 90) % 360;
 
-      // Realistic SAM interceptor flight duration (Mach 3.5-4.5 rocket flight)
+      // Realistic SAM interceptor rocket flight duration (Mach 4-5 high-velocity intercept)
       const icDistKm = distanceKm(ic.samLngLat, ic.lngLat);
       const strikeDurationSec = Math.max(15, seg.impactTimeSec - seg.releaseTimeSec);
       const munitionTotalDistKm = Math.max(1, routeTotalDistanceKm(munitionBaseRoute));
-      const distRatio = munitionTotalDistKm > 0 ? icDistKm / munitionTotalDistKm : 0.2;
-      // SAM interceptor flies ~3x faster than subsonic cruise missile
-      const icFlightDurationSec = Math.max(6, Math.min(16, (distRatio / 3) * strikeDurationSec + 5));
+      const distRatio = munitionTotalDistKm > 0 ? icDistKm / munitionTotalDistKm : 0.15;
+      // SAM rocket takes 1.8s - 3.8s to launch and reach the perimeter intercept point
+      const icFlightDurationSec = Math.max(1.8, Math.min(3.8, (distRatio / 4) * strikeDurationSec + 1.2));
 
       for (let j = 0; j < icCount; j++) {
-        const icStaggerSec = j * 0.4;
+        const icStaggerSec = j * 0.25;
         const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - icFlightDurationSec - icStaggerSec);
         const icImpactSec = ic.timeSec;
 

@@ -236,6 +236,12 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     addTheaterPhase,
     removeTheaterPhase,
     reorderTheaterPhase,
+    theaterTaskWaypoints,
+    setTheaterTaskWaypoints,
+    removeTheaterTaskWaypoint,
+    clearTheaterTaskWaypoints,
+    waypointPlacingActive,
+    setWaypointPlacingActive,
     theaterUmbrella,
     theaterAttackers,
     theaterAssessment,
@@ -248,7 +254,6 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
   const [newSalvo, setNewSalvo] = useState<number>(4);
-  const [taskWaypoints, setTaskWaypoints] = useState<[number, number][]>([]);
 
   // Targets candidates: all units on board
   const targetCandidates = board.units;
@@ -308,7 +313,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
 
     const doglegs = calculateRadarAvoidanceDogleg(attacker.lngLat, target.lngLat, threatZones);
     if (doglegs.length > 0) {
-      setTaskWaypoints(doglegs);
+      setTheaterTaskWaypoints(doglegs);
     }
   };
 
@@ -330,9 +335,10 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
       weaponIndex: newWeaponIndex,
       salvoSize: Math.min(maxMag, Math.max(1, newSalvo)),
       altitudeM: 3000,
-      waypoints: taskWaypoints.length > 0 ? taskWaypoints : undefined,
+      waypoints: theaterTaskWaypoints.length > 0 ? theaterTaskWaypoints : undefined,
     });
-    setTaskWaypoints([]);
+    clearTheaterTaskWaypoints();
+    setWaypointPlacingActive(false);
   };
 
   return (
@@ -559,11 +565,27 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                   📍 Task Flight Route & Radar Avoidance
                 </span>
                 <span className="wg-tag" style={{ fontSize: '9px' }}>
-                  {taskWaypoints.length > 0 ? `${taskWaypoints.length} Doglegs Active` : 'Direct Path'}
+                  {theaterTaskWaypoints.length > 0 ? `${theaterTaskWaypoints.length} Doglegs Active` : 'Direct Path'}
                 </span>
               </div>
 
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  className="wg-btn"
+                  style={{
+                    fontSize: '10px',
+                    padding: '4px 8px',
+                    background: waypointPlacingActive ? 'var(--amber-dim, #E8833A)' : 'var(--surface-hover)',
+                    color: waypointPlacingActive ? '#000000' : 'var(--paper)',
+                    fontWeight: waypointPlacingActive ? 600 : 400,
+                  }}
+                  disabled={!newAttackerId || !newTargetId}
+                  onClick={() => setWaypointPlacingActive(!waypointPlacingActive)}
+                  title="Click anywhere on the tactical map to drop dogleg waypoints for this task"
+                >
+                  {waypointPlacingActive ? '📍 Click Map to Drop WP (Active)' : '+ Click Map to Add WP'}
+                </button>
+
                 <button
                   className="wg-btn"
                   style={{
@@ -580,20 +602,23 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                   ⚡ Auto Radar Avoidance
                 </button>
 
-                {taskWaypoints.length > 0 && (
+                {theaterTaskWaypoints.length > 0 && (
                   <button
                     className="wg-btn"
                     style={{ fontSize: '10px', padding: '4px 8px', color: '#D9534F' }}
-                    onClick={() => setTaskWaypoints([])}
+                    onClick={() => {
+                      clearTheaterTaskWaypoints();
+                      setWaypointPlacingActive(false);
+                    }}
                   >
                     ↺ Reset Direct
                   </button>
                 )}
               </div>
 
-              {taskWaypoints.length > 0 && (
+              {theaterTaskWaypoints.length > 0 && (
                 <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  {taskWaypoints.map((wp, idx) => (
+                  {theaterTaskWaypoints.map((wp, idx) => (
                     <div
                       key={idx}
                       style={{
@@ -618,7 +643,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                           fontSize: '11px',
                           padding: '0 4px',
                         }}
-                        onClick={() => setTaskWaypoints(taskWaypoints.filter((_, i) => i !== idx))}
+                        onClick={() => removeTheaterTaskWaypoint(idx)}
                         title="Remove waypoint"
                       >
                         ✕
