@@ -39,12 +39,16 @@ function DefensiveUmbrellaView({
   if (!umbrella) return null;
 
   const totalDefenders =
-    umbrella.samDefenders.length + umbrella.capDefenders.length + umbrella.sensorDefenders.length;
+    umbrella.samDefenders.length +
+    umbrella.capDefenders.length +
+    umbrella.sensorDefenders.length +
+    (umbrella.artilleryDefenders?.length ?? 0) +
+    (umbrella.casDefenders?.length ?? 0);
 
   return (
     <div className="wg-tactical-card" style={{ marginTop: '8px' }}>
       <div className="wg-tactical-title">
-        <span>Defensive Umbrella over Objective</span>
+        <span>Defensive Umbrella & Retaliatory Fire</span>
         <span className="wg-tag">{totalDefenders} protective nodes</span>
       </div>
 
@@ -53,9 +57,37 @@ function DefensiveUmbrellaView({
           Defending <strong>{unitLabel(target, wg.formations, wg.systems)}</strong> ({wg.board.nations[target.iso]?.name ?? target.iso}):
         </p>
 
+        {umbrella.artilleryDefenders && umbrella.artilleryDefenders.length > 0 && (
+          <div style={{ marginTop: '6px' }}>
+            <span style={{ fontSize: '10px', color: '#FFB020', fontWeight: 600 }}>🎯 Covering Artillery & Counter-Battery:</span>
+            <div className="wg-package-pills" style={{ marginTop: '2px' }}>
+              {umbrella.artilleryDefenders.map((a, idx) => (
+                <span key={`arty-${idx}`} className="wg-package-pill" style={{ color: '#FFB020' }}>
+                  {unitLabel(a.unit, wg.formations, wg.systems)}
+                  <em>({a.weaponName} · {km(a.rangeKm)} reach {a.hasIsrSupport ? '· 🛸 Drone ISR' : ''})</em>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {umbrella.casDefenders && umbrella.casDefenders.length > 0 && (
+          <div style={{ marginTop: '6px' }}>
+            <span style={{ fontSize: '10px', color: '#BA68C8', fontWeight: 600 }}>🚁 Defending Close Air Support (CAS):</span>
+            <div className="wg-package-pills" style={{ marginTop: '2px' }}>
+              {umbrella.casDefenders.map((c, idx) => (
+                <span key={`cas-${idx}`} className="wg-package-pill" style={{ color: '#BA68C8' }}>
+                  {unitLabel(c.unit, wg.formations, wg.systems)}
+                  <em>({c.weaponName} · {km(c.combatRadiusKm)} radius)</em>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {umbrella.samDefenders.length > 0 && (
           <div style={{ marginTop: '6px' }}>
-            <span style={{ fontSize: '10px', color: '#E8833A', fontWeight: 600 }}>Covering SAM Batteries:</span>
+            <span style={{ fontSize: '10px', color: '#E8833A', fontWeight: 600 }}>🛡️ Covering SAM Air Defenses:</span>
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.samDefenders.map((s, idx) => (
                 <span key={`sam-${idx}`} className="wg-package-pill" style={{ color: '#E8833A' }}>
@@ -69,7 +101,7 @@ function DefensiveUmbrellaView({
 
         {umbrella.capDefenders.length > 0 && (
           <div style={{ marginTop: '6px' }}>
-            <span style={{ fontSize: '10px', color: '#4DD0E1', fontWeight: 600 }}>Combat Air Patrol (CAP):</span>
+            <span style={{ fontSize: '10px', color: '#4DD0E1', fontWeight: 600 }}>✈️ Combat Air Patrol (CAP Fighters):</span>
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.capDefenders.map((c, idx) => (
                 <span key={`cap-${idx}`} className="wg-package-pill" style={{ color: '#4DD0E1' }}>
@@ -83,7 +115,7 @@ function DefensiveUmbrellaView({
 
         {umbrella.sensorDefenders.length > 0 && (
           <div style={{ marginTop: '6px' }}>
-            <span style={{ fontSize: '10px', color: '#9AA7B4', fontWeight: 600 }}>Early Warning & AEW&C:</span>
+            <span style={{ fontSize: '10px', color: '#9AA7B4', fontWeight: 600 }}>🛸 Recon Drones, Radars & AEW&C:</span>
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.sensorDefenders.map((sn, idx) => (
                 <span key={`sensor-${idx}`} className="wg-package-pill">
@@ -97,7 +129,7 @@ function DefensiveUmbrellaView({
 
         {totalDefenders === 0 && (
           <p className="wg-note" style={{ marginTop: '4px' }}>
-            No nearby SAM batteries or CAP fighters cover this objective. Target is isolated and vulnerable.
+            No nearby artillery, CAS, SAM batteries, or CAP fighters cover this objective. Target is isolated and vulnerable.
           </p>
         )}
       </div>

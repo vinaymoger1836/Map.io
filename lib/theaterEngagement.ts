@@ -67,6 +67,8 @@ export interface DefensiveUmbrella {
   samDefenders: { unit: DeployedUnit; spec: SystemSpec; rangeKm: number; coverageDistanceKm: number }[];
   capDefenders: { unit: DeployedUnit; spec: SystemSpec; combatRadiusKm: number }[];
   sensorDefenders: { unit: DeployedUnit; spec: SystemSpec; detectionKm: number }[];
+  artilleryDefenders: { unit: DeployedUnit; spec: SystemSpec; rangeKm: number; weaponName: string; maxMagazine: number; hasIsrSupport: boolean }[];
+  casDefenders: { unit: DeployedUnit; spec: SystemSpec; combatRadiusKm: number; weaponName: string }[];
 }
 
 export type GroundTerrainType = 'open' | 'desert' | 'urban' | 'forest' | 'mountain' | 'stronghold';
@@ -324,9 +326,10 @@ export const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | unde
         typeId: 'special-forces',
         platform: { speedKmh: 40, combatRadiusKm: 150, crew: 0 },
         weapons: [
-          { name: 'Direct Action Assault & CQB', rangeKm: 3, salvo: 6, magazine: 36, pk: 0.85, engages: ['ground'] },
+          { name: 'Direct Action Assault & Carbines (5.56mm)', rangeKm: 3, salvo: 300, magazine: 3600, pk: 0.85, engages: ['ground'] },
           { name: 'Man-Portable ATGM (Javelin / NLAW)', rangeKm: 5, salvo: 2, magazine: 12, pk: 0.85, engages: ['ground'] },
-          { name: 'JTAC Laser Designator / Drone Strike', rangeKm: 25, salvo: 2, magazine: 8, pk: 0.90, engages: ['ground'] },
+          { name: 'Loitering Recon / Kamikaze FPV Drone', rangeKm: 25, salvo: 2, magazine: 12, pk: 0.90, engages: ['ground'] },
+          { name: 'MANPADS Air Defense (Stinger / Igla)', rangeKm: 6, salvo: 2, magazine: 6, pk: 0.80, engages: ['air'] },
         ],
       } as SystemSpec;
     }
@@ -337,34 +340,39 @@ export const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | unde
         typeId: 'airborne',
         platform: { speedKmh: 30, combatRadiusKm: 100, crew: 0 },
         weapons: [
-          { name: 'Airborne Assault Small Arms', rangeKm: 3, salvo: 10, magazine: 80, pk: 0.65, engages: ['ground'] },
-          { name: 'Shoulder-Fired ATGM', rangeKm: 4, salvo: 2, magazine: 18, pk: 0.75, engages: ['ground'] },
-          { name: 'MANPADS (Stinger / Igla)', rangeKm: 6, salvo: 2, magazine: 8, pk: 0.70, engages: ['air'] },
+          { name: 'Assault Rifles & Carbines (5.45mm / 5.56mm)', rangeKm: 3, salvo: 800, magazine: 16800, pk: 0.65, engages: ['ground'] },
+          { name: 'Squad Automatic Weapons & MMG (7.62mm)', rangeKm: 3.5, salvo: 400, magazine: 5000, pk: 0.70, engages: ['ground'] },
+          { name: 'Shoulder-Fired ATGM & RPG', rangeKm: 4, salvo: 4, magazine: 24, pk: 0.75, engages: ['ground'] },
+          { name: 'MANPADS Air Defense (Stinger / Igla)', rangeKm: 6, salvo: 2, magazine: 8, pk: 0.70, engages: ['air'] },
         ],
       } as SystemSpec;
     }
     if (typeId === 'infantry' || typeId === 'motorized' || typeId === 'marines') {
       return {
         id: unit.systemId || unit.id,
-        name: 'Infantry Battalion',
+        name: 'Infantry Company',
         typeId: 'infantry',
         platform: { speedKmh: 20, combatRadiusKm: 60, crew: 0 },
         weapons: [
-          { name: 'Small Arms & Heavy Machine Guns', rangeKm: 3, salvo: 10, magazine: 100, pk: 0.55, engages: ['ground'] },
-          { name: 'Anti-Tank Guided Missile (ATGM / RPG)', rangeKm: 5, salvo: 2, magazine: 24, pk: 0.70, engages: ['ground'] },
-          { name: '81 mm / 120 mm Mortar', rangeKm: 8, salvo: 4, magazine: 48, pk: 0.60, engages: ['ground'] },
+          { name: 'Assault Rifles (5.56mm / 5.45mm)', rangeKm: 3, salvo: 1000, magazine: 21000, pk: 0.55, engages: ['ground'] },
+          { name: 'Heavy & Medium Machine Guns (12.7mm / 7.62mm)', rangeKm: 3.5, salvo: 500, magazine: 6000, pk: 0.65, engages: ['ground'] },
+          { name: 'Anti-Tank Guided Missile (ATGM / RPG-7)', rangeKm: 5, salvo: 4, magazine: 32, pk: 0.70, engages: ['ground'] },
+          { name: '81 mm / 120 mm Company Mortar', rangeKm: 8, salvo: 6, magazine: 72, pk: 0.60, engages: ['ground'] },
+          { name: 'MANPADS Air Defense (Stinger / Igla)', rangeKm: 6, salvo: 2, magazine: 8, pk: 0.65, engages: ['air'] },
         ],
       } as SystemSpec;
     }
     if (typeId === 'mech-infantry' || typeId === 'mechanized' || typeId === 'ifv' || typeId === 'apc') {
       return {
         id: unit.systemId || unit.id,
-        name: 'Mechanised Infantry Unit',
+        name: 'Mechanised Infantry Company',
         typeId: 'mech-infantry',
         platform: { speedKmh: 70, combatRadiusKm: 400, crew: 3 },
         weapons: [
-          { name: '30 mm / 25 mm Autocannon', rangeKm: 4, salvo: 6, magazine: 60, pk: 0.70, engages: ['ground'] },
-          { name: 'Dismounted ATGM (Kornet / TOW)', rangeKm: 5, salvo: 2, magazine: 12, pk: 0.75, engages: ['ground'] },
+          { name: '30 mm / 25 mm Autocannon', rangeKm: 4, salvo: 30, magazine: 500, pk: 0.70, engages: ['ground'] },
+          { name: 'Heavy Coaxial MG (7.62mm)', rangeKm: 2.5, salvo: 200, magazine: 4000, pk: 0.60, engages: ['ground'] },
+          { name: 'Vehicle-Mounted ATGM (Kornet / TOW)', rangeKm: 5.5, salvo: 2, magazine: 16, pk: 0.80, engages: ['ground'] },
+          { name: 'Dismounted Rifle Platoon Fire', rangeKm: 3, salvo: 500, magazine: 10500, pk: 0.55, engages: ['ground'] },
         ],
       } as SystemSpec;
     }
@@ -376,7 +384,8 @@ export const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | unde
         platform: { speedKmh: 65, combatRadiusKm: 450, crew: 3 },
         weapons: [
           { name: '120 mm / 125 mm Smoothbore Gun', rangeKm: 4, salvo: 4, magazine: 42, pk: 0.75, engages: ['ground'] },
-          { name: 'Coaxial Machine Gun', rangeKm: 2, salvo: 10, magazine: 120, pk: 0.50, engages: ['ground'] },
+          { name: 'Coaxial Machine Gun (7.62mm)', rangeKm: 2, salvo: 200, magazine: 2000, pk: 0.50, engages: ['ground'] },
+          { name: 'Commander Heavy MG (12.7mm)', rangeKm: 2.5, salvo: 100, magazine: 1000, pk: 0.60, engages: ['ground'] },
         ],
       } as SystemSpec;
     }
@@ -423,11 +432,22 @@ export function discoverDefensiveUmbrella(
   const samDefenders: DefensiveUmbrella['samDefenders'] = [];
   const capDefenders: DefensiveUmbrella['capDefenders'] = [];
   const sensorDefenders: DefensiveUmbrella['sensorDefenders'] = [];
+  const artilleryDefenders: DefensiveUmbrella['artilleryDefenders'] = [];
+  const casDefenders: DefensiveUmbrella['casDefenders'] = [];
+
+  const hasIsrDroneOrRadar = sameNationUnits.some((u) => {
+    const s = specOf(u, ctx);
+    if (!s) return false;
+    const typeId = (u.kind === 'unit' ? u.typeId : 'formation').toLowerCase();
+    const dist = distanceKm(u.lngLat, target.lngLat);
+    return (typeId.includes('drone') || typeId.includes('uav') || typeId.includes('radar') || typeId.includes('recon')) && dist <= 120;
+  });
 
   for (const u of sameNationUnits) {
     const spec = specOf(u, ctx);
     if (!spec) continue;
     const distKm = distanceKm(u.lngLat, target.lngLat);
+    const typeId = (u.kind === 'unit' ? u.typeId : 'formation').toLowerCase();
 
     // SAM batteries covering the target
     const airWeapons = (spec.weapons ?? []).filter((w) => w.rangeKm && w.rangeKm > 0 && (!w.engages || w.engages.includes('air')));
@@ -445,10 +465,65 @@ export function discoverDefensiveUmbrella(
       }
     }
 
-    // Early Warning / AEW&C Sensors
-    const detection = spec.sensor?.detectionKm ?? 0;
-    if (detection >= distKm || spec.typeId === 'awacs' || spec.typeId === 'radar') {
+    // Early Warning / AEW&C Sensors & Drone Recon
+    const detection = spec.sensor?.detectionKm ?? (typeId.includes('drone') || typeId.includes('uav') ? 80 : 0);
+    if (detection >= distKm || spec.typeId === 'awacs' || spec.typeId === 'radar' || typeId.includes('drone') || typeId.includes('uav')) {
       sensorDefenders.push({ unit: u, spec, detectionKm: detection || 400 });
+    }
+
+    // Defending Tube Artillery & MLRS batteries covering the ground approach
+    const artyWeapons = (spec.weapons ?? []).filter(
+      (w) =>
+        w.rangeKm &&
+        w.rangeKm >= 5 &&
+        (w.name?.toLowerCase().includes('howitzer') ||
+          w.name?.toLowerCase().includes('mortar') ||
+          w.name?.toLowerCase().includes('caesar') ||
+          w.name?.toLowerCase().includes('paladin') ||
+          w.name?.toLowerCase().includes('smerch') ||
+          w.name?.toLowerCase().includes('grad') ||
+          w.name?.toLowerCase().includes('himars') ||
+          w.name?.toLowerCase().includes('rocket') ||
+          w.name?.toLowerCase().includes('artillery') ||
+          typeId.includes('artillery') ||
+          typeId.includes('howitzer') ||
+          typeId.includes('mlrs'))
+    );
+
+    if (artyWeapons.length > 0) {
+      const maxArtyRange = Math.max(...artyWeapons.map((w) => w.rangeKm));
+      if (maxArtyRange >= distKm || distKm <= 40) {
+        const bestWeapon = artyWeapons[0];
+        artilleryDefenders.push({
+          unit: u,
+          spec,
+          rangeKm: maxArtyRange,
+          weaponName: bestWeapon.name ?? 'Artillery Battery',
+          maxMagazine: bestWeapon.magazine ?? 40,
+          hasIsrSupport: hasIsrDroneOrRadar,
+        });
+      }
+    }
+
+    // Defending Close Air Support (CAS / Attack Helicopters) covering the position
+    if (
+      typeId.includes('attack-heli') ||
+      typeId.includes('heli') ||
+      typeId.includes('ka-52') ||
+      typeId.includes('apache') ||
+      typeId.includes('su-25') ||
+      typeId.includes('a-10') ||
+      typeId.includes('cas')
+    ) {
+      const casRadius = spec.platform?.combatRadiusKm ?? 300;
+      if (casRadius >= distKm || distKm <= 350) {
+        casDefenders.push({
+          unit: u,
+          spec,
+          combatRadiusKm: casRadius,
+          weaponName: spec.weapons?.[0]?.name ?? 'Close Air Support Weapons',
+        });
+      }
     }
   }
 
@@ -458,6 +533,8 @@ export function discoverDefensiveUmbrella(
     samDefenders,
     capDefenders,
     sensorDefenders,
+    artilleryDefenders,
+    casDefenders,
   };
 }
 
@@ -1151,7 +1228,92 @@ export function assessTheaterRaid(
             const isTgtInfantry = tgtType === 'infantry' || tgtType === 'special-forces' || tgtType === 'airborne';
             const isTgtStronghold = currentTerrain === 'stronghold' || tgtType.includes('bunker') || tgtType.includes('stronghold') || tgtType.includes('base');
 
-            // Check if prior artillery or CAS suppressed the stronghold in earlier phases
+            // Ground Defensive Umbrella for the defending objective
+            const objUmbrella = discoverDefensiveUmbrella(targetUnit, allUnits, ctx);
+
+            // 1. Defending Artillery Counter-Battery & Retaliatory Barrage
+            const activeArtyBatteries = objUmbrella.artilleryDefenders.filter((a) => {
+              const st = unitStates.get(a.unit.id);
+              return st && st.status !== 'destroyed' && st.aliveCount > 0 && (st.magazines.get(0) ?? 0) > 0;
+            });
+
+            const hasDefenderDroneIsr = objUmbrella.sensorDefenders.some((s) => {
+              const st = unitStates.get(s.unit.id);
+              return st && st.status !== 'destroyed' && st.aliveCount > 0;
+            }) || objUmbrella.artilleryDefenders.some((a) => a.hasIsrSupport);
+
+            if (activeArtyBatteries.length > 0) {
+              const defendingBattery = activeArtyBatteries[0];
+              const batteryState = unitStates.get(defendingBattery.unit.id);
+              const batteryMag = batteryState?.magazines.get(0) ?? 12;
+              const retSalvo = Math.min(6, batteryMag);
+              if (batteryState) {
+                batteryState.magazines.set(0, Math.max(0, batteryMag - retSalvo));
+              }
+
+              const retPk = hasDefenderDroneIsr ? 0.70 : 0.25;
+              const retHits = Math.max(1, Math.round(retSalvo * retPk));
+              const retCasualties = Math.min(attackerState.alivePersonnel, retHits * (isAttInfantry ? 8 : 3));
+              const retKia = Math.round(retCasualties * 0.65);
+              const retWia = Math.max(0, retCasualties - retKia);
+
+              attackerState.kiaPersonnel += retKia;
+              attackerState.wiaPersonnel += retWia;
+              attackerState.alivePersonnel = Math.max(0, attackerState.alivePersonnel - retCasualties);
+
+              battleLog.push({
+                id: nextEvt(),
+                timeFormatted: 'T+12m',
+                title: `Defending Artillery Retaliation — ${unitLabel(defendingBattery.unit, ctx.formations, ctx.systems)}`,
+                detail: `Automated counter-barrage: Fired ${retSalvo} × ${defendingBattery.weaponName} (${hasDefenderDroneIsr ? 'Drone-Guided Spotting' : 'Blind / Unobserved Fire'}). Inflicted ${retKia} KIA / ${retWia} WIA on advancing assault columns.`,
+                badge: { text: `${retHits} Arty Impacts`, variant: hasDefenderDroneIsr ? 'sead' : 'neutral' },
+              });
+            }
+
+            // 2. Defending Emergency Close Air Support (CAS) Scramble
+            const activeCasAssets = objUmbrella.casDefenders.filter((c) => {
+              const st = unitStates.get(c.unit.id);
+              return st && st.status !== 'destroyed' && st.aliveCount > 0;
+            });
+
+            if (activeCasAssets.length > 0) {
+              const casFlight = activeCasAssets[0];
+              const attackerHasManpads = (attackerSpec.weapons ?? []).some(
+                (w) =>
+                  w.engages?.includes('air') ||
+                  w.name?.toLowerCase().includes('manpads') ||
+                  w.name?.toLowerCase().includes('stinger') ||
+                  w.name?.toLowerCase().includes('igla')
+              );
+
+              if (attackerHasManpads) {
+                battleLog.push({
+                  id: nextEvt(),
+                  timeFormatted: 'T+18m',
+                  title: `Attacker MANPADS Air Defense — CAS Intercepted`,
+                  detail: `Advancing vanguard fired shoulder-launched MANPADS (Stinger/Igla), engaging and driving off defending ${unitLabel(casFlight.unit, ctx.formations, ctx.systems)} before weapons release.`,
+                  badge: { text: 'CAS Driven Off', variant: 'success' },
+                });
+              } else {
+                const casAttCasualties = Math.min(attackerState.alivePersonnel, Math.max(4, Math.round(attackerState.alivePersonnel * 0.20)));
+                const casKia = Math.round(casAttCasualties * 0.70);
+                const casWia = Math.max(0, casAttCasualties - casKia);
+
+                attackerState.kiaPersonnel += casKia;
+                attackerState.wiaPersonnel += casWia;
+                attackerState.alivePersonnel = Math.max(0, attackerState.alivePersonnel - casAttCasualties);
+
+                battleLog.push({
+                  id: nextEvt(),
+                  timeFormatted: 'T+18m',
+                  title: `Defending Close Air Support — ${unitLabel(casFlight.unit, ctx.formations, ctx.systems)}`,
+                  detail: `Defending CAS aircraft conducted unhindered strafing & rocket runs on exposed assault vanguard (${casKia} attacker KIA / ${casWia} WIA).`,
+                  badge: { text: 'CAS Strafing Run', variant: 'loss' },
+                });
+              }
+            }
+
+            // 3. Check if prior artillery or CAS suppressed the stronghold in earlier phases
             const priorBombardmentHit = phaseReports.some(
               (p) =>
                 p.task.targetUnitId === targetUnit.id &&
@@ -1213,11 +1375,11 @@ export function assessTheaterRaid(
 
             let attLossRate = 0;
             if (isAmbushedInUrban) {
-              attLossRate = 0.25;
-            } else if (isTgtStronghold && !priorBombardmentHit) {
               attLossRate = 0.20;
+            } else if (isTgtStronghold && !priorBombardmentHit) {
+              attLossRate = 0.15;
             } else {
-              attLossRate = 0.05;
+              attLossRate = 0.04;
             }
 
             const attSoldiersHit = Math.min(
