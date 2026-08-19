@@ -314,7 +314,82 @@ const isStrikeType = (typeId: string): boolean =>
 export const specOf = (unit: DeployedUnit, ctx: BoardContext): SystemSpec | undefined => {
   if (unit.kind === 'unit') {
     const raw = systemById(ctx.systems, unit.systemId);
-    return raw ? effectiveSpec(raw, unit.loadout, ctx.munitions) : undefined;
+    if (raw) return effectiveSpec(raw, unit.loadout, ctx.munitions);
+
+    const typeId = unit.typeId.toLowerCase();
+    if (typeId === 'special-forces' || typeId === 'sof') {
+      return {
+        id: unit.systemId || unit.id,
+        name: 'Special Forces Detachment',
+        typeId: 'special-forces',
+        platform: { speedKmh: 40, combatRadiusKm: 150, crew: 0 },
+        weapons: [
+          { name: 'Direct Action Assault & CQB', rangeKm: 3, salvo: 6, magazine: 36, pk: 0.85, engages: ['ground'] },
+          { name: 'Man-Portable ATGM (Javelin / NLAW)', rangeKm: 5, salvo: 2, magazine: 12, pk: 0.85, engages: ['ground'] },
+          { name: 'JTAC Laser Designator / Drone Strike', rangeKm: 25, salvo: 2, magazine: 8, pk: 0.90, engages: ['ground'] },
+        ],
+      } as SystemSpec;
+    }
+    if (typeId === 'airborne' || typeId === 'paratroopers' || typeId === 'vdv') {
+      return {
+        id: unit.systemId || unit.id,
+        name: 'Airborne Paratrooper Company',
+        typeId: 'airborne',
+        platform: { speedKmh: 30, combatRadiusKm: 100, crew: 0 },
+        weapons: [
+          { name: 'Airborne Assault Small Arms', rangeKm: 3, salvo: 10, magazine: 80, pk: 0.65, engages: ['ground'] },
+          { name: 'Shoulder-Fired ATGM', rangeKm: 4, salvo: 2, magazine: 18, pk: 0.75, engages: ['ground'] },
+          { name: 'MANPADS (Stinger / Igla)', rangeKm: 6, salvo: 2, magazine: 8, pk: 0.70, engages: ['air'] },
+        ],
+      } as SystemSpec;
+    }
+    if (typeId === 'infantry' || typeId === 'motorized' || typeId === 'marines') {
+      return {
+        id: unit.systemId || unit.id,
+        name: 'Infantry Battalion',
+        typeId: 'infantry',
+        platform: { speedKmh: 20, combatRadiusKm: 60, crew: 0 },
+        weapons: [
+          { name: 'Small Arms & Heavy Machine Guns', rangeKm: 3, salvo: 10, magazine: 100, pk: 0.55, engages: ['ground'] },
+          { name: 'Anti-Tank Guided Missile (ATGM / RPG)', rangeKm: 5, salvo: 2, magazine: 24, pk: 0.70, engages: ['ground'] },
+          { name: '81 mm / 120 mm Mortar', rangeKm: 8, salvo: 4, magazine: 48, pk: 0.60, engages: ['ground'] },
+        ],
+      } as SystemSpec;
+    }
+    if (typeId === 'mech-infantry' || typeId === 'mechanized' || typeId === 'ifv' || typeId === 'apc') {
+      return {
+        id: unit.systemId || unit.id,
+        name: 'Mechanised Infantry Unit',
+        typeId: 'mech-infantry',
+        platform: { speedKmh: 70, combatRadiusKm: 400, crew: 3 },
+        weapons: [
+          { name: '30 mm / 25 mm Autocannon', rangeKm: 4, salvo: 6, magazine: 60, pk: 0.70, engages: ['ground'] },
+          { name: 'Dismounted ATGM (Kornet / TOW)', rangeKm: 5, salvo: 2, magazine: 12, pk: 0.75, engages: ['ground'] },
+        ],
+      } as SystemSpec;
+    }
+    if (typeId === 'armour' || typeId === 'tank' || typeId === 'mbt') {
+      return {
+        id: unit.systemId || unit.id,
+        name: 'Main Battle Tank Platoon',
+        typeId: 'armour',
+        platform: { speedKmh: 65, combatRadiusKm: 450, crew: 3 },
+        weapons: [
+          { name: '120 mm / 125 mm Smoothbore Gun', rangeKm: 4, salvo: 4, magazine: 42, pk: 0.75, engages: ['ground'] },
+          { name: 'Coaxial Machine Gun', rangeKm: 2, salvo: 10, magazine: 120, pk: 0.50, engages: ['ground'] },
+        ],
+      } as SystemSpec;
+    }
+
+    return {
+      id: unit.systemId || unit.id,
+      name: unit.typeId,
+      typeId: unit.typeId,
+      platform: { speedKmh: 50, combatRadiusKm: 200, crew: 0 },
+      weapons: [
+        { name: 'Standard Weapons', rangeKm: 10, salvo: 2, magazine: 20, pk: 0.60, engages: ['ground'] },
+      ],
+    } as SystemSpec;
   }
   if (unit.kind === 'formation') {
     let strikePart = unit.composition.find((p) => p.count > 0 && isStrikeType(p.typeId));
