@@ -418,56 +418,139 @@ export function AarModal({ report, wg, isOpen, onClose }: AarModalProps) {
                   </div>
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--paper-dim)' }}>
-                      <th style={{ padding: '6px 8px' }}>Side</th>
-                      <th style={{ padding: '6px 8px' }}>Platform / Objective</th>
-                      <th style={{ padding: '6px 8px' }}>Domain</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Force Size</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Losses</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Surviving</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.casualtyRegistry.map((c, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 700, color: c.side === 'attacker' ? '#E8833A' : '#4DD0E1' }}>
-                          {c.side.toUpperCase()}
-                        </td>
-                        <td style={{ padding: '6px 8px', fontWeight: 600 }}>{c.unitLabel}</td>
-                        <td style={{ padding: '6px 8px', color: 'var(--paper-dim)', textTransform: 'capitalize' }}>{c.domain}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>{c.initialCount}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', color: c.lostCount > 0 ? '#D9534F' : 'var(--paper-dim)', fontWeight: 700 }}>
-                          {c.lostCount}
-                        </td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4FA85F' }}>{c.survivingCount}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                          <span
-                            className={`wg-tag ${
-                              c.status === 'destroyed' || c.status === 'sunk'
-                                ? 'loss'
-                                : c.status === 'suppressed' || c.status === 'damaged'
-                                  ? 'neutral'
-                                  : 'success'
-                            }`}
-                            style={{
-                              color:
-                                c.status === 'destroyed' || c.status === 'sunk'
-                                  ? '#D9534F'
-                                  : c.status === 'suppressed' || c.status === 'damaged'
-                                    ? '#E8833A'
-                                    : '#4FA85F',
-                            }}
-                          >
-                            {c.status.toUpperCase()}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--paper-dim)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                      🚜 Platform & Heavy Equipment Losses
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--paper-dim)' }}>
+                          <th style={{ padding: '6px 8px' }}>Side</th>
+                          <th style={{ padding: '6px 8px' }}>Platform / Objective</th>
+                          <th style={{ padding: '6px 8px' }}>Domain</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Force Size</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Losses</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Surviving</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.casualtyRegistry.map((c, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 700, color: c.side === 'attacker' ? '#E8833A' : '#4DD0E1' }}>
+                              {c.side.toUpperCase()}
+                            </td>
+                            <td style={{ padding: '6px 8px', fontWeight: 600 }}>{c.unitLabel}</td>
+                            <td style={{ padding: '6px 8px', color: 'var(--paper-dim)', textTransform: 'capitalize' }}>{c.domain}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{c.initialCount}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: c.lostCount > 0 ? '#D9534F' : 'var(--paper-dim)', fontWeight: 700 }}>
+                              {c.lostCount}
+                            </td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4FA85F' }}>{c.survivingCount}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                              <span
+                                className={`wg-tag ${
+                                  c.status === 'destroyed' || c.status === 'sunk'
+                                    ? 'loss'
+                                    : c.status === 'suppressed' || c.status === 'damaged'
+                                      ? 'neutral'
+                                      : 'success'
+                                }`}
+                                style={{
+                                  color:
+                                    c.status === 'destroyed' || c.status === 'sunk'
+                                      ? '#D9534F'
+                                      : c.status === 'suppressed' || c.status === 'damaged'
+                                        ? '#E8833A'
+                                        : '#4FA85F',
+                                }}
+                              >
+                                {c.status.toUpperCase()}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Personnel Casualties Table */}
+                  {report.personnelCasualties && report.personnelCasualties.entries.length > 0 && (
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--paper-dim)', textTransform: 'uppercase' }}>
+                          🪖 Military Personnel Casualties (Soldiers KIA / WIA)
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '10px' }}>
+                          <span style={{ color: '#E8833A' }}>
+                            Attacker: <strong>{report.personnelCasualties.attackerKia} KIA</strong> / {report.personnelCasualties.attackerWia} WIA ({report.personnelCasualties.attackerSurviving} Operational)
                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <span style={{ color: 'var(--border)' }}>|</span>
+                          <span style={{ color: '#4DD0E1' }}>
+                            Defender: <strong>{report.personnelCasualties.defenderKia} KIA</strong> / {report.personnelCasualties.defenderWia} WIA ({report.personnelCasualties.defenderSurviving} Operational)
+                          </span>
+                        </div>
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--paper-dim)' }}>
+                            <th style={{ padding: '6px 8px' }}>Side</th>
+                            <th style={{ padding: '6px 8px' }}>Unit / Formation</th>
+                            <th style={{ padding: '6px 8px' }}>Troop Type</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right' }}>Deployed</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right', color: '#D9534F' }}>💀 KIA</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right', color: '#FFB020' }}>🩹 WIA</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right', color: '#4FA85F' }}>Operational</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right' }}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {report.personnelCasualties.entries.map((p, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <td style={{ padding: '6px 8px', fontWeight: 700, color: p.side === 'attacker' ? '#E8833A' : '#4DD0E1' }}>
+                                {p.side.toUpperCase()}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontWeight: 600 }}>{p.unitLabel}</td>
+                              <td style={{ padding: '6px 8px', color: 'var(--paper-dim)' }}>{p.typeLabel}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>{p.initialPersonnel}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: p.kia > 0 ? '#D9534F' : 'var(--paper-dim)', fontWeight: 700 }}>
+                                {p.kia}
+                              </td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: p.wia > 0 ? '#FFB020' : 'var(--paper-dim)' }}>
+                                {p.wia}
+                              </td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4FA85F', fontWeight: 600 }}>
+                                {p.survivingPersonnel}
+                              </td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                                <span
+                                  className={`wg-tag ${
+                                    p.status === 'wiped_out'
+                                      ? 'loss'
+                                      : p.status === 'combat_ineffective'
+                                        ? 'neutral'
+                                        : 'success'
+                                  }`}
+                                  style={{
+                                    color:
+                                      p.status === 'wiped_out'
+                                        ? '#D9534F'
+                                        : p.status === 'combat_ineffective'
+                                          ? '#E8833A'
+                                          : '#4FA85F',
+                                  }}
+                                >
+                                  {p.status === 'wiped_out' ? 'WIPED OUT' : p.status === 'combat_ineffective' ? 'INEFFECTIVE' : 'OPERATIONAL'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

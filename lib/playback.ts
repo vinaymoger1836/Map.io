@@ -31,7 +31,7 @@ export interface TimelineSegment {
   id: string;
   phaseNumber: number;
   title: string;
-  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw' | 'bmd';
+  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw' | 'bmd' | 'ground' | 'cas';
   attackerLabel: string;
   targetLabel: string;
   weaponName: string;

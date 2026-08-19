@@ -69,6 +69,123 @@ export interface DefensiveUmbrella {
   sensorDefenders: { unit: DeployedUnit; spec: SystemSpec; detectionKm: number }[];
 }
 
+export type GroundTerrainType = 'open' | 'desert' | 'urban' | 'forest' | 'mountain' | 'stronghold';
+
+export interface GroundTerrainModifiers {
+  name: string;
+  description: string;
+  armorMult: number; // Attack power & protection multiplier for tanks and IFVs
+  infantryDefenseMult: number; // Defensive multiplier for infantry/special forces
+  sofAdvantageMult: number; // Ambush / lethality multiplier for special forces
+  fortificationBonus: number; // Extra protection for dug-in/stronghold defenders
+  casObstruction: number; // Penalty to unguided airstrikes (0 = clear, 0.4 = high cover)
+}
+
+export const GROUND_TERRAIN_CONFIG: Record<GroundTerrainType, GroundTerrainModifiers> = {
+  open: {
+    name: 'Open Plains',
+    description: 'Flat open fields and steppe. Maximum line of sight; armor and mechanized autocannons dominate.',
+    armorMult: 1.5,
+    infantryDefenseMult: 0.6,
+    sofAdvantageMult: 0.9,
+    fortificationBonus: 1.0,
+    casObstruction: 0.0,
+  },
+  desert: {
+    name: 'Desert Terrain',
+    description: 'Arid sandy expanses with zero natural cover. Thermal optics and direct-fire tank guns excel.',
+    armorMult: 1.6,
+    infantryDefenseMult: 0.5,
+    sofAdvantageMult: 0.8,
+    fortificationBonus: 1.0,
+    casObstruction: 0.0,
+  },
+  urban: {
+    name: 'Urban / Built-up Area',
+    description: 'Dense multi-story structures, basements, and narrow chokepoints. Heavy armor vulnerable to roof ATGMs.',
+    armorMult: 0.6,
+    infantryDefenseMult: 2.5,
+    sofAdvantageMult: 2.0,
+    fortificationBonus: 2.0,
+    casObstruction: 0.4,
+  },
+  forest: {
+    name: 'Dense Forest / Woods',
+    description: 'Concealed tree canopies and limited fields of fire. High infantry & special forces ambush effectiveness.',
+    armorMult: 0.75,
+    infantryDefenseMult: 1.8,
+    sofAdvantageMult: 2.2,
+    fortificationBonus: 1.4,
+    casObstruction: 0.35,
+  },
+  mountain: {
+    name: 'Mountainous / Rugged',
+    description: 'Steep terrain and restricted passes. Road-bound vehicles heavily canalized; high-ground advantage.',
+    armorMult: 0.5,
+    infantryDefenseMult: 2.0,
+    sofAdvantageMult: 1.7,
+    fortificationBonus: 1.8,
+    casObstruction: 0.25,
+  },
+  stronghold: {
+    name: 'Fortified Base / Bunkers',
+    description: 'Reinforced concrete bunkers, trench lines, and prepared firing slits. Heavy direct fire or bombardment required.',
+    armorMult: 1.0,
+    infantryDefenseMult: 3.0,
+    sofAdvantageMult: 1.3,
+    fortificationBonus: 3.0,
+    casObstruction: 0.5,
+  },
+};
+
+export function getUnitPersonnelHeadcount(
+  unit: DeployedUnit,
+  spec?: SystemSpec
+): { total: number; crewPerUnit: number; dismountsPerUnit: number } {
+  const typeId = (unit.kind === 'unit' ? unit.typeId : 'formation').toLowerCase();
+  const count = unit.kind === 'unit' ? Math.max(1, unit.count || 1) : Math.max(1, totalStrength(unit.composition));
+  const specCrew = spec?.platform?.crew;
+  const unitDomain = spec ? domainOf(spec) : undefined;
+
+  if (typeId === 'special-forces' || typeId === 'sof') {
+    return { total: count * 12, crewPerUnit: 0, dismountsPerUnit: 12 };
+  }
+  if (typeId === 'airborne' || typeId === 'paratroopers' || typeId === 'vdv') {
+    return { total: count * 80, crewPerUnit: 0, dismountsPerUnit: 80 };
+  }
+  if (typeId === 'infantry' || typeId === 'motorized' || typeId === 'marines') {
+    return { total: count * 100, crewPerUnit: 0, dismountsPerUnit: 100 };
+  }
+  if (typeId === 'mechanized' || typeId === 'ifv' || typeId === 'apc' || typeId.includes('bmp') || typeId.includes('bradley')) {
+    const crew = specCrew ?? 3;
+    const dismounts = 7;
+    return { total: count * (crew + dismounts), crewPerUnit: crew, dismountsPerUnit: dismounts };
+  }
+  if (typeId === 'armour' || typeId === 'tank' || typeId === 'mbt' || typeId.includes('t-90') || typeId.includes('leopard') || typeId.includes('abrams')) {
+    const crew = specCrew ?? 3;
+    return { total: count * crew, crewPerUnit: crew, dismountsPerUnit: 0 };
+  }
+  if (typeId === 'artillery' || typeId === 'howitzer' || typeId === 'mlrs' || typeId.includes('caesar') || typeId.includes('paladin') || typeId.includes('smerch') || typeId.includes('himars')) {
+    const crew = specCrew ?? 4;
+    return { total: count * crew, crewPerUnit: crew, dismountsPerUnit: 0 };
+  }
+  if (typeId.includes('sam') || typeId.includes('radar')) {
+    const crew = specCrew ?? 4;
+    return { total: count * crew, crewPerUnit: crew, dismountsPerUnit: 0 };
+  }
+  if (unitDomain === 'sea' || typeId.includes('ship') || typeId === 'frigate' || typeId === 'destroyer') {
+    const crew = specCrew ?? 150;
+    return { total: count * crew, crewPerUnit: crew, dismountsPerUnit: 0 };
+  }
+  if (unitDomain === 'air' || typeId === 'fighter' || typeId === 'strike' || typeId === 'bomber') {
+    const crew = specCrew ?? 1;
+    return { total: count * crew, crewPerUnit: crew, dismountsPerUnit: 0 };
+  }
+
+  const crew = specCrew ?? 10;
+  return { total: count * crew, crewPerUnit: crew, dismountsPerUnit: 0 };
+}
+
 export interface CandidateAttacker {
   unit: DeployedUnit;
   spec: SystemSpec;
@@ -82,13 +199,14 @@ export interface StrikePhaseTask {
   id: string;
   phaseNumber: number; // 1, 2, 3...
   title: string;
-  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw' | 'bmd';
+  category: 'oca' | 'sead' | 'strike' | 'standoff' | 'asuw' | 'asw' | 'bmd' | 'ground' | 'cas';
   attackerUnitId: string;
   targetUnitId: string;
   weaponIndex: number;
   salvoSize: number;
   altitudeM: number;
   waypoints?: [number, number][];
+  terrain?: GroundTerrainType;
 }
 
 export interface UnitPersistentState {
@@ -99,6 +217,10 @@ export interface UnitPersistentState {
   status: 'intact' | 'damaged' | 'suppressed' | 'destroyed';
   /** Maps weapon index to current ready rounds remaining in magazine */
   magazines: Map<number, number>;
+  initialPersonnel: number;
+  alivePersonnel: number;
+  kiaPersonnel: number;
+  wiaPersonnel: number;
 }
 
 export interface PhaseBattleLogEvent {
@@ -151,6 +273,7 @@ export interface TheaterAssessment {
   primaryTargetStatus: 'destroyed' | 'damaged' | 'held';
   overallVerdict: string;
   overallHeadline: string;
+  terrain?: GroundTerrainType;
   cumulativeAttackerLosses: { name: string; count: number }[];
   cumulativeAttackerSurvivors: { name: string; count: number }[];
   cumulativeDefenderLosses: { name: string; count: number; status: 'destroyed' | 'suppressed' | 'held' }[];
@@ -362,6 +485,8 @@ export function assessTheaterRaid(
       magazines.set(idx, cap);
     });
 
+    const manpower = getUnitPersonnelHeadcount(u, spec);
+
     unitStates.set(u.id, {
       unitId: u.id,
       initialCount: count,
@@ -369,6 +494,10 @@ export function assessTheaterRaid(
       destroyedCount: 0,
       status: 'intact',
       magazines,
+      initialPersonnel: manpower.total,
+      alivePersonnel: manpower.total,
+      kiaPersonnel: 0,
+      wiaPersonnel: 0,
     });
   }
 
@@ -409,6 +538,10 @@ export function assessTheaterRaid(
           destroyedCount: 0,
           status: 'intact',
           magazines: new Map([[0, 24]]),
+          initialPersonnel: 10,
+          alivePersonnel: 10,
+          kiaPersonnel: 0,
+          wiaPersonnel: 0,
         };
         unitStates.set(attackerUnit.id, attackerState);
       }
@@ -421,6 +554,10 @@ export function assessTheaterRaid(
           destroyedCount: 0,
           status: 'intact',
           magazines: new Map([[0, 24]]),
+          initialPersonnel: 10,
+          alivePersonnel: 10,
+          kiaPersonnel: 0,
+          wiaPersonnel: 0,
         };
         unitStates.set(targetUnit.id, targetState);
       }
@@ -922,32 +1059,160 @@ export function assessTheaterRaid(
             badge: { text: 'CAP Splashed', variant: 'success' },
           });
         } else {
-          // Main Strike on Objective
-          const impactNoun = isGroundDirectFire
-            ? 'cannon / sabot impacts'
-            : isTubeArtilleryOrMortar
-              ? 'artillery shell impacts'
-              : weaponName.toLowerCase().includes('rocket')
-                ? 'rocket artillery strikes'
-                : 'direct missile impacts';
+          // Combined Arms Ground Assault vs Standoff / Airstrike on Objective
+          const isGroundAttacker = domainOf(attackerSpec) === 'ground';
+          const isGroundTarget = targetSpec ? domainOf(targetSpec) === 'ground' : false;
 
-          targetState.status = hits >= 3 ? 'destroyed' : 'damaged';
-          targetDestroyed = targetState.status === 'destroyed';
-          if (targetDestroyed) {
-            targetState.aliveCount = 0;
-            targetState.destroyedCount = targetState.initialCount;
+          const currentTerrain: GroundTerrainType = task.terrain ?? 'open';
+          const terrainCfg = GROUND_TERRAIN_CONFIG[currentTerrain];
+
+          if (isGroundAttacker && isGroundTarget) {
+            const attType = (attackerUnit.kind === 'unit' ? attackerUnit.typeId : 'formation').toLowerCase();
+            const tgtType = (targetUnit.kind === 'unit' ? targetUnit.typeId : 'formation').toLowerCase();
+
+            const isAttArmor = attType === 'armour' || attType === 'tank' || attType === 'mbt' || attType === 'mechanized' || attType === 'ifv';
+            const isTgtArmor = tgtType === 'armour' || tgtType === 'tank' || tgtType === 'mbt' || tgtType === 'mechanized' || tgtType === 'ifv';
+            const isAttInfantry = attType === 'infantry' || attType === 'special-forces' || attType === 'airborne';
+            const isTgtInfantry = tgtType === 'infantry' || tgtType === 'special-forces' || tgtType === 'airborne';
+            const isTgtStronghold = currentTerrain === 'stronghold' || tgtType.includes('bunker') || tgtType.includes('stronghold') || tgtType.includes('base');
+
+            // Check if prior artillery or CAS suppressed the stronghold in earlier phases
+            const priorBombardmentHit = phaseReports.some(
+              (p) =>
+                p.task.targetUnitId === targetUnit.id &&
+                (p.task.category === 'strike' || p.task.category === 'cas' || p.weaponName.toLowerCase().includes('howitzer') || p.weaponName.toLowerCase().includes('rocket')) &&
+                p.munitionsImpacted > 0
+            );
+
+            let effectiveFortification = isTgtStronghold ? (priorBombardmentHit ? 1.4 : terrainCfg.fortificationBonus) : terrainCfg.fortificationBonus;
+            let attArmorBonus = isAttArmor ? terrainCfg.armorMult : 1.0;
+            let tgtDefBonus = (isTgtInfantry ? terrainCfg.infantryDefenseMult : (isTgtArmor ? terrainCfg.armorMult : 1.0)) * effectiveFortification;
+
+            // Tactical dynamics
+            const isAmbushedInUrban = (currentTerrain === 'urban' || currentTerrain === 'forest') && isAttArmor && isTgtInfantry;
+            const isOpenPlainsDominance = (currentTerrain === 'open' || currentTerrain === 'desert') && isAttArmor && isTgtInfantry;
+
+            const basePk = weapon.pk ?? (isAttArmor ? 0.75 : 0.60);
+            let effectivePk = basePk * (attArmorBonus / tgtDefBonus);
+            if (isAmbushedInUrban) effectivePk *= 0.55;
+            if (isOpenPlainsDominance) effectivePk *= 1.4;
+            effectivePk = Math.max(0.15, Math.min(0.95, effectivePk));
+
+            hits = Math.min(actualSalvo, Math.max(1, Math.round(actualSalvo * effectivePk)));
+
+            const roundsToKillUnit = isTgtArmor ? 3 : (isTgtStronghold ? 6 : 2);
+            const destroyedUnitsCount = Math.min(targetState.aliveCount, Math.floor(hits / roundsToKillUnit));
+
+            if (destroyedUnitsCount >= targetState.aliveCount || hits >= targetState.aliveCount * roundsToKillUnit) {
+              targetDestroyed = true;
+              targetState.status = 'destroyed';
+              targetState.aliveCount = 0;
+              targetState.destroyedCount = targetState.initialCount;
+            } else if (destroyedUnitsCount > 0) {
+              targetState.status = 'damaged';
+              targetState.aliveCount = Math.max(1, targetState.aliveCount - destroyedUnitsCount);
+              targetState.destroyedCount += destroyedUnitsCount;
+            } else if (hits >= 2) {
+              targetState.status = 'damaged';
+            }
+
+            // Personnel Casualties (KIA / WIA)
+            const tgtHeadcount = getUnitPersonnelHeadcount(targetUnit, targetSpec);
+            const tgtSoldiersPerUnit = Math.round(tgtHeadcount.total / Math.max(1, targetState.initialCount));
+
+            let defenderSoldiersHit = 0;
+            if (targetDestroyed) {
+              defenderSoldiersHit = targetState.alivePersonnel;
+            } else {
+              defenderSoldiersHit = Math.min(
+                targetState.alivePersonnel,
+                Math.round(destroyedUnitsCount * tgtSoldiersPerUnit + (hits * (isTgtInfantry ? 6 : 2)))
+              );
+            }
+
+            const defKia = Math.round(defenderSoldiersHit * 0.65);
+            const defWia = Math.max(0, defenderSoldiersHit - defKia);
+            targetState.kiaPersonnel += defKia;
+            targetState.wiaPersonnel += defWia;
+            targetState.alivePersonnel = Math.max(0, targetState.alivePersonnel - defenderSoldiersHit);
+
+            let attLossRate = 0;
+            if (isAmbushedInUrban) {
+              attLossRate = 0.25;
+            } else if (isTgtStronghold && !priorBombardmentHit) {
+              attLossRate = 0.20;
+            } else {
+              attLossRate = 0.05;
+            }
+
+            const attSoldiersHit = Math.min(
+              attackerState.alivePersonnel,
+              Math.max(0, Math.round(attackerState.alivePersonnel * attLossRate))
+            );
+            const attKia = Math.round(attSoldiersHit * 0.60);
+            const attWia = Math.max(0, attSoldiersHit - attKia);
+            attackerState.kiaPersonnel += attKia;
+            attackerState.wiaPersonnel += attWia;
+            attackerState.alivePersonnel = Math.max(0, attackerState.alivePersonnel - attSoldiersHit);
+
+            let tacticalNarrative = '';
+            if (isAmbushedInUrban) {
+              tacticalNarrative = `🏙️ Urban Anti-Tank Ambush: Defending ${tgtType} exploited high-angle vantage points and basements, inflicting ${attKia} KIA on advancing forces before being overwhelmed.`;
+            } else if (isOpenPlainsDominance) {
+              tacticalNarrative = `🏜️ Open Terrain Thermal Dominance: Attacking heavy direct fire decimated exposed defensive positions across open fields (${defKia} enemy KIA).`;
+            } else if (isTgtStronghold) {
+              tacticalNarrative = priorBombardmentHit
+                ? `🏰 Fortification Breached: Prior artillery preparation suppressed bunker firing ports, allowing assault squads to clear trenches with minimal casualties (${defKia} defender KIA).`
+                : `🏰 Fortified Bunker Assault: Assaulting un-softened reinforced strongpoints resulted in heavy close-quarters fighting (${attKia} attacker KIA, ${defKia} defender KIA).`;
+            } else {
+              tacticalNarrative = `Combined-arms kinetic engagement in ${terrainCfg.name} (${defKia} enemy KIA / ${defWia} WIA).`;
+            }
+
+            damageSummary = targetDestroyed
+              ? `Target Objective Obliterated & Captured (${defKia} KIA, ${defWia} WIA). ${tacticalNarrative}`
+              : `Target Heavily Damaged / Suppressed (${defKia} KIA, ${defWia} WIA). ${tacticalNarrative}`;
+
+            battleLog.push({
+              id: nextEvt(),
+              timeFormatted: 'T+30m',
+              title: `Ground Assault Resolution — ${phaseTargetLabel} (${terrainCfg.name})`,
+              detail: damageSummary,
+              badge: {
+                text: targetDestroyed ? 'Objective Overrun' : 'Contested',
+                variant: targetDestroyed ? 'success' : 'neutral',
+              },
+            });
+          } else {
+            // Air / Standoff Strike on Ground or Air Objective
+            const impactNoun = isGroundDirectFire
+              ? 'cannon / sabot impacts'
+              : isTubeArtilleryOrMortar
+                ? 'artillery shell impacts'
+                : weaponName.toLowerCase().includes('rocket')
+                  ? 'rocket artillery strikes'
+                  : 'direct missile impacts';
+
+            targetState.status = hits >= 3 ? 'destroyed' : 'damaged';
+            targetDestroyed = targetState.status === 'destroyed';
+            if (targetDestroyed) {
+              targetState.aliveCount = 0;
+              targetState.destroyedCount = targetState.initialCount;
+              targetState.kiaPersonnel += Math.round(targetState.alivePersonnel * 0.75);
+              targetState.wiaPersonnel += Math.max(0, targetState.alivePersonnel - Math.round(targetState.alivePersonnel * 0.75));
+              targetState.alivePersonnel = 0;
+            }
+            damageSummary = targetDestroyed
+              ? `Target Objective Obliterated by ${hits} ${impactNoun}.`
+              : `Target Objective Heavily Damaged by ${hits} ${impactNoun}.`;
+
+            battleLog.push({
+              id: nextEvt(),
+              timeFormatted: 'T+30m',
+              title: `Objective Struck — ${phaseTargetLabel}`,
+              detail: `${hits} munitions impacted objective. ${damageSummary}`,
+              badge: { text: `${hits} Hits`, variant: 'success' },
+            });
           }
-          damageSummary = targetDestroyed
-            ? `Target Objective Obliterated by ${hits} ${impactNoun}.`
-            : `Target Objective Heavily Damaged by ${hits} ${impactNoun}.`;
-
-          battleLog.push({
-            id: nextEvt(),
-            timeFormatted: 'T+30m',
-            title: `Objective Struck — ${phaseTargetLabel}`,
-            detail: `${hits} munitions impacted objective. ${damageSummary}`,
-            badge: { text: `${hits} Hits`, variant: 'success' },
-          });
         }
       } else {
         damageSummary = 'Strike wave stopped by integrated point defences before target impact.';

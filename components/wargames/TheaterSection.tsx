@@ -19,6 +19,7 @@ import {
   type StrikePhaseTask,
   type PhaseReport,
   type DefensiveUmbrella,
+  type GroundTerrainType,
 } from '@/lib/theaterEngagement';
 import { calculateRadarAvoidanceDogleg } from '@/lib/geo';
 import { generateTheaterAar } from '@/lib/aarReport';
@@ -271,7 +272,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
 
   // New Phase Form State
   const [selectedPhaseNum, setSelectedPhaseNum] = useState<number | 'new'>('new');
-  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike' | 'asuw' | 'asw' | 'bmd'>('sead');
+  const [newCategory, setNewCategory] = useState<'oca' | 'sead' | 'strike' | 'asuw' | 'asw' | 'bmd' | 'ground' | 'cas'>('sead');
+  const [newTerrain, setNewTerrain] = useState<GroundTerrainType>('open');
   const [newAttackerId, setNewAttackerId] = useState<string>('');
   const [newTargetId, setNewTargetId] = useState<string>('');
   const [newWeaponIndex, setNewWeaponIndex] = useState<number>(0);
@@ -377,6 +379,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
     if (newCategory === 'asuw') defaultTitle = 'Naval Surface Strike (ASuW Fleet Attack)';
     if (newCategory === 'asw') defaultTitle = 'Anti-Submarine Warfare (ASW Torpedo Hunt)';
     if (newCategory === 'bmd') defaultTitle = 'Ballistic / Hypersonic Missile Strike';
+    if (newCategory === 'ground') defaultTitle = 'Combined-Arms Ground Assault';
+    if (newCategory === 'cas') defaultTitle = 'Close Air Support (CAS Strike)';
 
     const targetPhaseNumber = selectedPhaseNum === 'new' ? nextPhaseNumber : selectedPhaseNum;
 
@@ -390,6 +394,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
       salvoSize: Math.min(maxMag, Math.max(1, newSalvo)),
       altitudeM: 3000,
       waypoints: theaterTaskWaypoints.length > 0 ? theaterTaskWaypoints : undefined,
+      terrain: newTerrain,
     });
     clearTheaterTaskWaypoints();
     setWaypointPlacingActive(false);
@@ -519,6 +524,8 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                 >
                   <option value="oca">Fighter Sweep (OCA)</option>
                   <option value="sead">SEAD (SAM Radar Strike)</option>
+                  <option value="ground">Combined-Arms Ground Assault</option>
+                  <option value="cas">Close Air Support (CAS Strike)</option>
                   <option value="asuw">Naval Surface Strike (ASuW)</option>
                   <option value="asw">Anti-Submarine Hunt (ASW)</option>
                   <option value="bmd">Ballistic / Hypersonic Strike (BMD)</option>
@@ -526,6 +533,24 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                 </select>
               </label>
 
+              <label className="wg-field">
+                <span>Terrain Environment</span>
+                <select
+                  value={newTerrain}
+                  onChange={(e) => setNewTerrain(e.target.value as GroundTerrainType)}
+                  style={{ fontSize: '11px' }}
+                >
+                  <option value="open">🏜️ Open Plains</option>
+                  <option value="desert">☀️ Desert Terrain</option>
+                  <option value="urban">🏙️ Urban / Built-up</option>
+                  <option value="forest">🌲 Dense Forest</option>
+                  <option value="mountain">⛰️ Mountainous</option>
+                  <option value="stronghold">🏰 Fortified Stronghold</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="wg-tactical-grid">
               <label className="wg-field">
                 <span>Attacking Unit</span>
                 <select

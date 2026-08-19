@@ -91,6 +91,29 @@ export interface PlatformCasualtyEntry {
   status: 'intact' | 'damaged' | 'suppressed' | 'destroyed' | 'sunk';
 }
 
+export interface PersonnelCasualtyEntry {
+  side: 'attacker' | 'defender';
+  unitLabel: string;
+  typeLabel: string;
+  initialPersonnel: number;
+  kia: number;
+  wia: number;
+  survivingPersonnel: number;
+  status: 'operational' | 'combat_ineffective' | 'wiped_out';
+}
+
+export interface PersonnelCasualtySummary {
+  attackerTotalDeployed: number;
+  attackerKia: number;
+  attackerWia: number;
+  attackerSurviving: number;
+  defenderTotalDeployed: number;
+  defenderKia: number;
+  defenderWia: number;
+  defenderSurviving: number;
+  entries: PersonnelCasualtyEntry[];
+}
+
 export interface TacticalLesson {
   category: 'air_defense' | 'saturation' | 'stealth_standoff' | 'naval_asw' | 'bmd_space' | 'magazine_depth';
   title: string;
@@ -153,6 +176,7 @@ export interface ComprehensiveAarReport {
   // Itemized Data
   munitionMatrix: MunitionExpenditureEntry[];
   casualtyRegistry: PlatformCasualtyEntry[];
+  personnelCasualties?: PersonnelCasualtySummary;
   tacticalLessons: TacticalLesson[];
   chronologicalLog: AarTimelineEntry[];
   unitSpecs: UnitSpecLedgerEntry[];
@@ -628,6 +652,64 @@ export function generateTheaterAar(
     }
   }
 
+  // Personnel Casualties Ledger
+  const personnelEntries: PersonnelCasualtyEntry[] = [];
+  let attTotPers = 0, attKiaPers = 0, attWiaPers = 0, attSurvPers = 0;
+  let defTotPers = 0, defKiaPers = 0, defWiaPers = 0, defSurvPers = 0;
+
+  if (theaterAss.unitFinalStates && theaterAss.unitFinalStates.size > 0) {
+    for (const [uId, uState] of theaterAss.unitFinalStates.entries()) {
+      const u = units.find((unit) => unit.id === uId);
+      if (!u) continue;
+      const side: 'attacker' | 'defender' = u.iso === theaterAss.attackerIso ? 'attacker' : 'defender';
+      const label = unitLabel(u, [], []);
+
+      const initPers = uState.initialPersonnel ?? 10;
+      const kiaPers = uState.kiaPersonnel ?? 0;
+      const wiaPers = uState.wiaPersonnel ?? 0;
+      const survPers = Math.max(0, initPers - kiaPers - wiaPers);
+      const persStatus: PersonnelCasualtyEntry['status'] =
+        survPers === 0 ? 'wiped_out' : (kiaPers + wiaPers > initPers * 0.5 ? 'combat_ineffective' : 'operational');
+
+      if (side === 'attacker') {
+        attTotPers += initPers;
+        attKiaPers += kiaPers;
+        attWiaPers += wiaPers;
+        attSurvPers += survPers;
+      } else {
+        defTotPers += initPers;
+        defKiaPers += kiaPers;
+        defWiaPers += wiaPers;
+        defSurvPers += survPers;
+      }
+
+      if (kiaPers > 0 || wiaPers > 0 || uState.status !== 'intact') {
+        personnelEntries.push({
+          side,
+          unitLabel: label,
+          typeLabel: u.kind === 'unit' ? u.typeId.toUpperCase() : 'Unit Formation',
+          initialPersonnel: initPers,
+          kia: kiaPers,
+          wia: wiaPers,
+          survivingPersonnel: survPers,
+          status: persStatus,
+        });
+      }
+    }
+  }
+
+  const personnelSummary: PersonnelCasualtySummary = {
+    attackerTotalDeployed: attTotPers,
+    attackerKia: attKiaPers,
+    attackerWia: attWiaPers,
+    attackerSurviving: attSurvPers,
+    defenderTotalDeployed: defTotPers,
+    defenderKia: defKiaPers,
+    defenderWia: defWiaPers,
+    defenderSurviving: defSurvPers,
+    entries: personnelEntries,
+  };
+
   // 2. Munitions Matrix and Merged Phase Timeline
   const phaseNumbers = Array.from(new Set(theaterAss.phases.map((p) => p.phaseNumber))).sort((a, b) => a - b);
 
@@ -862,6 +944,7 @@ export function generateTheaterAar(
     attritionExchangeRatio: ratio,
     munitionMatrix,
     casualtyRegistry,
+    personnelCasualties: personnelSummary,
     tacticalLessons,
     chronologicalLog,
     unitSpecs: buildUnitSpecsLedger(
@@ -913,7 +996,8 @@ export function renderAarMarkdown(aar: ComprehensiveAarReport): string {
   lines.push(``);
   lines.push(`---`);
   lines.push(``);
-  lines.push(`## 3. PLATFORM CASUALTY & DAMAGE REGISTRY`);
+  lines.push(`## 3. PLATFORM & PERSONNEL CASUALTY REGISTRY`);
+  lines.push(`### Platform & Heavy Equipment Losses`);
   if (aar.casualtyRegistry.length === 0) {
     lines.push(`*Zero platform casualties or structural damage recorded. All participating units survived intact with 0 losses.*`);
   } else {
@@ -925,6 +1009,21 @@ export function renderAarMarkdown(aar: ComprehensiveAarReport): string {
         `| **${c.side.toUpperCase()}** | ${c.unitLabel} | ${c.domain} | ${c.initialCount} | ${c.lostCount} | ${c.survivingCount} | **${c.status.toUpperCase()}** |`
       );
     }
+  }
+
+  if (aar.personnelCasualties && aar.personnelCasualties.entries.length > 0) {
+    lines.push(``);
+    lines.push(`### Military Personnel Casualties (Troops KIA / WIA)`);
+    lines.push(`| Side | Unit / Formation | Troop Type | Deployed Troops | KIA (Killed) | WIA (Wounded) | Operational Survivors | Status |`);
+    lines.push(`|:-----|:-----------------|:-----------|----------------:|-------------:|--------------:|----------------------:|:-------|`);
+    for (const p of aar.personnelCasualties.entries) {
+      lines.push(
+        `| **${p.side.toUpperCase()}** | ${p.unitLabel} | ${p.typeLabel} | ${p.initialPersonnel} | ${p.kia} | ${p.wia} | ${p.survivingPersonnel} | \`${p.status.toUpperCase()}\` |`
+      );
+    }
+    lines.push(``);
+    lines.push(`* **Total Attacker Casualties:** \`${aar.personnelCasualties.attackerTotalDeployed} Deployed | ${aar.personnelCasualties.attackerKia} KIA | ${aar.personnelCasualties.attackerWia} WIA | ${aar.personnelCasualties.attackerSurviving} Operational\``);
+    lines.push(`* **Total Defender Casualties:** \`${aar.personnelCasualties.defenderTotalDeployed} Deployed | ${aar.personnelCasualties.defenderKia} KIA | ${aar.personnelCasualties.defenderWia} WIA | ${aar.personnelCasualties.defenderSurviving} Operational\``);
   }
   lines.push(``);
   lines.push(`---`);
