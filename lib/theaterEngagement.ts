@@ -566,6 +566,32 @@ export function assessTheaterRaid(
       const isTargetNaval = targetSpec ? isNavalCombatant(targetSpec.typeId) : false;
       const isTargetSub = targetSpec ? isSubsurfaceUnit(targetSpec.typeId) : false;
 
+      // Munition Domain & Interceptability Check
+      const wNameLower = weaponName.toLowerCase();
+      const isGroundDirectFire =
+        wNameLower.includes('gun') ||
+        wNameLower.includes('smoothbore') ||
+        wNameLower.includes('cannon') ||
+        wNameLower.includes('autocannon') ||
+        wNameLower.includes('120 mm') ||
+        wNameLower.includes('125 mm') ||
+        wNameLower.includes('105 mm') ||
+        wNameLower.includes('76 mm') ||
+        wNameLower.includes('tank');
+
+      const isTubeArtilleryOrMortar =
+        wNameLower.includes('howitzer') ||
+        wNameLower.includes('mortar') ||
+        wNameLower.includes('155 mm') ||
+        wNameLower.includes('152 mm') ||
+        wNameLower.includes('122 mm');
+
+      const isNonAirInterceptableGroundMunition =
+        (isGroundDirectFire || isTubeArtilleryOrMortar) &&
+        !wNameLower.includes('missile') &&
+        !wNameLower.includes('guided') &&
+        !wNameLower.includes('rocket');
+
       // Route to evaluate against defending air defense envelopes
       const activeEvaluationRoute = isAirAttacker && isStandoff ? munitionRoute : fullRoute;
       const corridorDistKm = routeTotalDistanceKm(activeEvaluationRoute);
@@ -587,9 +613,11 @@ export function assessTheaterRaid(
 
       const candidates: DefEngagementCandidate[] = [];
 
-      for (const def of defenders) {
-        // When engaging a naval combatant, the ship's defense is handled in assessNavalCombat
-        if (isTargetNaval && def.id === targetUnit.id) continue;
+      // Direct-fire tank cannon rounds and tube artillery cannot be intercepted by SAMs, fighters, or naval air-defense
+      if (!isNonAirInterceptableGroundMunition) {
+        for (const def of defenders) {
+          // When engaging a naval combatant, the ship's defense is handled in assessNavalCombat
+          if (isTargetNaval && def.id === targetUnit.id) continue;
 
         const defState = unitStates.get(def.id);
         if (!defState || defState.status === 'destroyed' || defState.aliveCount <= 0) continue;
@@ -644,9 +672,10 @@ export function assessTheaterRaid(
           });
         }
       }
+    }
 
-      // Sort candidate defense engagements by corridor entry distance (outer layer engages first)
-      candidates.sort((a, b) => a.entryKm - b.entryKm);
+    // Sort candidate defense engagements by corridor entry distance (outer layer engages first)
+    candidates.sort((a, b) => a.entryKm - b.entryKm);
 
       for (const cand of candidates) {
         if (munitionsSurviving <= 0) break;
@@ -894,18 +923,30 @@ export function assessTheaterRaid(
           });
         } else {
           // Main Strike on Objective
+          const impactNoun = isGroundDirectFire
+            ? 'cannon / sabot impacts'
+            : isTubeArtilleryOrMortar
+              ? 'artillery shell impacts'
+              : weaponName.toLowerCase().includes('rocket')
+                ? 'rocket artillery strikes'
+                : 'direct missile impacts';
+
           targetState.status = hits >= 3 ? 'destroyed' : 'damaged';
           targetDestroyed = targetState.status === 'destroyed';
+          if (targetDestroyed) {
+            targetState.aliveCount = 0;
+            targetState.destroyedCount = targetState.initialCount;
+          }
           damageSummary = targetDestroyed
-            ? `Target Objective Obliterated by ${hits} direct missile impacts.`
-            : `Target Objective Heavily Damaged by ${hits} missile impacts.`;
+            ? `Target Objective Obliterated by ${hits} ${impactNoun}.`
+            : `Target Objective Heavily Damaged by ${hits} ${impactNoun}.`;
 
           battleLog.push({
             id: nextEvt(),
             timeFormatted: 'T+30m',
             title: `Objective Struck — ${phaseTargetLabel}`,
-            detail: `${hits} cruise missiles impacted objective. ${damageSummary}`,
-            badge: { text: `${hits} Impacts`, variant: 'success' },
+            detail: `${hits} munitions impacted objective. ${damageSummary}`,
+            badge: { text: `${hits} Hits`, variant: 'success' },
           });
         }
       } else {

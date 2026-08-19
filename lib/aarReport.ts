@@ -61,7 +61,18 @@ export interface UnitSpecLedgerEntry {
 export interface MunitionExpenditureEntry {
   side: 'attacker' | 'defender';
   weaponName: string;
-  category: 'cruise_missile' | 'ballistic' | 'hypersonic' | 'sam_interceptor' | 'torpedo' | 'ciws' | 'decoy' | 'bomb';
+  category:
+    | 'cruise_missile'
+    | 'ballistic'
+    | 'hypersonic'
+    | 'sam_interceptor'
+    | 'torpedo'
+    | 'ciws'
+    | 'decoy'
+    | 'bomb'
+    | 'artillery_shell'
+    | 'tank_round'
+    | 'rocket_artillery';
   fired: number;
   intercepted: number;
   decoyedOrJammed: number;
@@ -148,6 +159,87 @@ export interface ComprehensiveAarReport {
 
   // Raw Markdown Intelligence Briefing text
   markdownBriefing: string;
+}
+
+export function classifyMunitionCategory(
+  weaponName: string,
+  taskCategory: string
+): MunitionExpenditureEntry['category'] {
+  const w = weaponName.toLowerCase();
+  if (taskCategory === 'asw' || w.includes('torpedo')) return 'torpedo';
+  if (
+    taskCategory === 'bmd' ||
+    w.includes('ballistic') ||
+    w.includes('iskander') ||
+    w.includes('atacms') ||
+    w.includes('df-')
+  ) {
+    return 'ballistic';
+  }
+  if (w.includes('hypersonic') || w.includes('kinzhal') || w.includes('zircon') || w.includes('hgv')) {
+    return 'hypersonic';
+  }
+  if (
+    w.includes('sam') ||
+    w.includes('interceptor') ||
+    w.includes('pac-3') ||
+    w.includes('40n6') ||
+    w.includes('48n6') ||
+    w.includes('aster') ||
+    w.includes('sn-7') ||
+    w.includes('m75') ||
+    w.includes('r-77') ||
+    w.includes('aim-120') ||
+    w.includes('iris-t')
+  ) {
+    return 'sam_interceptor';
+  }
+  if (
+    w.includes('gun') ||
+    w.includes('tank') ||
+    w.includes('smoothbore') ||
+    w.includes('120 mm') ||
+    w.includes('125 mm') ||
+    w.includes('105 mm') ||
+    w.includes('cannon') ||
+    w.includes('autocannon')
+  ) {
+    return 'tank_round';
+  }
+  if (
+    w.includes('howitzer') ||
+    w.includes('mortar') ||
+    w.includes('155 mm') ||
+    w.includes('152 mm') ||
+    w.includes('122 mm') ||
+    w.includes('artillery') ||
+    w.includes('caesar') ||
+    w.includes('paladin')
+  ) {
+    return 'artillery_shell';
+  }
+  if (
+    w.includes('rocket') ||
+    w.includes('smerch') ||
+    w.includes('gmlrs') ||
+    w.includes('grad') ||
+    w.includes('uragan') ||
+    w.includes('himars') ||
+    w.includes('9m55') ||
+    w.includes('9m528')
+  ) {
+    return 'rocket_artillery';
+  }
+  if (w.includes('bomb') || w.includes('jdam') || w.includes('paveway') || w.includes('gbu') || w.includes('glide bomb')) {
+    return 'bomb';
+  }
+  if (w.includes('ciws') || w.includes('phalanx') || w.includes('goalkeeper') || w.includes('pantsir')) {
+    return 'ciws';
+  }
+  if (w.includes('decoy') || w.includes('flare') || w.includes('chaff')) {
+    return 'decoy';
+  }
+  return 'cruise_missile';
 }
 
 export function buildUnitSpecsLedger(
@@ -317,7 +409,7 @@ export function generateSingleRaidAar(
   munitionMatrix.push({
     side: 'attacker',
     weaponName,
-    category: bmdAss ? 'ballistic' : raid.standoff?.enabled ? 'cruise_missile' : 'bomb',
+    category: classifyMunitionCategory(weaponName, bmdAss ? 'bmd' : 'strike'),
     fired: attFired,
     intercepted: attIntercepted,
     decoyedOrJammed: attDecoyed,
@@ -512,10 +604,11 @@ export function generateTheaterAar(
         domain = 'radar';
       }
 
-      const lost = uState.destroyedCount || (uState.status === 'destroyed' ? uState.initialCount : 0);
-      const surv = uState.aliveCount;
-      let finalStatus: PlatformCasualtyEntry['status'] = uState.status;
-      if (domain === 'naval' && (uState.status === 'destroyed' || uState.aliveCount === 0)) {
+      const isDestroyed = uState.status === 'destroyed' || (uState.aliveCount === 0 && (uState.initialCount ?? 0) > 0);
+      const lost = isDestroyed ? uState.initialCount : Math.min(uState.initialCount, uState.destroyedCount || 0);
+      const surv = isDestroyed ? 0 : Math.max(0, uState.initialCount - lost);
+      let finalStatus: PlatformCasualtyEntry['status'] = isDestroyed ? 'destroyed' : uState.status;
+      if (domain === 'naval' && isDestroyed) {
         finalStatus = 'sunk';
       }
 
@@ -569,12 +662,7 @@ export function generateTheaterAar(
       munitionMatrix.push({
         side: 'attacker',
         weaponName: `${phase.weaponName} (Phase ${phase.phaseNumber})`,
-        category:
-          phase.task.category === 'bmd'
-            ? 'ballistic'
-            : phase.task.category === 'asw'
-              ? 'torpedo'
-              : 'cruise_missile',
+        category: classifyMunitionCategory(phase.weaponName, phase.task.category),
         fired: phase.salvoCommitted,
         intercepted: phase.munitionsIntercepted,
         decoyedOrJammed: 0,
@@ -608,13 +696,14 @@ export function generateTheaterAar(
           });
         }
       } else if (phase.interceptions && phase.interceptions.length > 0) {
+        let currentFacing = phase.salvoCommitted;
         for (const ic of phase.interceptions) {
-          const leaked = Math.max(0, phase.salvoCommitted - ic.kills);
+          const leaked = Math.max(0, currentFacing - ic.kills);
           const layerSummary =
             ic.kills > 0
               ? `${ic.kills} × ${phase.weaponName} intercepted by ${ic.defenderLabel}` +
                 (leaked > 0 ? ` (${leaked} leakers penetrated)` : ` (All intercepted)`)
-              : `Failed to intercept incoming missiles`;
+              : `Failed to intercept incoming munitions`;
 
           defenseLayersBreakdown.push({
             defender: ic.defenderLabel,
@@ -625,6 +714,7 @@ export function generateTheaterAar(
             leakedCount: leaked,
             summary: layerSummary,
           });
+          currentFacing = leaked;
         }
       }
     }
