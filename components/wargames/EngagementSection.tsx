@@ -72,7 +72,7 @@ function Picker({
           <option value="">Choose…</option>
           {units.map((u) => (
             <option key={u.id} value={u.id}>
-              {wg.board.nations[u.iso]?.name ?? u.iso} — {unitLabel(u, wg.formations, wg.systems)}
+              {wg.board.nations[u.iso]?.name ?? u.iso} — {unitLabel(u, wg.formations, wg.systems, wg.board.units)}
             </option>
           ))}
         </select>
