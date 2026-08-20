@@ -54,7 +54,7 @@ function DefensiveUmbrellaView({
 
       <div className="wg-tactical-body">
         <p style={{ margin: '3px 0' }}>
-          Defending <strong>{unitLabel(target, wg.formations, wg.systems)}</strong> ({wg.board.nations[target.iso]?.name ?? target.iso}):
+          Defending <strong>{unitLabel(target, wg.formations, wg.systems, wg.board.units)}</strong> ({wg.board.nations[target.iso]?.name ?? target.iso}):
         </p>
 
         {umbrella.artilleryDefenders && umbrella.artilleryDefenders.length > 0 && (
@@ -63,7 +63,7 @@ function DefensiveUmbrellaView({
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.artilleryDefenders.map((a, idx) => (
                 <span key={`arty-${idx}`} className="wg-package-pill" style={{ color: '#FFB020' }}>
-                  {unitLabel(a.unit, wg.formations, wg.systems)}
+                  {unitLabel(a.unit, wg.formations, wg.systems, wg.board.units)}
                   <em>({a.weaponName} · {km(a.rangeKm)} reach {a.hasIsrSupport ? '· 🛸 Drone ISR' : ''})</em>
                 </span>
               ))}
@@ -77,7 +77,7 @@ function DefensiveUmbrellaView({
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.casDefenders.map((c, idx) => (
                 <span key={`cas-${idx}`} className="wg-package-pill" style={{ color: '#BA68C8' }}>
-                  {unitLabel(c.unit, wg.formations, wg.systems)}
+                  {unitLabel(c.unit, wg.formations, wg.systems, wg.board.units)}
                   <em>({c.weaponName} · {km(c.combatRadiusKm)} radius)</em>
                 </span>
               ))}
@@ -91,7 +91,7 @@ function DefensiveUmbrellaView({
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.samDefenders.map((s, idx) => (
                 <span key={`sam-${idx}`} className="wg-package-pill" style={{ color: '#E8833A' }}>
-                  {unitLabel(s.unit, wg.formations, wg.systems)}
+                  {unitLabel(s.unit, wg.formations, wg.systems, wg.board.units)}
                   <em>({km(s.rangeKm)} reach · {km(s.coverageDistanceKm)} out)</em>
                 </span>
               ))}
@@ -105,7 +105,7 @@ function DefensiveUmbrellaView({
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.capDefenders.map((c, idx) => (
                 <span key={`cap-${idx}`} className="wg-package-pill" style={{ color: '#4DD0E1' }}>
-                  {unitLabel(c.unit, wg.formations, wg.systems)}
+                  {unitLabel(c.unit, wg.formations, wg.systems, wg.board.units)}
                   <em>({km(c.combatRadiusKm)} radius)</em>
                 </span>
               ))}
@@ -119,7 +119,7 @@ function DefensiveUmbrellaView({
             <div className="wg-package-pills" style={{ marginTop: '2px' }}>
               {umbrella.sensorDefenders.map((sn, idx) => (
                 <span key={`sensor-${idx}`} className="wg-package-pill">
-                  {unitLabel(sn.unit, wg.formations, wg.systems)}
+                  {unitLabel(sn.unit, wg.formations, wg.systems, wg.board.units)}
                   <em>({km(sn.detectionKm)} scan)</em>
                 </span>
               ))}

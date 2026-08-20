@@ -282,7 +282,7 @@ export function buildUnitSpecsLedger(
 
     const side: 'attacker' | 'defender' = u.iso === attackerIso ? 'attacker' : 'defender';
     const nationName = nations[u.iso]?.name ?? u.iso;
-    const uLabel = unitLabel(u, dummyCtx.formations, dummyCtx.systems);
+    const uLabel = unitLabel(u, dummyCtx.formations, dummyCtx.systems, units);
     const uState = unitStates?.get(u.id);
 
     const typeId = (u.kind === 'unit' ? u.typeId : 'formation').toLowerCase();
