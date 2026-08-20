@@ -115,7 +115,7 @@ export interface PersonnelCasualtySummary {
 }
 
 export interface TacticalLesson {
-  category: 'air_defense' | 'saturation' | 'stealth_standoff' | 'naval_asw' | 'bmd_space' | 'magazine_depth';
+  category: 'air_defense' | 'saturation' | 'stealth_standoff' | 'naval_asw' | 'naval_asuw' | 'bmd_space' | 'magazine_depth';
   title: string;
   detail: string;
   impact: 'positive' | 'negative' | 'critical' | 'neutral';
@@ -313,7 +313,13 @@ export function buildUnitSpecsLedger(
       domain = 'radar';
     }
 
-    const finalStatus: UnitSpecLedgerEntry['finalStatus'] = uState?.status ?? 'intact';
+    let finalStatus: UnitSpecLedgerEntry['finalStatus'] = uState?.status ?? 'intact';
+    if (
+      (domain === 'naval' || domain === 'subsurface') &&
+      (finalStatus === 'destroyed' || (uState?.aliveCount === 0 && (uState?.initialCount ?? 0) > 0))
+    ) {
+      finalStatus = 'sunk';
+    }
 
     const weapons: WeaponSpecStatus[] = (spec.weapons ?? []).map((w: WeaponFacet, wIdx: number) => {
       const loadoutCount = u.kind === 'unit' ? u.loadout?.find((l) => l.id === w.id)?.count : undefined;
@@ -894,7 +900,7 @@ export function generateTheaterAar(
   }
   if (theaterAss.phases.some((p) => (p.navalAssessment && p.navalAssessment.kind === 'asuw' && p.navalAssessment.flagshipDamage === 'sunk'))) {
     tacticalLessons.push({
-      category: 'naval_asw',
+      category: 'naval_asuw',
       title: 'Naval Surface Strike Saturation Breach',
       detail: 'Coordinated multi-vector anti-ship missile saturation penetrated all 4 fleet defense tiers, resulting in catastrophic hull loss.',
       impact: 'positive',
