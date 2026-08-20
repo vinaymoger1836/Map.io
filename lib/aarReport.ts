@@ -599,7 +599,7 @@ export function generateTheaterAar(
       const u = units.find((unit) => unit.id === uId);
       if (!u) continue;
       const side: 'attacker' | 'defender' = u.iso === theaterAss.attackerIso ? 'attacker' : 'defender';
-      const label = unitLabel(u, [], []);
+      const label = unitLabel(u, ctx?.formations ?? [], ctx?.systems ?? [], units);
       const typeId = (u.kind === 'unit' ? u.typeId : 'formation').toLowerCase();
 
       let domain: PlatformCasualtyEntry['domain'] = 'ground';
@@ -662,7 +662,7 @@ export function generateTheaterAar(
       const u = units.find((unit) => unit.id === uId);
       if (!u) continue;
       const side: 'attacker' | 'defender' = u.iso === theaterAss.attackerIso ? 'attacker' : 'defender';
-      const label = unitLabel(u, [], []);
+      const label = unitLabel(u, ctx?.formations ?? [], ctx?.systems ?? [], units);
 
       const initPers = uState.initialPersonnel ?? 10;
       const kiaPers = uState.kiaPersonnel ?? 0;
