@@ -1521,7 +1521,7 @@ export function assessTheaterRaid(
   for (const tId of targetIdsInPhases) {
     const tState = unitStates.get(tId);
     const tUnit = allUnits.find((u) => u.id === tId);
-    const tName = tUnit ? unitLabel(tUnit, ctx.formations, ctx.systems) : 'Target';
+    const tName = tUnit ? unitLabel(tUnit, ctx.formations, ctx.systems, allUnits) : 'Target';
     if (tState?.status === 'destroyed' || (tState?.aliveCount === 0 && (tState?.initialCount ?? 0) > 0)) {
       destroyedTargets.push(tName);
     } else if (tState?.status === 'damaged' || tState?.status === 'suppressed') {
