@@ -737,6 +737,10 @@ export function generateTheaterAar(
       attackMunitionsBreakdown.push({
         launcher: phase.attackerLabel,
         weaponName: phase.weaponName,
+        count: phase.salvoCommitted,
+        target: phase.targetLabel,
+      });
+
       const taskAttackerUnit = units.find((u) => u.id === phase.task.attackerUnitId);
       const taskSide: 'attacker' | 'defender' = taskAttackerUnit?.iso === attIso ? 'attacker' : 'defender';
 
@@ -862,11 +866,6 @@ export function generateTheaterAar(
       badgeVariant: isPhaseSuccess ? 'success' : 'loss',
       breakdown: {
         impacts: tasksInPhase.map((t) => ({
-          target: t.targetLabel,
-          missileName: t.weaponName,
-          hits: t.munitionsImpacted,
-          damageVerdict: t.targetDamageSummary,
-        })),
           target: t.targetLabel,
           missileName: t.weaponName,
           hits: t.munitionsImpacted,
