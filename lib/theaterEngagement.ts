@@ -663,6 +663,7 @@ export function assessTheaterRaid(
 
   for (const pNum of phaseNumbers) {
     const tasksInPhase = phases.filter((p) => p.phaseNumber === pNum);
+    const simultaneousTargetIds = new Set(tasksInPhase.map((t) => t.targetUnitId));
 
     // Sort tasks in this phase so Offensive Counter-Air (OCA) resolves first, then SEAD, then Main Strikes
     const sortedTasks = [...tasksInPhase].sort((a, b) => {
@@ -1047,7 +1048,8 @@ export function assessTheaterRaid(
           actualSalvo,
           allUnits,
           unitStates,
-          ctx
+          ctx,
+          simultaneousTargetIds
         );
       } else {
         const isBallistic =
