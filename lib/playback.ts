@@ -530,17 +530,20 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
         totalKills += ic.kills;
       }
 
-      // Map individual missiles in sequential ripple stream directly from the launching platform
+      // Map individual missiles in sequential in-trail ripple stream directly from the launching platform
+      const baseFlightDuration = Math.max(1, seg.impactTimeSec - seg.releaseTimeSec);
+      const dynamicStagger = Math.max(0.3, Math.min(0.8, (baseFlightDuration * 0.35) / Math.max(1, salvoCount)));
+
       for (let m = 0; m < salvoCount; m++) {
-        // Sequential ripple launch stagger (0.5s between VLS / rail launches)
-        const staggerSec = m * 0.5;
+        // Sequential ripple launch stagger (each round fires one after the other)
+        const staggerSec = m * dynamicStagger;
         const mLaunchSec = seg.releaseTimeSec + staggerSec;
 
         if (clampedTime < mLaunchSec) continue;
 
         // Check if this missile gets intercepted
         const isIntercepted = m < totalKills;
-        let killTimeSec = seg.impactTimeSec;
+        let killTimeSec = seg.impactTimeSec + staggerSec * 0.4;
         let killCoord = targetLngLat;
         let killDistKm = routeTotalDistanceKm(munitionBaseRoute);
 
@@ -558,11 +561,13 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           }
         }
 
-        // If missile was destroyed earlier, don't draw it past its kill time
-        if (isIntercepted && clampedTime > killTimeSec) continue;
+        const mImpactSec = isIntercepted ? killTimeSec : (seg.impactTimeSec + staggerSec * 0.4);
 
-        // Base flight time from platform launch to destination/intercept
-        const mTotalSec = (isIntercepted ? killTimeSec : seg.impactTimeSec) - seg.releaseTimeSec;
+        // If missile was destroyed or impacted earlier, don't draw it past its impact/kill time
+        if (clampedTime > mImpactSec) continue;
+
+        // Flight progress along the corridor
+        const mTotalSec = mImpactSec - mLaunchSec;
         const progress = mTotalSec > 0 ? (clampedTime - mLaunchSec) / mTotalSec : 1;
         const clampedFrac = Math.min(1, Math.max(0, progress));
 
@@ -573,32 +578,10 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
 
         const mTotalDist = routeTotalDistanceKm(activeMunitionRoute);
         const mPos = interpolateRouteDistance(activeMunitionRoute, clampedFrac * mTotalDist);
-        const corePoint = mPos.coord;
+        const mCurrentCoord = mPos.coord;
         const mHeading = mPos.heading;
-        const mPerpBearing = (mHeading + 90) % 360;
 
-        // Distinct tactical formation spread:
-        // Calculate lateral echelon / wedge lanes so all N missiles are clearly visible side-by-side
-        const laneIndex = salvoCount > 1 ? m - (salvoCount - 1) / 2 : 0;
-        const lateralSpreadFactor = Math.sin(Math.pow(clampedFrac, 0.7) * Math.PI);
-        const laneOffsetKm = laneIndex * 6.5 * lateralSpreadFactor;
-
-        // Longitudinal ripple stagger (each missile flying slightly staggered in the formation)
-        const longitudinalOffsetKm = (m % 2 === 0 ? 0 : -2.5) * lateralSpreadFactor;
-
-        let mCurrentCoord = corePoint;
-        if (laneOffsetKm !== 0 && clampedFrac > 0.02 && clampedFrac < 0.98) {
-          mCurrentCoord = destination(corePoint, laneOffsetKm, mPerpBearing);
-        }
-        if (longitudinalOffsetKm !== 0 && clampedFrac > 0.05 && clampedFrac < 0.95) {
-          mCurrentCoord = destination(
-            mCurrentCoord,
-            Math.abs(longitudinalOffsetKm),
-            (mHeading + (longitudinalOffsetKm > 0 ? 0 : 180)) % 360
-          );
-        }
-
-        // Individual Munition Entity
+        // Individual Munition Entity (In-Trail Column)
         entities.push({
           id: `${seg.id}-m-${m}`,
           type: 'munition',
@@ -607,10 +590,10 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
           lngLat: mCurrentCoord,
           headingDeg: mHeading,
           color: '#FFB020',
-          status: clampedFrac > 0.88 ? 'terminal' : 'munition-flight',
+          status: clampedFrac > 0.90 ? 'terminal' : 'munition-flight',
         });
 
-        // Individual Munition Trail from launch platform to current location
+        // Individual Munition Trail from launch platform along the flight corridor
         const mTrail = multiLegGreatCirclePath([
           ...activeMunitionRoute.slice(0, mPos.legIndex + 1),
           mCurrentCoord,
