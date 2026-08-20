@@ -737,12 +737,11 @@ export function generateTheaterAar(
       attackMunitionsBreakdown.push({
         launcher: phase.attackerLabel,
         weaponName: phase.weaponName,
-        count: phase.salvoCommitted,
-        target: phase.targetLabel,
-      });
+      const taskAttackerUnit = units.find((u) => u.id === phase.task.attackerUnitId);
+      const taskSide: 'attacker' | 'defender' = taskAttackerUnit?.iso === attIso ? 'attacker' : 'defender';
 
       munitionMatrix.push({
-        side: 'attacker',
+        side: taskSide,
         weaponName: `${phase.weaponName} (Phase ${phase.phaseNumber})`,
         category: classifyMunitionCategory(phase.weaponName, phase.task.category),
         fired: phase.salvoCommitted,
@@ -801,9 +800,14 @@ export function generateTheaterAar(
       }
     }
 
-    // Consolidated T+00m Launch Event
+    const phaseOffsetMin = (pNum - 1) * 35;
+    const launchTimeFormatted = `T+${String(0 + phaseOffsetMin).padStart(2, '0')}m`;
+    const interceptTimeFormatted = `T+${String(18 + phaseOffsetMin).padStart(2, '0')}m`;
+    const impactTimeFormatted = `T+${String(30 + phaseOffsetMin).padStart(2, '0')}m`;
+
+    // Consolidated Launch Event
     chronologicalLog.push({
-      timeFormatted: 'T+00m',
+      timeFormatted: launchTimeFormatted,
       phaseNumber: pNum,
       title: `[Phase ${pNum}] Coordinated Time-on-Target Salvo Launch`,
       detail:
@@ -817,10 +821,10 @@ export function generateTheaterAar(
       },
     });
 
-    // Consolidated T+18m Interception Event
+    // Consolidated Interception Event
     if (phaseIntercepted > 0) {
       chronologicalLog.push({
-        timeFormatted: 'T+18m',
+        timeFormatted: interceptTimeFormatted,
         phaseNumber: pNum,
         title: `[Phase ${pNum}] Layered Defensive Interceptions`,
         detail: `Defending fire control engaged incoming strike salvos: ${phaseIntercepted} intercepted across active defense tiers (${phaseFired - phaseIntercepted} penetrated).`,
@@ -832,7 +836,7 @@ export function generateTheaterAar(
       });
     } else {
       chronologicalLog.push({
-        timeFormatted: 'T+18m',
+        timeFormatted: interceptTimeFormatted,
         phaseNumber: pNum,
         title: `[Phase ${pNum}] Defensive Interception Window`,
         detail: `No defending interceptors engaged. Entire salvo of ${phaseFired} munitions penetrated directly toward target complex.`,
@@ -844,13 +848,13 @@ export function generateTheaterAar(
       });
     }
 
-    // Consolidated T+30m Impact / Damage Event (Deduplicated per target)
+    // Consolidated Impact / Damage Event (Deduplicated per target)
     const damageSummaries = Array.from(
       new Set(tasksInPhase.map((t) => `${t.targetLabel}: ${t.targetDamageSummary}`))
     );
     const isPhaseSuccess = tasksInPhase.some((t) => t.targetDestroyed || t.targetSuppressed);
     chronologicalLog.push({
-      timeFormatted: 'T+30m',
+      timeFormatted: impactTimeFormatted,
       phaseNumber: pNum,
       title: `[Phase ${pNum}] Phase Outcome & Strike Resolution`,
       detail: damageSummaries.join(' | '),
@@ -858,6 +862,11 @@ export function generateTheaterAar(
       badgeVariant: isPhaseSuccess ? 'success' : 'loss',
       breakdown: {
         impacts: tasksInPhase.map((t) => ({
+          target: t.targetLabel,
+          missileName: t.weaponName,
+          hits: t.munitionsImpacted,
+          damageVerdict: t.targetDamageSummary,
+        })),
           target: t.targetLabel,
           missileName: t.weaponName,
           hits: t.munitionsImpacted,
