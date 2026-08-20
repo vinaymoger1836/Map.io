@@ -861,8 +861,8 @@ function unitsToGeoJSON(
             // A strike group's label carries its size, because the whole point
             // of a special unit is that it is more than one thing.
             label: isFormation
-              ? `${unitLabel(u, formations, systems)} · ${totalStrength(u.composition)}`
-              : unitLabel(u, formations, systems),
+              ? `${unitLabel(u, formations, systems, units)} · ${totalStrength(u.composition)}`
+              : unitLabel(u, formations, systems, units),
             nation: nations[u.iso]?.name ?? '',
             type: isFormation ? (formation?.label ?? 'Special unit') : (u.typeId ?? ''),
             detail: isFormation ? describeComposition(u.composition, systems) : '',
@@ -922,7 +922,7 @@ export function envelopesToGeoJSON(
 
   for (const unit of units) {
     const color = nations[unit.iso]?.color ?? '#9AA7B4';
-    const unitName = unitLabel(unit, formations, systems);
+    const unitName = unitLabel(unit, formations, systems, units);
     let envelopes: Envelope[];
     let specs: (SystemSpec | undefined)[];
 

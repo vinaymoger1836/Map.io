@@ -61,13 +61,13 @@ export function OrderOfBattle({ wg }: { wg: WarGames }) {
                         src={deployedPreview(u, board.formations, board.nations[u.iso]?.color ?? NEUTRAL)}
                         alt=""
                       />
-                      <span>{unitLabel(u, board.formations, systems)}</span>
+                      <span>{unitLabel(u, board.formations, systems, board.units)}</span>
                       {strengthOf(u) > 1 && <span className="wg-ob-size">{strengthOf(u)}</span>}
                     </button>
                     <button
                       className="wg-ob-del"
                       onClick={() => wg.removeUnit(u.id)}
-                      aria-label={`Remove ${unitLabel(u, board.formations, systems)}`}
+                      aria-label={`Remove ${unitLabel(u, board.formations, systems, board.units)}`}
                     >
                       ×
                     </button>

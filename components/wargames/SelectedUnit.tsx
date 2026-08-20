@@ -42,7 +42,7 @@ export function SelectedUnit({ wg, unit }: { wg: WarGames; unit: DeployedUnit })
       <div className="wg-selected-head">
         <img src={deployedPreview(unit, board.formations, color)} alt="" />
         <div>
-          <b>{unitLabel(unit, board.formations, systems)}</b>
+          <b>{unitLabel(unit, board.formations, systems, board.units)}</b>
           <span>
             {board.nations[unit.iso]?.name ?? 'Unassigned'}
             {unit.kind === 'formation'
@@ -79,7 +79,7 @@ export function SelectedUnit({ wg, unit }: { wg: WarGames; unit: DeployedUnit })
           <input
             className="wg-search"
             value={unit.name ?? ''}
-            placeholder={unitLabel(unit, board.formations, systems)}
+            placeholder={unitLabel(unit, board.formations, systems, board.units)}
             onChange={(e) => wg.renameUnit(unit.id, e.target.value || undefined)}
             aria-label="Unit name"
           />
