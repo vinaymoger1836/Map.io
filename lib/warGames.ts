@@ -620,7 +620,8 @@ const systemName = (systems: SystemSpec[] | undefined, id: string | undefined) =
 export function unitLabel(
   u: DeployedUnit,
   custom: Formation[] = [],
-  systems: SystemSpec[] = []
+  systems: SystemSpec[] = [],
+  allUnits?: DeployedUnit[]
 ): string {
   if (u.name) return u.name;
   if (u.kind === 'formation') {
@@ -628,14 +629,34 @@ export function unitLabel(
   }
 
   const base = systemName(systems, u.systemId) ?? UNIT_BY_ID.get(u.typeId)?.label ?? '';
-  if (u.count > 1) return `${u.count} × ${base}`;
+  let label = base;
+  if (u.count > 1) {
+    label = `${u.count} × ${base}`;
+  } else {
+    const ech = ECHELON_BY_ID.get(u.echelonId);
+    if (ech && !base.toLowerCase().includes(ech.label.toLowerCase())) {
+      label = `${ech.abbr} ${base}`.trim();
+    }
+  }
 
-  const ech = ECHELON_BY_ID.get(u.echelonId);
-  if (!ech) return base;
-  // "CSG Carrier strike group" says it twice. Where the name already carries
-  // its own size, the prefix is noise.
-  if (base.toLowerCase().includes(ech.label.toLowerCase())) return base;
-  return `${ech.abbr} ${base}`.trim();
+  if (allUnits && allUnits.length > 1) {
+    const sameClassUnits = allUnits.filter(
+      (other) =>
+        other.kind === 'unit' &&
+        other.iso === u.iso &&
+        other.typeId === u.typeId &&
+        other.systemId === u.systemId &&
+        !other.name
+    );
+    if (sameClassUnits.length > 1) {
+      const idx = sameClassUnits.findIndex((x) => x.id === u.id);
+      if (idx !== -1) {
+        label = `${label}-${idx + 1}`;
+      }
+    }
+  }
+
+  return label;
 }
 
 /** The icon a deployed thing draws, whichever kind it is. */
