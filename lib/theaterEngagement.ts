@@ -616,7 +616,7 @@ export function assessTheaterRaid(
   const target = allUnits.find((u) => u.id === targetUnitId);
   if (!target) return null;
 
-  const targetLabel = unitLabel(target, ctx.formations, ctx.systems);
+  const targetLabel = unitLabel(target, ctx.formations, ctx.systems, allUnits);
 
   // Initialize persistent unit states
   const unitStates = new Map<string, UnitPersistentState>();
