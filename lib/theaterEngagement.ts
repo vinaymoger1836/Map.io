@@ -722,8 +722,8 @@ export function assessTheaterRaid(
         weapons: [{ name: 'Standoff Cruise Missile', rangeKm: 600, salvo: 4, magazine: 24 }],
       } as SystemSpec);
 
-      const attackerLabel = unitLabel(attackerUnit, ctx.formations, ctx.systems);
-      const phaseTargetLabel = unitLabel(targetUnit, ctx.formations, ctx.systems);
+      const attackerLabel = unitLabel(attackerUnit, ctx.formations, ctx.systems, allUnits);
+      const phaseTargetLabel = unitLabel(targetUnit, ctx.formations, ctx.systems, allUnits);
 
       const weapon = attackerSpec.weapons?.[task.weaponIndex] ?? { rangeKm: 50, name: 'Standard Strike Munition' };
       const weaponName = weapon.name ?? 'Strike Munition';
