@@ -364,18 +364,18 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
   const phaseTargetOptions = useMemo(() => {
     if (!targetUnit) return [];
     const list: { id: string; label: string; kind: string }[] = [
-      { id: targetUnit.id, label: `${unitLabel(targetUnit, wg.formations, wg.systems)} (PRIMARY OBJECTIVE)`, kind: 'objective' },
+      { id: targetUnit.id, label: `${unitLabel(targetUnit, wg.formations, wg.systems, wg.board.units)} (PRIMARY OBJECTIVE)`, kind: 'objective' },
     ];
     if (theaterUmbrella) {
       for (const sam of theaterUmbrella.samDefenders) {
-        list.push({ id: sam.unit.id, label: `${unitLabel(sam.unit, wg.formations, wg.systems)} (SAM Radar)`, kind: 'sam' });
+        list.push({ id: sam.unit.id, label: `${unitLabel(sam.unit, wg.formations, wg.systems, wg.board.units)} (SAM Radar)`, kind: 'sam' });
       }
       for (const cap of theaterUmbrella.capDefenders) {
-        list.push({ id: cap.unit.id, label: `${unitLabel(cap.unit, wg.formations, wg.systems)} (CAP Fighter Flight)`, kind: 'cap' });
+        list.push({ id: cap.unit.id, label: `${unitLabel(cap.unit, wg.formations, wg.systems, wg.board.units)} (CAP Fighter Flight)`, kind: 'cap' });
       }
     }
     return list;
-  }, [targetUnit, theaterUmbrella, wg.formations, wg.systems]);
+  }, [targetUnit, theaterUmbrella, wg.formations, wg.systems, wg.board.units]);
 
   // Available weapons on selected new attacker
   const selectedAttackerCandidate = theaterAttackers.find((a) => a.unit.id === newAttackerId);
@@ -454,7 +454,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
             <option value="">Choose objective to attack…</option>
             {targetCandidates.map((u) => (
               <option key={u.id} value={u.id}>
-                {wg.board.nations[u.iso]?.name ?? u.iso} — {unitLabel(u, wg.formations, wg.systems)}
+                {wg.board.nations[u.iso]?.name ?? u.iso} — {unitLabel(u, wg.formations, wg.systems, wg.board.units)}
               </option>
             ))}
           </select>
