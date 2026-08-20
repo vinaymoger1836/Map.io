@@ -363,16 +363,24 @@ export function SystemForm({
                 <NumberField
                   label="Speed"
                   unit={w.engages?.includes('subsurface') ? 'kts' : 'Mach'}
-                  step={0.1}
-                  value={w.speedMach ?? w.speedKnots}
+                  step={w.engages?.includes('subsurface') ? 1 : 0.1}
+                  value={
+                    w.engages?.includes('subsurface')
+                      ? (w.speedKnots ?? (w.speedMach ? Math.round(w.speedMach * 666) : undefined))
+                      : (w.speedMach ?? (w.speedKnots ? Number((w.speedKnots / 666).toFixed(2)) : undefined))
+                  }
                   onChange={(v) => {
                     if (w.engages?.includes('subsurface')) {
-                      setWeapon(i, { speedKnots: v, speedMach: v ? v / 666 : undefined });
+                      setWeapon(i, { speedKnots: v, speedMach: undefined });
                     } else {
-                      setWeapon(i, { speedMach: v });
+                      setWeapon(i, { speedMach: v, speedKnots: undefined });
                     }
                   }}
-                  tooltip="Flight speed in Mach (e.g. 0.88 for Tomahawk/Kalibr, 2.8 for BrahMos/Onyx, 6.0 for Hypersonic) or underwater speed in Knots for torpedoes (e.g. 55 kts)."
+                  tooltip={
+                    w.engages?.includes('subsurface')
+                      ? 'Underwater torpedo speed in Knots (e.g. 55 kts for heavyweight torpedo, 45 kts for lightweight).'
+                      : 'Flight speed in Mach (e.g. 0.88 for Tomahawk/Kalibr, 2.8 for BrahMos/Onyx, 6.0 for Hypersonic).'
+                  }
                 />
               </div>
               <span className="wg-field-label">
