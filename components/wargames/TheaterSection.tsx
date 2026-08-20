@@ -498,7 +498,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
               <div className="wg-package-pills">
                 {theaterAttackers.map((att, idx) => (
                   <span key={idx} className="wg-package-pill">
-                    <strong>{unitLabel(att.unit, wg.formations, wg.systems)}</strong>
+                    <strong>{unitLabel(att.unit, wg.formations, wg.systems, wg.board.units)}</strong>
                     <em>({km(att.distanceToTargetKm)} to target)</em>
                   </span>
                 ))}
@@ -596,7 +596,7 @@ export function TheaterSection({ wg }: { wg: WarGames }) {
                   <option value="">Select attacker…</option>
                   {theaterAttackers.map((a) => (
                     <option key={a.unit.id} value={a.unit.id}>
-                      {unitLabel(a.unit, wg.formations, wg.systems)}
+                      {unitLabel(a.unit, wg.formations, wg.systems, wg.board.units)}
                     </option>
                   ))}
                 </select>
