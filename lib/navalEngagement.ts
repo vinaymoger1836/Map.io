@@ -23,7 +23,7 @@ import { distanceKm, interpolate } from './geo';
 import { specOf, type BoardContext, type UnitPersistentState } from './theaterEngagement';
 import { unitLabel, type DeployedUnit, type Formation } from './warGames';
 import type { SystemSpec, WeaponFacet } from './specs';
-import { maxMunitionCapacity } from './specs';
+import { maxMunitionCapacity, defaultSonarFor } from './specs';
 
 /* ------------------------------------------------------------------ */
 /* Types & Interfaces                                                  */
@@ -503,27 +503,36 @@ export function assessAswEngagement(
   const targetSpec = specOf(targetSub, ctx);
   if (!hunterSpec || !targetSpec) return null;
 
-  const hunterLabel = unitLabel(hunter, ctx.formations, ctx.systems);
-  const targetLabel = unitLabel(targetSub, ctx.formations, ctx.systems);
+  const hunterLabel = unitLabel(hunter, ctx.formations, ctx.systems, allUnits);
+  const targetLabel = unitLabel(targetSub, ctx.formations, ctx.systems, allUnits);
   const dist = distanceKm(hunter.lngLat, targetSub.lngLat);
 
-  // Determine hunter sensor suite
-  let hunterSensorType: AswSonarProfile['hunterSensorType'] = 'hull_sonar';
-  let hunterSensorLabel = 'Bow Conformal Active/Passive Sonar';
+  // Retrieve subsurface sonar sensor suites
+  const hunterSonar = defaultSonarFor(hunterSpec, hunterSpec.typeId);
+  const targetSonar = defaultSonarFor(targetSpec, targetSpec.typeId);
 
-  if (hunterSpec.typeId === 'mpa') {
-    hunterSensorType = 'sonobuoy_field';
-    hunterSensorLabel = 'Air-Dropped Multi-Static Sonobuoy Field (DICASS/DIFAR)';
-  } else if (hunterSpec.typeId === 'attack-heli' || hunterSpec.typeId === 'transport-heli') {
-    hunterSensorType = 'dipping_sonar';
-    hunterSensorLabel = 'AN/AQS-22 ALFS Dipping Sonar';
-  } else if (hunterSpec.typeId === 'destroyer' || hunterSpec.typeId === 'frigate') {
-    hunterSensorType = 'towed_vds';
-    hunterSensorLabel = 'AN/SQQ-89(V)15 Variable Depth Towed Sonar (VDS)';
-  } else if (isSubsurfaceUnit(hunterSpec.typeId)) {
-    hunterSensorType = 'submarine_conformal';
-    hunterSensorLabel = 'Spherical Active/Passive Bow Sonar & Flank Arrays';
-  }
+  // Determine hunter sensor suite
+  let hunterSensorType: AswSonarProfile['hunterSensorType'] =
+    hunterSonar.type === 'towed_vds'
+      ? 'towed_vds'
+      : hunterSonar.type === 'dipping'
+        ? 'dipping_sonar'
+        : hunterSonar.type === 'sonobuoy_field'
+          ? 'sonobuoy_field'
+          : isSubsurfaceUnit(hunterSpec.typeId)
+            ? 'submarine_conformal'
+            : 'hull_sonar';
+
+  let hunterSensorLabel =
+    hunterSensorType === 'towed_vds'
+      ? `Variable Depth Towed Sonar (VDS, ${hunterSonar.detectionKm ?? 50} km)`
+      : hunterSensorType === 'dipping_sonar'
+        ? `Low-Frequency Dipping Sonar (${hunterSonar.detectionKm ?? 30} km)`
+        : hunterSensorType === 'sonobuoy_field'
+          ? `Air-Dropped Multi-Static Sonobuoy Field (${hunterSonar.detectionKm ?? 60} km)`
+          : hunterSensorType === 'submarine_conformal'
+            ? `Spherical Bow & Flank Conformal Array (${hunterSonar.detectionKm ?? 65} km)`
+            : `Hull-Mounted Sonar (${hunterSonar.detectionKm ?? 18} km)`;
 
   // Determine target acoustic signature & depth
   const isAip = targetSpec.name?.toLowerCase().includes('aip') || targetSpec.name?.toLowerCase().includes('type 212') || targetSpec.name?.toLowerCase().includes('gotland');
@@ -550,8 +559,9 @@ export function assessAswEngagement(
   const layerShadowAdvantage = isTargetBelowLayer && (hunterSensorType === 'hull_sonar' || hunterSensorType === 'submarine_conformal');
   const convergenceZoneActive = dist >= 45 && dist <= 65;
 
-  // Calculate acoustic detection confidence
-  let detectionScore = 65;
+  // Calculate acoustic detection confidence based on sonar reach & oceanography
+  const maxSonarReach = hunterSonar.detectionKm ?? 45;
+  let detectionScore = dist <= maxSonarReach ? 70 : Math.max(10, 70 - (dist - maxSonarReach) * 1.5);
   if (hunterSensorType === 'towed_vds') detectionScore += 25; // VDS penetrates thermocline!
   if (hunterSensorType === 'dipping_sonar') detectionScore += 20; // Dipping sonar lowers past the layer
   if (hunterSensorType === 'sonobuoy_field') detectionScore += 15;
@@ -560,7 +570,7 @@ export function assessAswEngagement(
   if (targetAcousticSignature === 'cavitation_sprint') detectionScore += 35;
   if (convergenceZoneActive) detectionScore += 20;
 
-  const acousticDetectionConfidencePct = Math.min(95, Math.max(15, detectionScore));
+  const acousticDetectionConfidencePct = Math.min(95, Math.max(15, Math.round(detectionScore)));
 
   const sonarProfile: AswSonarProfile = {
     thermoclineDepthM,
@@ -594,7 +604,10 @@ export function assessAswEngagement(
       ? 'air_dropped_lightweight'
       : 'heavyweight_wire';
 
-  const torpedoSpeedKnots = isRocketAsroc ? 600 : isLightweight ? 45 : 55;
+  const torpedoSpeedKnots =
+    defaultWeapon.speedKnots ??
+    (defaultWeapon.speedMach ? Math.round(defaultWeapon.speedMach * 666) : undefined) ??
+    (isRocketAsroc ? 600 : isLightweight ? 45 : 55);
 
   // Allies supporting ASW screen
   const alliesInAswScreen = allUnits.filter(
@@ -634,13 +647,15 @@ export function assessAswEngagement(
   addLog(
     'T+06m',
     `ASW Torpedo Attack Committed`,
-    `${hunterLabel} launched ${salvoSize} × ${torpedoName} (${isRocketAsroc ? 'Rocket-boosted Standoff Flight' : 'High-speed Wire-guided Track'}).`,
+    `${hunterLabel} launched ${salvoSize} × ${torpedoName} (${torpedoSpeedKnots} kts, ${isRocketAsroc ? 'Rocket-boosted Standoff Flight' : 'High-speed Wire-guided Track'}).`,
     { text: `${salvoSize} Torpedoes Inbound`, variant: 'standoff' }
   );
 
-  // Countermeasures & Torpedo Interceptions
+  // Countermeasures & Torpedo Interceptions using Torpedo Warning Sonar
+  const torpedoWarningKm = targetSonar.torpedoWarningKm ?? 8;
+  const warningMultiplier = Math.min(1.4, Math.max(0.6, torpedoWarningKm / 8));
   let activeDecoysExpended = salvoSize * 2;
-  let torpedoesDecoyed = Math.round(salvoSize * (isAip ? 0.45 : 0.35));
+  let torpedoesDecoyed = Math.round(salvoSize * (isAip ? 0.50 : 0.35) * warningMultiplier);
   let hardKillInterceptions = 0;
   let thermalLayerEvasions = 0;
 

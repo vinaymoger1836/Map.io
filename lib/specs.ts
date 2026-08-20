@@ -95,6 +95,18 @@ export const sourceRef = (p: Provenance): SourceRef =>
 export const isCited = (p: Provenance): boolean =>
   typeof p.source !== 'string' && Boolean(p.source.url);
 
+/** Subsurface acoustic sensor suite for Anti-Submarine Warfare (ASW) and submarine duels. */
+export interface SonarFacet {
+  /** Sonar technology and transducer placement */
+  type?: 'passive' | 'active' | 'towed_vds' | 'dipping' | 'flank_array' | 'hull_mounted' | 'sonobuoy_field';
+  /** Acoustic search / track acquisition range against submerged submarine threats (km) */
+  detectionKm?: number;
+  /** High-frequency acoustic torpedo warning detection envelope (km) */
+  torpedoWarningKm?: number;
+  /** Maximum simultaneous underwater acoustic tracks */
+  tracks?: number;
+}
+
 /** Anything that looks — a radar, a sonar, an AEW&C aircraft. */
 export interface SensorFacet {
   /** Instrumented detection range against its primary target class. */
@@ -108,6 +120,8 @@ export interface SensorFacet {
   horizonLimited?: boolean;
   /** Height of the antenna, for that horizon calculation. */
   antennaM?: number;
+  /** Dedicated subsurface sonar suite */
+  sonar?: SonarFacet;
 }
 
 /** Anything that shoots. A destroyer has several; a fighter carries a loadout. */
@@ -123,6 +137,10 @@ export interface WeaponFacet {
   minRangeKm?: number;
   /** Launch mass of one round. */
   massKg?: number;
+  /** Flight speed of the munition in Mach (e.g. 0.88 subsonic, 2.8 supersonic, 6.0 hypersonic). */
+  speedMach?: number;
+  /** Underwater speed of torpedoes in Knots (e.g. 50–70 kts). */
+  speedKnots?: number;
   /** Rounds committed per engagement. */
   salvo?: number;
   /** Ready rounds before reloading — VLS cells, launcher rails, hardpoints. */
@@ -132,6 +150,88 @@ export interface WeaponFacet {
   /** Detection to launch, in seconds. */
   reactionSec?: number;
   engages?: TargetClass[];
+}
+
+/**
+ * Fallback researched military sonar characteristics when a platform does not have
+ * explicit sonar values configured in its SystemSpec.
+ */
+export function defaultSonarFor(spec: SystemSpec | undefined, typeId: string): SonarFacet {
+  if (spec?.sensor?.sonar?.detectionKm) {
+    return spec.sensor.sonar;
+  }
+
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+
+  // Nuclear Attack Submarines (SSN / SSGN)
+  if (tid === 'submarine' && (name.includes('nuclear') || name.includes('ssn') || name.includes('ssgn') || name.includes('virginia') || name.includes('astute') || name.includes('yasen') || name.includes('seawolf') || name.includes('los angeles'))) {
+    return {
+      type: 'towed_vds',
+      detectionKm: 65,
+      torpedoWarningKm: 12,
+      tracks: 16,
+    };
+  }
+
+  // Ballistic Missile Submarines (SSBN)
+  if (tid === 'ssbn' || name.includes('ssbn') || name.includes('ohio') || name.includes('borei') || name.includes('vanguard') || name.includes('triomphant')) {
+    return {
+      type: 'passive',
+      detectionKm: 70,
+      torpedoWarningKm: 14,
+      tracks: 16,
+    };
+  }
+
+  // Conventional Diesel-Electric / AIP Submarines (SSK)
+  if (tid === 'submarine' || tid === 'midget-sub' || name.includes('aip') || name.includes('gotland') || name.includes('type 212') || name.includes('kilo') || name.includes('scorpene')) {
+    return {
+      type: 'passive',
+      detectionKm: 45,
+      torpedoWarningKm: 10,
+      tracks: 12,
+    };
+  }
+
+  // Maritime Patrol Aircraft (P-8, Tu-142, Atlantique)
+  if (tid === 'mpa' || name.includes('poseidon') || name.includes('p-8') || name.includes('tu-142')) {
+    return {
+      type: 'sonobuoy_field',
+      detectionKm: 60,
+      torpedoWarningKm: 6,
+      tracks: 32,
+    };
+  }
+
+  // ASW Helicopters (MH-60R, Merlin, Ka-27)
+  if (tid === 'helicopter' || tid === 'attack-heli' || tid === 'transport-heli' || name.includes('mh-60r') || name.includes('seahawk') || name.includes('merlin') || name.includes('ka-27')) {
+    return {
+      type: 'dipping',
+      detectionKm: 30,
+      torpedoWarningKm: 6,
+      tracks: 4,
+    };
+  }
+
+  // Modern ASW Frigates & Destroyers (with Towed VDS)
+  if (tid === 'destroyer' || tid === 'frigate' || tid === 'cruiser') {
+    const isDedicatedAsw = name.includes('fremm') || name.includes('type 26') || name.includes('type 23') || name.includes('constellation') || name.includes('burke') || name.includes('akizuki');
+    return {
+      type: isDedicatedAsw ? 'towed_vds' : 'hull_mounted',
+      detectionKm: isDedicatedAsw ? 50 : 20,
+      torpedoWarningKm: isDedicatedAsw ? 8 : 4,
+      tracks: isDedicatedAsw ? 8 : 4,
+    };
+  }
+
+  // Default Generic Sonar
+  return {
+    type: 'hull_mounted',
+    detectionKm: 15,
+    torpedoWarningKm: 4,
+    tracks: 2,
+  };
 }
 
 /** The thing that carries the sensors and weapons around. */

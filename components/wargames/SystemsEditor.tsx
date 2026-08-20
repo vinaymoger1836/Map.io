@@ -360,6 +360,20 @@ export function SystemForm({
                   onChange={(v) => setWeapon(i, { reactionSec: v })}
                   tooltip="Reaction time in seconds from lock to weapon release. Fast targets traversing the envelope quicker than this cannot be engaged."
                 />
+                <NumberField
+                  label="Speed"
+                  unit={w.engages?.includes('subsurface') ? 'kts' : 'Mach'}
+                  step={0.1}
+                  value={w.speedMach ?? w.speedKnots}
+                  onChange={(v) => {
+                    if (w.engages?.includes('subsurface')) {
+                      setWeapon(i, { speedKnots: v, speedMach: v ? v / 666 : undefined });
+                    } else {
+                      setWeapon(i, { speedMach: v });
+                    }
+                  }}
+                  tooltip="Flight speed in Mach (e.g. 0.88 for Tomahawk/Kalibr, 2.8 for BrahMos/Onyx, 6.0 for Hypersonic) or underwater speed in Knots for torpedoes (e.g. 55 kts)."
+                />
               </div>
               <span className="wg-field-label">
                 Engages
@@ -403,6 +417,8 @@ export function SystemForm({
                           rangeKm: matched.rangeKm,
                           minRangeKm: matched.minRangeKm,
                           massKg: matched.massKg,
+                          speedMach: (matched as any).speedMach,
+                          speedKnots: (matched as any).speedKnots,
                           salvo: matched.salvo ?? 2,
                           pk: matched.pk ?? 0.8,
                           reactionSec: matched.reactionSec ?? 5,
@@ -428,11 +444,11 @@ export function SystemForm({
 
       {section(
         'sensor',
-        'Sensor',
+        'Sensor & Sonar Suite',
         <>
           <div className="wg-fields">
             <NumberField
-              label="Detection"
+              label="Radar Detection"
               unit="km"
               value={draft.sensor?.detectionKm}
               onChange={(v) =>
@@ -441,7 +457,7 @@ export function SystemForm({
               tooltip="Maximum instrumented search / track acquisition range against a standard 3m² RCS target."
             />
             <NumberField
-              label="Tracks held"
+              label="Radar Tracks"
               value={draft.sensor?.tracks}
               onChange={(v) => sensor({ tracks: v })}
               tooltip="Maximum simultaneous radar track files the fire control computer can maintain."
@@ -479,6 +495,82 @@ export function SystemForm({
             <FieldInfo hint="Target classifications detectable by this sensor array." />
           </span>
           <TargetPicker value={draft.sensor?.sees} onChange={(v) => sensor({ sees: v })} />
+
+          {/* Subsurface Sonar Suite */}
+          <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#4DD0E1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              🌊 Subsurface Sonar Suite (ASW & Submarine Warfare)
+            </span>
+            <div className="wg-fields" style={{ marginTop: '8px' }}>
+              <label className="wg-field">
+                <span>
+                  Sonar Architecture
+                  <FieldInfo hint="Acoustic transducer array type and deployment method." />
+                </span>
+                <select
+                  className="wg-inline-select"
+                  value={draft.sensor?.sonar?.type ?? 'hull_mounted'}
+                  onChange={(e) =>
+                    sensor({
+                      sonar: {
+                        ...(draft.sensor?.sonar ?? {}),
+                        type: e.target.value as any,
+                      },
+                    })
+                  }
+                >
+                  <option value="hull_mounted">Hull-Mounted High-Frequency Sonar</option>
+                  <option value="towed_vds">Variable Depth Towed Sonar (VDS / CAPTAS-4)</option>
+                  <option value="passive">Bow Conformal / Passive Sonar (Submarine)</option>
+                  <option value="active">Spherical Active / Passive Bow Sonar</option>
+                  <option value="dipping">Low-Frequency Dipping Sonar (Helicopter)</option>
+                  <option value="sonobuoy_field">Multi-Static Sonobuoy Barrier Field (MPA)</option>
+                  <option value="flank_array">Flank Array Sonar (Submarine)</option>
+                </select>
+              </label>
+              <NumberField
+                label="Submarine Detection"
+                unit="km"
+                value={draft.sensor?.sonar?.detectionKm}
+                onChange={(v) =>
+                  sensor({
+                    sonar: {
+                      ...(draft.sensor?.sonar ?? {}),
+                      detectionKm: v,
+                    },
+                  })
+                }
+                tooltip="Acoustic detection and track convergence range against submerged submarine threats."
+              />
+              <NumberField
+                label="Torpedo Warning"
+                unit="km"
+                value={draft.sensor?.sonar?.torpedoWarningKm}
+                onChange={(v) =>
+                  sensor({
+                    sonar: {
+                      ...(draft.sensor?.sonar ?? {}),
+                      torpedoWarningKm: v,
+                    },
+                  })
+                }
+                tooltip="High-frequency acoustic intercept range to detect incoming torpedoes and deploy acoustic countermeasures (Nixie/ADC)."
+              />
+              <NumberField
+                label="Acoustic Tracks"
+                value={draft.sensor?.sonar?.tracks}
+                onChange={(v) =>
+                  sensor({
+                    sonar: {
+                      ...(draft.sensor?.sonar ?? {}),
+                      tracks: v,
+                    },
+                  })
+                }
+                tooltip="Simultaneous underwater acoustic track files the combat system can maintain."
+              />
+            </div>
+          </div>
         </>
       )}
 

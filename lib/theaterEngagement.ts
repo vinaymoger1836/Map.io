@@ -903,8 +903,8 @@ export function assessTheaterRaid(
 
       const candidates: DefEngagementCandidate[] = [];
 
-      // Direct-fire tank cannon rounds and tube artillery cannot be intercepted by SAMs, fighters, or naval air-defense
-      if (!isNonAirInterceptableGroundMunition) {
+      // Direct-fire tank cannon rounds, tube artillery, and subsurface ASW torpedoes cannot be intercepted by standard air SAMs/fighters
+      if (!isNonAirInterceptableGroundMunition && task.category !== 'asw' && !isTargetSub) {
         for (const def of defenders) {
           // When engaging a naval combatant, the ship's defense is handled in assessNavalCombat
           if (isTargetNaval && def.id === targetUnit.id) continue;
