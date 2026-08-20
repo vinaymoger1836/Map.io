@@ -1129,7 +1129,7 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
                     <option value="">None</option>
                     {ewOptions.map((u) => (
                       <option key={u.id} value={u.id}>
-                        {unitLabel(u, wg.formations, wg.systems)}
+                        {unitLabel(u, wg.formations, wg.systems, wg.board.units)}
                       </option>
                     ))}
                   </select>
@@ -1148,7 +1148,7 @@ export function EngagementSection({ wg }: { wg: WarGames }) {
                     <option value="">None</option>
                     {seadOptions.map((u) => (
                       <option key={u.id} value={u.id}>
-                        {unitLabel(u, wg.formations, wg.systems)}
+                        {unitLabel(u, wg.formations, wg.systems, wg.board.units)}
                       </option>
                     ))}
                   </select>
