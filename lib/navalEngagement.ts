@@ -200,14 +200,15 @@ export function assessNavalFleetDefense(
   salvoSize: number,
   allUnits: DeployedUnit[],
   unitStates: Map<string, UnitPersistentState>,
-  ctx: BoardContext
+  ctx: BoardContext,
+  simultaneousTargetIds?: Set<string>
 ): NavalFleetAssessment | null {
   const flagSpec = specOf(flagship, ctx);
   const attSpec = specOf(attacker, ctx);
   if (!flagSpec || !attSpec) return null;
 
-  const flagLabel = unitLabel(flagship, ctx.formations, ctx.systems);
-  const attLabel = unitLabel(attacker, ctx.formations, ctx.systems);
+  const flagLabel = unitLabel(flagship, ctx.formations, ctx.systems, allUnits);
+  const attLabel = unitLabel(attacker, ctx.formations, ctx.systems, allUnits);
 
   const weapon = attSpec.weapons?.[weaponIndex] ?? {
     name: 'Anti-Ship Cruise Missile',
@@ -270,9 +271,17 @@ export function assessNavalFleetDefense(
   const defendingWeapons: DefendingWeaponCandidate[] = [];
 
   for (const ship of allFleetUnits) {
+    const isTargetHull = ship.id === flagship.id;
+    // Self-Defense Priority Doctrine:
+    // If this escort ship is simultaneously under direct missile attack in the same wave,
+    // it preserves its air-defense magazine to defend its own hull rather than expending ammo defending other ships.
+    if (!isTargetHull && simultaneousTargetIds && simultaneousTargetIds.has(ship.id)) {
+      continue;
+    }
+
     const sSpec = specOf(ship, ctx);
     if (!sSpec) continue;
-    const sLabel = unitLabel(ship, ctx.formations, ctx.systems);
+    const sLabel = unitLabel(ship, ctx.formations, ctx.systems, allUnits);
     const sState = unitStates.get(ship.id);
 
     (sSpec.weapons ?? []).forEach((w, wIdx) => {
@@ -314,8 +323,13 @@ export function assessNavalFleetDefense(
     });
   }
 
-  // Sort descending by range (Long range outer defense -> medium area -> close point defense)
-  defendingWeapons.sort((a, b) => b.rangeKm - a.rangeKm);
+  // Sort: target ship's own self-defense weapons engage first, then unthreatened escorts by range
+  defendingWeapons.sort((a, b) => {
+    const aIsTarget = a.unit.id === flagship.id ? 1 : 0;
+    const bIsTarget = b.unit.id === flagship.id ? 1 : 0;
+    if (aIsTarget !== bIsTarget) return bIsTarget - aIsTarget;
+    return b.rangeKm - a.rangeKm;
+  });
 
   let tierNumber = 0;
   for (const cand of defendingWeapons) {
@@ -741,7 +755,8 @@ export function assessNavalCombat(
   salvoSize: number,
   allUnits: DeployedUnit[],
   unitStates: Map<string, UnitPersistentState>,
-  ctx: BoardContext
+  ctx: BoardContext,
+  simultaneousTargetIds?: Set<string>
 ): NavalAssessment | null {
   const attSpec = specOf(attacker, ctx);
   const tgtSpec = specOf(target, ctx);
@@ -754,7 +769,16 @@ export function assessNavalCombat(
 
   // If target is a surface combatant / flagship, run Layered Fleet Air Defense (ASuW)
   if (isNavalCombatant(tgtSpec.typeId)) {
-    return assessNavalFleetDefense(target, attacker, weaponIndex, salvoSize, allUnits, unitStates, ctx);
+    return assessNavalFleetDefense(
+      target,
+      attacker,
+      weaponIndex,
+      salvoSize,
+      allUnits,
+      unitStates,
+      ctx,
+      simultaneousTargetIds
+    );
   }
 
   return null;
