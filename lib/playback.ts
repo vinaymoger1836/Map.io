@@ -623,25 +623,24 @@ export function calculatePlaybackFrame(model: PlaybackModel, timeSec: number): P
       const icFlightDurationSec = Math.max(1.8, Math.min(3.8, (distRatio / 4) * strikeDurationSec + 1.2));
 
       for (let j = 0; j < icCount; j++) {
-        const icStaggerSec = j * 0.25;
-        const icLaunchSec = Math.max(seg.releaseTimeSec, ic.timeSec - icFlightDurationSec - icStaggerSec);
-        const icImpactSec = ic.timeSec;
+        // Sequential ripple launch stagger (0.35s between interceptor launches)
+        const icStaggerSec = j * 0.35;
+        const icBaseLaunch = Math.max(seg.releaseTimeSec, ic.timeSec - icFlightDurationSec);
+        const icLaunchSec = icBaseLaunch + icStaggerSec;
+        const icImpactSec = ic.timeSec + icStaggerSec * 0.5;
 
         if (clampedTime >= icLaunchSec && clampedTime <= icImpactSec) {
           const icTotalSec = icImpactSec - icLaunchSec;
           const icFrac = icTotalSec > 0 ? (clampedTime - icLaunchSec) / icTotalSec : 1;
           const clampedIcFrac = Math.min(1, Math.max(0, icFrac));
 
-          // Interceptors launch directly from the defending battery / warship (ic.samLngLat)
-          const coreIcPoint = interpolate(ic.samLngLat, ic.lngLat, clampedIcFrac);
-          const icLaneOffset = ((j % 2 === 0 ? 1 : -1) * (j * 1.2)) * Math.sin(clampedIcFrac * Math.PI);
-          const icCurrCoord =
-            icLaneOffset !== 0 ? destination(coreIcPoint, icLaneOffset, icPerpBearing) : coreIcPoint;
+          // Interceptors launch directly from the defending battery / warship (ic.samLngLat) in single file
+          const icCurrCoord = interpolate(ic.samLngLat, ic.lngLat, clampedIcFrac);
 
           entities.push({
             id: `${seg.id}-ic-${icIdx}-${j}`,
             type: 'interceptor',
-            label: j === 0 ? `${ic.samLabel} Interceptors` : '',
+            label: j === 0 ? `${ic.samLabel} (${icCount}x Interceptors)` : `INT-${j + 1}`,
             count: 1,
             lngLat: icCurrCoord,
             headingDeg: icHeading,
