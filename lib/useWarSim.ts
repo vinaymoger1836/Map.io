@@ -22,6 +22,7 @@ import {
   deployEntityToBase,
   deployAutonomousEntity,
   orderPatrol,
+  orderEntityRtb,
   addSimBase,
   renameSimBase,
 } from './warSimEngine';
@@ -178,6 +179,17 @@ export function useWarSim({
     []
   );
 
+  const orderRtb = useCallback(
+    (entityId: string) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return orderEntityRtb(prev, entityId);
+      });
+      setTargetPicking(null);
+    },
+    []
+  );
+
   const createBaseAtLocation = useCallback(
     (name: string, type: BaseType, lngLat: [number, number]) => {
       setSession((prev) => {
@@ -327,6 +339,7 @@ export function useWarSim({
     deployUnitToBase,
     deployAutonomousBattery,
     orderSortieToPoint,
+    orderRtb,
     createBaseAtLocation,
     renameBase,
     friendlyEntities,

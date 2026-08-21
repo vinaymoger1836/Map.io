@@ -157,7 +157,7 @@ export default function EurasiaMap() {
         return;
       }
 
-      const layers = ['warsim-bases-circle', 'warsim-entities-circle', 'warsim-contacts-circle'].filter(
+      const layers = ['warsim-bases-circle', 'warsim-entities-symbol', 'warsim-contacts-circle'].filter(
         (id) => map.getLayer(id)
       );
       const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
@@ -167,7 +167,7 @@ export default function EurasiaMap() {
 
         if (layerId === 'warsim-bases-circle' && props.id) {
           warSim.setSelectedBaseId(props.id);
-        } else if (layerId === 'warsim-entities-circle' && props.id) {
+        } else if (layerId === 'warsim-entities-symbol' && props.id) {
           warSim.setSelectedEntityId(props.id);
           warSim.setSelectedContactId(null);
         } else if (layerId === 'warsim-contacts-circle' && props.id) {
@@ -663,7 +663,7 @@ export default function EurasiaMap() {
             onStartSortie={(entity) => {
               warSim.startSortiePicking(entity);
             }}
-            onOrderRtb={warSim.orderSortieToPoint ? (id) => warSim.orderSortieToPoint(id, [0, 0], 0) : () => {}}
+            onOrderRtb={warSim.orderRtb}
             onStartBasePlacement={warSim.startBasePlacement}
             onRenameBase={warSim.renameBase}
             targetPicking={warSim.targetPicking}

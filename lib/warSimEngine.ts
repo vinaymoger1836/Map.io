@@ -134,7 +134,24 @@ export function tickWarSim(
     const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (entity.typeId === 'fighter' ? 900 : 1500);
     const speedKmh = entity.speedKmh > 0 ? entity.speedKmh : (spec?.platform?.speedKmh ?? 850);
     const homeBase = updatedBases.find((b) => b.id === entity.homeBaseId);
-    const homeLngLat = homeBase?.lngLat ?? entity.lngLat;
+    let homeLngLat = homeBase?.lngLat;
+    if (!homeLngLat) {
+      const friendlyBases = updatedBases.filter((b) => b.iso === entity.iso);
+      if (friendlyBases.length > 0) {
+        let nearestDist = Infinity;
+        let nearestCoord = friendlyBases[0].lngLat;
+        for (const fb of friendlyBases) {
+          const d = distanceKm(entity.lngLat, fb.lngLat);
+          if (d < nearestDist) {
+            nearestDist = d;
+            nearestCoord = fb.lngLat;
+          }
+        }
+        homeLngLat = nearestCoord;
+      } else {
+        homeLngLat = entity.lngLat;
+      }
+    }
 
     // Fuel multiplier (tanker support cuts burn rate in half)
     const fuelRateMult = hasTankerSupport(entity) ? 0.5 : 1.0;
@@ -769,5 +786,75 @@ export function renameSimBase(
   return {
     ...session,
     bases: updatedBases,
+  };
+}
+
+/**
+ * Orders a specific in-flight or deployed entity to immediately abort mission and return directly to its home base (or nearest friendly base).
+ */
+export function orderEntityRtb(session: WarSimSession, entityId: string): WarSimSession {
+  let orderedName = '';
+  let entityIso = session.playerIso;
+  let homeLngLat: [number, number] | null = null;
+  let homeBaseName = '';
+
+  const updatedEntities = session.entities.map((e) => {
+    if (e.id !== entityId) return e;
+    orderedName = e.name;
+    entityIso = e.iso;
+
+    // Find its designated home base or fallback to nearest friendly base
+    const homeBase = session.bases.find((b) => b.id === e.homeBaseId);
+    if (homeBase) {
+      homeLngLat = homeBase.lngLat;
+      homeBaseName = homeBase.name;
+    } else {
+      const friendlyBases = session.bases.filter((b) => b.iso === e.iso);
+      if (friendlyBases.length > 0) {
+        let nearestDist = Infinity;
+        let nearestCoord = friendlyBases[0].lngLat;
+        for (const fb of friendlyBases) {
+          const d = distanceKm(e.lngLat, fb.lngLat);
+          if (d < nearestDist) {
+            nearestDist = d;
+            nearestCoord = fb.lngLat;
+          }
+        }
+        homeLngLat = nearestCoord;
+        homeBaseName = friendlyBases[0].name;
+      }
+    }
+
+    const nextHeading = homeLngLat ? bearingDeg(e.lngLat, homeLngLat) : e.headingDeg;
+
+    return {
+      ...e,
+      status: 'bingo_rtb' as const,
+      headingDeg: nextHeading,
+      patrolOrder: undefined, // Clear any orbit/loiter orders so it flies directly home
+    };
+  });
+
+  const faction: 'player' | 'enemy' = entityIso === session.playerIso ? 'player' : 'enemy';
+  const newEvents = orderedName
+    ? [
+        ...session.eventLog,
+        {
+          id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          simTimeSec: session.simTimeSec,
+          timeFormatted: formatSimTime(session.simTimeSec),
+          faction,
+          type: 'rtb' as const,
+          title: `RTB Ordered: ${orderedName}`,
+          detail: `${orderedName} was ordered to RTB immediately towards ${homeBaseName || 'home installation'}.`,
+          lngLat: homeLngLat || undefined,
+        },
+      ]
+    : session.eventLog;
+
+  return {
+    ...session,
+    entities: updatedEntities,
+    eventLog: newEvents.slice(-200),
   };
 }

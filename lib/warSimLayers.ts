@@ -3,8 +3,8 @@
  *
  * Manages live GeoJSON sources and layers for:
  * 1. Sovereign Base installations (Airbases, Naval Ports, Army HQs, Silos) with distinct icons.
- * 2. Active Friendly Units with relatable military icons (✈️, 🚢, 🚁, 🛸, 🚀, 🛡️, ⛽).
- * 3. Selected Unit Multi-Envelopes (Detection Horizon, Engagement Radius, Combat Radius).
+ * 2. Active Friendly Units with NATO Tactical Military APP-6 Icons (aircraft, SAM domes, armor tracks, ships, UAVs).
+ * 3. Selected Unit Multi-Envelopes (Detection Horizon, Engagement Radius).
  * 4. Fog-of-War Contact Blips (Tier 1 Sensor Tracks vs. Tier 2 PID units).
  * 5. Patrol Orbit Rings & Ingress Trajectories.
  * 6. In-flight Missiles and Interceptors.
@@ -21,6 +21,8 @@ import {
 } from './warSimTypes';
 import { type SystemSpec } from './specs';
 import { geodesicRing, greatCirclePath } from './geo';
+import { ensureIcons, unitIconId, type IconSpec } from './unitIcons';
+import { UNIT_BY_ID, type EchelonMark } from './warGames';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -39,8 +41,7 @@ const LYR_ENVELOPES_LABEL = 'warsim-envelopes-label';
 const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
 const LYR_ENTITIES_HALO = 'warsim-entities-halo';
-const LYR_ENTITIES_CIRCLE = 'warsim-entities-circle';
-const LYR_ENTITIES_LABEL = 'warsim-entities-label';
+const LYR_ENTITIES_SYMBOL = 'warsim-entities-symbol';
 const LYR_CONTACTS_CIRCLE = 'warsim-contacts-circle';
 const LYR_CONTACTS_LABEL = 'warsim-contacts-label';
 const LYR_PATROLS_LINE = 'warsim-patrols-line';
@@ -101,6 +102,93 @@ export function getSimUnitIcon(typeId: string): string {
   }
 }
 
+export function mapSimTypeToUnitType(typeId: string): string {
+  switch (typeId) {
+    case 'fighter':
+    case 'interceptor':
+    case 'multirole':
+      return 'fighter';
+    case 'strike':
+      return 'strike';
+    case 'strategic-bomber':
+    case 'bomber':
+      return 'bomber';
+    case 'awacs':
+      return 'awacs';
+    case 'tanker':
+      return 'tanker';
+    case 'uav':
+    case 'drone':
+    case 'halej-uav':
+      return 'uav';
+    case 'attack-heli':
+      return 'attack-heli';
+    case 'transport-heli':
+      return 'transport-heli';
+    case 'destroyer':
+      return 'destroyer';
+    case 'frigate':
+      return 'frigate';
+    case 'corvette':
+      return 'corvette';
+    case 'carrier':
+      return 'carrier-ship';
+    case 'amphibious':
+      return 'amphib-ship';
+    case 'submarine':
+    case 'ssn':
+      return 'submarine';
+    case 'ssbn':
+      return 'ssbn';
+    case 'sam-launcher':
+      return 'sam-launcher';
+    case 'radar':
+    case 'early-warning':
+      return 'radar';
+    case 'tank':
+    case 'mbt':
+    case 'armor':
+    case 'armour':
+      return 'armour';
+    case 'ifv':
+    case 'apc':
+    case 'mech-infantry':
+      return 'mech-infantry';
+    case 'artillery':
+      return 'artillery';
+    case 'mlrs':
+      return 'rocket';
+    case 'special-forces':
+      return 'special-forces';
+    case 'silo':
+      return 'silo';
+    default:
+      return 'infantry';
+  }
+}
+
+export function simEntityIconSpec(e: SimEntity, color: string): IconSpec {
+  const mappedKey = mapSimTypeToUnitType(e.typeId);
+  const typeDef = UNIT_BY_ID.get(mappedKey) ?? UNIT_BY_ID.get('infantry')!;
+
+  const mark: EchelonMark =
+    e.count > 1
+      ? { kind: 'text', text: `${e.count}×` }
+      : typeDef.domain === 'air'
+        ? { kind: 'text', text: 'SQN' }
+        : typeDef.domain === 'site'
+          ? { kind: 'text', text: 'BTY' }
+          : { kind: 'bars', n: 2 };
+
+  return {
+    typeId: typeDef.id,
+    glyph: typeDef.glyph,
+    domain: typeDef.domain,
+    color,
+    mark,
+  };
+}
+
 export function installWarSimLayers(map: MLMap) {
   if (map.getSource(SRC_BASES)) return;
 
@@ -132,7 +220,7 @@ export function installWarSimLayers(map: MLMap) {
     },
   });
 
-  // 0.1. Unit Envelopes (Detection, Engagement, Combat Radius)
+  // 0.1. Unit Envelopes (Detection, Engagement)
   map.addSource(SRC_ENVELOPES, {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: [] },
@@ -232,7 +320,7 @@ export function installWarSimLayers(map: MLMap) {
     },
   });
 
-  // 3. Friendly Entities Source & Layers
+  // 3. Friendly Entities Source & Tactical Symbol Layers (NATO Chips)
   map.addSource(SRC_ENTITIES, {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: [] },
@@ -244,41 +332,38 @@ export function installWarSimLayers(map: MLMap) {
     source: SRC_ENTITIES,
     filter: ['==', ['get', 'selected'], true],
     paint: {
-      'circle-radius': 13,
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 20, 6, 28, 10, 36],
       'circle-color': '#4FC3F7',
-      'circle-opacity': 0.25,
+      'circle-opacity': 0.22,
       'circle-stroke-color': '#4FC3F7',
       'circle-stroke-width': 2,
+      'circle-stroke-opacity': 0.95,
     },
   });
 
   map.addLayer({
-    id: LYR_ENTITIES_CIRCLE,
-    type: 'circle',
-    source: SRC_ENTITIES,
-    paint: {
-      'circle-radius': 7.5,
-      'circle-color': ['get', 'color'],
-      'circle-stroke-width': 2,
-      'circle-stroke-color': '#070C14',
-    },
-  });
-
-  map.addLayer({
-    id: LYR_ENTITIES_LABEL,
+    id: LYR_ENTITIES_SYMBOL,
     type: 'symbol',
     source: SRC_ENTITIES,
     layout: {
+      'icon-image': ['get', 'icon'],
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 2, 0.55, 5, 0.78, 9, 0.96],
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+      'icon-anchor': 'center',
       'text-field': ['get', 'label'],
-      'text-size': 10.5,
-      'text-offset': [0, -1.4],
-      'text-anchor': 'bottom',
       'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-size': 10.5,
+      'text-offset': [0, 1.5],
+      'text-anchor': 'top',
+      'text-optional': true,
+      'text-padding': 2,
     },
     paint: {
       'text-color': '#FFFFFF',
       'text-halo-color': '#070C14',
-      'text-halo-width': 2,
+      'text-halo-width': 1.6,
+      'text-halo-blur': 0.4,
     },
   });
 
@@ -387,7 +472,7 @@ export function renderWarSimStateToMap(
     features: reachRingFeatures,
   });
 
-  // 0.1. Render Tactical Envelopes for Selected Entity (Detection, Engagement, Combat Radius)
+  // 0.1. Render Tactical Envelopes for Selected Entity (Detection, Engagement)
   const envelopeFeatures: GeoJSON.Feature[] = [];
   const selectedEntity = session.entities.find((e) => e.id === selectedEntityId && e.status !== 'destroyed');
 
@@ -460,13 +545,26 @@ export function renderWarSimStateToMap(
     features: basesFeatures,
   });
 
-  // 2. Render Friendly Entities (In Flight / Patrol / Deployed) with Relatable Military Icons
+  // 2. Render Friendly Entities (In Flight / Patrol / Deployed) with NATO Tactical Chip Icons
   const friendlyEntities = session.entities.filter(
     (e) => e.iso === factionIso && e.status !== 'destroyed' && e.status !== 'docked'
   );
+
+  const iconSpecs: IconSpec[] = [];
   const entityFeatures = friendlyEntities.map((e) => {
-    const icon = getSimUnitIcon(e.typeId);
     const isSelected = e.id === selectedEntityId;
+    const spec = simEntityIconSpec(e, factionColor);
+    iconSpecs.push(spec);
+    const iconId = unitIconId(spec.typeId, spec.mark, spec.color);
+
+    const statusText =
+      e.status === 'on_station'
+        ? 'PATROL'
+        : e.status === 'takeoff_ingress'
+          ? 'INGRESS'
+          : e.status === 'bingo_rtb'
+            ? 'RTB'
+            : e.status.toUpperCase();
 
     return {
       type: 'Feature' as const,
@@ -474,11 +572,15 @@ export function renderWarSimStateToMap(
       properties: {
         id: e.id,
         selected: isSelected,
-        label: `${icon} ${e.name} [${e.status.replace('_', ' ').toUpperCase()}] ${e.currentFuelPct.toFixed(0)}%`,
+        icon: iconId,
+        label: `${e.count > 1 ? `${e.count} × ` : ''}${e.name} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`,
         color: factionColor,
       },
     };
   });
+
+  ensureIcons(map, iconSpecs);
+
   (map.getSource(SRC_ENTITIES) as GeoJSONSource)?.setData({
     type: 'FeatureCollection',
     features: entityFeatures,
@@ -547,8 +649,7 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_MISSILES_LINE,
     LYR_CONTACTS_LABEL,
     LYR_CONTACTS_CIRCLE,
-    LYR_ENTITIES_LABEL,
-    LYR_ENTITIES_CIRCLE,
+    LYR_ENTITIES_SYMBOL,
     LYR_ENTITIES_HALO,
     LYR_PATROLS_LINE,
     LYR_BASES_LABEL,
