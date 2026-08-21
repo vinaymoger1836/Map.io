@@ -679,7 +679,9 @@ export default function EurasiaMap() {
                 params.weaponIndex,
                 params.salvoCount,
                 params.postStrikeAction,
-                params.customPostLngLat
+                params.customPostLngLat,
+                params.sortieCount,
+                params.customWeapons
               );
             }}
             activeWeaponIndex={warSim.activeWeaponIndex}

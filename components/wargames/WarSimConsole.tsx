@@ -83,6 +83,8 @@ export interface WarSimConsoleProps {
     salvoCount: number;
     postStrikeAction: import('@/lib/warSimTypes').PostStrikeAction;
     customPostLngLat?: [number, number];
+    sortieCount?: number;
+    customWeapons?: import('@/lib/specs').WeaponFacet[];
   }) => void;
   onOpenAar: () => void;
   onExitSim: () => void;

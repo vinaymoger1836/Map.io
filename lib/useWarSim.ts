@@ -222,7 +222,9 @@ export function useWarSim({
       weaponIndex: number,
       salvoCount: number = 1,
       postStrikeAction: PostStrikeAction = 'rtb',
-      customPostLngLat?: [number, number]
+      customPostLngLat?: [number, number],
+      sortieCount?: number,
+      customWeapons?: import('./specs').WeaponFacet[]
     ) => {
       setSession((prev) => {
         if (!prev) return null;
@@ -235,7 +237,9 @@ export function useWarSim({
           salvoCount,
           postStrikeAction,
           customPostLngLat,
-          systemsLibrary
+          systemsLibrary,
+          sortieCount,
+          customWeapons
         );
       });
       setTargetPicking(null);

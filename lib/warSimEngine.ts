@@ -1254,7 +1254,9 @@ export function orderStrikeMission(
   salvoCount: number = 1,
   postStrikeAction: PostStrikeAction = 'rtb',
   customPostLngLat?: [number, number],
-  systemsLibrary: SystemSpec[] = []
+  systemsLibrary: SystemSpec[] = [],
+  sortieCount?: number,
+  customWeapons?: import('./specs').WeaponFacet[]
 ): WarSimSession {
   const attacker = session.entities.find((e) => e.id === attackerEntityId);
   if (!attacker || attacker.status === 'destroyed' || attacker.status === 'in_repair' || attacker.status === 'turnaround') {
@@ -1262,16 +1264,21 @@ export function orderStrikeMission(
   }
 
   const spec = systemsLibrary.find((s) => s.id === attacker.systemId);
-  const weapons = (attacker.customWeapons && attacker.customWeapons.length > 0)
-    ? attacker.customWeapons
-    : (spec?.weapons || []);
+  const effectiveWeapons = (customWeapons && customWeapons.length > 0)
+    ? customWeapons
+    : (attacker.customWeapons && attacker.customWeapons.length > 0)
+      ? attacker.customWeapons
+      : (spec?.weapons || []);
 
-  const weapon = weapons[weaponIndex] || weapons[0];
+  const weapon = effectiveWeapons[weaponIndex] || effectiveWeapons[0];
   const weaponName = weapon?.name || 'Ordnance';
   const weaponRangeKm = weapon?.rangeKm || 100;
 
   const targetEntity = session.entities.find((e) => e.id === targetEntityId);
   const targetName = targetEntity?.name || 'Hostile Target Track';
+
+  const effectiveCount = Math.max(1, Math.min(attacker.count, sortieCount ?? attacker.count));
+  const isPartialSplit = effectiveCount < attacker.count;
 
   const strikePlan: StrikePlan = {
     targetEntityId,
@@ -1287,35 +1294,96 @@ export function orderStrikeMission(
 
   const isPlayer = attacker.iso === session.playerIso;
   const faction: 'player' | 'enemy' = isPlayer ? 'player' : 'enemy';
+  const cleanName = attacker.name.replace(/^\d+\s*[×x]\s*/i, '');
 
-  const newEvents = [
-    ...session.eventLog,
-    {
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      simTimeSec: session.simTimeSec,
-      timeFormatted: formatSimTime(session.simTimeSec),
-      faction,
-      type: 'launch' as const,
-      title: `Strike Mission Tasked: ${attacker.name}`,
-      detail: `${attacker.name} tasked on strike mission against ${targetName} committing ${salvoCount} × ${weaponName} (Max Range: ${weaponRangeKm} km). Post-strike protocol: ${postStrikeAction.toUpperCase().replace(/_/g, ' ')}.`,
-      lngLat: attacker.lngLat,
-    },
-  ];
+  if (isPartialSplit) {
+    const remainingCount = attacker.count - effectiveCount;
+    const personnelPerUnit = Math.max(1, Math.round(attacker.personnel / attacker.count));
 
-  const updatedEntities = session.entities.map((e) => {
-    if (e.id !== attackerEntityId) return e;
-    return {
-      ...e,
-      status: 'engaging' as const,
-      assignedMission: 'strike' as const,
+    const updatedDockedEntity: SimEntity = {
+      ...attacker,
+      name: `${remainingCount > 1 ? `${remainingCount} × ` : ''}${cleanName}`,
+      count: remainingCount,
+      personnel: remainingCount * personnelPerUnit,
+    };
+
+    const sortieEntity: SimEntity = {
+      ...attacker,
+      id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+      name: `${effectiveCount > 1 ? `${effectiveCount} × ` : ''}${cleanName}`,
+      count: effectiveCount,
+      personnel: effectiveCount * personnelPerUnit,
+      status: 'engaging',
+      assignedMission: 'strike',
       assignedTargetEntityId: targetEntityId,
       strikePlan,
+      customWeapons: effectiveWeapons,
     };
-  });
 
-  return {
-    ...session,
-    entities: updatedEntities,
-    eventLog: newEvents.slice(-200),
-  };
+    const homeBase = session.bases.find((b) => b.id === attacker.homeBaseId);
+    let updatedBases = session.bases;
+    if (homeBase && !homeBase.stationedEntityIds.includes(sortieEntity.id)) {
+      updatedBases = session.bases.map((b) =>
+        b.id === homeBase.id
+          ? { ...b, stationedEntityIds: [...b.stationedEntityIds, sortieEntity.id] }
+          : b
+      );
+    }
+
+    const updatedEntities = session.entities.map((e) => (e.id === attacker.id ? updatedDockedEntity : e));
+    updatedEntities.push(sortieEntity);
+
+    const newEvents = [
+      ...session.eventLog,
+      {
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        simTimeSec: session.simTimeSec,
+        timeFormatted: formatSimTime(session.simTimeSec),
+        faction,
+        type: 'launch' as const,
+        title: `Strike Sortie Scrambled: ${effectiveCount} × ${cleanName}`,
+        detail: `Scrambled ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on strike mission against ${targetName} committing ${salvoCount} × ${weaponName} (Max Range: ${weaponRangeKm} km). Post-strike protocol: ${postStrikeAction.toUpperCase().replace(/_/g, ' ')}.`,
+        lngLat: attacker.lngLat,
+      },
+    ];
+
+    return {
+      ...session,
+      bases: updatedBases,
+      entities: updatedEntities,
+      eventLog: newEvents.slice(-200),
+    };
+  } else {
+    const updatedEntities = session.entities.map((e) => {
+      if (e.id !== attackerEntityId) return e;
+      return {
+        ...e,
+        status: 'engaging' as const,
+        assignedMission: 'strike' as const,
+        assignedTargetEntityId: targetEntityId,
+        strikePlan,
+        customWeapons: effectiveWeapons,
+      };
+    });
+
+    const newEvents = [
+      ...session.eventLog,
+      {
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        simTimeSec: session.simTimeSec,
+        timeFormatted: formatSimTime(session.simTimeSec),
+        faction,
+        type: 'launch' as const,
+        title: `Strike Mission Tasked: ${attacker.name}`,
+        detail: `${attacker.name} tasked on strike mission against ${targetName} committing ${salvoCount} × ${weaponName} (Max Range: ${weaponRangeKm} km). Post-strike protocol: ${postStrikeAction.toUpperCase().replace(/_/g, ' ')}.`,
+        lngLat: attacker.lngLat,
+      },
+    ];
+
+    return {
+      ...session,
+      entities: updatedEntities,
+      eventLog: newEvents.slice(-200),
+    };
+  }
 }

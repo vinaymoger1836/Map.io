@@ -247,29 +247,66 @@ export function canEntityEngageTarget(
     return { canEngage: false, compatibleWeapons: [], reason: 'Unit is in turnaround/rearming' };
   }
 
+  const isDockedAtBase = entity.status === 'docked';
   const weapons = (entity.customWeapons && entity.customWeapons.length > 0)
     ? entity.customWeapons
     : (spec?.weapons || []);
 
-  if (weapons.length === 0) {
+  if (weapons.length === 0 && !isDockedAtBase) {
     return { canEngage: false, compatibleWeapons: [], reason: 'Unit has no equipped armament (e.g. unarmed recon/tanker)' };
   }
 
-  const compatible = weapons.filter((w) => canWeaponEngageTarget(w, targetDomain));
+  let compatible = weapons.filter((w) => canWeaponEngageTarget(w, targetDomain));
+
+  // If currently docked at base, check if system specification has compatible loadout options
+  if (compatible.length === 0 && isDockedAtBase && spec?.weapons) {
+    compatible = spec.weapons.filter((w) => canWeaponEngageTarget(w, targetDomain));
+  }
+
+  // For multirole/strike/fighter/bomber airframes at base, allow loadout reconfiguration
+  if (compatible.length === 0 && isDockedAtBase) {
+    const isCombatPlatform = [
+      'fighter',
+      'strike',
+      'multirole',
+      'interceptor',
+      'bomber',
+      'strategic-bomber',
+      'uav',
+      'drone',
+      'attack-heli',
+      'destroyer',
+      'frigate',
+      'corvette',
+      'cruiser',
+      'submarine',
+      'ssn',
+      'ssbn',
+      'artillery',
+      'mlrs',
+    ].includes(entity.typeId);
+
+    if (isCombatPlatform) {
+      return {
+        canEngage: true,
+        compatibleWeapons: weapons.length > 0 ? weapons : (spec?.weapons || []),
+      };
+    }
+  }
 
   if (compatible.length === 0) {
     const isAirOnly = weapons.every((w) => w.engages && w.engages.every((e) => e === 'air'));
     const isGroundOnly = weapons.every((w) => w.engages && w.engages.every((e) => e === 'ground' || e === 'surface'));
 
     let reason = `No compatible munitions for ${targetDomain.toUpperCase()} targets.`;
-    if (isAirOnly) reason = `Equipped with Air-to-Air missiles only (cannot engage ${targetDomain} targets).`;
-    if (isGroundOnly && targetDomain === 'air') reason = `Equipped with Air-to-Ground munitions only (cannot intercept Air targets).`;
+    if (isAirOnly) reason = `Air-to-Air loadout only (airborne unit cannot engage ${targetDomain} targets without re-arming at base).`;
+    if (isGroundOnly && targetDomain === 'air') reason = `Air-to-Ground loadout only (cannot intercept Air targets while airborne).`;
 
     return { canEngage: false, compatibleWeapons: [], reason };
   }
 
   const withAmmo = compatible.filter((w) => w.magazine === undefined || w.magazine > 0);
-  if (withAmmo.length === 0) {
+  if (withAmmo.length === 0 && !isDockedAtBase) {
     return {
       canEngage: false,
       compatibleWeapons: [],
@@ -277,5 +314,5 @@ export function canEntityEngageTarget(
     };
   }
 
-  return { canEngage: true, compatibleWeapons: withAmmo };
+  return { canEngage: true, compatibleWeapons: withAmmo.length > 0 ? withAmmo : compatible };
 }
