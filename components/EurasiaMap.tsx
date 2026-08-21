@@ -118,7 +118,7 @@ export default function EurasiaMap() {
   const war = useWarGames({
     mapRef,
     mapReady: ready,
-    active: mode === 'wargames',
+    active: mode === 'wargames' && !activeWarSimSession,
     darkBasemap: basemap === 'dark',
   });
   warHydrateRef.current = war.hydrate;
@@ -134,8 +134,15 @@ export default function EurasiaMap() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
-    renderWarSimStateToMap(map, warSim.session, warSim.session.activeFaction, warSim.targetPicking);
-  }, [ready, mode, warSim.session, warSim.targetPicking]);
+    renderWarSimStateToMap(
+      map,
+      warSim.session,
+      warSim.session.activeFaction,
+      warSim.targetPicking,
+      warSim.selectedEntityId,
+      war.systems
+    );
+  }, [ready, mode, warSim.session, warSim.targetPicking, warSim.selectedEntityId, war.systems]);
 
   // War Sim Map Click & Interaction
   useEffect(() => {
@@ -620,13 +627,9 @@ export default function EurasiaMap() {
             isOpen={warSimLauncherOpen}
             onClose={() => setWarSimLauncherOpen(false)}
             onLaunchSimulation={(session) => {
-              // 1. Clear sandbox board completely
-              war.clearUnits();
-              war.clearNations();
-              // 2. Paint ONLY the 2 selected nations in their chosen faction colors
-              war.applyColor(session.playerIso, session.playerColor);
-              war.applyColor(session.enemyIso, session.enemyColor);
-              // 3. Launch the simulation session
+              // 1. Atomically reset board to only the 2 selected simulation nations in their colors
+              war.setSimulationNations(session.playerIso, session.playerColor, session.enemyIso, session.enemyColor);
+              // 2. Launch the simulation session
               setActiveWarSimSession(session);
               setWarSimLauncherOpen(false);
             }}

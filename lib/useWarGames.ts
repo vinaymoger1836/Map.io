@@ -229,6 +229,7 @@ export interface WarGames {
 
   clearUnits: () => void;
   clearNations: () => void;
+  setSimulationNations: (playerIso: string, playerColor: string, enemyIso: string, enemyColor: string) => void;
 
   /** Boards kept under a name on this machine, newest first. */
   scenarios: Scenario[];
@@ -1088,6 +1089,23 @@ export function useWarGames({
   const clearNations = useCallback(() => {
     commit((prev) => ({ ...prev, nations: {} }));
   }, [commit]);
+
+  const setSimulationNations = useCallback(
+    (playerIso: string, playerColor: string, enemyIso: string, enemyColor: string) => {
+      const metaPlayer = countriesRef.current.get(playerIso);
+      const metaEnemy = countriesRef.current.get(enemyIso);
+      commit((prev) => ({
+        ...prev,
+        units: [],
+        formations: [],
+        nations: {
+          [playerIso]: { iso: playerIso, name: metaPlayer?.name ?? playerIso, color: playerColor },
+          [enemyIso]: { iso: enemyIso, name: metaEnemy?.name ?? enemyIso, color: enemyColor },
+        },
+      }));
+    },
+    [commit]
+  );
 
   /* ---------------- scenarios ---------------- */
 
@@ -1985,6 +2003,7 @@ export function useWarGames({
     flyToUnit,
     clearUnits,
     clearNations,
+    setSimulationNations,
     scenarios: scenarioDoc.items,
     activeScenario: scenarioDoc.items.find((s) => s.id === scenarioDoc.active) ?? null,
     saveScenario,

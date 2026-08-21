@@ -2,12 +2,13 @@
  * War Simulation MapLibre GL Layers & Live Visual Renderers
  *
  * Manages live GeoJSON sources and layers for:
- * 1. Sovereign Base installations (Airbases, Naval Ports, Army HQs, Silos).
- * 2. Active Friendly Units (Kinematic positions, headings, fuel status).
- * 3. Fog-of-War Contact Blips (Tier 1 Sensor Tracks vs. Tier 2 PID units).
- * 4. Patrol Orbit Rings & Ingress Trajectories.
- * 5. In-flight Missiles and Interceptors.
- * 6. Combat Radius Reach Rings during target selection.
+ * 1. Sovereign Base installations (Airbases, Naval Ports, Army HQs, Silos) with distinct icons.
+ * 2. Active Friendly Units with relatable military icons (✈️, 🚢, 🚁, 🛸, 🚀, 🛡️, ⛽).
+ * 3. Selected Unit Multi-Envelopes (Detection Horizon, Engagement Radius, Combat Radius).
+ * 4. Fog-of-War Contact Blips (Tier 1 Sensor Tracks vs. Tier 2 PID units).
+ * 5. Patrol Orbit Rings & Ingress Trajectories.
+ * 6. In-flight Missiles and Interceptors.
+ * 7. Combat Radius Reach Rings during target selection.
  */
 
 import type { Map as MLMap, GeoJSONSource } from 'maplibre-gl';
@@ -18,6 +19,7 @@ import {
   type DetectedContact,
   type MissileFlyoutTrack,
 } from './warSimTypes';
+import { type SystemSpec } from './specs';
 import { geodesicRing, greatCirclePath } from './geo';
 
 const SRC_BASES = 'warsim-bases-src';
@@ -26,11 +28,17 @@ const SRC_CONTACTS = 'warsim-contacts-src';
 const SRC_PATROLS = 'warsim-patrols-src';
 const SRC_MISSILES = 'warsim-missiles-src';
 const SRC_REACH_RING = 'warsim-reach-ring-src';
+const SRC_ENVELOPES = 'warsim-envelopes-src';
 
 const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
+const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
+const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
+const LYR_ENVELOPES_LABEL = 'warsim-envelopes-label';
+
 const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
+const LYR_ENTITIES_HALO = 'warsim-entities-halo';
 const LYR_ENTITIES_CIRCLE = 'warsim-entities-circle';
 const LYR_ENTITIES_LABEL = 'warsim-entities-label';
 const LYR_CONTACTS_CIRCLE = 'warsim-contacts-circle';
@@ -39,10 +47,64 @@ const LYR_PATROLS_LINE = 'warsim-patrols-line';
 const LYR_MISSILES_LINE = 'warsim-missiles-line';
 const LYR_MISSILES_HEAD = 'warsim-missiles-head';
 
+export function getSimUnitIcon(typeId: string): string {
+  switch (typeId) {
+    case 'fighter':
+    case 'strike':
+    case 'multirole':
+    case 'interceptor':
+      return '✈️';
+    case 'strategic-bomber':
+    case 'bomber':
+      return '🛫';
+    case 'awacs':
+      return '📡';
+    case 'tanker':
+      return '⛽';
+    case 'uav':
+    case 'drone':
+    case 'halej-uav':
+      return '🛸';
+    case 'attack-heli':
+    case 'transport-heli':
+      return '🚁';
+    case 'destroyer':
+    case 'frigate':
+    case 'corvette':
+      return '🚢';
+    case 'carrier':
+    case 'amphibious':
+      return '🛳️';
+    case 'submarine':
+    case 'ssn':
+    case 'ssbn':
+      return '🤿';
+    case 'sam-launcher':
+      return '🚀';
+    case 'radar':
+    case 'early-warning':
+      return '🌐';
+    case 'tank':
+    case 'ifv':
+    case 'apc':
+    case 'armor':
+      return '🛡️';
+    case 'artillery':
+    case 'mlrs':
+      return '💥';
+    case 'special-forces':
+      return '🎯';
+    case 'silo':
+      return '🚀';
+    default:
+      return '⚔️';
+  }
+}
+
 export function installWarSimLayers(map: MLMap) {
   if (map.getSource(SRC_BASES)) return;
 
-  // 0. Reach Ring (Combat Radius Reach) Source & Layers
+  // 0. Reach Ring (Combat Radius Target Designation)
   map.addSource(SRC_REACH_RING, {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: [] },
@@ -67,6 +129,52 @@ export function installWarSimLayers(map: MLMap) {
       'line-width': 2,
       'line-dasharray': [4, 3],
       'line-opacity': 0.85,
+    },
+  });
+
+  // 0.1. Unit Envelopes (Detection, Engagement, Combat Radius)
+  map.addSource(SRC_ENVELOPES, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  map.addLayer({
+    id: LYR_ENVELOPES_FILL,
+    type: 'fill',
+    source: SRC_ENVELOPES,
+    paint: {
+      'fill-color': ['get', 'color'],
+      'fill-opacity': ['get', 'fillOpacity'],
+    },
+  });
+
+  map.addLayer({
+    id: LYR_ENVELOPES_LINE,
+    type: 'line',
+    source: SRC_ENVELOPES,
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': ['get', 'lineWidth'],
+      'line-dasharray': [3, 2],
+      'line-opacity': 0.85,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_ENVELOPES_LABEL,
+    type: 'symbol',
+    source: SRC_ENVELOPES,
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 10,
+      'text-offset': [0, -1],
+      'text-anchor': 'bottom',
+      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+    },
+    paint: {
+      'text-color': ['get', 'color'],
+      'text-halo-color': '#070C14',
+      'text-halo-width': 1.5,
     },
   });
 
@@ -131,13 +239,27 @@ export function installWarSimLayers(map: MLMap) {
   });
 
   map.addLayer({
+    id: LYR_ENTITIES_HALO,
+    type: 'circle',
+    source: SRC_ENTITIES,
+    filter: ['==', ['get', 'selected'], true],
+    paint: {
+      'circle-radius': 13,
+      'circle-color': '#4FC3F7',
+      'circle-opacity': 0.25,
+      'circle-stroke-color': '#4FC3F7',
+      'circle-stroke-width': 2,
+    },
+  });
+
+  map.addLayer({
     id: LYR_ENTITIES_CIRCLE,
     type: 'circle',
     source: SRC_ENTITIES,
     paint: {
-      'circle-radius': 6.5,
+      'circle-radius': 7.5,
       'circle-color': ['get', 'color'],
-      'circle-stroke-width': 1.5,
+      'circle-stroke-width': 2,
       'circle-stroke-color': '#070C14',
     },
   });
@@ -148,15 +270,15 @@ export function installWarSimLayers(map: MLMap) {
     source: SRC_ENTITIES,
     layout: {
       'text-field': ['get', 'label'],
-      'text-size': 10,
-      'text-offset': [0, -1.3],
+      'text-size': 10.5,
+      'text-offset': [0, -1.4],
       'text-anchor': 'bottom',
       'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
     },
     paint: {
-      'text-color': ['get', 'color'],
+      'text-color': '#FFFFFF',
       'text-halo-color': '#070C14',
-      'text-halo-width': 1.5,
+      'text-halo-width': 2,
     },
   });
 
@@ -237,7 +359,9 @@ export function renderWarSimStateToMap(
     mode: 'sortie' | 'place_autonomous' | 'place_base';
     originLngLat?: [number, number];
     maxRangeKm?: number;
-  } | null
+  } | null,
+  selectedEntityId?: string | null,
+  systemsLibrary: SystemSpec[] = []
 ) {
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
@@ -263,7 +387,71 @@ export function renderWarSimStateToMap(
     features: reachRingFeatures,
   });
 
-  // 1. Render Bases with distinct iconography
+  // 0.1. Render Tactical Envelopes for Selected Entity (Detection, Engagement, Combat Radius)
+  const envelopeFeatures: GeoJSON.Feature[] = [];
+  const selectedEntity = session.entities.find((e) => e.id === selectedEntityId && e.status !== 'destroyed');
+
+  if (selectedEntity) {
+    const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+
+    // 1. Detection / Sensor Horizon Envelope
+    const detectionRadiusKm = spec?.sensor?.detectionKm ?? (selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250);
+    if (detectionRadiusKm > 0) {
+      const detectCoords = geodesicRing(selectedEntity.lngLat, detectionRadiusKm, 64);
+      envelopeFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [detectCoords] },
+        properties: {
+          color: '#4FC3F7',
+          fillOpacity: 0.08,
+          lineWidth: 1.5,
+          label: `📡 ${selectedEntity.name} Detection Horizon (${detectionRadiusKm} km)`,
+        },
+      });
+    }
+
+    // 2. Weapon Engagement Envelope
+    const maxWeaponRangeKm = spec?.weapons?.reduce((max, w) => Math.max(max, w.rangeKm), 0) ?? (selectedEntity.typeId === 'sam-launcher' ? 200 : selectedEntity.typeId === 'fighter' ? 120 : 0);
+    if (maxWeaponRangeKm > 0) {
+      const engageCoords = geodesicRing(selectedEntity.lngLat, maxWeaponRangeKm, 64);
+      envelopeFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [engageCoords] },
+        properties: {
+          color: '#FF9800',
+          fillOpacity: 0.1,
+          lineWidth: 2,
+          label: `⚔️ Engagement Envelope · ${spec?.weapons?.[0]?.name || 'Missiles'} (${maxWeaponRangeKm} km)`,
+        },
+      });
+    }
+
+    // 3. Combat Radius Reach from Base
+    const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (selectedEntity.typeId === 'fighter' ? 900 : 1500);
+    const homeBase = session.bases.find((b) => b.id === selectedEntity.homeBaseId);
+    const originLngLat = homeBase?.lngLat ?? selectedEntity.lngLat;
+
+    if (combatRadiusKm > 0 && selectedEntity.homeBaseId) {
+      const radiusCoords = geodesicRing(originLngLat, combatRadiusKm, 72);
+      envelopeFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [radiusCoords] },
+        properties: {
+          color: '#BA68C8',
+          fillOpacity: 0.05,
+          lineWidth: 1.5,
+          label: `🎯 ${homeBase?.name ?? 'Base'} Combat Radius (${combatRadiusKm} km)`,
+        },
+      });
+    }
+  }
+
+  (map.getSource(SRC_ENVELOPES) as GeoJSONSource)?.setData({
+    type: 'FeatureCollection',
+    features: envelopeFeatures,
+  });
+
+  // 1. Render Bases with distinct iconography (Filtered to sovereign bases)
   const basesFeatures = session.bases.map((b) => {
     const icon =
       b.type === 'airbase'
@@ -291,19 +479,25 @@ export function renderWarSimStateToMap(
     features: basesFeatures,
   });
 
-  // 2. Render Friendly Entities (In Flight / Patrol / Deployed)
+  // 2. Render Friendly Entities (In Flight / Patrol / Deployed) with Relatable Military Icons
   const friendlyEntities = session.entities.filter(
     (e) => e.iso === factionIso && e.status !== 'destroyed' && e.status !== 'docked'
   );
-  const entityFeatures = friendlyEntities.map((e) => ({
-    type: 'Feature' as const,
-    geometry: { type: 'Point' as const, coordinates: e.lngLat },
-    properties: {
-      id: e.id,
-      label: `${e.name} [${e.status.replace('_', ' ').toUpperCase()}] ${e.currentFuelPct.toFixed(0)}%`,
-      color: factionColor,
-    },
-  }));
+  const entityFeatures = friendlyEntities.map((e) => {
+    const icon = getSimUnitIcon(e.typeId);
+    const isSelected = e.id === selectedEntityId;
+
+    return {
+      type: 'Feature' as const,
+      geometry: { type: 'Point' as const, coordinates: e.lngLat },
+      properties: {
+        id: e.id,
+        selected: isSelected,
+        label: `${icon} ${e.name} [${e.status.replace('_', ' ').toUpperCase()}] ${e.currentFuelPct.toFixed(0)}%`,
+        color: factionColor,
+      },
+    };
+  });
   (map.getSource(SRC_ENTITIES) as GeoJSONSource)?.setData({
     type: 'FeatureCollection',
     features: entityFeatures,
@@ -374,17 +568,21 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_CONTACTS_CIRCLE,
     LYR_ENTITIES_LABEL,
     LYR_ENTITIES_CIRCLE,
+    LYR_ENTITIES_HALO,
     LYR_PATROLS_LINE,
     LYR_BASES_LABEL,
     LYR_BASES_CIRCLE,
     LYR_REACH_RING_LINE,
     LYR_REACH_RING_FILL,
+    LYR_ENVELOPES_LABEL,
+    LYR_ENVELOPES_LINE,
+    LYR_ENVELOPES_FILL,
   ];
   layerIds.forEach((id) => {
     if (map.getLayer(id)) map.removeLayer(id);
   });
 
-  const sourceIds = [SRC_MISSILES, SRC_CONTACTS, SRC_ENTITIES, SRC_PATROLS, SRC_BASES, SRC_REACH_RING];
+  const sourceIds = [SRC_MISSILES, SRC_CONTACTS, SRC_ENTITIES, SRC_PATROLS, SRC_BASES, SRC_REACH_RING, SRC_ENVELOPES];
   sourceIds.forEach((id) => {
     if (map.getSource(id)) map.removeSource(id);
   });

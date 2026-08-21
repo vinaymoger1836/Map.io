@@ -69,16 +69,7 @@ export function useWarSim({
     }
   }, [initialSession]);
 
-  // Seed default sovereign bases if none exist
-  useEffect(() => {
-    if (session && session.bases.length === 0) {
-      let s = addSimBase(session, `${session.playerIso} Central Airbase`, 'airbase', session.playerIso, [-77.0, 38.8]);
-      s = addSimBase(s, `${session.playerIso} Naval Station`, 'naval_base', session.playerIso, [-76.3, 36.9]);
-      s = addSimBase(s, `${session.enemyIso} Strategic Airfield`, 'airbase', session.enemyIso, [37.6, 55.7]);
-      s = addSimBase(s, `${session.enemyIso} Fleet Command Port`, 'naval_base', session.enemyIso, [33.5, 44.6]);
-      setSession(s);
-    }
-  }, [session]);
+
 
   // -------------------------------------------------------------
   // Master Clock & Kinematic Loop (Ticks every ~100 ms)

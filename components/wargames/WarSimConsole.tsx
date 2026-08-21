@@ -23,6 +23,7 @@ import { type SystemSpec, domainOf } from '@/lib/specs';
 import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
+import { getSimUnitIcon } from '@/lib/warSimLayers';
 
 export type WarSimTab = 'systems' | 'bases' | 'intel' | 'log';
 
@@ -38,6 +39,8 @@ export interface WarSimConsoleProps {
   visibleContacts: DetectedContact[];
   selectedBase: SimBase | null;
   onSelectBase: (baseId: string | null) => void;
+  selectedEntity: SimEntity | null;
+  onSelectEntity: (id: string | null) => void;
   onDeployUnitToBase: (baseId: string, systemId: string, count: number) => void;
   onDeployAutonomous: (systemId: string, count: number) => void;
   onStartSortie: (entity: SimEntity) => void;
@@ -66,6 +69,8 @@ export function WarSimConsole({
   visibleContacts,
   selectedBase,
   onSelectBase,
+  selectedEntity,
+  onSelectEntity,
   onDeployUnitToBase,
   onDeployAutonomous,
   onStartSortie,

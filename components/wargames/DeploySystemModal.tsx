@@ -29,11 +29,11 @@ export function DeploySystemModal({
   onClose,
   onDeploy,
 }: DeploySystemModalProps) {
-  const remainingQuota = quota.count - quota.deployed;
-  const domain = domainOf(systemSpec);
+  const activeCountryIso = session.activeFaction === 'player' ? session.playerIso : session.enemyIso;
 
-  // Compatible friendly bases
+  // Compatible friendly sovereign bases
   const compatibleBases = bases.filter((b) => {
+    if (b.iso !== activeCountryIso) return false;
     const check = canStationAtBase(b.type, { domain, typeId: systemSpec.typeId });
     return check.allowed;
   });
