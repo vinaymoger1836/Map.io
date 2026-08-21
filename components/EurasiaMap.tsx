@@ -118,7 +118,8 @@ export default function EurasiaMap() {
   const war = useWarGames({
     mapRef,
     mapReady: ready,
-    active: mode === 'wargames' && !activeWarSimSession,
+    active: mode === 'wargames',
+    simulationActive: Boolean(activeWarSimSession),
     darkBasemap: basemap === 'dark',
   });
   warHydrateRef.current = war.hydrate;
@@ -673,6 +674,7 @@ export default function EurasiaMap() {
               setActiveWarSimSession(null);
             }}
             systemsLibrary={war.systems}
+            countries={war.countries}
             onFlyToBase={(lngLat) => {
               mapRef.current?.flyTo({ center: lngLat, zoom: 6, duration: 1200 });
             }}

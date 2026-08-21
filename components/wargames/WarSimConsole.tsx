@@ -55,6 +55,7 @@ export interface WarSimConsoleProps {
   onOpenAar: () => void;
   onExitSim: () => void;
   systemsLibrary: SystemSpec[];
+  countries?: { iso: string; name: string }[];
   onFlyToBase?: (lngLat: [number, number]) => void;
 }
 
@@ -83,6 +84,7 @@ export function WarSimConsole({
   onOpenAar,
   onExitSim,
   systemsLibrary,
+  countries,
   onFlyToBase,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -94,6 +96,9 @@ export function WarSimConsole({
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
+  const playerCountryName = countries?.find((c) => c.iso === session.playerIso)?.name || session.playerIso;
+  const enemyCountryName = countries?.find((c) => c.iso === session.enemyIso)?.name || session.enemyIso;
+  const activeCountryName = isPlayer ? playerCountryName : enemyCountryName;
   const activeCountryIso = isPlayer ? session.playerIso : session.enemyIso;
   const otherCountryIso = isPlayer ? session.enemyIso : session.playerIso;
   const activeColor = isPlayer ? session.playerColor : session.enemyColor;
@@ -216,7 +221,7 @@ export function WarSimConsole({
                 if (!isPlayer) onSwitchFaction();
               }}
             >
-              🔵 {session.playerIso} (Blue)
+              🔵 {playerCountryName} (Blue)
             </button>
 
             <button
@@ -235,7 +240,7 @@ export function WarSimConsole({
                 if (isPlayer) onSwitchFaction();
               }}
             >
-              🔴 {session.enemyIso} (Red)
+              🔴 {enemyCountryName} (Red)
             </button>
           </div>
 
@@ -601,7 +606,7 @@ export function WarSimConsole({
                 </div>
 
                 <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase' }}>
-                  {activeCountryIso} Operational Bases ({friendlyBases.length})
+                  {activeCountryName} Operational Bases ({friendlyBases.length})
                 </span>
 
                 {friendlyBases.map((base) => {

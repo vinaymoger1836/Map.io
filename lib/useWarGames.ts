@@ -363,11 +363,13 @@ export function useWarGames({
   mapRef,
   mapReady,
   active,
+  simulationActive = false,
   darkBasemap = true,
 }: {
   mapRef: React.MutableRefObject<MLMap | null>;
   mapReady: boolean;
   active: boolean;
+  simulationActive?: boolean;
   /** Drives label ink: the board should read on whatever it is drawn on. */
   darkBasemap?: boolean;
 }): WarGames {
@@ -1248,7 +1250,7 @@ export function useWarGames({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || !active) return;
+    if (!map || !mapReady || !active || simulationActive) return;
 
     const canvas = map.getCanvas();
     let drag: {
@@ -1437,15 +1439,15 @@ export function useWarGames({
       map.dragPan.enable();
       canvas.style.cursor = '';
     };
-  }, [active, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId, undo, redo]);
+  }, [active, simulationActive, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId, undo, redo]);
 
   // The cursor is the clearest statement of which tool is armed.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !active) return;
+    if (!map || !active || simulationActive) return;
     map.getCanvas().style.cursor =
       waypointPlacingActive || tool === 'deploy' ? 'crosshair' : tool === 'paint' ? 'copy' : '';
-  }, [tool, waypointPlacingActive, active, mapRef]);
+  }, [tool, waypointPlacingActive, active, simulationActive, mapRef]);
 
   const selectedUnit = useMemo(
     () => board.units.find((u) => u.id === selectedId) ?? null,

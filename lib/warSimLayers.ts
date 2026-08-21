@@ -425,25 +425,6 @@ export function renderWarSimStateToMap(
         },
       });
     }
-
-    // 3. Combat Radius Reach from Base
-    const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (selectedEntity.typeId === 'fighter' ? 900 : 1500);
-    const homeBase = session.bases.find((b) => b.id === selectedEntity.homeBaseId);
-    const originLngLat = homeBase?.lngLat ?? selectedEntity.lngLat;
-
-    if (combatRadiusKm > 0 && selectedEntity.homeBaseId) {
-      const radiusCoords = geodesicRing(originLngLat, combatRadiusKm, 72);
-      envelopeFeatures.push({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [radiusCoords] },
-        properties: {
-          color: '#BA68C8',
-          fillOpacity: 0.05,
-          lineWidth: 1.5,
-          label: `🎯 ${homeBase?.name ?? 'Base'} Combat Radius (${combatRadiusKm} km)`,
-        },
-      });
-    }
   }
 
   (map.getSource(SRC_ENVELOPES) as GeoJSONSource)?.setData({
