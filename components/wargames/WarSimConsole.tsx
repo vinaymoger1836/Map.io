@@ -24,7 +24,7 @@ import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
-import { isGroundCombatUnit } from '@/lib/warSimRules';
+import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 
 export type WarSimTab = 'systems' | 'bases' | 'intel' | 'log';
 
@@ -838,17 +838,20 @@ export function WarSimConsole({
 
       {/* 5. FLOATING ENTITY TACTICAL HUD */}
       {selectedEntity && (() => {
+        const isStaticAD = isStaticAirDefense(selectedEntity.typeId);
         const isGround = isGroundCombatUnit(selectedEntity.typeId);
         const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
         const detectionKm = spec?.sensor?.detectionKm ?? (
           isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
         );
         const statusLabel =
-          selectedEntity.status === 'on_station'
-            ? (isGround ? 'ENTRENCHED' : 'PATROL')
-            : selectedEntity.status === 'takeoff_ingress'
-              ? (isGround ? 'ROAD MARCH' : 'TAKEOFF INGRESS')
-              : selectedEntity.status.replace('_', ' ').toUpperCase();
+          isStaticAD
+            ? 'AIR DEFENSE (ON WATCH)'
+            : selectedEntity.status === 'on_station'
+              ? (isGround ? 'ENTRENCHED' : 'PATROL')
+              : selectedEntity.status === 'takeoff_ingress'
+                ? (isGround ? 'ROAD MARCH' : 'TAKEOFF INGRESS')
+                : selectedEntity.status.replace('_', ' ').toUpperCase();
 
         return (
           <div
@@ -885,7 +888,7 @@ export function WarSimConsole({
                   <strong style={{ fontSize: '13px', color: '#FFFFFF' }}>{selectedEntity.name}</strong>
                   <div style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
                     {countries?.find((c) => c.iso === selectedEntity.iso)?.name || selectedEntity.iso}{' '}
-                    {isGround ? 'Ground Formation' : 'Tactical Formation'} · {selectedEntity.personnel} Personnel
+                    {isStaticAD ? 'Air Defense Site' : isGround ? 'Ground Formation' : 'Tactical Formation'} · {selectedEntity.personnel} Personnel
                   </div>
                 </div>
               </div>
@@ -903,23 +906,37 @@ export function WarSimConsole({
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                 <span>
                   Status:{' '}
-                  <strong style={{ color: selectedEntity.status === 'on_station' ? '#BA68C8' : '#4FA85F' }}>
+                  <strong style={{ color: isStaticAD ? '#4FA85F' : selectedEntity.status === 'on_station' ? '#BA68C8' : '#4FA85F' }}>
                     {statusLabel}
                   </strong>
                 </span>
-                <span>
-                  Fuel:{' '}
-                  <strong style={{ color: selectedEntity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
-                    {selectedEntity.currentFuelPct.toFixed(0)}%
-                  </strong>
-                </span>
+                {!isStaticAD && !isGround ? (
+                  <span>
+                    Fuel:{' '}
+                    <strong style={{ color: selectedEntity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
+                      {selectedEntity.currentFuelPct.toFixed(0)}%
+                    </strong>
+                  </span>
+                ) : (
+                  <span>
+                    Readiness: <strong style={{ color: '#4FA85F' }}>100% Ready</strong>
+                  </span>
+                )}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
-                <span>Altitude: <strong>{isGround ? '0 m (Ground)' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
-                <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
-              </div>
+              {!isStaticAD ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                  <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
+                  <span>Altitude: <strong>{isGround ? '0 m (Ground)' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
+                  <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+                </div>
+              ) : (
+                <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Site: <strong>Fixed Firing Position</strong></span>
+                  <span>Altitude: <strong>0 m (Ground Level)</strong></span>
+                  <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
+                </div>
+              )}
 
               {/* Sensor / Sight Horizon */}
               <div
@@ -1014,7 +1031,7 @@ export function WarSimConsole({
 
               {/* Quick Tactical Actions */}
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                {(selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
+                {!isStaticAD && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
                   <button
                     className="wg-btn"
                     style={{ flex: 1, fontSize: '11px', padding: '5px', borderColor: '#FFB020', color: '#FFB020' }}
@@ -1029,7 +1046,7 @@ export function WarSimConsole({
                   style={{ flex: 1, fontSize: '11px', padding: '5px', fontWeight: 600 }}
                   onClick={() => onStartSortie(selectedEntity)}
                 >
-                  {isGround ? '📍 Relocate Position' : '🎯 Retask Patrol'}
+                  {isStaticAD ? '📍 Relocate Battery' : isGround ? '📍 Relocate Position' : '🎯 Retask Patrol'}
                 </button>
               </div>
             </div>

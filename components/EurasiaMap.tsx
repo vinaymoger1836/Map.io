@@ -25,7 +25,7 @@ import { WarSimLauncher } from './wargames/WarSimLauncher';
 import { WarSimConsole } from './wargames/WarSimConsole';
 import { WarSimAarModal } from './wargames/WarSimAarModal';
 import { useWarSim } from '@/lib/useWarSim';
-import { renderWarSimStateToMap, removeWarSimLayers } from '@/lib/warSimLayers';
+import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
 
 /**
@@ -146,6 +146,13 @@ export default function EurasiaMap() {
       warSim.showAllEnvelopes
     );
   }, [ready, mode, warSim.session, warSim.targetPicking, warSim.selectedEntityId, war.systems, warSim.activeWeaponIndex, warSim.showAllEnvelopes]);
+
+  // Real-time Cursor Patrol Orbit Preview
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+    updateWarSimPatrolPreview(map, warSim.targetPicking, cursor);
+  }, [cursor, warSim.targetPicking, ready, mode, warSim.session]);
 
   // War Sim Map Click & Interaction
   useEffect(() => {

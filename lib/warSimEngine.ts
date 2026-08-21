@@ -31,6 +31,7 @@ import {
   calculateFuelBurnPct,
   calculateBingoFuelThreshold,
   isGroundCombatUnit,
+  isStaticAirDefense,
 } from './warSimRules';
 import {
   type SystemSpec,
@@ -729,11 +730,12 @@ export function orderPatrol(
   }
 
   const isGround = isGroundCombatUnit(targetEntity.typeId);
-  const effectiveRadiusKm = isGround ? 0 : patrolRadiusKm;
-  const effectiveAltM = isGround ? 0 : altitudeM;
+  const isStaticAD = isStaticAirDefense(targetEntity.typeId);
+  const effectiveRadiusKm = isGround || isStaticAD ? 0 : patrolRadiusKm;
+  const effectiveAltM = isGround || isStaticAD ? 0 : altitudeM;
 
   const effectiveCount = Math.max(1, Math.min(targetEntity.count, sortieCount ?? targetEntity.count));
-  const isPartialSplit = effectiveCount < targetEntity.count && targetEntity.status === 'docked';
+  const isPartialSplit = effectiveCount < targetEntity.count;
 
   const patrolOrder: PatrolOrder = {
     centerLngLat,
@@ -790,10 +792,16 @@ export function orderPatrol(
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
         type: 'rtb' as const,
-        title: isGround ? `Ground Movement: ${effectiveCount} × ${cleanName}` : `Sortie Launched: ${effectiveCount} × ${cleanName}`,
-        detail: isGround
-          ? `Dispatched ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on road march to designated coordinates.`
-          : `Detached ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on designated patrol mission.`,
+        title: isStaticAD
+          ? `Air Defense Emplaced: ${effectiveCount} × ${cleanName}`
+          : isGround
+            ? `Ground Movement: ${effectiveCount} × ${cleanName}`
+            : `Sortie Launched: ${effectiveCount} × ${cleanName}`,
+        detail: isStaticAD
+          ? `Emplaced ${effectiveCount} × ${cleanName} air defense battery (${remainingCount} in depot) at designated coordinates.`
+          : isGround
+            ? `Dispatched ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on road march to designated coordinates.`
+            : `Detached ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on designated patrol mission.`,
         lngLat: centerLngLat,
       },
     ];

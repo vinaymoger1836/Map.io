@@ -127,6 +127,29 @@ export function isGroundCombatUnit(typeId: string): boolean {
   );
 }
 
+/**
+ * Returns true if the typeId represents stationary or emplaced surface-to-air missile batteries,
+ * radar sites, early-warning stations, or missile silos.
+ */
+export function isStaticAirDefense(typeId: string): boolean {
+  const t = typeId.toLowerCase();
+  return (
+    t.includes('sam') ||
+    t.includes('radar') ||
+    t.includes('silo') ||
+    t.includes('early-warning') ||
+    t.includes('air-defense') ||
+    t.includes('patriot') ||
+    t.includes('akash') ||
+    t.includes('s-400') ||
+    t.includes('s-300') ||
+    t.includes('hq-9') ||
+    t.includes('nasams') ||
+    t.includes('iron-dome') ||
+    t.includes('aster')
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* 2. Fuel, Range & Kinematics Calculations                           */
 /* ------------------------------------------------------------------ */

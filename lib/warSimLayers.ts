@@ -20,10 +20,10 @@ import {
   type MissileFlyoutTrack,
 } from './warSimTypes';
 import { type SystemSpec } from './specs';
-import { geodesicRing, greatCirclePath } from './geo';
+import { distanceKm, geodesicRing, greatCirclePath } from './geo';
 import { ensureIcons, unitIconId, type IconSpec } from './unitIcons';
 import { UNIT_BY_ID, type EchelonMark } from './warGames';
-import { isGroundCombatUnit } from './warSimRules';
+import { isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -32,9 +32,13 @@ const SRC_PATROLS = 'warsim-patrols-src';
 const SRC_MISSILES = 'warsim-missiles-src';
 const SRC_REACH_RING = 'warsim-reach-ring-src';
 const SRC_ENVELOPES = 'warsim-envelopes-src';
+const SRC_PATROL_PREVIEW = 'warsim-patrol-preview-src';
 
 const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
+const LYR_PATROL_PREVIEW_FILL = 'warsim-patrol-preview-fill';
+const LYR_PATROL_PREVIEW_LINE = 'warsim-patrol-preview-line';
+const LYR_PATROL_PREVIEW_CENTER = 'warsim-patrol-preview-center';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
 
@@ -217,6 +221,47 @@ export function installWarSimLayers(map: MLMap) {
       'line-width': 2,
       'line-dasharray': [4, 3],
       'line-opacity': 0.85,
+    },
+  });
+
+  // 0.05. Real-time Cursor Patrol Orbit Preview
+  map.addSource(SRC_PATROL_PREVIEW, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  map.addLayer({
+    id: LYR_PATROL_PREVIEW_FILL,
+    type: 'fill',
+    source: SRC_PATROL_PREVIEW,
+    paint: {
+      'fill-color': ['get', 'color'],
+      'fill-opacity': ['get', 'fillOpacity'],
+    },
+  });
+
+  map.addLayer({
+    id: LYR_PATROL_PREVIEW_LINE,
+    type: 'line',
+    source: SRC_PATROL_PREVIEW,
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': ['get', 'lineWidth'],
+      'line-dasharray': [3, 2],
+      'line-opacity': 0.9,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_PATROL_PREVIEW_CENTER,
+    type: 'circle',
+    source: SRC_PATROL_PREVIEW,
+    filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-radius': 4.5,
+      'circle-color': '#FFFFFF',
+      'circle-stroke-color': ['get', 'color'],
+      'circle-stroke-width': 2,
     },
   });
 
@@ -614,16 +659,25 @@ export function renderWarSimStateToMap(
     iconSpecs.push(spec);
     const iconId = unitIconId(spec.typeId, spec.mark, spec.color);
 
+    const isStaticAD = isStaticAirDefense(e.typeId);
     const isGround = isGroundCombatUnit(e.typeId);
     const cleanName = e.name.replace(/^\d+\s*[×x]\s*/i, '');
     const statusText =
-      e.status === 'on_station'
-        ? (isGround ? 'ENTRENCHED' : 'PATROL')
-        : e.status === 'takeoff_ingress'
-          ? (isGround ? 'MARCHING' : 'INGRESS')
-          : e.status === 'bingo_rtb'
-            ? 'RTB'
-            : e.status.toUpperCase();
+      isStaticAD
+        ? 'AIR DEFENSE'
+        : e.status === 'on_station'
+          ? (isGround ? 'ENTRENCHED' : 'PATROL')
+          : e.status === 'takeoff_ingress'
+            ? (isGround ? 'MARCHING' : 'INGRESS')
+            : e.status === 'bingo_rtb'
+              ? 'RTB'
+              : e.status.toUpperCase();
+
+    const label = isStaticAD
+      ? `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [AIR DEFENSE]`
+      : isGround
+        ? `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}]`
+        : `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`;
 
     return {
       type: 'Feature' as const,
@@ -632,7 +686,7 @@ export function renderWarSimStateToMap(
         id: e.id,
         selected: isSelected,
         icon: iconId,
-        label: `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`,
+        label,
         color: factionColor,
       },
     };
@@ -702,6 +756,64 @@ export function renderWarSimStateToMap(
   });
 }
 
+/**
+ * Updates the live cursor loiter / patrol orbit circle preview on the map
+ * in real-time as the user moves their mouse before placing a waypoint.
+ */
+export function updateWarSimPatrolPreview(
+  map: MLMap,
+  targetPicking?: {
+    mode: 'sortie' | 'place_autonomous' | 'place_base';
+    originLngLat?: [number, number];
+    maxRangeKm?: number;
+    patrolRadiusKm?: number;
+  } | null,
+  cursor?: [number, number] | null
+) {
+  const source = map.getSource(SRC_PATROL_PREVIEW) as GeoJSONSource | undefined;
+  if (!source) return;
+
+  if (!targetPicking || targetPicking.mode !== 'sortie' || !cursor) {
+    source.setData({ type: 'FeatureCollection', features: [] });
+    return;
+  }
+
+  const patrolRadiusKm = targetPicking.patrolRadiusKm ?? 15;
+  const isOutOfRange =
+    targetPicking.originLngLat && targetPicking.maxRangeKm
+      ? distanceKm(targetPicking.originLngLat, cursor) > targetPicking.maxRangeKm
+      : false;
+
+  const color = isOutOfRange ? '#FF5252' : '#4FC3F7';
+  const features: GeoJSON.Feature[] = [];
+
+  // 1. Center Station Point
+  features.push({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: cursor },
+    properties: { color },
+  });
+
+  // 2. Loiter / Holding Orbit Preview Ring
+  if (patrolRadiusKm > 0) {
+    const orbitCoords = geodesicRing(cursor, patrolRadiusKm, 64);
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [orbitCoords] },
+      properties: {
+        color,
+        fillOpacity: isOutOfRange ? 0.08 : 0.16,
+        lineWidth: 2,
+      },
+    });
+  }
+
+  source.setData({
+    type: 'FeatureCollection',
+    features,
+  });
+}
+
 export function removeWarSimLayers(map: MLMap) {
   const layerIds = [
     LYR_MISSILES_HEAD,
@@ -715,6 +827,9 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_BASES_CIRCLE,
     LYR_REACH_RING_LINE,
     LYR_REACH_RING_FILL,
+    LYR_PATROL_PREVIEW_CENTER,
+    LYR_PATROL_PREVIEW_LINE,
+    LYR_PATROL_PREVIEW_FILL,
     LYR_ENVELOPES_LINE,
     LYR_ENVELOPES_FILL,
   ];
@@ -722,7 +837,16 @@ export function removeWarSimLayers(map: MLMap) {
     if (map.getLayer(id)) map.removeLayer(id);
   });
 
-  const sourceIds = [SRC_MISSILES, SRC_CONTACTS, SRC_ENTITIES, SRC_PATROLS, SRC_BASES, SRC_REACH_RING, SRC_ENVELOPES];
+  const sourceIds = [
+    SRC_MISSILES,
+    SRC_CONTACTS,
+    SRC_ENTITIES,
+    SRC_PATROLS,
+    SRC_BASES,
+    SRC_REACH_RING,
+    SRC_PATROL_PREVIEW,
+    SRC_ENVELOPES,
+  ];
   sourceIds.forEach((id) => {
     if (map.getSource(id)) map.removeSource(id);
   });

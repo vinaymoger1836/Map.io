@@ -6,19 +6,21 @@
  * Appears prior to dispatching an aircraft flight, naval strike group, or ground battalion.
  * Provides:
  * 1. Quantity Detachment Selector (e.g. 2 out of 36 fighters).
- * 2. Weapon Loadout Customization & Preset Selection (CAP, Strike, Anti-Ship, All).
- * 3. Flight Profile (Altitude, Patrol Orbit Radius, Active Radar vs. EMCON Silent).
+ * 2. Compatible Munitions Catalogue & Weapon Swapping (CAP, Strike, Anti-Ship, Munition Search, Hardpoints).
+ * 3. Flight Profile (Altitude, Sovereign Holding Pattern / Orbit Radius, Active Radar vs. EMCON Silent).
  * 4. Geodesic Map Waypoint Dispatch.
  */
 
 import React, { useState, useMemo } from 'react';
 import { type SimEntity, type SimBase, type WarSimSession } from '@/lib/warSimTypes';
-import { type SystemSpec, type WeaponFacet } from '@/lib/specs';
-import { isGroundCombatUnit } from '@/lib/warSimRules';
+import { type SystemSpec, type WeaponFacet, describeTargets } from '@/lib/specs';
+import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
+import { buildMunitions, compatibleMunitions, type Munition } from '@/lib/munitions';
 
 export interface SortieTaskingModalProps {
   entity: SimEntity;
+  initialCount?: number;
   base?: SimBase;
   session: WarSimSession;
   systemsLibrary: SystemSpec[];
@@ -34,6 +36,7 @@ export interface SortieTaskingModalProps {
 
 export function SortieTaskingModal({
   entity,
+  initialCount,
   base,
   session,
   systemsLibrary,
@@ -46,24 +49,35 @@ export function SortieTaskingModal({
   );
 
   const isGround = isGroundCombatUnit(entity.typeId);
+  const isStaticAD = isStaticAirDefense(entity.typeId);
 
   // 1. Quantity allocation
-  const [count, setCount] = useState<number>(Math.min(2, entity.count));
-
-  // 2. Weapon loadout state (list of equipped weapons from spec)
-  const defaultWeapons: WeaponFacet[] = useMemo(() => {
-    return entity.customWeapons && entity.customWeapons.length > 0
-      ? entity.customWeapons
-      : spec?.weapons || [];
-  }, [entity.customWeapons, spec?.weapons]);
-
-  const [selectedWeaponIndices, setSelectedWeaponIndices] = useState<number[]>(() => {
-    return defaultWeapons.map((_, idx) => idx);
+  const [count, setCount] = useState<number>(() => {
+    if (initialCount && initialCount > 0) {
+      return Math.max(1, Math.min(entity.count, initialCount));
+    }
+    return Math.min(2, entity.count);
   });
 
-  // 3. Operational Profile
-  const [altitudeM, setAltitudeM] = useState<number>(isGround ? 0 : 7000);
-  const [patrolRadiusKm, setPatrolRadiusKm] = useState<number>(isGround ? 0 : 15);
+  // 2. Munitions Catalogue & Compatible Systems
+  const catalogue = useMemo(() => buildMunitions(systemsLibrary), [systemsLibrary]);
+  const compatible = useMemo(() => compatibleMunitions(catalogue, spec), [catalogue, spec]);
+
+  // Standard weapons from spec
+  const standardWeapons: WeaponFacet[] = useMemo(() => spec?.weapons || [], [spec]);
+
+  // Currently equipped weapon loadout
+  const [equippedWeapons, setEquippedWeapons] = useState<WeaponFacet[]>(() => {
+    return entity.customWeapons && entity.customWeapons.length > 0
+      ? [...entity.customWeapons]
+      : [...standardWeapons];
+  });
+
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // 3. Operational Flight Profile
+  const [altitudeM, setAltitudeM] = useState<number>(isGround || isStaticAD ? 0 : 7000);
+  const [patrolRadiusKm, setPatrolRadiusKm] = useState<number>(isGround || isStaticAD ? 0 : 15);
   const [emcon, setEmcon] = useState<'active' | 'passive'>('active');
 
   const cleanName = entity.name.replace(/^\d+\s*[×x]\s*/i, '');
@@ -79,34 +93,91 @@ export function SortieTaskingModal({
       ? combatRadiusKm * 1.75
       : combatRadiusKm;
 
-  // Preset Loadout Applicators
-  const applyPreset = (preset: 'all' | 'air' | 'strike') => {
-    if (preset === 'all') {
-      setSelectedWeaponIndices(defaultWeapons.map((_, i) => i));
-      return;
-    }
+  // Filter compatible munitions by search query
+  const filteredCompatible = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return compatible;
+    return compatible.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        (m.weapon.engages && m.weapon.engages.some((e) => e.toLowerCase().includes(q)))
+    );
+  }, [compatible, searchQuery]);
 
-    const filtered = defaultWeapons
-      .map((w, idx) => {
-        const engages = w.engages || [];
-        if (preset === 'air' && engages.includes('air')) return idx;
-        if (preset === 'strike' && (engages.includes('ground') || engages.includes('surface'))) return idx;
-        return -1;
-      })
-      .filter((idx) => idx !== -1);
+  // Loadout Action Handlers
+  const handleRestoreStandard = () => {
+    setEquippedWeapons([...standardWeapons]);
+  };
 
-    if (filtered.length > 0) {
-      setSelectedWeaponIndices(filtered);
+  const handleToggleMunition = (munition: Munition) => {
+    const existingIndex = equippedWeapons.findIndex(
+      (w) => (w.name || '').toLowerCase() === munition.name.toLowerCase()
+    );
+
+    if (existingIndex >= 0) {
+      // Remove munition
+      setEquippedWeapons((prev) => prev.filter((_, idx) => idx !== existingIndex));
     } else {
-      setSelectedWeaponIndices(defaultWeapons.map((_, i) => i));
+      // Add munition
+      const newWeapon: WeaponFacet = {
+        ...munition.weapon,
+        name: munition.name,
+        magazine: munition.weapon.magazine ?? 2,
+      };
+      setEquippedWeapons((prev) => [...prev, newWeapon]);
     }
   };
 
-  const handleLaunch = () => {
-    const activeWeapons = defaultWeapons.filter((_, idx) => selectedWeaponIndices.includes(idx));
+  const handleRemoveWeapon = (index: number) => {
+    setEquippedWeapons((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleAdjustMagazine = (index: number, delta: number) => {
+    setEquippedWeapons((prev) =>
+      prev.map((w, idx) => {
+        if (idx !== index) return w;
+        const currentMag = w.magazine ?? 2;
+        const nextMag = Math.max(1, currentMag + delta);
+        return { ...w, magazine: nextMag };
+      })
+    );
+  };
+
+  // Preset Role Applicators
+  const applyPreset = (preset: 'cap' | 'strike' | 'antiship') => {
+    const matching = compatible.filter((m) => {
+      const engages = m.weapon.engages || [];
+      if (preset === 'cap') return engages.includes('air');
+      if (preset === 'strike') return engages.includes('ground') || engages.includes('surface');
+      if (preset === 'antiship') return engages.includes('surface') || engages.includes('subsurface');
+      return false;
+    });
+
+    if (matching.length > 0) {
+      // Pick top 2-3 most capable munitions for this mission role
+      const selected = matching.slice(0, 3).map((m) => ({
+        ...m.weapon,
+        name: m.name,
+        magazine: m.weapon.magazine ?? 2,
+      }));
+      setEquippedWeapons(selected);
+    }
+  };
+
+  const isEquipped = (munName: string) => {
+    return equippedWeapons.some((w) => (w.name || '').toLowerCase() === munName.toLowerCase());
+  };
+
+  const isStandard = (munName: string) => {
+    return standardWeapons.some((w) => (w.name || '').toLowerCase() === munName.toLowerCase());
+  };
+
+  const totalRoundsCount = equippedWeapons.reduce((sum, w) => sum + (w.magazine ?? 1), 0);
+
+  const handleConfirm = () => {
     onConfirmTasking({
       count,
-      customWeapons: activeWeapons,
+      customWeapons: equippedWeapons,
       patrolRadiusKm: isGround ? 0 : patrolRadiusKm,
       altitudeM: isGround ? 0 : altitudeM,
       emcon,
@@ -118,28 +189,28 @@ export function SortieTaskingModal({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.82)',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(10px)',
         zIndex: 1100,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: '16px',
         fontFamily: 'var(--font-sans, system-ui, sans-serif)',
       }}
       onClick={onClose}
     >
       <div
         style={{
-          width: '560px',
+          width: '640px',
           maxWidth: '96vw',
-          maxHeight: '90vh',
+          maxHeight: '92vh',
           backgroundColor: '#09101B',
           border: '1px solid var(--border)',
           borderRadius: '8px',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.9)',
+          boxShadow: '0 24px 70px rgba(0, 0, 0, 0.95)',
           overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -147,21 +218,29 @@ export function SortieTaskingModal({
         {/* Header */}
         <div
           style={{
-            padding: '16px 20px',
+            padding: '14px 20px',
             borderBottom: '1px solid var(--border)',
-            background: 'rgba(79, 195, 247, 0.06)',
+            background: 'rgba(79, 195, 247, 0.07)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '24px' }}>{getSimUnitIcon(entity.typeId)}</span>
             <div>
-              <div style={{ fontSize: '11px', color: '#4FC3F7', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+              <div
+                style={{
+                  fontSize: '11px',
+                  color: '#4FC3F7',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.8px',
+                  fontWeight: 600,
+                }}
+              >
                 Pre-Mission Tasking & Loadout Configurator
               </div>
-              <h2 style={{ margin: 0, fontSize: '17px', color: '#FFFFFF', fontWeight: 700 }}>
+              <h2 style={{ margin: 0, fontSize: '18px', color: '#FFFFFF', fontWeight: 700 }}>
                 {cleanName}
               </h2>
             </div>
@@ -182,14 +261,22 @@ export function SortieTaskingModal({
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Base Origin & Ready Count */}
+        <div
+          style={{
+            padding: '18px 20px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
+          {/* Base Origin & Ready Inventory Info */}
           <div
             style={{
               background: '#070C14',
               border: '1px solid var(--border)',
               borderRadius: '6px',
-              padding: '12px 14px',
+              padding: '10px 14px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -201,14 +288,23 @@ export function SortieTaskingModal({
               <strong style={{ color: '#FFFFFF' }}>{base?.name || 'Field Station'}</strong>
             </div>
             <div>
-              <span style={{ color: 'var(--paper-dim)' }}>Total Ready: </span>
+              <span style={{ color: 'var(--paper-dim)' }}>Total Available: </span>
               <strong style={{ color: '#4FA85F' }}>{entity.count} Units</strong>
             </div>
           </div>
 
-          {/* Section 1: Quantity to Task */}
+          {/* 1. Formation Quantity Detachment */}
           <div>
-            <label style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+            <label
+              style={{
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                color: 'var(--paper-dim)',
+                fontWeight: 700,
+                display: 'block',
+                marginBottom: '6px',
+              }}
+            >
               1. Task Formation Quantity
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -219,7 +315,7 @@ export function SortieTaskingModal({
                   background: '#070C14',
                   border: '1px solid var(--border)',
                   borderRadius: '6px',
-                  padding: '4px 8px',
+                  padding: '3px 8px',
                   gap: '8px',
                 }}
               >
@@ -238,7 +334,15 @@ export function SortieTaskingModal({
                 >
                   −
                 </button>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF', minWidth: '32px', textAlign: 'center' }}>
+                <span
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    minWidth: '32px',
+                    textAlign: 'center',
+                  }}
+                >
                   {count}
                 </span>
                 <button
@@ -259,110 +363,296 @@ export function SortieTaskingModal({
               </div>
 
               <div style={{ fontSize: '11.5px', color: 'var(--paper-dim)' }}>
-                Deploying <strong style={{ color: '#FFFFFF' }}>{count}</strong> of {entity.count} available (
-                {entity.count - count} will remain on standby at base).
+                Detaching <strong style={{ color: '#FFFFFF' }}>{count}</strong> of {entity.count} units (
+                {entity.count - count} will remain stationed on base standby).
               </div>
             </div>
           </div>
 
-          {/* Section 2: Weapon Loadout Customization */}
-          {defaultWeapons.length > 0 && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 700 }}>
-                  2. Weapon Loadout Customization
-                </label>
+          {/* 2. Weapon Loadout Customization & Compatible Munitions */}
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px',
+              }}
+            >
+              <label
+                style={{
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  color: 'var(--paper-dim)',
+                  fontWeight: 700,
+                }}
+              >
+                2. Armament & Weapon Loadout ({equippedWeapons.length} Systems · {totalRoundsCount} Rounds)
+              </label>
 
-                {/* Preset Loadout Buttons */}
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    type="button"
-                    className="wg-btn"
-                    style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                    onClick={() => applyPreset('all')}
-                  >
-                    All Weapons
-                  </button>
-                  <button
-                    type="button"
-                    className="wg-btn"
-                    style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                    onClick={() => applyPreset('air')}
-                  >
-                    CAP / Air
-                  </button>
-                  <button
-                    type="button"
-                    className="wg-btn"
-                    style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                    onClick={() => applyPreset('strike')}
-                  >
-                    Strike / Land
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {defaultWeapons.map((w, idx) => {
-                  const isSelected = selectedWeaponIndices.includes(idx);
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        setSelectedWeaponIndices((prev) =>
-                          prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
-                        );
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        border: `1px solid ${isSelected ? '#4FA85F' : 'var(--border)'}`,
-                        background: isSelected ? 'rgba(79, 168, 95, 0.08)' : '#070C14',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          style={{ cursor: 'pointer' }}
-                        />
-                        <div>
-                          <strong style={{ fontSize: '12px', color: isSelected ? '#FFFFFF' : 'var(--paper-dim)' }}>
-                            {w.name || `Weapon #${idx + 1}`}
-                          </strong>
-                          {w.engages && (
-                            <div style={{ fontSize: '9px', color: 'var(--paper-dim)' }}>
-                              Engages: {w.engages.join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div style={{ textAlign: 'right' }}>
-                        <strong style={{ fontSize: '12px', color: '#FF9800' }}>{w.rangeKm} km</strong>
-                        {w.magazine && (
-                          <div style={{ fontSize: '9px', color: 'var(--paper-dim)' }}>
-                            Mag: {w.magazine} rounds
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <button
+                  type="button"
+                  className="wg-btn"
+                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                  onClick={handleRestoreStandard}
+                >
+                  Standard Fit
+                </button>
+                <button
+                  type="button"
+                  className="wg-btn"
+                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                  onClick={() => applyPreset('cap')}
+                >
+                  CAP / Air
+                </button>
+                <button
+                  type="button"
+                  className="wg-btn"
+                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                  onClick={() => applyPreset('strike')}
+                >
+                  Strike / Land
+                </button>
+                <button
+                  type="button"
+                  className="wg-btn"
+                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                  onClick={() => applyPreset('antiship')}
+                >
+                  Anti-Ship
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Section 3: Flight Profile & EMCON (For Air & Naval) */}
-          {!isGround && (
+            {/* Currently Equipped Weapons on Platform */}
+            <div
+              style={{
+                background: '#070C14',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                marginBottom: '10px',
+              }}
+            >
+              {equippedWeapons.length === 0 ? (
+                <div style={{ fontSize: '11px', color: 'var(--paper-dim)', padding: '6px', textAlign: 'center' }}>
+                  Clean — carrying no weapons. Select compatible munitions below to equip.
+                </div>
+              ) : (
+                equippedWeapons.map((weapon, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      borderRadius: '4px',
+                      padding: '6px 10px',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF' }}>
+                        {weapon.name || `Weapon #${idx + 1}`}
+                      </div>
+                      <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                        <span style={{ color: '#FF9800', fontWeight: 600 }}>{weapon.rangeKm} km</span>
+                        {weapon.engages && (
+                          <span> · vs {describeTargets(weapon.engages)}</span>
+                        )}
+                        {weapon.speedMach && <span> · Mach {weapon.speedMach}</span>}
+                      </div>
+                    </div>
+
+                    {/* Stepper Count & Remove */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          background: '#09101B',
+                          border: '1px solid var(--border)',
+                          borderRadius: '4px',
+                          padding: '1px 4px',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#4FC3F7',
+                            cursor: 'pointer',
+                            padding: '1px 6px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                          }}
+                          onClick={() => handleAdjustMagazine(idx, -1)}
+                        >
+                          −
+                        </button>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#FFFFFF',
+                            minWidth: '22px',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {weapon.magazine ?? 2}
+                        </span>
+                        <button
+                          type="button"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#4FC3F7',
+                            cursor: 'pointer',
+                            padding: '1px 6px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                          }}
+                          onClick={() => handleAdjustMagazine(idx, 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#D9534F',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          padding: '2px 6px',
+                        }}
+                        onClick={() => handleRemoveWeapon(idx)}
+                        title="Remove munition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Search and Equip from Compatible Munitions */}
             <div>
-              <label style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+              <input
+                type="search"
+                className="wg-input"
+                style={{
+                  width: '100%',
+                  fontSize: '11px',
+                  padding: '6px 10px',
+                  marginBottom: '8px',
+                  background: '#070C14',
+                  border: '1px solid var(--border)',
+                  borderRadius: '4px',
+                  color: '#FFFFFF',
+                }}
+                placeholder={`Search ${compatible.length} compatible munitions…`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+
+              <div
+                style={{
+                  maxHeight: '140px',
+                  overflowY: 'auto',
+                  background: '#070C14',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  padding: '6px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                  gap: '5px',
+                }}
+              >
+                {filteredCompatible.length === 0 ? (
+                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', padding: '10px', gridColumn: '1 / -1', textAlign: 'center' }}>
+                    No matching compatible munitions found.
+                  </div>
+                ) : (
+                  filteredCompatible.map((m) => {
+                    const equipped = isEquipped(m.name);
+                    const standard = isStandard(m.name);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleToggleMunition(m)}
+                        style={{
+                          background: equipped ? 'rgba(79, 168, 95, 0.16)' : 'rgba(255, 255, 255, 0.03)',
+                          border: `1px solid ${equipped ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)'}`,
+                          borderRadius: '4px',
+                          padding: '6px 8px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '2px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: equipped ? '#FFFFFF' : 'var(--paper-dim)' }}>
+                            {m.name}
+                          </span>
+                          {standard && (
+                            <span
+                              style={{
+                                fontSize: '8px',
+                                textTransform: 'uppercase',
+                                color: '#4FC3F7',
+                                background: 'rgba(79, 195, 247, 0.12)',
+                                padding: '1px 3px',
+                                borderRadius: '2px',
+                              }}
+                            >
+                              Standard
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                          <span style={{ color: '#FF9800' }}>{m.weapon.rangeKm} km</span>
+                          {m.weapon.engages && (
+                            <span>{m.weapon.engages[0]}</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Flight Profile & Radar EMCON (For Air & Naval) */}
+          {!isGround && !isStaticAD && (
+            <div>
+              <label
+                style={{
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  color: 'var(--paper-dim)',
+                  fontWeight: 700,
+                  display: 'block',
+                  marginBottom: '6px',
+                }}
+              >
                 3. Flight & Sensor Profile
               </label>
 
@@ -425,7 +715,7 @@ export function SortieTaskingModal({
           {/* Operational Range Summary */}
           <div
             style={{
-              padding: '10px 14px',
+              padding: '8px 12px',
               background: 'rgba(255, 255, 255, 0.03)',
               borderRadius: '6px',
               border: '1px solid var(--border)',
@@ -435,12 +725,20 @@ export function SortieTaskingModal({
             }}
           >
             <span>
-              Effective {isGround ? 'Road Range' : 'Combat Radius'}:{' '}
+              Effective {isStaticAD ? 'Deployment Reach' : isGround ? 'Road Range' : 'Combat Radius'}:{' '}
               <strong style={{ color: '#4FC3F7' }}>{effectiveRadiusKm.toFixed(0)} km</strong>
-              {hasTanker && !isGround ? ' (w/ Tanker +75%)' : ''}
+              {hasTanker && !isGround && !isStaticAD ? ' (w/ Tanker +75%)' : ''}
             </span>
             <span>
-              Cruise Speed: <strong>{entity.speedKmh} km/h</strong>
+              {isStaticAD ? (
+                <>
+                  Site Posture: <strong style={{ color: '#4FA85F' }}>Entrenched Battery</strong>
+                </>
+              ) : (
+                <>
+                  Cruise Speed: <strong>{entity.speedKmh} km/h</strong>
+                </>
+              )}
             </span>
           </div>
         </div>
@@ -448,7 +746,7 @@ export function SortieTaskingModal({
         {/* Footer Actions */}
         <div
           style={{
-            padding: '14px 20px',
+            padding: '12px 20px',
             borderTop: '1px solid var(--border)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -470,9 +768,9 @@ export function SortieTaskingModal({
               fontSize: '12px',
               padding: '8px 20px',
             }}
-            onClick={handleLaunch}
+            onClick={handleConfirm}
           >
-            🌐 Designate Waypoint on Map ({count} Units)
+            🌐 {isStaticAD ? 'Emplace Battery on Map' : isGround ? 'Designate Ground Position' : 'Designate Waypoint on Map'} ({count} Units)
           </button>
         </div>
       </div>

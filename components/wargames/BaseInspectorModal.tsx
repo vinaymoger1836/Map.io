@@ -15,7 +15,7 @@ import {
   type WarSimSession,
 } from '@/lib/warSimTypes';
 import { type SystemSpec, type WeaponFacet } from '@/lib/specs';
-import { canStationAtBase, isGroundCombatUnit } from '@/lib/warSimRules';
+import { canStationAtBase, isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { SortieTaskingModal } from './SortieTaskingModal';
 
 export interface BaseInspectorModalProps {
@@ -522,7 +522,12 @@ export function BaseInspectorModal({
                           }}
                           onClick={() => setTaskingEntity(entity)}
                         >
-                          {isGround ? '🗺️ Deploy / March' : '🚀 Sortie / Task'} ({sortieCounts[entity.id] ?? Math.min(2, entity.count)} / {entity.count})
+                          {isStaticAirDefense(entity.typeId)
+                            ? '🛡️ Emplace Battery'
+                            : isGround
+                              ? '🗺️ Deploy / March'
+                              : '🚀 Sortie / Task'}{' '}
+                          ({sortieCounts[entity.id] ?? Math.min(2, entity.count)} / {entity.count})
                         </button>
                       </div>
                     ) : (
@@ -538,7 +543,11 @@ export function BaseInspectorModal({
                         }}
                         onClick={() => setTaskingEntity(entity)}
                       >
-                        {isGround ? '🗺️ Deploy / March' : '🚀 Sortie / Task'}
+                        {isStaticAirDefense(entity.typeId)
+                          ? '🛡️ Emplace Battery'
+                          : isGround
+                            ? '🗺️ Deploy / March'
+                            : '🚀 Sortie / Task'}
                       </button>
                     );
                   })()}
@@ -555,7 +564,11 @@ export function BaseInspectorModal({
                       }}
                       onClick={() => onOrderRtb(entity.id)}
                     >
-                      {isGroundCombatUnit(entity.typeId) ? '🏠 Recall to Base' : '🏠 Recall RTB'}
+                      {isStaticAirDefense(entity.typeId)
+                        ? '🏠 Return to Depot'
+                        : isGroundCombatUnit(entity.typeId)
+                          ? '🏠 Recall to Base'
+                          : '🏠 Recall RTB'}
                     </button>
                   )}
                 </div>
@@ -584,6 +597,7 @@ export function BaseInspectorModal({
       {taskingEntity && (
         <SortieTaskingModal
           entity={taskingEntity}
+          initialCount={sortieCounts[taskingEntity.id]}
           base={base}
           session={session}
           systemsLibrary={systemsLibrary}
