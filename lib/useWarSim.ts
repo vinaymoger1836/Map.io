@@ -59,6 +59,13 @@ export function useWarSim({
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedBaseId, setSelectedBaseId] = useState<string | null>(null);
   const [targetPicking, setTargetPicking] = useState<TargetPickingState | null>(null);
+  const [activeWeaponIndex, setActiveWeaponIndex] = useState<number | null>(null);
+  const [showAllEnvelopes, setShowAllEnvelopes] = useState<boolean>(false);
+
+  // Reset active weapon envelope preview when entity selection changes
+  useEffect(() => {
+    setActiveWeaponIndex(null);
+  }, [selectedEntityId]);
 
   const lastTickTimeRef = useRef<number>(Date.now());
   const sessionRef = useRef<WarSimSession | null>(session);
@@ -351,6 +358,10 @@ export function useWarSim({
     selectedEntity,
     selectedEntityId,
     setSelectedEntityId,
+    activeWeaponIndex,
+    setActiveWeaponIndex,
+    showAllEnvelopes,
+    setShowAllEnvelopes,
     selectedContact,
     selectedContactId,
     setSelectedContactId,

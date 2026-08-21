@@ -446,7 +446,9 @@ export function renderWarSimStateToMap(
     maxRangeKm?: number;
   } | null,
   selectedEntityId?: string | null,
-  systemsLibrary: SystemSpec[] = []
+  systemsLibrary: SystemSpec[] = [],
+  activeWeaponIndex?: number | null,
+  showAllEnvelopes: boolean = false
 ) {
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
@@ -472,43 +474,93 @@ export function renderWarSimStateToMap(
     features: reachRingFeatures,
   });
 
-  // 0.1. Render Tactical Envelopes for Selected Entity (Detection, Engagement)
+  // 0.1. Render Tactical Envelopes (Either for ALL deployed friendly units or ONLY selected unit)
   const envelopeFeatures: GeoJSON.Feature[] = [];
-  const selectedEntity = session.entities.find((e) => e.id === selectedEntityId && e.status !== 'destroyed');
 
-  if (selectedEntity) {
-    const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+  if (showAllEnvelopes) {
+    const activeFriendly = session.entities.filter(
+      (e) => e.iso === factionIso && e.status !== 'destroyed' && e.status !== 'docked'
+    );
 
-    // 1. Detection / Sensor Horizon Envelope
-    const detectionRadiusKm = spec?.sensor?.detectionKm ?? (selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250);
-    if (detectionRadiusKm > 0) {
-      const detectCoords = geodesicRing(selectedEntity.lngLat, detectionRadiusKm, 64);
-      envelopeFeatures.push({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [detectCoords] },
-        properties: {
-          color: '#4FC3F7',
-          fillOpacity: 0.08,
-          lineWidth: 1.5,
-          label: `📡 ${selectedEntity.name} Detection Horizon (${detectionRadiusKm} km)`,
-        },
-      });
-    }
+    activeFriendly.forEach((e) => {
+      const spec = systemsLibrary.find((s) => s.id === e.systemId);
+      const isSelected = e.id === selectedEntityId;
 
-    // 2. Weapon Engagement Envelope
-    const maxWeaponRangeKm = spec?.weapons?.reduce((max, w) => Math.max(max, w.rangeKm), 0) ?? (selectedEntity.typeId === 'sam-launcher' ? 200 : selectedEntity.typeId === 'fighter' ? 120 : 0);
-    if (maxWeaponRangeKm > 0) {
-      const engageCoords = geodesicRing(selectedEntity.lngLat, maxWeaponRangeKm, 64);
-      envelopeFeatures.push({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [engageCoords] },
-        properties: {
-          color: '#FF9800',
-          fillOpacity: 0.1,
-          lineWidth: 2,
-          label: `⚔️ Engagement Envelope · ${spec?.weapons?.[0]?.name || 'Missiles'} (${maxWeaponRangeKm} km)`,
-        },
-      });
+      // Sensor horizon envelope
+      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (e.typeId === 'awacs' ? 450 : e.typeId === 'radar' ? 400 : 200);
+      if (detectionRadiusKm > 0) {
+        const detectCoords = geodesicRing(e.lngLat, detectionRadiusKm, 48);
+        envelopeFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [detectCoords] },
+          properties: {
+            color: '#4FC3F7',
+            fillOpacity: isSelected ? 0.12 : 0.04,
+            lineWidth: isSelected ? 1.8 : 1.0,
+            label: `📡 ${e.name} (${detectionRadiusKm} km)`,
+          },
+        });
+      }
+
+      // Weapon range for selected entity if previewing a specific weapon
+      if (isSelected && activeWeaponIndex !== null && activeWeaponIndex !== undefined && spec?.weapons?.[activeWeaponIndex]) {
+        const weapon = spec.weapons[activeWeaponIndex];
+        if (weapon.rangeKm > 0) {
+          const engageCoords = geodesicRing(e.lngLat, weapon.rangeKm, 64);
+          envelopeFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [engageCoords] },
+            properties: {
+              color: '#FF9800',
+              fillOpacity: 0.14,
+              lineWidth: 2,
+              label: `⚔️ ${weapon.name || 'Munition'} (${weapon.rangeKm} km)`,
+            },
+          });
+        }
+      }
+    });
+  } else {
+    // Only render for selectedEntity
+    const selectedEntity = session.entities.find((e) => e.id === selectedEntityId && e.status !== 'destroyed');
+
+    if (selectedEntity) {
+      const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+
+      // 1. Detection / Sensor Horizon Envelope (Always on for selected entity)
+      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250);
+      if (detectionRadiusKm > 0) {
+        const detectCoords = geodesicRing(selectedEntity.lngLat, detectionRadiusKm, 64);
+        envelopeFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [detectCoords] },
+          properties: {
+            color: '#4FC3F7',
+            fillOpacity: 0.08,
+            lineWidth: 1.5,
+            label: `📡 ${selectedEntity.name} Sensor Horizon (${detectionRadiusKm} km)`,
+          },
+        });
+      }
+
+      // 2. Weapon Engagement Envelope (Displayed ONLY when a particular weapon is clicked)
+      if (activeWeaponIndex !== null && activeWeaponIndex !== undefined && spec?.weapons && spec.weapons[activeWeaponIndex]) {
+        const weapon = spec.weapons[activeWeaponIndex];
+        const weaponRangeKm = weapon.rangeKm;
+        if (weaponRangeKm > 0) {
+          const engageCoords = geodesicRing(selectedEntity.lngLat, weaponRangeKm, 64);
+          envelopeFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [engageCoords] },
+            properties: {
+              color: '#FF9800',
+              fillOpacity: 0.12,
+              lineWidth: 2,
+              label: `⚔️ ${weapon.name || 'Munition'} Range (${weaponRangeKm} km)`,
+            },
+          });
+        }
+      }
     }
   }
 

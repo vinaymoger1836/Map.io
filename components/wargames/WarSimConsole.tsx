@@ -47,6 +47,10 @@ export interface WarSimConsoleProps {
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
+  activeWeaponIndex?: number | null;
+  onToggleWeapon?: (idx: number) => void;
+  showAllEnvelopes?: boolean;
+  onToggleShowAllEnvelopes?: () => void;
   targetPicking: {
     mode: 'sortie' | 'place_autonomous' | 'place_base';
     label?: string;
@@ -79,6 +83,10 @@ export function WarSimConsole({
   onOrderRtb,
   onStartBasePlacement,
   onRenameBase,
+  activeWeaponIndex,
+  onToggleWeapon,
+  showAllEnvelopes = false,
+  onToggleShowAllEnvelopes,
   targetPicking,
   onCancelTargetPicking,
   onOpenAar,
@@ -243,6 +251,34 @@ export function WarSimConsole({
               🔴 {enemyCountryName} (Red)
             </button>
           </div>
+
+          {/* Global / Selected Unit Envelopes Toggle */}
+          <button
+            className="wg-btn"
+            style={{
+              fontSize: '11px',
+              padding: '4px 10px',
+              borderRadius: '16px',
+              border: `1px solid ${showAllEnvelopes ? '#4FC3F7' : 'var(--border)'}`,
+              background: showAllEnvelopes ? 'rgba(79, 195, 247, 0.18)' : '#09101B',
+              color: showAllEnvelopes ? '#4FC3F7' : 'var(--paper-dim)',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onClick={onToggleShowAllEnvelopes}
+            title={
+              showAllEnvelopes
+                ? 'Radar & sensor envelopes currently visible for ALL deployed units. Click to show for Selected Unit only.'
+                : 'Click to show radar & sensor envelopes for ALL deployed units simultaneously.'
+            }
+          >
+            <span>{showAllEnvelopes ? '🌐' : '📡'}</span>
+            <span>{showAllEnvelopes ? 'Envelopes: ALL' : 'Envelopes: SELECTED'}</span>
+          </button>
 
           <button
             className="wg-btn"
@@ -825,7 +861,7 @@ export function WarSimConsole({
               <div>
                 <strong style={{ fontSize: '13px', color: '#FFFFFF' }}>{selectedEntity.name}</strong>
                 <div style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
-                  {selectedEntity.iso} Tactical Formation · {selectedEntity.personnel} Personnel
+                  {countries?.find((c) => c.iso === selectedEntity.iso)?.name || selectedEntity.iso} Tactical Formation · {selectedEntity.personnel} Personnel
                 </div>
               </div>
             </div>
@@ -861,35 +897,98 @@ export function WarSimConsole({
               <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
             </div>
 
-            {/* Tactical Envelopes Breakdown */}
+            {/* Sensor / Radar Horizon (Always Active on Map by default) */}
             <div
               style={{
-                marginTop: '4px',
-                padding: '8px 10px',
-                background: '#070C14',
-                borderRadius: '6px',
-                border: '1px solid var(--border)',
+                marginTop: '2px',
+                padding: '6px 10px',
+                background: 'rgba(79, 195, 247, 0.08)',
+                borderRadius: '5px',
+                border: '1px solid rgba(79, 195, 247, 0.25)',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-                fontSize: '10.5px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '11px',
               }}
             >
-              <div style={{ color: '#4FC3F7', display: 'flex', justifyContent: 'space-between' }}>
-                <span>📡 Radar / Sensor Horizon:</span>
-                <strong>{systemsLibrary.find(s => s.id === selectedEntity.systemId)?.sensor?.detectionKm ?? 250} km</strong>
-              </div>
-              <div style={{ color: '#FF9800', display: 'flex', justifyContent: 'space-between' }}>
-                <span>⚔️ Max Engagement Range:</span>
-                <strong>{systemsLibrary.find(s => s.id === selectedEntity.systemId)?.weapons?.[0]?.rangeKm ?? 120} km</strong>
-              </div>
-              {selectedEntity.homeBaseId && (
-                <div style={{ color: '#BA68C8', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>🎯 Combat Radius Reach:</span>
-                  <strong>{systemsLibrary.find(s => s.id === selectedEntity.systemId)?.platform?.combatRadiusKm ?? 900} km</strong>
-                </div>
-              )}
+              <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📡</span>
+                <span>Radar / Sensor Horizon:</span>
+              </span>
+              <strong style={{ color: '#4FC3F7' }}>
+                {systemsLibrary.find((s) => s.id === selectedEntity.systemId)?.sensor?.detectionKm ?? 250} km
+              </strong>
             </div>
+
+            {/* Equipped Weapons Arsenal & Interactive Range Toggles */}
+            {(() => {
+              const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+              const weapons = spec?.weapons || [];
+
+              if (weapons.length === 0) return null;
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                  <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
+                    Equipped Weapons (Click to toggle range envelope):
+                  </span>
+
+                  {weapons.map((w, idx) => {
+                    const isActive = activeWeaponIndex === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => onToggleWeapon?.(idx)}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '6px 8px',
+                          borderRadius: '5px',
+                          border: `1px solid ${isActive ? '#FF9800' : 'var(--border)'}`,
+                          background: isActive ? 'rgba(255, 152, 0, 0.16)' : '#070C14',
+                          color: isActive ? '#FF9800' : 'var(--paper)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '13px' }}>{isActive ? '🎯' : '🚀'}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <strong style={{ fontSize: '11px', color: isActive ? '#FF9800' : '#FFFFFF' }}>
+                              {w.name || `Weapon #${idx + 1}`}
+                            </strong>
+                            {w.engages && w.engages.length > 0 && (
+                              <span style={{ fontSize: '8.5px', color: 'var(--paper-dim)' }}>
+                                Engages: {w.engages.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <strong style={{ color: '#FF9800', fontSize: '11px' }}>{w.rangeKm} km</strong>
+                          <span
+                            style={{
+                              fontSize: '8px',
+                              padding: '1px 4px',
+                              borderRadius: '2px',
+                              fontWeight: 600,
+                              background: isActive ? '#FF9800' : 'rgba(255, 255, 255, 0.06)',
+                              color: isActive ? '#070C14' : 'var(--paper-dim)',
+                            }}
+                          >
+                            {isActive ? '✓ ON MAP' : 'CLICK TO SHOW'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Quick Tactical Actions */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>

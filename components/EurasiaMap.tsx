@@ -141,9 +141,11 @@ export default function EurasiaMap() {
       warSim.session.activeFaction,
       warSim.targetPicking,
       warSim.selectedEntityId,
-      war.systems
+      war.systems,
+      warSim.activeWeaponIndex,
+      warSim.showAllEnvelopes
     );
-  }, [ready, mode, warSim.session, warSim.targetPicking, warSim.selectedEntityId, war.systems]);
+  }, [ready, mode, warSim.session, warSim.targetPicking, warSim.selectedEntityId, war.systems, warSim.activeWeaponIndex, warSim.showAllEnvelopes]);
 
   // War Sim Map Click & Interaction
   useEffect(() => {
@@ -656,6 +658,14 @@ export default function EurasiaMap() {
             onSelectBase={warSim.setSelectedBaseId}
             selectedEntity={warSim.selectedEntity}
             onSelectEntity={warSim.setSelectedEntityId}
+            activeWeaponIndex={warSim.activeWeaponIndex}
+            onToggleWeapon={(idx) => {
+              warSim.setActiveWeaponIndex(warSim.activeWeaponIndex === idx ? null : idx);
+            }}
+            showAllEnvelopes={warSim.showAllEnvelopes}
+            onToggleShowAllEnvelopes={() => {
+              warSim.setShowAllEnvelopes((prev) => !prev);
+            }}
             onDeployUnitToBase={warSim.deployUnitToBase}
             onDeployAutonomous={(sysId, count) => {
               warSim.startAutonomousPicking(sysId, count);
