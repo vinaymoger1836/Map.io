@@ -685,6 +685,8 @@ export default function EurasiaMap() {
             onRenameBase={warSim.renameBase}
             targetPicking={warSim.targetPicking}
             onCancelTargetPicking={warSim.cancelTargetPicking}
+            onConfirmCustomRoute={warSim.confirmCustomRoute}
+            onUndoLastWaypoint={warSim.undoLastWaypoint}
             onOpenAar={() => setWarSimAarOpen(true)}
             onExitSim={() => {
               if (mapRef.current) removeWarSimLayers(mapRef.current);

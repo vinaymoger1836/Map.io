@@ -265,17 +265,107 @@ export function tickWarSim(
       };
     }
 
-    // E. On Station / Holding Position
+    // E. On Station / Holding Position / Multi-Waypoint Route Patrol
     if (entity.status === 'on_station' && entity.patrolOrder) {
       const isGround = isGroundCombatUnit(entity.typeId);
-      const { centerLngLat, patrolRadiusKm, orbitAngleDeg } = entity.patrolOrder;
+      const isStaticAD = isStaticAirDefense(entity.typeId);
+      const { centerLngLat, patrolRadiusKm, orbitAngleDeg, routeType, waypoints } = entity.patrolOrder;
 
-      // Ground formations stay stationary at designated ground position
-      if (isGround || patrolRadiusKm <= 0) {
+      // Ground formations & static batteries stay stationary at designated ground position
+      if (isGround || isStaticAD) {
         return {
           ...entity,
           lngLat: centerLngLat,
           altitudeM: 0,
+        };
+      }
+
+      // E.1. Custom Multi-Waypoint Route Navigation (WP1 -> WP2 -> WP3 ... -> WPN -> in reverse)
+      if (routeType === 'waypoints' && waypoints && waypoints.length >= 2) {
+        const currentIdx = Math.max(0, Math.min(waypoints.length - 1, entity.patrolOrder.currentWaypointIdx ?? 1));
+        const direction = entity.patrolOrder.patrolDirection ?? 1;
+        const targetWp = waypoints[currentIdx] || waypoints[0];
+
+        const distToWp = distanceKm(entity.lngLat, targetWp);
+        const stepDistKm = (speedKmh / 3600) * dtSimSec;
+
+        // Route flight fuel consumption
+        const fuelBurn = calculateFuelBurnPct(stepDistKm, combatRadiusKm, 0, speedKmh) * fuelRateMult;
+        const nextFuel = Math.max(0, entity.currentFuelPct - fuelBurn);
+
+        // Check Bingo Fuel
+        const distToBase = distanceKm(entity.lngLat, homeLngLat);
+        const bingoThreshold = calculateBingoFuelThreshold(distToBase, combatRadiusKm);
+
+        if (nextFuel <= bingoThreshold) {
+          logEvent(
+            entity.iso === session.playerIso ? 'player' : 'enemy',
+            'alert',
+            `Bingo Fuel: ${entity.name}`,
+            `${entity.name} reached Bingo Fuel (${nextFuel.toFixed(1)}%). Aborting route for RTB.`,
+            entity.lngLat
+          );
+          return {
+            ...entity,
+            status: 'bingo_rtb',
+            currentFuelPct: nextFuel,
+          };
+        }
+
+        // Check if reached current waypoint
+        if (distToWp <= Math.max(4, stepDistKm)) {
+          let nextIdx = currentIdx + direction;
+          let nextDirection: 1 | -1 = direction;
+
+          if (nextIdx >= waypoints.length) {
+            // Reached final waypoint -> reverse direction
+            nextDirection = -1;
+            nextIdx = Math.max(0, waypoints.length - 2);
+          } else if (nextIdx < 0) {
+            // Reached start waypoint -> forward direction
+            nextDirection = 1;
+            nextIdx = Math.min(waypoints.length - 1, 1);
+          }
+
+          const nextTargetWp = waypoints[nextIdx] || targetWp;
+          const nextHeading = bearingDeg(targetWp, nextTargetWp);
+
+          return {
+            ...entity,
+            lngLat: targetWp,
+            headingDeg: nextHeading,
+            currentFuelPct: nextFuel,
+            patrolOrder: {
+              ...entity.patrolOrder,
+              currentWaypointIdx: nextIdx,
+              patrolDirection: nextDirection,
+            },
+          };
+        }
+
+        // Interpolate position towards target waypoint
+        const fraction = Math.min(1, stepDistKm / Math.max(1, distToWp));
+        const nextLngLat = interpolate(entity.lngLat, targetWp, fraction);
+        const nextHeading = bearingDeg(entity.lngLat, targetWp);
+
+        return {
+          ...entity,
+          lngLat: nextLngLat,
+          headingDeg: nextHeading,
+          currentFuelPct: nextFuel,
+          patrolOrder: {
+            ...entity.patrolOrder,
+            currentWaypointIdx: currentIdx,
+            patrolDirection: direction,
+          },
+        };
+      }
+
+      // E.2. Circular Orbit Loiter
+      if (patrolRadiusKm <= 0) {
+        return {
+          ...entity,
+          lngLat: centerLngLat,
         };
       }
       
@@ -616,6 +706,7 @@ export function deployEntityToBase(
     repairTimerSec: 0,
     personnel: (spec?.platform?.crew ?? 2) * count,
     magazines: {},
+    customWeapons: spec?.weapons ? [...spec.weapons] : [],
   };
 
   return {
@@ -675,6 +766,7 @@ export function deployAutonomousEntity(
     repairTimerSec: 0,
     personnel: (spec?.platform?.crew ?? 4) * count,
     magazines: {},
+    customWeapons: spec?.weapons ? [...spec.weapons] : [],
     patrolOrder: {
       centerLngLat: lngLat,
       patrolRadiusKm: 0,
@@ -722,7 +814,9 @@ export function orderPatrol(
   altitudeM: number = 7000,
   emcon: 'active' | 'passive' = 'active',
   sortieCount?: number,
-  customWeapons?: import('./specs').WeaponFacet[]
+  customWeapons?: import('./specs').WeaponFacet[],
+  routeType: 'orbit' | 'waypoints' = 'orbit',
+  waypoints?: [number, number][]
 ): WarSimSession {
   const targetEntity = session.entities.find((e) => e.id === entityId);
   if (!targetEntity || targetEntity.status === 'destroyed' || targetEntity.status === 'in_repair') {
@@ -731,18 +825,24 @@ export function orderPatrol(
 
   const isGround = isGroundCombatUnit(targetEntity.typeId);
   const isStaticAD = isStaticAirDefense(targetEntity.typeId);
-  const effectiveRadiusKm = isGround || isStaticAD ? 0 : patrolRadiusKm;
+  const isCustomRoute = routeType === 'waypoints' && waypoints && waypoints.length >= 2;
+  const effectiveRadiusKm = isGround || isStaticAD || isCustomRoute ? 0 : patrolRadiusKm;
   const effectiveAltM = isGround || isStaticAD ? 0 : altitudeM;
+  const initialCenter = isCustomRoute ? waypoints[0] : centerLngLat;
 
   const effectiveCount = Math.max(1, Math.min(targetEntity.count, sortieCount ?? targetEntity.count));
   const isPartialSplit = effectiveCount < targetEntity.count;
 
   const patrolOrder: PatrolOrder = {
-    centerLngLat,
+    centerLngLat: initialCenter,
     patrolRadiusKm: effectiveRadiusKm,
     altitudeM: effectiveAltM,
     orbitAngleDeg: 0,
     emcon,
+    routeType: isCustomRoute ? 'waypoints' : 'orbit',
+    waypoints: isCustomRoute ? waypoints : undefined,
+    currentWaypointIdx: isCustomRoute ? 1 : undefined,
+    patrolDirection: 1,
   };
 
   const faction: 'player' | 'enemy' = targetEntity.iso === session.playerIso ? 'player' : 'enemy';
@@ -768,7 +868,7 @@ export function orderPatrol(
       status: 'takeoff_ingress',
       patrolOrder,
       altitudeM: effectiveAltM,
-      customWeapons: customWeapons || targetEntity.customWeapons,
+      customWeapons: customWeapons && customWeapons.length > 0 ? [...customWeapons] : targetEntity.customWeapons,
     };
 
     const homeBase = session.bases.find((b) => b.id === targetEntity.homeBaseId);
@@ -820,7 +920,7 @@ export function orderPatrol(
         status: 'takeoff_ingress' as const,
         patrolOrder,
         altitudeM: effectiveAltM,
-        customWeapons: customWeapons || e.customWeapons,
+        customWeapons: customWeapons && customWeapons.length > 0 ? [...customWeapons] : e.customWeapons,
       };
     });
 

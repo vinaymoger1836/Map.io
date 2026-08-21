@@ -424,23 +424,49 @@ export function BaseInspectorModal({
                       ? (spec?.platform?.combatRadiusKm ? spec.platform.combatRadiusKm * 2 : 550)
                       : combatRadiusKm;
 
+                    const weapons = (entity.customWeapons && entity.customWeapons.length > 0)
+                      ? entity.customWeapons
+                      : (spec?.weapons || []);
+
                     return (
-                      <div style={{ display: 'flex', gap: '14px', fontSize: '11px', color: 'var(--paper-dim)' }}>
-                        <span>
-                          Fuel:{' '}
-                          <strong style={{ color: entity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
-                            {entity.currentFuelPct.toFixed(0)}%
-                          </strong>
-                        </span>
-                        <span>
-                          Speed: <strong>{entity.speedKmh} km/h</strong>
-                        </span>
-                        <span>
-                          {isGround ? 'Range' : 'Radius'}: <strong>{rangeDisplay} km</strong>
-                        </span>
-                        <span>
-                          Crew: <strong>{entity.personnel} personnel</strong>
-                        </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', gap: '14px', fontSize: '11px', color: 'var(--paper-dim)' }}>
+                          <span>
+                            Fuel:{' '}
+                            <strong style={{ color: entity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
+                              {entity.currentFuelPct.toFixed(0)}%
+                            </strong>
+                          </span>
+                          <span>
+                            Speed: <strong>{entity.speedKmh} km/h</strong>
+                          </span>
+                          <span>
+                            {isGround ? 'Range' : 'Radius'}: <strong>{rangeDisplay} km</strong>
+                          </span>
+                          <span>
+                            Crew: <strong>{entity.personnel} personnel</strong>
+                          </span>
+                        </div>
+
+                        {weapons.length > 0 && (
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+                            {weapons.map((w, wIdx) => (
+                              <span
+                                key={wIdx}
+                                style={{
+                                  fontSize: '9.5px',
+                                  background: 'rgba(255, 152, 0, 0.1)',
+                                  border: '1px solid rgba(255, 152, 0, 0.25)',
+                                  color: '#FF9800',
+                                  padding: '1px 6px',
+                                  borderRadius: '3px',
+                                }}
+                              >
+                                🚀 {w.magazine ? `${w.magazine} × ` : ''}{w.name} ({w.rangeKm} km)
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}

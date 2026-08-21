@@ -23,6 +23,7 @@ import { type SystemSpec, domainOf } from '@/lib/specs';
 import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
+import { SortieTaskingModal } from './SortieTaskingModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 
@@ -52,6 +53,7 @@ export interface WarSimConsoleProps {
       patrolRadiusKm?: number;
       altitudeM?: number;
       emcon?: 'active' | 'passive';
+      routeType?: 'orbit' | 'waypoints';
     }
   ) => void;
   onOrderRtb: (entityId: string) => void;
@@ -64,8 +66,12 @@ export interface WarSimConsoleProps {
   targetPicking: {
     mode: 'sortie' | 'place_autonomous' | 'place_base';
     label?: string;
+    routeType?: 'orbit' | 'waypoints';
+    pickedWaypoints?: [number, number][];
   } | null;
   onCancelTargetPicking: () => void;
+  onConfirmCustomRoute?: () => void;
+  onUndoLastWaypoint?: () => void;
   onOpenAar: () => void;
   onExitSim: () => void;
   systemsLibrary: SystemSpec[];
@@ -99,6 +105,8 @@ export function WarSimConsole({
   onToggleShowAllEnvelopes,
   targetPicking,
   onCancelTargetPicking,
+  onConfirmCustomRoute,
+  onUndoLastWaypoint,
   onOpenAar,
   onExitSim,
   systemsLibrary,
@@ -111,6 +119,7 @@ export function WarSimConsole({
   const [systemDomainFilter, setSystemDomainFilter] = useState<string>('all');
   const [newBaseType, setNewBaseType] = useState<BaseType>('airbase');
   const [customBaseName, setCustomBaseName] = useState<string>('');
+  const [hudTaskingEntity, setHudTaskingEntity] = useState<SimEntity | null>(null);
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -308,7 +317,7 @@ export function WarSimConsole({
         </div>
       </header>
 
-      {/* 2. TARGET PICKING FLOATING BANNER (When designating patrol or base) */}
+      {/* 2. TARGET PICKING FLOATING BANNER (When designating patrol, base, or multi-waypoint route) */}
       {targetPicking && (
         <div
           style={{
@@ -316,34 +325,88 @@ export function WarSimConsole({
             top: '56px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(232, 131, 58, 0.95)',
-            color: '#070C14',
-            padding: '8px 18px',
-            borderRadius: '20px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.6)',
+            background: 'rgba(9, 16, 27, 0.96)',
+            backdropFilter: 'blur(12px)',
+            border: `1px solid ${targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(232, 131, 58, 0.8)'}`,
+            borderRadius: '10px',
+            padding: '8px 16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
             zIndex: 650,
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            fontWeight: 700,
-            fontSize: '12px',
+            gap: '14px',
+            color: 'var(--paper)',
+            fontFamily: 'var(--font-sans, system-ui, sans-serif)',
           }}
         >
-          <span>📍 {targetPicking.label}</span>
-          <button
-            onClick={onCancelTargetPicking}
-            style={{
-              background: '#070C14',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '2px 8px',
-              fontSize: '11px',
-              cursor: 'pointer',
-            }}
-          >
-            Cancel
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>
+              {targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
+                {targetPicking.routeType === 'waypoints'
+                  ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
+                  : 'Target Designation Active'}
+              </span>
+              <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                {targetPicking.label}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {targetPicking.routeType === 'waypoints' && (
+              <>
+                <button
+                  type="button"
+                  className="wg-btn accent"
+                  style={{
+                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)',
+                    color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
+                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#4FA85F' : 'transparent',
+                    fontWeight: 700,
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                  }}
+                  disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
+                  onClick={onConfirmCustomRoute}
+                >
+                  ✓ Launch Route ({(targetPicking.pickedWaypoints?.length || 0)} WPs)
+                </button>
+
+                <button
+                  type="button"
+                  className="wg-btn"
+                  style={{
+                    fontSize: '11px',
+                    padding: '4px 8px',
+                    cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                  }}
+                  disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
+                  onClick={onUndoLastWaypoint}
+                >
+                  ↩ Undo WP
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              className="wg-btn"
+              style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderColor: '#D9534F',
+                color: '#D9534F',
+                background: 'transparent',
+              }}
+              onClick={onCancelTargetPicking}
+            >
+              ✕ Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -826,9 +889,9 @@ export function WarSimConsole({
           session={session}
           onClose={() => onSelectBase(null)}
           stationedEntities={friendlyEntities.filter((e) => e.homeBaseId === selectedBase.id)}
-          onStartSortie={(entity) => {
+          onStartSortie={(entity, options) => {
             onSelectBase(null);
-            onStartSortie(entity);
+            onStartSortie(entity, options);
           }}
           onOrderRtb={onOrderRtb}
           onDeployToThisBase={(sysId, count) => onDeployUnitToBase(selectedBase.id, sysId, count)}
@@ -963,7 +1026,9 @@ export function WarSimConsole({
 
               {/* Equipped Weapons Arsenal & Interactive Range Toggles */}
               {(() => {
-                const weapons = spec?.weapons || [];
+                const weapons = (selectedEntity.customWeapons && selectedEntity.customWeapons.length > 0)
+                  ? selectedEntity.customWeapons
+                  : (spec?.weapons || []);
                 if (weapons.length === 0) return null;
 
                 return (
@@ -997,7 +1062,7 @@ export function WarSimConsole({
                             <span style={{ fontSize: '13px' }}>{isActive ? '🎯' : '🚀'}</span>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               <strong style={{ fontSize: '11px', color: isActive ? '#FF9800' : '#FFFFFF' }}>
-                                {w.name || `Weapon #${idx + 1}`}
+                                {w.magazine ? `${w.magazine} × ` : ''}{w.name || `Weapon #${idx + 1}`}
                               </strong>
                               {w.engages && w.engages.length > 0 && (
                                 <span style={{ fontSize: '8.5px', color: 'var(--paper-dim)' }}>
@@ -1044,7 +1109,7 @@ export function WarSimConsole({
                 <button
                   className="wg-btn accent"
                   style={{ flex: 1, fontSize: '11px', padding: '5px', fontWeight: 600 }}
-                  onClick={() => onStartSortie(selectedEntity)}
+                  onClick={() => setHudTaskingEntity(selectedEntity)}
                 >
                   {isStaticAD ? '📍 Relocate Battery' : isGround ? '📍 Relocate Position' : '🎯 Retask Patrol'}
                 </button>
@@ -1053,6 +1118,23 @@ export function WarSimConsole({
           </div>
         );
       })()}
+
+      {/* Pre-Mission Tasking & Loadout Configurator Modal (When retasking from HUD) */}
+      {hudTaskingEntity && (
+        <SortieTaskingModal
+          entity={hudTaskingEntity}
+          initialCount={hudTaskingEntity.count}
+          base={friendlyBases.find((b) => b.id === hudTaskingEntity.homeBaseId)}
+          session={session}
+          systemsLibrary={systemsLibrary}
+          onClose={() => setHudTaskingEntity(null)}
+          onConfirmTasking={(params) => {
+            setHudTaskingEntity(null);
+            onSelectEntity(null);
+            onStartSortie(hudTaskingEntity, params);
+          }}
+        />
+      )}
     </>
   );
 }

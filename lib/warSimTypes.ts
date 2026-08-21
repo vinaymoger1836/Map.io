@@ -108,6 +108,10 @@ export interface PatrolOrder {
   altitudeM: number;
   orbitAngleDeg: number; // Current orbital progress angle around patrol center
   emcon: 'active' | 'passive'; // Active radar search vs silent passive standby
+  routeType?: 'orbit' | 'waypoints'; // 'orbit': circular loiter, 'waypoints': multi-point corridor
+  waypoints?: [number, number][]; // [WP1, WP2, WP3, ...]
+  currentWaypointIdx?: number; // Target waypoint index
+  patrolDirection?: 1 | -1; // 1: forward (WP1 -> WPN), -1: reverse (WPN -> WP1)
 }
 
 export interface SimEntity {

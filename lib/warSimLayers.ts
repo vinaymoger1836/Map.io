@@ -699,16 +699,33 @@ export function renderWarSimStateToMap(
     features: entityFeatures,
   });
 
-  // 3. Render Patrol Rings
+  // 3. Render Patrol Rings & Multi-Waypoint Flight Corridors
   const patrolFeatures: GeoJSON.Feature[] = [];
   friendlyEntities.forEach((e) => {
-    if (e.patrolOrder && (e.status === 'on_station' || e.status === 'takeoff_ingress') && e.patrolOrder.patrolRadiusKm > 0) {
-      const ringCoords = geodesicRing(e.patrolOrder.centerLngLat, e.patrolOrder.patrolRadiusKm);
-      patrolFeatures.push({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [ringCoords] },
-        properties: { color: factionColor },
-      });
+    if (e.patrolOrder && (e.status === 'on_station' || e.status === 'takeoff_ingress')) {
+      if (e.patrolOrder.routeType === 'waypoints' && e.patrolOrder.waypoints && e.patrolOrder.waypoints.length >= 2) {
+        // Multi-waypoint route line corridor
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: e.patrolOrder.waypoints },
+          properties: { color: factionColor },
+        });
+        // Waypoint dots
+        e.patrolOrder.waypoints.forEach((wp) => {
+          patrolFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: wp },
+            properties: { color: factionColor },
+          });
+        });
+      } else if (e.patrolOrder.patrolRadiusKm > 0) {
+        const ringCoords = geodesicRing(e.patrolOrder.centerLngLat, e.patrolOrder.patrolRadiusKm);
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [ringCoords] },
+          properties: { color: factionColor },
+        });
+      }
     }
   });
   (map.getSource(SRC_PATROLS) as GeoJSONSource)?.setData({
@@ -728,6 +745,7 @@ export function renderWarSimStateToMap(
       id: c.contactId,
       tier: c.intelTier,
       label: c.intelTier === 2 ? `🎯 ${c.knownName} (${c.knownCount ?? 1}x)` : `⚠️ UNKNOWN ${c.domain.toUpperCase()} [?]`,
+      color: c.intelTier === 2 ? '#D9534F' : '#FFB020',
     },
   }));
   (map.getSource(SRC_CONTACTS) as GeoJSONSource)?.setData({
@@ -735,15 +753,16 @@ export function renderWarSimStateToMap(
     features: contactFeatures,
   });
 
-  // 5. Render Missiles
+  // 5. Render Active Missiles
   const missileFeatures: GeoJSON.Feature[] = [];
   session.activeMissiles.forEach((m) => {
-    const path = greatCirclePath(m.originLngLat, m.currentLngLat, 20);
+    // Missile line trajectory
     missileFeatures.push({
       type: 'Feature',
-      geometry: { type: 'LineString', coordinates: path },
+      geometry: { type: 'LineString', coordinates: [m.originLngLat, m.currentLngLat] },
       properties: {},
     });
+    // Missile warhead tip
     missileFeatures.push({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: m.currentLngLat },
@@ -767,13 +786,74 @@ export function updateWarSimPatrolPreview(
     originLngLat?: [number, number];
     maxRangeKm?: number;
     patrolRadiusKm?: number;
+    routeType?: 'orbit' | 'waypoints';
+    pickedWaypoints?: [number, number][];
   } | null,
   cursor?: [number, number] | null
 ) {
   const source = map.getSource(SRC_PATROL_PREVIEW) as GeoJSONSource | undefined;
   if (!source) return;
 
-  if (!targetPicking || targetPicking.mode !== 'sortie' || !cursor) {
+  if (!targetPicking || targetPicking.mode !== 'sortie') {
+    source.setData({ type: 'FeatureCollection', features: [] });
+    return;
+  }
+
+  const isCustomRoute = targetPicking.routeType === 'waypoints';
+  const picked = targetPicking.pickedWaypoints ?? [];
+  const features: GeoJSON.Feature[] = [];
+
+  if (isCustomRoute) {
+    // 1. Placed Waypoints
+    picked.forEach((wp, idx) => {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: wp },
+        properties: { color: '#4FC3F7', label: `WP-${idx + 1}` },
+      });
+    });
+
+    // 2. Line connecting placed waypoints
+    if (picked.length >= 2) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: picked },
+        properties: { color: '#4FC3F7', lineWidth: 2.5 },
+      });
+    }
+
+    // 3. Dynamic line from last placed waypoint to cursor
+    if (cursor) {
+      const isOutOfRange =
+        targetPicking.originLngLat && targetPicking.maxRangeKm
+          ? distanceKm(targetPicking.originLngLat, cursor) > targetPicking.maxRangeKm
+          : false;
+      const color = isOutOfRange ? '#FF5252' : '#4FC3F7';
+
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: cursor },
+        properties: { color, label: `WP-${picked.length + 1}` },
+      });
+
+      if (picked.length >= 1) {
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [picked[picked.length - 1], cursor],
+          },
+          properties: { color, lineWidth: 1.8 },
+        });
+      }
+    }
+
+    source.setData({ type: 'FeatureCollection', features });
+    return;
+  }
+
+  // Circular Orbit Mode
+  if (!cursor) {
     source.setData({ type: 'FeatureCollection', features: [] });
     return;
   }
@@ -785,7 +865,6 @@ export function updateWarSimPatrolPreview(
       : false;
 
   const color = isOutOfRange ? '#FF5252' : '#4FC3F7';
-  const features: GeoJSON.Feature[] = [];
 
   // 1. Center Station Point
   features.push({

@@ -44,6 +44,8 @@ export interface TargetPickingState {
   altitudeM?: number;
   emcon?: 'active' | 'passive';
   customWeapons?: import('./specs').WeaponFacet[];
+  routeType?: 'orbit' | 'waypoints';
+  pickedWaypoints?: [number, number][];
 }
 
 export interface UseWarSimProps {
@@ -241,6 +243,7 @@ export function useWarSim({
         patrolRadiusKm?: number;
         altitudeM?: number;
         emcon?: 'active' | 'passive';
+        routeType?: 'orbit' | 'waypoints';
       }
     ) => {
       const spec = systemsLibrary.find((s) => s.id === entity.systemId);
@@ -261,6 +264,7 @@ export function useWarSim({
 
       const taskCount = options?.count ?? entity.count;
       const cleanName = entity.name.replace(/^\d+\s*[×x]\s*/i, '');
+      const routeType = options?.routeType ?? 'orbit';
 
       setTargetPicking({
         mode: 'sortie',
@@ -272,9 +276,13 @@ export function useWarSim({
         altitudeM: options?.altitudeM,
         emcon: options?.emcon,
         customWeapons: options?.customWeapons,
+        routeType,
+        pickedWaypoints: [],
         label: isGround
           ? `Click on map to deploy ${taskCount > 1 ? `${taskCount} × ` : ''}${cleanName} (Road Range: ${effectiveRadiusKm.toFixed(0)} km)`
-          : `Select Patrol Point for ${taskCount > 1 ? `${taskCount} × ` : ''}${cleanName} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
+          : routeType === 'waypoints'
+            ? `Click on map to place Waypoint #1 for ${taskCount > 1 ? `${taskCount} × ` : ''}${cleanName} route`
+            : `Select Patrol Point for ${taskCount > 1 ? `${taskCount} × ` : ''}${cleanName} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
       });
     },
     [systemsLibrary]
@@ -355,6 +363,19 @@ export function useWarSim({
       if (!targetPicking) return;
 
       if (targetPicking.mode === 'sortie' && targetPicking.entityId) {
+        if (targetPicking.routeType === 'waypoints') {
+          // Add waypoint to route!
+          const prevWaypoints = targetPicking.pickedWaypoints ?? [];
+          const nextWaypoints = [...prevWaypoints, lngLat];
+          setTargetPicking({
+            ...targetPicking,
+            pickedWaypoints: nextWaypoints,
+            label: `Waypoint #${nextWaypoints.length} placed. Click map to add WP #${nextWaypoints.length + 1}, or click 'Confirm Route'.`,
+          });
+          return;
+        }
+
+        // Circular orbit mode
         orderSortieToPoint(
           targetPicking.entityId,
           lngLat,
@@ -374,6 +395,54 @@ export function useWarSim({
     },
     [targetPicking, orderSortieToPoint, deployAutonomousBattery, createBaseAtLocation, session, friendlyBases.length]
   );
+
+  const confirmCustomRoute = useCallback(() => {
+    if (!targetPicking || targetPicking.mode !== 'sortie' || !targetPicking.entityId) return;
+    const waypoints = targetPicking.pickedWaypoints ?? [];
+    if (waypoints.length === 0) return;
+
+    if (waypoints.length === 1) {
+      orderSortieToPoint(
+        targetPicking.entityId,
+        waypoints[0],
+        targetPicking.patrolRadiusKm ?? 15,
+        targetPicking.count,
+        targetPicking.altitudeM ?? 7000,
+        targetPicking.emcon ?? 'active',
+        targetPicking.customWeapons
+      );
+      return;
+    }
+
+    setSession((prev) => {
+      if (!prev) return null;
+      return orderPatrol(
+        prev,
+        targetPicking.entityId!,
+        waypoints[0],
+        0,
+        targetPicking.altitudeM ?? 7000,
+        targetPicking.emcon ?? 'active',
+        targetPicking.count,
+        targetPicking.customWeapons,
+        'waypoints',
+        waypoints
+      );
+    });
+    setTargetPicking(null);
+  }, [targetPicking, orderSortieToPoint]);
+
+  const undoLastWaypoint = useCallback(() => {
+    if (!targetPicking || !targetPicking.pickedWaypoints || targetPicking.pickedWaypoints.length === 0) return;
+    const nextWaypoints = targetPicking.pickedWaypoints.slice(0, -1);
+    setTargetPicking({
+      ...targetPicking,
+      pickedWaypoints: nextWaypoints,
+      label: nextWaypoints.length === 0
+        ? `Click on map to place Waypoint #1`
+        : `Waypoint #${nextWaypoints.length} placed. Click map to add WP #${nextWaypoints.length + 1}, or click 'Confirm Route'.`,
+    });
+  }, [targetPicking]);
 
   return {
     session,
@@ -414,5 +483,7 @@ export function useWarSim({
     startBasePlacement,
     cancelTargetPicking,
     confirmTargetPick,
+    confirmCustomRoute,
+    undoLastWaypoint,
   };
 }

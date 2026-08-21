@@ -31,6 +31,7 @@ export interface SortieTaskingModalProps {
     patrolRadiusKm: number;
     altitudeM: number;
     emcon: 'active' | 'passive';
+    routeType: 'orbit' | 'waypoints';
   }) => void;
 }
 
@@ -76,6 +77,7 @@ export function SortieTaskingModal({
   const [searchQuery, setSearchQuery] = useState('');
 
   // 3. Operational Flight Profile
+  const [patrolMode, setPatrolMode] = useState<'orbit' | 'waypoints'>('orbit');
   const [altitudeM, setAltitudeM] = useState<number>(isGround || isStaticAD ? 0 : 7000);
   const [patrolRadiusKm, setPatrolRadiusKm] = useState<number>(isGround || isStaticAD ? 0 : 15);
   const [emcon, setEmcon] = useState<'active' | 'passive'>('active');
@@ -178,9 +180,10 @@ export function SortieTaskingModal({
     onConfirmTasking({
       count,
       customWeapons: equippedWeapons,
-      patrolRadiusKm: isGround ? 0 : patrolRadiusKm,
-      altitudeM: isGround ? 0 : altitudeM,
+      patrolRadiusKm: isGround || isStaticAD || patrolMode === 'waypoints' ? 0 : patrolRadiusKm,
+      altitudeM: isGround || isStaticAD ? 0 : altitudeM,
       emcon,
+      routeType: patrolMode,
     });
   };
 
@@ -656,7 +659,59 @@ export function SortieTaskingModal({
                 3. Flight & Sensor Profile
               </label>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              {/* Patrol Pattern Selector */}
+              <div style={{ marginBottom: '10px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                  Patrol Route Pattern:
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    type="button"
+                    style={{
+                      padding: '7px 10px',
+                      borderRadius: '5px',
+                      border: `1px solid ${patrolMode === 'orbit' ? '#4FC3F7' : 'var(--border)'}`,
+                      background: patrolMode === 'orbit' ? 'rgba(79, 195, 247, 0.15)' : '#070C14',
+                      color: patrolMode === 'orbit' ? '#4FC3F7' : 'var(--paper)',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      justifyContent: 'center',
+                    }}
+                    onClick={() => setPatrolMode('orbit')}
+                  >
+                    <span>🔄</span>
+                    <span>Circular Holding Orbit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      padding: '7px 10px',
+                      borderRadius: '5px',
+                      border: `1px solid ${patrolMode === 'waypoints' ? '#4FC3F7' : 'var(--border)'}`,
+                      background: patrolMode === 'waypoints' ? 'rgba(79, 195, 247, 0.15)' : '#070C14',
+                      color: patrolMode === 'waypoints' ? '#4FC3F7' : 'var(--paper)',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      justifyContent: 'center',
+                    }}
+                    onClick={() => setPatrolMode('waypoints')}
+                  >
+                    <span>🗺️</span>
+                    <span>Custom Multi-Waypoint Route</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: patrolMode === 'orbit' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
                 {/* Altitude */}
                 <div>
                   <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
@@ -675,23 +730,25 @@ export function SortieTaskingModal({
                   </select>
                 </div>
 
-                {/* Patrol Radius */}
-                <div>
-                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
-                    Patrol Orbit Radius:
-                  </span>
-                  <select
-                    className="wg-select"
-                    style={{ width: '100%', fontSize: '11px', padding: '6px' }}
-                    value={patrolRadiusKm}
-                    onChange={(e) => setPatrolRadiusKm(Number(e.target.value))}
-                  >
-                    <option value={0}>Stationary Loiter (0 km)</option>
-                    <option value={15}>Tight Holding Pattern (15 km)</option>
-                    <option value={30}>Tactical Orbit (30 km)</option>
-                    <option value={60}>Wide Area Sweep (60 km)</option>
-                  </select>
-                </div>
+                {/* Patrol Radius (Only for circular orbit) */}
+                {patrolMode === 'orbit' && (
+                  <div>
+                    <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                      Patrol Orbit Radius:
+                    </span>
+                    <select
+                      className="wg-select"
+                      style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+                      value={patrolRadiusKm}
+                      onChange={(e) => setPatrolRadiusKm(Number(e.target.value))}
+                    >
+                      <option value={0}>Stationary Loiter (0 km)</option>
+                      <option value={15}>Tight Holding Pattern (15 km)</option>
+                      <option value={30}>Tactical Orbit (30 km)</option>
+                      <option value={60}>Wide Area Sweep (60 km)</option>
+                    </select>
+                  </div>
+                )}
 
                 {/* EMCON */}
                 <div>
@@ -709,6 +766,24 @@ export function SortieTaskingModal({
                   </select>
                 </div>
               </div>
+
+              {/* Waypoint Guidance notice */}
+              {patrolMode === 'waypoints' && (
+                <div
+                  style={{
+                    marginTop: '8px',
+                    padding: '8px 10px',
+                    background: 'rgba(79, 195, 247, 0.08)',
+                    borderRadius: '5px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    fontSize: '10.5px',
+                    color: '#4FC3F7',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  📍 <strong>Interactive Route Planning</strong>: After clicking below, click sequentially on the map to define waypoints (WP-1, WP-2, WP-3...). The aircraft will patrol this corridor back and forth.
+                </div>
+              )}
             </div>
           )}
 
@@ -770,7 +845,7 @@ export function SortieTaskingModal({
             }}
             onClick={handleConfirm}
           >
-            🌐 {isStaticAD ? 'Emplace Battery on Map' : isGround ? 'Designate Ground Position' : 'Designate Waypoint on Map'} ({count} Units)
+            🌐 {isStaticAD ? 'Emplace Battery on Map' : isGround ? 'Designate Ground Position' : patrolMode === 'waypoints' ? 'Plot Custom Route on Map' : 'Designate Patrol Point on Map'} ({count} Units)
           </button>
         </div>
       </div>
