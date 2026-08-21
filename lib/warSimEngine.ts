@@ -440,7 +440,7 @@ export function tickWarSim(
 
         // Subsurface acoustic check
         if (targetDomain === 'sub') {
-          const sonar = scanSpec?.sonar ?? defaultSonarFor(scanSpec, scanner.typeId);
+          const sonar = scanSpec?.sensor?.sonar ?? defaultSonarFor(scanSpec, scanner.typeId);
           const maxSonarKm = sonar.detectionKm ?? 35;
           if (dist <= maxSonarKm) {
             bestTier = Math.max(bestTier, 1) as 1 | 2;
@@ -462,22 +462,23 @@ export function tickWarSim(
       }
 
       if (bestTier > 0) {
+        const tier: 1 | 2 = bestTier === 2 ? 2 : 1;
         contacts.push({
           contactId: `cnt-${target.id}-${scanningFaction}`,
           targetEntityId: target.id,
           targetIso: target.iso,
           discoveredByFaction: scanningFaction,
-          intelTier: bestTier,
+          intelTier: tier,
           domain: targetDomain,
           lastKnownLngLat: target.lngLat,
           headingDeg: target.headingDeg,
           speedKmh: target.speedKmh,
           lastDetectedSimTimeSec: newSimTimeSec,
           decayTimerSec: 120, // Contact holds for 2 sim minutes
-          knownName: bestTier === 2 ? target.name : undefined,
-          knownCount: bestTier === 2 ? target.count : undefined,
-          knownPersonnel: bestTier === 2 ? target.personnel : undefined,
-          knownDamage: bestTier === 2 ? target.damage : undefined,
+          knownName: tier === 2 ? target.name : undefined,
+          knownCount: tier === 2 ? target.count : undefined,
+          knownPersonnel: tier === 2 ? target.personnel : undefined,
+          knownDamage: tier === 2 ? target.damage : undefined,
         });
       }
     }

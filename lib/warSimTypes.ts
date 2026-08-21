@@ -82,7 +82,7 @@ export interface DetectedContact {
   knownName?: string;
   knownCount?: number;
   knownPersonnel?: number;
-  knownDamage?: 'intact' | 'damaged' | 'suppressed';
+  knownDamage?: 'intact' | 'damaged' | 'suppressed' | 'destroyed';
 }
 
 /* ------------------------------------------------------------------ */

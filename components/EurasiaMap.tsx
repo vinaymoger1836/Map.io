@@ -23,6 +23,7 @@ import { PlaybackHUD } from './wargames/PlaybackHUD';
 import { ConfigurationSuite } from './wargames/ConfigurationSuite';
 import { WarSimLauncher } from './wargames/WarSimLauncher';
 import { WarSimOperationsBar } from './wargames/WarSimOperationsBar';
+import { WarSimAarModal } from './wargames/WarSimAarModal';
 import { useWarSim } from '@/lib/useWarSim';
 import { renderWarSimStateToMap, removeWarSimLayers } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
@@ -106,6 +107,7 @@ export default function EurasiaMap() {
   const [configOpen, setConfigOpen] = useState(false);
   const [warSimLauncherOpen, setWarSimLauncherOpen] = useState(false);
   const [activeWarSimSession, setActiveWarSimSession] = useState<WarSimSession | null>(null);
+  const [warSimAarOpen, setWarSimAarOpen] = useState(false);
 
   const modeRef = useRef(mode);
   const warHydrateRef = useRef<((map: MLMap) => void) | null>(null);
@@ -637,12 +639,20 @@ export default function EurasiaMap() {
             onDispatchPatrol={warSim.dispatchPatrol}
             patrolDesignateMode={warSim.patrolDesignateMode}
             onTogglePatrolDesignate={() => warSim.setPatrolDesignateMode(!warSim.patrolDesignateMode)}
-            onOpenAar={() => {}}
+            onOpenAar={() => setWarSimAarOpen(true)}
             onExitSim={() => {
               if (mapRef.current) removeWarSimLayers(mapRef.current);
               setActiveWarSimSession(null);
             }}
             systemsLibrary={war.systems}
+          />
+        )}
+
+        {warSimAarOpen && warSim.session && (
+          <WarSimAarModal
+            isOpen={warSimAarOpen}
+            onClose={() => setWarSimAarOpen(false)}
+            session={warSim.session}
           />
         )}
 
