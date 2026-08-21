@@ -752,3 +752,22 @@ export function addSimBase(
     bases: [...session.bases, newBase],
   };
 }
+
+/**
+ * Renames an existing sovereign base installation.
+ */
+export function renameSimBase(
+  session: WarSimSession,
+  baseId: string,
+  newName: string
+): WarSimSession {
+  const updatedBases = session.bases.map((b) => {
+    if (b.id !== baseId) return b;
+    return { ...b, name: newName.trim() || b.name };
+  });
+
+  return {
+    ...session,
+    bases: updatedBases,
+  };
+}

@@ -23,6 +23,7 @@ import {
   deployAutonomousEntity,
   orderPatrol,
   addSimBase,
+  renameSimBase,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { writeDoc } from './store';
@@ -189,9 +190,15 @@ export function useWarSim({
     []
   );
 
-  // -------------------------------------------------------------
-  // Target Picking Handlers (Sortie target, Base placement, SAM battery)
-  // -------------------------------------------------------------
+  const renameBase = useCallback(
+    (baseId: string, newName: string) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return renameSimBase(prev, baseId, newName);
+      });
+    },
+    []
+  );
 
   const startSortiePicking = useCallback(
     (entity: SimEntity) => {
@@ -257,10 +264,12 @@ export function useWarSim({
       } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
         deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
       } else if (targetPicking.mode === 'place_base' && targetPicking.baseType) {
-        createBaseAtLocation(targetPicking.baseName || 'New Sovereign Base', targetPicking.baseType, lngLat);
+        const iso = session?.activeFaction === 'player' ? session?.playerIso : session?.enemyIso;
+        const defaultName = `${iso} ${targetPicking.baseType.replace('_', ' ').toUpperCase()} #${friendlyBases.length + 1}`;
+        createBaseAtLocation(targetPicking.baseName?.trim() || defaultName, targetPicking.baseType, lngLat);
       }
     },
-    [targetPicking, orderSortieToPoint, deployAutonomousBattery, createBaseAtLocation]
+    [targetPicking, orderSortieToPoint, deployAutonomousBattery, createBaseAtLocation, session, friendlyBases.length]
   );
 
   // -------------------------------------------------------------
@@ -315,6 +324,7 @@ export function useWarSim({
     deployAutonomousBattery,
     orderSortieToPoint,
     createBaseAtLocation,
+    renameBase,
     friendlyEntities,
     friendlyBases,
     visibleContacts,
