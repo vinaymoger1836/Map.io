@@ -681,6 +681,8 @@ export function deployAutonomousEntity(
 
 /**
  * Tasks a stationed entity to sortie and establish a patrol orbit.
+ * If sortieCount is specified and is less than entity.count, splits the formation:
+ * the requested sortieCount takes off on patrol, while the remaining count stays stationed at base.
  */
 export function orderPatrol(
   session: WarSimSession,
@@ -688,57 +690,111 @@ export function orderPatrol(
   centerLngLat: [number, number],
   patrolRadiusKm: number = 80,
   altitudeM: number = 7000,
-  emcon: 'active' | 'passive' = 'active'
+  emcon: 'active' | 'passive' = 'active',
+  sortieCount?: number
 ): WarSimSession {
-  let sortieName = '';
-  let entityIso = session.playerIso;
+  const targetEntity = session.entities.find((e) => e.id === entityId);
+  if (!targetEntity || targetEntity.status === 'destroyed' || targetEntity.status === 'in_repair') {
+    return session;
+  }
 
-  const updatedEntities = session.entities.map((e) => {
-    if (e.id !== entityId || e.status === 'destroyed' || e.status === 'in_repair') {
-      return e;
-    }
+  const effectiveCount = Math.max(1, Math.min(targetEntity.count, sortieCount ?? targetEntity.count));
+  const isPartialSplit = effectiveCount < targetEntity.count && targetEntity.status === 'docked';
 
-    sortieName = e.name;
-    entityIso = e.iso;
+  const patrolOrder: PatrolOrder = {
+    centerLngLat,
+    patrolRadiusKm,
+    altitudeM,
+    orbitAngleDeg: 0,
+    emcon,
+  };
 
-    const patrolOrder: PatrolOrder = {
-      centerLngLat,
-      patrolRadiusKm,
-      altitudeM,
-      orbitAngleDeg: 0,
-      emcon,
+  const faction: 'player' | 'enemy' = targetEntity.iso === session.playerIso ? 'player' : 'enemy';
+
+  if (isPartialSplit) {
+    const remainingCount = targetEntity.count - effectiveCount;
+    const personnelPerUnit = Math.max(1, Math.round(targetEntity.personnel / targetEntity.count));
+
+    const updatedDockedEntity: SimEntity = {
+      ...targetEntity,
+      count: remainingCount,
+      personnel: remainingCount * personnelPerUnit,
     };
 
-    return {
-      ...e,
-      status: 'takeoff_ingress' as const,
+    const sortieEntity: SimEntity = {
+      ...targetEntity,
+      id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+      count: effectiveCount,
+      personnel: effectiveCount * personnelPerUnit,
+      status: 'takeoff_ingress',
       patrolOrder,
       altitudeM,
     };
-  });
 
-  const faction: 'player' | 'enemy' = entityIso === session.playerIso ? 'player' : 'enemy';
-  const newEvents = sortieName
-    ? [
-        ...session.eventLog,
-        {
-          id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          simTimeSec: session.simTimeSec,
-          timeFormatted: formatSimTime(session.simTimeSec),
-          faction,
-          type: 'rtb' as const,
-          title: `Sortie Launched: ${sortieName}`,
-          detail: `${sortieName} departed base and is en route to designated patrol coordinates.`,
-          lngLat: centerLngLat,
-        },
-      ]
-    : session.eventLog;
+    const homeBase = session.bases.find((b) => b.id === targetEntity.homeBaseId);
+    let updatedBases = session.bases;
+    if (homeBase && !homeBase.stationedEntityIds.includes(sortieEntity.id)) {
+      updatedBases = session.bases.map((b) =>
+        b.id === homeBase.id
+          ? { ...b, stationedEntityIds: [...b.stationedEntityIds, sortieEntity.id] }
+          : b
+      );
+    }
 
-  return {
-    ...session,
-    entities: updatedEntities,
-    eventLog: newEvents.slice(-200),
-  };
+    const updatedEntities = session.entities.map((e) => (e.id === targetEntity.id ? updatedDockedEntity : e));
+    updatedEntities.push(sortieEntity);
+
+    const newEvents = [
+      ...session.eventLog,
+      {
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        simTimeSec: session.simTimeSec,
+        timeFormatted: formatSimTime(session.simTimeSec),
+        faction,
+        type: 'rtb' as const,
+        title: `Sortie Launched: ${effectiveCount} × ${targetEntity.name}`,
+        detail: `Detached ${effectiveCount} × ${targetEntity.name} (${remainingCount} remaining at base) on designated patrol mission.`,
+        lngLat: centerLngLat,
+      },
+    ];
+
+    return {
+      ...session,
+      bases: updatedBases,
+      entities: updatedEntities,
+      eventLog: newEvents.slice(-200),
+    };
+  } else {
+    const updatedEntities = session.entities.map((e) => {
+      if (e.id !== entityId) return e;
+      return {
+        ...e,
+        status: 'takeoff_ingress' as const,
+        patrolOrder,
+        altitudeM,
+      };
+    });
+
+    const newEvents = [
+      ...session.eventLog,
+      {
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        simTimeSec: session.simTimeSec,
+        timeFormatted: formatSimTime(session.simTimeSec),
+        faction,
+        type: 'rtb' as const,
+        title: `Sortie Launched: ${targetEntity.count > 1 ? `${targetEntity.count} × ` : ''}${targetEntity.name}`,
+        detail: `${targetEntity.name} (${targetEntity.count}x) departed base and is en route to designated patrol coordinates.`,
+        lngLat: centerLngLat,
+      },
+    ];
+
+    return {
+      ...session,
+      entities: updatedEntities,
+      eventLog: newEvents.slice(-200),
+    };
+  }
 }
 
 /**

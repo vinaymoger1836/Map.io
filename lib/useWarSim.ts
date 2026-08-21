@@ -176,10 +176,10 @@ export function useWarSim({
   );
 
   const orderSortieToPoint = useCallback(
-    (entityId: string, targetLngLat: [number, number], patrolRadiusKm: number = 80) => {
+    (entityId: string, targetLngLat: [number, number], patrolRadiusKm: number = 80, sortieCount?: number) => {
       setSession((prev) => {
         if (!prev) return null;
-        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, 7000, 'active');
+        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, 7000, 'active', sortieCount);
       });
       setTargetPicking(null);
     },
@@ -220,7 +220,7 @@ export function useWarSim({
   );
 
   const startSortiePicking = useCallback(
-    (entity: SimEntity) => {
+    (entity: SimEntity, requestedCount?: number) => {
       const spec = systemsLibrary.find((s) => s.id === entity.systemId);
       const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (entity.typeId === 'fighter' ? 900 : 1500);
 
@@ -234,12 +234,15 @@ export function useWarSim({
       const base = sessionRef.current?.bases.find((b) => b.id === entity.homeBaseId);
       const originLngLat = base?.lngLat ?? entity.lngLat;
 
+      const taskCount = requestedCount ?? entity.count;
+
       setTargetPicking({
         mode: 'sortie',
         entityId: entity.id,
+        count: taskCount,
         originLngLat,
         maxRangeKm: effectiveRadiusKm,
-        label: `Select Patrol Point for ${entity.name} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
+        label: `Select Patrol Point for ${taskCount > 1 ? `${taskCount} × ` : ''}${entity.name} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
       });
     },
     [systemsLibrary]
@@ -320,7 +323,7 @@ export function useWarSim({
       if (!targetPicking) return;
 
       if (targetPicking.mode === 'sortie' && targetPicking.entityId) {
-        orderSortieToPoint(targetPicking.entityId, lngLat, 80);
+        orderSortieToPoint(targetPicking.entityId, lngLat, 80, targetPicking.count);
       } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
         deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
       } else if (targetPicking.mode === 'place_base' && targetPicking.baseType) {

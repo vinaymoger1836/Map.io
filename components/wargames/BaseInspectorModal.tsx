@@ -22,7 +22,7 @@ export interface BaseInspectorModalProps {
   session: WarSimSession;
   onClose: () => void;
   stationedEntities: SimEntity[];
-  onStartSortie: (entity: SimEntity) => void;
+  onStartSortie: (entity: SimEntity, count?: number) => void;
   onOrderRtb: (entityId: string) => void;
   onDeployToThisBase: (systemId: string, count: number) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
@@ -45,6 +45,7 @@ export function BaseInspectorModal({
   const [deployCount, setDeployCount] = useState<number>(12);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(base.name);
+  const [sortieCounts, setSortieCounts] = useState<Record<string, number>>({});
 
   const activeFaction = session.activeFaction;
   const quotaLedger = session.quotas[activeFaction] || {};
@@ -425,25 +426,107 @@ export function BaseInspectorModal({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   {isIdle && (
-                    <button
-                      className="wg-btn"
-                      style={{
-                        background: '#4FA85F',
-                        color: '#070C14',
-                        borderColor: '#4FA85F',
-                        fontWeight: 600,
-                        fontSize: '11px',
-                        padding: '5px 12px',
-                      }}
-                      onClick={() => {
-                        onClose();
-                        onStartSortie(entity);
-                      }}
-                    >
-                      🚀 Sortie / Patrol
-                    </button>
+                    entity.count > 1 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: '#070C14',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px',
+                            padding: '2px 4px',
+                            gap: '2px',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#4FC3F7',
+                              cursor: 'pointer',
+                              padding: '1px 6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSortieCounts((prev) => ({
+                                ...prev,
+                                [entity.id]: Math.max(1, (prev[entity.id] ?? Math.min(2, entity.count)) - 1),
+                              }));
+                            }}
+                          >
+                            −
+                          </button>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#FFFFFF', minWidth: '22px', textAlign: 'center' }}>
+                            {sortieCounts[entity.id] ?? Math.min(2, entity.count)}
+                          </span>
+                          <button
+                            type="button"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#4FC3F7',
+                              cursor: 'pointer',
+                              padding: '1px 6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSortieCounts((prev) => ({
+                                ...prev,
+                                [entity.id]: Math.min(entity.count, (prev[entity.id] ?? Math.min(2, entity.count)) + 1),
+                              }));
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          className="wg-btn"
+                          style={{
+                            background: '#4FA85F',
+                            color: '#070C14',
+                            borderColor: '#4FA85F',
+                            fontWeight: 700,
+                            fontSize: '11px',
+                            padding: '5px 12px',
+                            whiteSpace: 'nowrap',
+                          }}
+                          onClick={() => {
+                            onClose();
+                            const count = sortieCounts[entity.id] ?? Math.min(2, entity.count);
+                            onStartSortie(entity, count);
+                          }}
+                        >
+                          🚀 Sortie ({sortieCounts[entity.id] ?? Math.min(2, entity.count)} / {entity.count})
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="wg-btn"
+                        style={{
+                          background: '#4FA85F',
+                          color: '#070C14',
+                          borderColor: '#4FA85F',
+                          fontWeight: 600,
+                          fontSize: '11px',
+                          padding: '5px 12px',
+                        }}
+                        onClick={() => {
+                          onClose();
+                          onStartSortie(entity, 1);
+                        }}
+                      >
+                        🚀 Sortie / Patrol
+                      </button>
+                    )
                   )}
 
                   {isSortied && (

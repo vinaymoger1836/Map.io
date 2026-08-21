@@ -43,7 +43,7 @@ export interface WarSimConsoleProps {
   onSelectEntity: (id: string | null) => void;
   onDeployUnitToBase: (baseId: string, systemId: string, count: number) => void;
   onDeployAutonomous: (systemId: string, count: number) => void;
-  onStartSortie: (entity: SimEntity) => void;
+  onStartSortie: (entity: SimEntity, count?: number) => void;
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
