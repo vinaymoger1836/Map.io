@@ -22,6 +22,9 @@ import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
 import { PlaybackHUD } from './wargames/PlaybackHUD';
 import { ConfigurationSuite } from './wargames/ConfigurationSuite';
 import { WarSimLauncher } from './wargames/WarSimLauncher';
+import { WarSimOperationsBar } from './wargames/WarSimOperationsBar';
+import { useWarSim } from '@/lib/useWarSim';
+import { renderWarSimStateToMap, removeWarSimLayers } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
 
 /**
