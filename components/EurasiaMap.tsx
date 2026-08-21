@@ -121,6 +121,63 @@ export default function EurasiaMap() {
   });
   warHydrateRef.current = war.hydrate;
 
+  const warSim = useWarSim({
+    initialSession: activeWarSimSession,
+    systemsLibrary: war.systems,
+    mapRef,
+    onClose: () => setActiveWarSimSession(null),
+  });
+
+  // Sync War Sim state to MapLibre layers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+    renderWarSimStateToMap(map, warSim.session, warSim.session.activeFaction);
+  }, [ready, mode, warSim.session]);
+
+  // War Sim Map Click & Interaction
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+
+    const onSimClick = (e: maplibregl.MapMouseEvent) => {
+      if (warSim.patrolDesignateMode && warSim.selectedEntityId) {
+        warSim.dispatchPatrol(warSim.selectedEntityId, [e.lngLat.lng, e.lngLat.lat], 80);
+        return;
+      }
+
+      const layers = ['warsim-entities-circle', 'warsim-contacts-circle', 'warsim-bases-circle'].filter(
+        (id) => map.getLayer(id)
+      );
+      const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
+      if (hits.length > 0) {
+        const props = (hits[0].properties || {}) as Record<string, string>;
+        const layerId = hits[0].layer.id;
+        if (layerId === 'warsim-entities-circle' && props.id) {
+          warSim.setSelectedEntityId(props.id);
+          warSim.setSelectedContactId(null);
+        } else if (layerId === 'warsim-contacts-circle' && props.id) {
+          warSim.setSelectedContactId(props.id);
+          warSim.setSelectedEntityId(null);
+        }
+      }
+    };
+
+    map.on('click', onSimClick);
+    return () => {
+      map.off('click', onSimClick);
+    };
+  }, [
+    ready,
+    mode,
+    warSim.session,
+    warSim.patrolDesignateMode,
+    warSim.selectedEntityId,
+    warSim.dispatchPatrol,
+    warSim.setSelectedEntityId,
+    warSim.setSelectedContactId,
+  ]);
+
   /** Re-adds every source and layer. Safe to call after a basemap swap. */
   const hydrate = useCallback((map: MLMap) => {
     if (!dataRef.current) return;
@@ -558,6 +615,34 @@ export default function EurasiaMap() {
               setWarSimLauncherOpen(false);
               setConfigOpen(true);
             }}
+          />
+        )}
+
+        {mode === 'wargames' && warSim.session && (
+          <WarSimOperationsBar
+            session={warSim.session}
+            isPlaying={warSim.isPlaying}
+            onTogglePlay={warSim.togglePlay}
+            speedMultiplier={warSim.speedMultiplier}
+            onSetSpeed={warSim.setSpeedMultiplier}
+            onSwitchFaction={warSim.switchActiveFaction}
+            friendlyBases={warSim.friendlyBases}
+            friendlyEntities={warSim.friendlyEntities}
+            visibleContacts={warSim.visibleContacts}
+            selectedEntity={warSim.selectedEntity}
+            onSelectEntity={warSim.setSelectedEntityId}
+            selectedContact={warSim.selectedContact}
+            onSelectContact={warSim.setSelectedContactId}
+            onDeployUnit={warSim.deployUnit}
+            onDispatchPatrol={warSim.dispatchPatrol}
+            patrolDesignateMode={warSim.patrolDesignateMode}
+            onTogglePatrolDesignate={() => warSim.setPatrolDesignateMode(!warSim.patrolDesignateMode)}
+            onOpenAar={() => {}}
+            onExitSim={() => {
+              if (mapRef.current) removeWarSimLayers(mapRef.current);
+              setActiveWarSimSession(null);
+            }}
+            systemsLibrary={war.systems}
           />
         )}
 
