@@ -28,12 +28,14 @@ export function SectionNav({
   onChange,
   counts,
   onOpenConfiguration,
+  onOpenWarSim,
 }: {
   section: Section;
   onChange: (s: Section) => void;
   /** A badge per section, so the nav carries a little state of its own. */
   counts: Record<Section, number | undefined>;
   onOpenConfiguration?: () => void;
+  onOpenWarSim?: () => void;
 }) {
   return (
     <nav className="wg-nav" aria-label="Console sections">
@@ -49,6 +51,16 @@ export function SectionNav({
           {counts[id] !== undefined && <span className="wg-nav-count">{counts[id]}</span>}
         </button>
       ))}
+      {onOpenWarSim && (
+        <button
+          className="wg-nav-tab"
+          style={{ color: '#4FA85F', borderColor: 'rgba(79, 168, 95, 0.4)', fontWeight: 600 }}
+          onClick={onOpenWarSim}
+          title="Launch Realistic Real-Time War Simulation Staging Deck"
+        >
+          <span>⚔️ War Sim</span>
+        </button>
+      )}
       {onOpenConfiguration && (
         <button
           className="wg-nav-tab config-link"

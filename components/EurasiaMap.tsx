@@ -21,6 +21,8 @@ import { INTERACTIVE_LAYERS, applyVisibility, installLayers } from '@/lib/mapLay
 import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
 import { PlaybackHUD } from './wargames/PlaybackHUD';
 import { ConfigurationSuite } from './wargames/ConfigurationSuite';
+import { WarSimLauncher } from './wargames/WarSimLauncher';
+import { type WarSimSession } from '@/lib/warSimTypes';
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -99,6 +101,8 @@ export default function EurasiaMap() {
   const [panelOpen, setPanelOpen] = useState(true);
   const [mode, setMode] = useState<Mode>('situation');
   const [configOpen, setConfigOpen] = useState(false);
+  const [warSimLauncherOpen, setWarSimLauncherOpen] = useState(false);
+  const [activeWarSimSession, setActiveWarSimSession] = useState<WarSimSession | null>(null);
 
   const modeRef = useRef(mode);
   const warHydrateRef = useRef<((map: MLMap) => void) | null>(null);
@@ -454,6 +458,13 @@ export default function EurasiaMap() {
               <button className="action" onClick={() => switchMode('situation')}>
                 Situation map
               </button>
+              <button
+                className="action"
+                style={{ color: '#4FA85F', borderColor: 'rgba(79, 168, 95, 0.6)', fontWeight: 600 }}
+                onClick={() => setWarSimLauncherOpen(true)}
+              >
+                ⚔️ War Sim
+              </button>
               <button className="action accent" onClick={() => setConfigOpen(true)}>
                 ⚙️ Configuration
               </button>
@@ -477,7 +488,11 @@ export default function EurasiaMap() {
         {panelOpen ? (
           <div className={`panel${mode === 'wargames' ? ' panel-wide' : ''}`}>
             {mode === 'wargames' ? (
-              <WarGamesPanel {...war} onOpenConfiguration={() => setConfigOpen(true)} />
+              <WarGamesPanel
+                {...war}
+                onOpenConfiguration={() => setConfigOpen(true)}
+                onOpenWarSim={() => setWarSimLauncherOpen(true)}
+              />
             ) : (
               <ControlPanel
                 state={visibility}
@@ -524,6 +539,22 @@ export default function EurasiaMap() {
           <ConfigurationSuite
             wg={war}
             onClose={() => setConfigOpen(false)}
+          />
+        )}
+
+        {warSimLauncherOpen && (
+          <WarSimLauncher
+            wg={war}
+            isOpen={warSimLauncherOpen}
+            onClose={() => setWarSimLauncherOpen(false)}
+            onLaunchSimulation={(session) => {
+              setActiveWarSimSession(session);
+              setWarSimLauncherOpen(false);
+            }}
+            onOpenConfiguration={(sysId) => {
+              setWarSimLauncherOpen(false);
+              setConfigOpen(true);
+            }}
           />
         )}
 
