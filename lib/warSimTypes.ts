@@ -126,6 +126,7 @@ export interface StrikePlan {
   weaponIndex: number;
   weaponName: string;
   weaponRangeKm: number;
+  salvoCount: number;
   postStrikeAction: PostStrikeAction;
   returnPatrolOrder?: PatrolOrder;
   customPostLngLat?: [number, number];

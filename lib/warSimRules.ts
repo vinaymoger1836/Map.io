@@ -268,5 +268,14 @@ export function canEntityEngageTarget(
     return { canEngage: false, compatibleWeapons: [], reason };
   }
 
-  return { canEngage: true, compatibleWeapons: compatible };
+  const withAmmo = compatible.filter((w) => w.magazine === undefined || w.magazine > 0);
+  if (withAmmo.length === 0) {
+    return {
+      canEngage: false,
+      compatibleWeapons: [],
+      reason: 'All compatible munitions have been expended. RTB required to replenish armament.',
+    };
+  }
+
+  return { canEngage: true, compatibleWeapons: withAmmo };
 }

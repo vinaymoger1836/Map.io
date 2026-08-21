@@ -36,6 +36,7 @@ export interface StrikeTaskingModalProps {
     targetEntityId: string;
     targetLngLat: [number, number];
     weaponIndex: number;
+    salvoCount: number;
     postStrikeAction: PostStrikeAction;
     customPostLngLat?: [number, number];
   }) => void;
@@ -102,11 +103,18 @@ export function StrikeTaskingModal({
   // 2. Weapon selection for chosen attacker
   const [selectedWeaponIdx, setSelectedWeaponIdx] = useState<number>(0);
 
-  // 3. Post-Strike Protocol selection
+  // 3. Salvo / Ordnance count selection
+  const [userSalvoCount, setUserSalvoCount] = useState<number>(1);
+
+  // 4. Post-Strike Protocol selection
   const [postStrikeAction, setPostStrikeAction] = useState<PostStrikeAction>('rtb');
 
   const compatibleWeapons = currentAttackerEval?.engagementCheck.compatibleWeapons || [];
   const activeWeapon = compatibleWeapons[selectedWeaponIdx] || compatibleWeapons[0];
+
+  const roundsPerUnit = activeWeapon?.magazine ?? 1;
+  const totalFormationRounds = currentAttackerEval ? currentAttackerEval.entity.count * roundsPerUnit : 1;
+  const effectiveSalvoCount = Math.min(Math.max(1, userSalvoCount), Math.max(1, totalFormationRounds));
 
   const handleLaunch = () => {
     if (!currentAttackerEval || !currentAttackerEval.isEligible) return;
@@ -119,6 +127,7 @@ export function StrikeTaskingModal({
       targetEntityId: target.targetId,
       targetLngLat: target.lngLat,
       weaponIndex: realWeaponIdx >= 0 ? realWeaponIdx : 0,
+      salvoCount: effectiveSalvoCount,
       postStrikeAction,
     });
   };
@@ -409,6 +418,107 @@ export function StrikeTaskingModal({
               </div>
             )}
           </div>
+
+          {/* Step 2.1: Salvo Size / Ordnance Count Selection */}
+          {compatibleWeapons.length > 0 && (
+            <div
+              style={{
+                background: '#070C14',
+                border: '1px solid rgba(255, 152, 0, 0.35)',
+                borderRadius: '6px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <label
+                    style={{
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      color: '#FF9800',
+                      fontWeight: 700,
+                      display: 'block',
+                      margin: 0,
+                    }}
+                  >
+                    Salvo Size / Weapons to Release
+                  </label>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                    Formation has <strong>{totalFormationRounds} {activeWeapon?.name || 'rounds'}</strong> available ({currentAttackerEval?.entity.count} aircraft × {roundsPerUnit} per airframe)
+                  </span>
+                </div>
+
+                {/* Salvo Stepper Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ padding: '4px 10px', fontSize: '13px', fontWeight: 'bold' }}
+                    onClick={() => setUserSalvoCount((prev) => Math.max(1, prev - 1))}
+                    disabled={effectiveSalvoCount <= 1}
+                  >
+                    −
+                  </button>
+
+                  <span
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#FF9800',
+                      minWidth: '42px',
+                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {effectiveSalvoCount} ×
+                  </span>
+
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ padding: '4px 10px', fontSize: '13px', fontWeight: 'bold' }}
+                    onClick={() => setUserSalvoCount((prev) => Math.min(totalFormationRounds, prev + 1))}
+                    disabled={effectiveSalvoCount >= totalFormationRounds}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Select Buttons */}
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)', marginRight: '4px' }}>Quick Salvo:</span>
+                {[1, 2, 4, totalFormationRounds]
+                  .filter((v, i, a) => v <= totalFormationRounds && a.indexOf(v) === i)
+                  .map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setUserSalvoCount(num)}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '10px',
+                        borderRadius: '4px',
+                        border: `1px solid ${effectiveSalvoCount === num ? '#FF9800' : 'var(--border)'}`,
+                        background: effectiveSalvoCount === num ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                        color: effectiveSalvoCount === num ? '#FF9800' : 'var(--paper)',
+                        cursor: 'pointer',
+                        fontWeight: effectiveSalvoCount === num ? 700 : 400,
+                      }}
+                    >
+                      {num === totalFormationRounds ? `Full Salvo (${num}x)` : `${num} Round${num > 1 ? 's' : ''}`}
+                    </button>
+                  ))}
+              </div>
+
+              <div style={{ fontSize: '10px', color: '#4FA85F', marginTop: '2px' }}>
+                ✓ Committing <strong>{effectiveSalvoCount} of {totalFormationRounds} rounds</strong>. Post-strike remaining magazine: <strong>{totalFormationRounds - effectiveSalvoCount} rounds</strong>.
+              </div>
+            </div>
+          )}
 
           {/* Step 3: Post-Strike Egress & Recovery Protocol */}
           <div>

@@ -80,6 +80,7 @@ export interface WarSimConsoleProps {
     targetEntityId: string;
     targetLngLat: [number, number];
     weaponIndex: number;
+    salvoCount: number;
     postStrikeAction: import('@/lib/warSimTypes').PostStrikeAction;
     customPostLngLat?: [number, number];
   }) => void;
@@ -1054,6 +1055,9 @@ export function WarSimConsole({
 
                     {weapons.map((w, idx) => {
                       const isActive = activeWeaponIndex === idx;
+                      const isDepleted = w.magazine !== undefined && w.magazine <= 0;
+                      const totalInFormation = selectedEntity.count * (w.magazine ?? 1);
+
                       return (
                         <button
                           key={idx}
@@ -1065,41 +1069,44 @@ export function WarSimConsole({
                             alignItems: 'center',
                             padding: '6px 8px',
                             borderRadius: '5px',
-                            border: `1px solid ${isActive ? '#FF9800' : 'var(--border)'}`,
-                            background: isActive ? 'rgba(255, 152, 0, 0.16)' : '#070C14',
-                            color: isActive ? '#FF9800' : 'var(--paper)',
+                            border: `1px solid ${isActive ? '#FF9800' : isDepleted ? 'rgba(217, 83, 79, 0.4)' : 'var(--border)'}`,
+                            background: isActive
+                              ? 'rgba(255, 152, 0, 0.16)'
+                              : isDepleted
+                                ? 'rgba(217, 83, 79, 0.08)'
+                                : '#070C14',
+                            color: isActive ? '#FF9800' : isDepleted ? '#FF5252' : 'var(--paper)',
                             cursor: 'pointer',
                             textAlign: 'left',
                             transition: 'all 0.15s ease',
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '13px' }}>{isActive ? '🎯' : '🚀'}</span>
+                            <span style={{ fontSize: '13px' }}>{isDepleted ? '⚠️' : isActive ? '🎯' : '🚀'}</span>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <strong style={{ fontSize: '11px', color: isActive ? '#FF9800' : '#FFFFFF' }}>
-                                {w.magazine ? `${w.magazine} × ` : ''}{w.name || `Weapon #${idx + 1}`}
+                              <strong style={{ fontSize: '11px', color: isActive ? '#FF9800' : isDepleted ? '#FF5252' : '#FFFFFF' }}>
+                                {isDepleted ? `0 × ${w.name} (DEPLETED)` : `${w.magazine ? `${w.magazine} × ` : ''}${w.name || `Weapon #${idx + 1}`}`}
                               </strong>
-                              {w.engages && w.engages.length > 0 && (
-                                <span style={{ fontSize: '8.5px', color: 'var(--paper-dim)' }}>
-                                  Engages: {w.engages.join(', ')}
-                                </span>
-                              )}
+                              <span style={{ fontSize: '8.5px', color: isDepleted ? '#FF5252' : 'var(--paper-dim)' }}>
+                                {isDepleted ? 'RTB required to replenish' : `${totalInFormation} Total Rounds in Formation`}
+                                {w.engages && w.engages.length > 0 ? ` · Targets: ${w.engages.join(', ')}` : ''}
+                              </span>
                             </div>
                           </div>
 
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                            <strong style={{ color: '#FF9800', fontSize: '11px' }}>{w.rangeKm} km</strong>
+                            <strong style={{ color: isDepleted ? '#FF5252' : '#FF9800', fontSize: '11px' }}>{w.rangeKm} km</strong>
                             <span
                               style={{
                                 fontSize: '8px',
                                 padding: '1px 4px',
                                 borderRadius: '2px',
                                 fontWeight: 600,
-                                background: isActive ? '#FF9800' : 'rgba(255, 255, 255, 0.06)',
-                                color: isActive ? '#070C14' : 'var(--paper-dim)',
+                                background: isActive ? '#FF9800' : isDepleted ? 'rgba(217, 83, 79, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                                color: isActive ? '#070C14' : isDepleted ? '#FF5252' : 'var(--paper-dim)',
                               }}
                             >
-                              {isActive ? '✓ ON MAP' : 'CLICK TO SHOW'}
+                              {isActive ? '✓ ON MAP' : isDepleted ? 'DEPLETED' : 'CLICK TO SHOW'}
                             </span>
                           </div>
                         </button>

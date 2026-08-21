@@ -677,6 +677,7 @@ export default function EurasiaMap() {
                 params.targetEntityId,
                 params.targetLngLat,
                 params.weaponIndex,
+                params.salvoCount,
                 params.postStrikeAction,
                 params.customPostLngLat
               );

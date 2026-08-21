@@ -20,8 +20,8 @@ import {
   type MissileFlyoutTrack,
 } from './warSimTypes';
 import { type SystemSpec } from './specs';
-import { distanceKm, geodesicRing, greatCirclePath } from './geo';
-import { ensureIcons, unitIconId, type IconSpec } from './unitIcons';
+import { distanceKm, geodesicRing, greatCirclePath, bearingDeg } from './geo';
+import { ensureIcons, ensurePlaybackIcons, unitIconId, type IconSpec } from './unitIcons';
 import { UNIT_BY_ID, type EchelonMark } from './warGames';
 import { isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
 
@@ -51,6 +51,8 @@ const LYR_CONTACTS_LABEL = 'warsim-contacts-label';
 const LYR_PATROLS_LINE = 'warsim-patrols-line';
 const LYR_MISSILES_LINE = 'warsim-missiles-line';
 const LYR_MISSILES_HEAD = 'warsim-missiles-head';
+const LYR_MISSILES_SYMBOL = 'warsim-missiles-symbol';
+const LYR_MISSILES_LABEL = 'warsim-missiles-label';
 
 export function getSimUnitIcon(typeId: string): string {
   switch (typeId) {
@@ -451,11 +453,47 @@ export function installWarSimLayers(map: MLMap) {
     id: LYR_MISSILES_HEAD,
     type: 'circle',
     source: SRC_MISSILES,
+    filter: ['==', '$type', 'Point'],
     paint: {
-      'circle-radius': 4,
+      'circle-radius': 3.5,
       'circle-color': '#FFFFFF',
       'circle-stroke-color': '#FF5252',
-      'circle-stroke-width': 2,
+      'circle-stroke-width': 1.5,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_MISSILES_SYMBOL,
+    type: 'symbol',
+    source: SRC_MISSILES,
+    filter: ['==', '$type', 'Point'],
+    layout: {
+      'icon-image': ['get', 'icon'],
+      'icon-size': 0.9,
+      'icon-rotate': ['get', 'bearing'],
+      'icon-rotation-alignment': 'map',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_MISSILES_LABEL,
+    type: 'symbol',
+    source: SRC_MISSILES,
+    filter: ['==', '$type', 'Point'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 9.5,
+      'text-offset': [0, 1.4],
+      'text-anchor': 'top',
+      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-allow-overlap': false,
+    },
+    paint: {
+      'text-color': '#FF5252',
+      'text-halo-color': '#070C14',
+      'text-halo-width': 2,
     },
   });
 }
@@ -754,19 +792,33 @@ export function renderWarSimStateToMap(
   });
 
   // 5. Render Active Missiles
+  ensurePlaybackIcons(map);
   const missileFeatures: GeoJSON.Feature[] = [];
   session.activeMissiles.forEach((m) => {
+    const bearing = bearingDeg(m.originLngLat, m.targetLngLat);
+    const icon = m.weaponCategory === 'air_to_air'
+      ? 'wg-icon-interceptor'
+      : m.weaponCategory === 'sam'
+        ? 'wg-icon-interceptor'
+        : 'wg-icon-missile';
+
     // Missile line trajectory
     missileFeatures.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: [m.originLngLat, m.currentLngLat] },
-      properties: {},
+      properties: {
+        color: '#FF5252',
+      },
     });
-    // Missile warhead tip
+    // Missile warhead tip with rotating playback vector icon & label
     missileFeatures.push({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: m.currentLngLat },
-      properties: {},
+      properties: {
+        icon,
+        bearing,
+        label: `${m.weaponName} (${m.speedKmh.toFixed(0)} km/h)`,
+      },
     });
   });
   (map.getSource(SRC_MISSILES) as GeoJSONSource)?.setData({
@@ -895,6 +947,8 @@ export function updateWarSimPatrolPreview(
 
 export function removeWarSimLayers(map: MLMap) {
   const layerIds = [
+    LYR_MISSILES_LABEL,
+    LYR_MISSILES_SYMBOL,
     LYR_MISSILES_HEAD,
     LYR_MISSILES_LINE,
     LYR_CONTACTS_LABEL,

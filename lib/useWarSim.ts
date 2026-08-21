@@ -220,6 +220,7 @@ export function useWarSim({
       targetEntityId: string,
       targetLngLat: [number, number],
       weaponIndex: number,
+      salvoCount: number = 1,
       postStrikeAction: PostStrikeAction = 'rtb',
       customPostLngLat?: [number, number]
     ) => {
@@ -231,6 +232,7 @@ export function useWarSim({
           targetEntityId,
           targetLngLat,
           weaponIndex,
+          salvoCount,
           postStrikeAction,
           customPostLngLat,
           systemsLibrary

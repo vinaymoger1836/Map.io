@@ -429,13 +429,18 @@ export function tickWarSim(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'rtb',
           `Unit Landed: ${entity.name}`,
-          `${entity.name} touched down at ${homeBase?.name ?? 'Base'} for ${isDamaged ? 'repairs' : 'refueling'}.`,
+          `${entity.name} touched down at ${homeBase?.name ?? 'Base'} for ${isDamaged ? 'repairs' : 'refueling & re-arming'}.`,
           homeLngLat
         );
+
+        // Replenish full stock weapons loadout & 100% fuel on return to base
+        const stockWeapons = spec?.weapons ? spec.weapons.map((w) => ({ ...w })) : entity.customWeapons;
 
         return {
           ...entity,
           lngLat: homeLngLat,
+          currentFuelPct: 100,
+          customWeapons: stockWeapons,
           status: isDamaged ? 'in_repair' : 'turnaround',
           repairTimerSec: isDamaged ? 45 * 60 : 0, // 45 min repairs
           turnaroundTimerSec: isDamaged ? 0 : 15 * 60, // 15 min turnaround
@@ -507,31 +512,48 @@ export function tickWarSim(
             ? 'torpedo'
             : 'cruise';
 
-        const newMissile: MissileFlyoutTrack = {
-          id: `msl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          originLngLat: entity.lngLat,
-          targetLngLat: targetPos,
-          currentLngLat: entity.lngLat,
-          attackerEntityId: entity.id,
-          targetEntityId: plan.targetEntityId,
-          attackerIso: entity.iso,
-          targetIso: targetEntity?.iso ?? (entity.iso === session.playerIso ? session.enemyIso : session.playerIso),
-          weaponName,
-          weaponCategory: missileCategory,
-          speedKmh: missileSpeed,
-          startSimTimeSec: session.simTimeSec,
-          etaSimTimeSec: session.simTimeSec + Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)),
-          isIntercepted: false,
-          progress: 0,
-        };
+        // Calculate salvo size & deduct ammunition
+        const salvoCount = Math.max(1, plan.salvoCount || 1);
+        const roundsPerUnit = weapon?.magazine ?? 1;
+        const totalRoundsBefore = entity.count * roundsPerUnit;
+        const totalRoundsAfter = Math.max(0, totalRoundsBefore - salvoCount);
+        const updatedMagazinePerUnit = Math.floor(totalRoundsAfter / entity.count);
 
-        session.activeMissiles.push(newMissile);
+        const updatedCustomWeapons = weapons.map((w, idx) => {
+          if (idx !== plan.weaponIndex) return w;
+          return {
+            ...w,
+            magazine: updatedMagazinePerUnit,
+          };
+        });
+
+        // Spawn salvoCount missiles in activeMissiles
+        for (let s = 0; s < salvoCount; s++) {
+          const newMissile: MissileFlyoutTrack = {
+            id: `msl-${Date.now()}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+            originLngLat: entity.lngLat,
+            targetLngLat: targetPos,
+            currentLngLat: entity.lngLat,
+            attackerEntityId: entity.id,
+            targetEntityId: plan.targetEntityId,
+            attackerIso: entity.iso,
+            targetIso: targetEntity?.iso ?? (entity.iso === session.playerIso ? session.enemyIso : session.playerIso),
+            weaponName,
+            weaponCategory: missileCategory,
+            speedKmh: missileSpeed,
+            startSimTimeSec: session.simTimeSec + s * 2,
+            etaSimTimeSec: session.simTimeSec + Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)) + s * 2,
+            isIntercepted: false,
+            progress: 0,
+          };
+          session.activeMissiles.push(newMissile);
+        }
 
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'strike',
           `🚀 Ordnance Released: ${entity.name}`,
-          `${entity.name} launched ${weaponName} against target at ${distToTarget.toFixed(0)} km range. Executing ${plan.postStrikeAction.toUpperCase()} protocol.`,
+          `${entity.name} launched ${salvoCount} × ${weaponName} against target at ${distToTarget.toFixed(0)} km stand-off range (${totalRoundsAfter} total rounds remaining). Executing ${plan.postStrikeAction.toUpperCase()} protocol.`,
           entity.lngLat
         );
 
@@ -541,6 +563,7 @@ export function tickWarSim(
             ...entity,
             status: 'bingo_rtb',
             currentFuelPct: nextFuel,
+            customWeapons: updatedCustomWeapons,
             strikePlan: undefined,
           };
         } else if (plan.postStrikeAction === 'return_to_patrol' && plan.returnPatrolOrder) {
@@ -549,6 +572,7 @@ export function tickWarSim(
             status: 'takeoff_ingress',
             patrolOrder: plan.returnPatrolOrder,
             currentFuelPct: nextFuel,
+            customWeapons: updatedCustomWeapons,
             strikePlan: undefined,
           };
         } else if (plan.postStrikeAction === 'loiter_target') {
@@ -563,6 +587,7 @@ export function tickWarSim(
               emcon: 'active',
             },
             currentFuelPct: nextFuel,
+            customWeapons: updatedCustomWeapons,
             strikePlan: undefined,
           };
         } else if (plan.postStrikeAction === 'designated_waypoint' && plan.customPostLngLat) {
@@ -577,6 +602,7 @@ export function tickWarSim(
               emcon: 'active',
             },
             currentFuelPct: nextFuel,
+            customWeapons: updatedCustomWeapons,
             strikePlan: undefined,
           };
         }
@@ -585,6 +611,7 @@ export function tickWarSim(
           ...entity,
           status: 'bingo_rtb',
           currentFuelPct: nextFuel,
+          customWeapons: updatedCustomWeapons,
           strikePlan: undefined,
         };
       }
@@ -1224,6 +1251,7 @@ export function orderStrikeMission(
   targetEntityId: string,
   targetLngLat: [number, number],
   weaponIndex: number,
+  salvoCount: number = 1,
   postStrikeAction: PostStrikeAction = 'rtb',
   customPostLngLat?: [number, number],
   systemsLibrary: SystemSpec[] = []
@@ -1251,6 +1279,7 @@ export function orderStrikeMission(
     weaponIndex,
     weaponName,
     weaponRangeKm,
+    salvoCount: Math.max(1, salvoCount),
     postStrikeAction,
     returnPatrolOrder: attacker.patrolOrder ? { ...attacker.patrolOrder } : undefined,
     customPostLngLat,
@@ -1268,7 +1297,7 @@ export function orderStrikeMission(
       faction,
       type: 'launch' as const,
       title: `Strike Mission Tasked: ${attacker.name}`,
-      detail: `${attacker.name} tasked on strike mission against ${targetName} using ${weaponName} (Max Range: ${weaponRangeKm} km). Post-strike protocol: ${postStrikeAction.toUpperCase().replace(/_/g, ' ')}.`,
+      detail: `${attacker.name} tasked on strike mission against ${targetName} committing ${salvoCount} × ${weaponName} (Max Range: ${weaponRangeKm} km). Post-strike protocol: ${postStrikeAction.toUpperCase().replace(/_/g, ' ')}.`,
       lngLat: attacker.lngLat,
     },
   ];
