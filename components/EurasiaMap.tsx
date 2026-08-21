@@ -670,8 +670,8 @@ export default function EurasiaMap() {
             onDeployAutonomous={(sysId, count) => {
               warSim.startAutonomousPicking(sysId, count);
             }}
-            onStartSortie={(entity, count) => {
-              warSim.startSortiePicking(entity, count);
+            onStartSortie={(entity, options) => {
+              warSim.startSortiePicking(entity, options);
             }}
             onOrderRtb={warSim.orderRtb}
             onStartBasePlacement={warSim.startBasePlacement}

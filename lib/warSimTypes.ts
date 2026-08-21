@@ -133,6 +133,8 @@ export interface SimEntity {
   personnel: number;
   /** Weapon index -> remaining ready rounds in magazine */
   magazines: Record<number, number>;
+  /** Custom equipped weapon facets configured during pre-mission sortie tasking */
+  customWeapons?: import('./specs').WeaponFacet[];
 }
 
 /* ------------------------------------------------------------------ */

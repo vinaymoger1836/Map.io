@@ -23,6 +23,7 @@ import { type SystemSpec } from './specs';
 import { geodesicRing, greatCirclePath } from './geo';
 import { ensureIcons, unitIconId, type IconSpec } from './unitIcons';
 import { UNIT_BY_ID, type EchelonMark } from './warGames';
+import { isGroundCombatUnit } from './warSimRules';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -36,7 +37,6 @@ const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
-const LYR_ENVELOPES_LABEL = 'warsim-envelopes-label';
 
 const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
@@ -245,24 +245,6 @@ export function installWarSimLayers(map: MLMap) {
       'line-width': ['get', 'lineWidth'],
       'line-dasharray': [3, 2],
       'line-opacity': 0.85,
-    },
-  });
-
-  map.addLayer({
-    id: LYR_ENVELOPES_LABEL,
-    type: 'symbol',
-    source: SRC_ENVELOPES,
-    layout: {
-      'text-field': ['get', 'label'],
-      'text-size': 10,
-      'text-offset': [0, -1],
-      'text-anchor': 'bottom',
-      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
-    },
-    paint: {
-      'text-color': ['get', 'color'],
-      'text-halo-color': '#070C14',
-      'text-halo-width': 1.5,
     },
   });
 
@@ -479,15 +461,23 @@ export function renderWarSimStateToMap(
 
   if (showAllEnvelopes) {
     const activeFriendly = session.entities.filter(
-      (e) => e.iso === factionIso && e.status !== 'destroyed' && e.status !== 'docked'
+      (e) =>
+        e.iso === factionIso &&
+        e.status !== 'destroyed' &&
+        e.status !== 'docked' &&
+        e.status !== 'turnaround' &&
+        e.status !== 'in_repair'
     );
 
     activeFriendly.forEach((e) => {
       const spec = systemsLibrary.find((s) => s.id === e.systemId);
       const isSelected = e.id === selectedEntityId;
 
+      const isGround = isGroundCombatUnit(e.typeId);
       // Sensor horizon envelope
-      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (e.typeId === 'awacs' ? 450 : e.typeId === 'radar' ? 400 : 200);
+      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (
+        isGround ? 8 : e.typeId === 'awacs' ? 450 : e.typeId === 'radar' ? 400 : 200
+      );
       if (detectionRadiusKm > 0) {
         const detectCoords = geodesicRing(e.lngLat, detectionRadiusKm, 48);
         envelopeFeatures.push({
@@ -497,14 +487,15 @@ export function renderWarSimStateToMap(
             color: '#4FC3F7',
             fillOpacity: isSelected ? 0.12 : 0.04,
             lineWidth: isSelected ? 1.8 : 1.0,
-            label: `📡 ${e.name} (${detectionRadiusKm} km)`,
+            label: isGround ? `🔭 ${e.name} (${detectionRadiusKm} km)` : `📡 ${e.name} (${detectionRadiusKm} km)`,
           },
         });
       }
 
       // Weapon range for selected entity if previewing a specific weapon
-      if (isSelected && activeWeaponIndex !== null && activeWeaponIndex !== undefined && spec?.weapons?.[activeWeaponIndex]) {
-        const weapon = spec.weapons[activeWeaponIndex];
+      const weapons = (e.customWeapons && e.customWeapons.length > 0) ? e.customWeapons : (spec?.weapons || []);
+      if (isSelected && activeWeaponIndex !== null && activeWeaponIndex !== undefined && weapons[activeWeaponIndex]) {
+        const weapon = weapons[activeWeaponIndex];
         if (weapon.rangeKm > 0) {
           const engageCoords = geodesicRing(e.lngLat, weapon.rangeKm, 64);
           envelopeFeatures.push({
@@ -526,9 +517,12 @@ export function renderWarSimStateToMap(
 
     if (selectedEntity) {
       const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+      const isGround = isGroundCombatUnit(selectedEntity.typeId);
 
       // 1. Detection / Sensor Horizon Envelope (Always on for selected entity)
-      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250);
+      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (
+        isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
+      );
       if (detectionRadiusKm > 0) {
         const detectCoords = geodesicRing(selectedEntity.lngLat, detectionRadiusKm, 64);
         envelopeFeatures.push({
@@ -538,14 +532,20 @@ export function renderWarSimStateToMap(
             color: '#4FC3F7',
             fillOpacity: 0.08,
             lineWidth: 1.5,
-            label: `📡 ${selectedEntity.name} Sensor Horizon (${detectionRadiusKm} km)`,
+            label: isGround
+              ? `🔭 ${selectedEntity.name} Optic Horizon (${detectionRadiusKm} km)`
+              : `📡 ${selectedEntity.name} Sensor Horizon (${detectionRadiusKm} km)`,
           },
         });
       }
 
       // 2. Weapon Engagement Envelope (Displayed ONLY when a particular weapon is clicked)
-      if (activeWeaponIndex !== null && activeWeaponIndex !== undefined && spec?.weapons && spec.weapons[activeWeaponIndex]) {
-        const weapon = spec.weapons[activeWeaponIndex];
+      const weapons = (selectedEntity.customWeapons && selectedEntity.customWeapons.length > 0)
+        ? selectedEntity.customWeapons
+        : (spec?.weapons || []);
+
+      if (activeWeaponIndex !== null && activeWeaponIndex !== undefined && weapons[activeWeaponIndex]) {
+        const weapon = weapons[activeWeaponIndex];
         const weaponRangeKm = weapon.rangeKm;
         if (weaponRangeKm > 0) {
           const engageCoords = geodesicRing(selectedEntity.lngLat, weaponRangeKm, 64);
@@ -599,7 +599,12 @@ export function renderWarSimStateToMap(
 
   // 2. Render Friendly Entities (In Flight / Patrol / Deployed) with NATO Tactical Chip Icons
   const friendlyEntities = session.entities.filter(
-    (e) => e.iso === factionIso && e.status !== 'destroyed' && e.status !== 'docked'
+    (e) =>
+      e.iso === factionIso &&
+      e.status !== 'destroyed' &&
+      e.status !== 'docked' &&
+      e.status !== 'turnaround' &&
+      e.status !== 'in_repair'
   );
 
   const iconSpecs: IconSpec[] = [];
@@ -609,11 +614,13 @@ export function renderWarSimStateToMap(
     iconSpecs.push(spec);
     const iconId = unitIconId(spec.typeId, spec.mark, spec.color);
 
+    const isGround = isGroundCombatUnit(e.typeId);
+    const cleanName = e.name.replace(/^\d+\s*[×x]\s*/i, '');
     const statusText =
       e.status === 'on_station'
-        ? 'PATROL'
+        ? (isGround ? 'ENTRENCHED' : 'PATROL')
         : e.status === 'takeoff_ingress'
-          ? 'INGRESS'
+          ? (isGround ? 'MARCHING' : 'INGRESS')
           : e.status === 'bingo_rtb'
             ? 'RTB'
             : e.status.toUpperCase();
@@ -625,7 +632,7 @@ export function renderWarSimStateToMap(
         id: e.id,
         selected: isSelected,
         icon: iconId,
-        label: `${e.count > 1 ? `${e.count} × ` : ''}${e.name} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`,
+        label: `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`,
         color: factionColor,
       },
     };
@@ -641,7 +648,7 @@ export function renderWarSimStateToMap(
   // 3. Render Patrol Rings
   const patrolFeatures: GeoJSON.Feature[] = [];
   friendlyEntities.forEach((e) => {
-    if (e.patrolOrder && (e.status === 'on_station' || e.status === 'takeoff_ingress')) {
+    if (e.patrolOrder && (e.status === 'on_station' || e.status === 'takeoff_ingress') && e.patrolOrder.patrolRadiusKm > 0) {
       const ringCoords = geodesicRing(e.patrolOrder.centerLngLat, e.patrolOrder.patrolRadiusKm);
       patrolFeatures.push({
         type: 'Feature',
@@ -708,7 +715,6 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_BASES_CIRCLE,
     LYR_REACH_RING_LINE,
     LYR_REACH_RING_FILL,
-    LYR_ENVELOPES_LABEL,
     LYR_ENVELOPES_LINE,
     LYR_ENVELOPES_FILL,
   ];

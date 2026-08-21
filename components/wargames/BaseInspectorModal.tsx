@@ -14,15 +14,25 @@ import {
   type SimEntity,
   type WarSimSession,
 } from '@/lib/warSimTypes';
-import { type SystemSpec } from '@/lib/specs';
-import { canStationAtBase } from '@/lib/warSimRules';
+import { type SystemSpec, type WeaponFacet } from '@/lib/specs';
+import { canStationAtBase, isGroundCombatUnit } from '@/lib/warSimRules';
+import { SortieTaskingModal } from './SortieTaskingModal';
 
 export interface BaseInspectorModalProps {
   base: SimBase;
   session: WarSimSession;
   onClose: () => void;
   stationedEntities: SimEntity[];
-  onStartSortie: (entity: SimEntity, count?: number) => void;
+  onStartSortie: (
+    entity: SimEntity,
+    options?: {
+      count?: number;
+      customWeapons?: WeaponFacet[];
+      patrolRadiusKm?: number;
+      altitudeM?: number;
+      emcon?: 'active' | 'passive';
+    }
+  ) => void;
   onOrderRtb: (entityId: string) => void;
   onDeployToThisBase: (systemId: string, count: number) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
@@ -46,6 +56,7 @@ export function BaseInspectorModal({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(base.name);
   const [sortieCounts, setSortieCounts] = useState<Record<string, number>>({});
+  const [taskingEntity, setTaskingEntity] = useState<SimEntity | null>(null);
 
   const activeFaction = session.activeFaction;
   const quotaLedger = session.quotas[activeFaction] || {};
@@ -407,28 +418,38 @@ export function BaseInspectorModal({
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '14px', fontSize: '11px', color: 'var(--paper-dim)' }}>
-                    <span>
-                      Fuel:{' '}
-                      <strong style={{ color: entity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
-                        {entity.currentFuelPct.toFixed(0)}%
-                      </strong>
-                    </span>
-                    <span>
-                      Speed: <strong>{entity.speedKmh} km/h</strong>
-                    </span>
-                    <span>
-                      Radius: <strong>{combatRadiusKm} km</strong>
-                    </span>
-                    <span>
-                      Crew: <strong>{entity.personnel} personnel</strong>
-                    </span>
-                  </div>
+                  {(() => {
+                    const isGround = isGroundCombatUnit(entity.typeId);
+                    const rangeDisplay = isGround
+                      ? (spec?.platform?.combatRadiusKm ? spec.platform.combatRadiusKm * 2 : 550)
+                      : combatRadiusKm;
+
+                    return (
+                      <div style={{ display: 'flex', gap: '14px', fontSize: '11px', color: 'var(--paper-dim)' }}>
+                        <span>
+                          Fuel:{' '}
+                          <strong style={{ color: entity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
+                            {entity.currentFuelPct.toFixed(0)}%
+                          </strong>
+                        </span>
+                        <span>
+                          Speed: <strong>{entity.speedKmh} km/h</strong>
+                        </span>
+                        <span>
+                          {isGround ? 'Range' : 'Radius'}: <strong>{rangeDisplay} km</strong>
+                        </span>
+                        <span>
+                          Crew: <strong>{entity.personnel} personnel</strong>
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  {isIdle && (
-                    entity.count > 1 ? (
+                  {isIdle && (() => {
+                    const isGround = isGroundCombatUnit(entity.typeId);
+                    return entity.count > 1 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <div
                           style={{
@@ -499,13 +520,9 @@ export function BaseInspectorModal({
                             padding: '5px 12px',
                             whiteSpace: 'nowrap',
                           }}
-                          onClick={() => {
-                            onClose();
-                            const count = sortieCounts[entity.id] ?? Math.min(2, entity.count);
-                            onStartSortie(entity, count);
-                          }}
+                          onClick={() => setTaskingEntity(entity)}
                         >
-                          🚀 Sortie ({sortieCounts[entity.id] ?? Math.min(2, entity.count)} / {entity.count})
+                          {isGround ? '🗺️ Deploy / March' : '🚀 Sortie / Task'} ({sortieCounts[entity.id] ?? Math.min(2, entity.count)} / {entity.count})
                         </button>
                       </div>
                     ) : (
@@ -519,15 +536,12 @@ export function BaseInspectorModal({
                           fontSize: '11px',
                           padding: '5px 12px',
                         }}
-                        onClick={() => {
-                          onClose();
-                          onStartSortie(entity, 1);
-                        }}
+                        onClick={() => setTaskingEntity(entity)}
                       >
-                        🚀 Sortie / Patrol
+                        {isGround ? '🗺️ Deploy / March' : '🚀 Sortie / Task'}
                       </button>
-                    )
-                  )}
+                    );
+                  })()}
 
                   {isSortied && (
                     <button
@@ -541,7 +555,7 @@ export function BaseInspectorModal({
                       }}
                       onClick={() => onOrderRtb(entity.id)}
                     >
-                      🏠 Recall RTB
+                      {isGroundCombatUnit(entity.typeId) ? '🏠 Recall to Base' : '🏠 Recall RTB'}
                     </button>
                   )}
                 </div>
@@ -565,6 +579,22 @@ export function BaseInspectorModal({
           </button>
         </div>
       </div>
+
+      {/* Pre-Mission Tasking & Loadout Configurator Modal */}
+      {taskingEntity && (
+        <SortieTaskingModal
+          entity={taskingEntity}
+          base={base}
+          session={session}
+          systemsLibrary={systemsLibrary}
+          onClose={() => setTaskingEntity(null)}
+          onConfirmTasking={(params) => {
+            setTaskingEntity(null);
+            onClose();
+            onStartSortie(taskingEntity, params);
+          }}
+        />
+      )}
     </div>
   );
 }

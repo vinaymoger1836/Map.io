@@ -103,6 +103,30 @@ export function defaultBaseCapacity(type: BaseType): number {
   }
 }
 
+/**
+ * Returns true if the typeId represents a land-based ground vehicle, armor, artillery, or infantry formation.
+ */
+export function isGroundCombatUnit(typeId: string): boolean {
+  const t = typeId.toLowerCase();
+  return (
+    t.includes('tank') ||
+    t.includes('mbt') ||
+    t.includes('armor') ||
+    t.includes('armour') ||
+    t.includes('ifv') ||
+    t.includes('apc') ||
+    t.includes('infantry') ||
+    t.includes('mech') ||
+    t.includes('artillery') ||
+    t.includes('mlrs') ||
+    t.includes('special-forces') ||
+    t.includes('engineer') ||
+    t.includes('recon') ||
+    t.includes('mobile-ad') ||
+    t.includes('hq')
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* 2. Fuel, Range & Kinematics Calculations                           */
 /* ------------------------------------------------------------------ */

@@ -24,6 +24,7 @@ import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
+import { isGroundCombatUnit } from '@/lib/warSimRules';
 
 export type WarSimTab = 'systems' | 'bases' | 'intel' | 'log';
 
@@ -43,7 +44,16 @@ export interface WarSimConsoleProps {
   onSelectEntity: (id: string | null) => void;
   onDeployUnitToBase: (baseId: string, systemId: string, count: number) => void;
   onDeployAutonomous: (systemId: string, count: number) => void;
-  onStartSortie: (entity: SimEntity, count?: number) => void;
+  onStartSortie: (
+    entity: SimEntity,
+    options?: {
+      count?: number;
+      customWeapons?: import('@/lib/specs').WeaponFacet[];
+      patrolRadiusKm?: number;
+      altitudeM?: number;
+      emcon?: 'active' | 'passive';
+    }
+  ) => void;
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
@@ -827,192 +837,205 @@ export function WarSimConsole({
       )}
 
       {/* 5. FLOATING ENTITY TACTICAL HUD */}
-      {selectedEntity && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '24px',
-            right: '24px',
-            width: '380px',
-            background: 'rgba(9, 16, 27, 0.96)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(79, 195, 247, 0.4)',
-            borderRadius: '8px',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.8)',
-            zIndex: 620,
-            overflow: 'hidden',
-            fontFamily: 'var(--font-sans, system-ui, sans-serif)',
-            color: 'var(--paper)',
-          }}
-        >
-          {/* Header */}
+      {selectedEntity && (() => {
+        const isGround = isGroundCombatUnit(selectedEntity.typeId);
+        const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+        const detectionKm = spec?.sensor?.detectionKm ?? (
+          isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
+        );
+        const statusLabel =
+          selectedEntity.status === 'on_station'
+            ? (isGround ? 'ENTRENCHED' : 'PATROL')
+            : selectedEntity.status === 'takeoff_ingress'
+              ? (isGround ? 'ROAD MARCH' : 'TAKEOFF INGRESS')
+              : selectedEntity.status.replace('_', ' ').toUpperCase();
+
+        return (
           <div
             style={{
-              padding: '10px 14px',
-              background: 'rgba(79, 195, 247, 0.08)',
-              borderBottom: '1px solid var(--border)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              position: 'absolute',
+              bottom: '24px',
+              right: '24px',
+              width: '380px',
+              background: 'rgba(9, 16, 27, 0.96)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(79, 195, 247, 0.4)',
+              borderRadius: '8px',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.8)',
+              zIndex: 620,
+              overflow: 'hidden',
+              fontFamily: 'var(--font-sans, system-ui, sans-serif)',
+              color: 'var(--paper)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px' }}>{getSimUnitIcon(selectedEntity.typeId)}</span>
-              <div>
-                <strong style={{ fontSize: '13px', color: '#FFFFFF' }}>{selectedEntity.name}</strong>
-                <div style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
-                  {countries?.find((c) => c.iso === selectedEntity.iso)?.name || selectedEntity.iso} Tactical Formation · {selectedEntity.personnel} Personnel
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onSelectEntity(null)}
-              style={{ background: 'none', border: 'none', color: 'var(--paper-dim)', cursor: 'pointer', fontSize: '16px' }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Kinematics & Status */}
-          <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-              <span>
-                Status:{' '}
-                <strong style={{ color: selectedEntity.status === 'on_station' ? '#BA68C8' : '#4FA85F' }}>
-                  {selectedEntity.status.replace('_', ' ').toUpperCase()}
-                </strong>
-              </span>
-              <span>
-                Fuel:{' '}
-                <strong style={{ color: selectedEntity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
-                  {selectedEntity.currentFuelPct.toFixed(0)}%
-                </strong>
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-              <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
-              <span>Altitude: <strong>{(selectedEntity.altitudeM / 1000).toFixed(1)} km</strong></span>
-              <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
-            </div>
-
-            {/* Sensor / Radar Horizon (Always Active on Map by default) */}
+            {/* Header */}
             <div
               style={{
-                marginTop: '2px',
-                padding: '6px 10px',
+                padding: '10px 14px',
                 background: 'rgba(79, 195, 247, 0.08)',
-                borderRadius: '5px',
-                border: '1px solid rgba(79, 195, 247, 0.25)',
+                borderBottom: '1px solid var(--border)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                fontSize: '11px',
               }}
             >
-              <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>📡</span>
-                <span>Radar / Sensor Horizon:</span>
-              </span>
-              <strong style={{ color: '#4FC3F7' }}>
-                {systemsLibrary.find((s) => s.id === selectedEntity.systemId)?.sensor?.detectionKm ?? 250} km
-              </strong>
-            </div>
-
-            {/* Equipped Weapons Arsenal & Interactive Range Toggles */}
-            {(() => {
-              const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
-              const weapons = spec?.weapons || [];
-
-              if (weapons.length === 0) return null;
-
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
-                    Equipped Weapons (Click to toggle range envelope):
-                  </span>
-
-                  {weapons.map((w, idx) => {
-                    const isActive = activeWeaponIndex === idx;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => onToggleWeapon?.(idx)}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '6px 8px',
-                          borderRadius: '5px',
-                          border: `1px solid ${isActive ? '#FF9800' : 'var(--border)'}`,
-                          background: isActive ? 'rgba(255, 152, 0, 0.16)' : '#070C14',
-                          color: isActive ? '#FF9800' : 'var(--paper)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '13px' }}>{isActive ? '🎯' : '🚀'}</span>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <strong style={{ fontSize: '11px', color: isActive ? '#FF9800' : '#FFFFFF' }}>
-                              {w.name || `Weapon #${idx + 1}`}
-                            </strong>
-                            {w.engages && w.engages.length > 0 && (
-                              <span style={{ fontSize: '8.5px', color: 'var(--paper-dim)' }}>
-                                Engages: {w.engages.join(', ')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                          <strong style={{ color: '#FF9800', fontSize: '11px' }}>{w.rangeKm} km</strong>
-                          <span
-                            style={{
-                              fontSize: '8px',
-                              padding: '1px 4px',
-                              borderRadius: '2px',
-                              fontWeight: 600,
-                              background: isActive ? '#FF9800' : 'rgba(255, 255, 255, 0.06)',
-                              color: isActive ? '#070C14' : 'var(--paper-dim)',
-                            }}
-                          >
-                            {isActive ? '✓ ON MAP' : 'CLICK TO SHOW'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>{getSimUnitIcon(selectedEntity.typeId)}</span>
+                <div>
+                  <strong style={{ fontSize: '13px', color: '#FFFFFF' }}>{selectedEntity.name}</strong>
+                  <div style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                    {countries?.find((c) => c.iso === selectedEntity.iso)?.name || selectedEntity.iso}{' '}
+                    {isGround ? 'Ground Formation' : 'Tactical Formation'} · {selectedEntity.personnel} Personnel
+                  </div>
                 </div>
-              );
-            })()}
-
-            {/* Quick Tactical Actions */}
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              {(selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
-                <button
-                  className="wg-btn"
-                  style={{ flex: 1, fontSize: '11px', padding: '5px', borderColor: '#FFB020', color: '#FFB020' }}
-                  onClick={() => onOrderRtb(selectedEntity.id)}
-                >
-                  🏠 Order RTB
-                </button>
-              )}
+              </div>
 
               <button
-                className="wg-btn accent"
-                style={{ flex: 1, fontSize: '11px', padding: '5px', fontWeight: 600 }}
-                onClick={() => onStartSortie(selectedEntity)}
+                onClick={() => onSelectEntity(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--paper-dim)', cursor: 'pointer', fontSize: '16px' }}
               >
-                🎯 Retask Patrol
+                ✕
               </button>
             </div>
+
+            {/* Kinematics & Status */}
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                <span>
+                  Status:{' '}
+                  <strong style={{ color: selectedEntity.status === 'on_station' ? '#BA68C8' : '#4FA85F' }}>
+                    {statusLabel}
+                  </strong>
+                </span>
+                <span>
+                  Fuel:{' '}
+                  <strong style={{ color: selectedEntity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
+                    {selectedEntity.currentFuelPct.toFixed(0)}%
+                  </strong>
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
+                <span>Altitude: <strong>{isGround ? '0 m (Ground)' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
+                <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+              </div>
+
+              {/* Sensor / Sight Horizon */}
+              <div
+                style={{
+                  marginTop: '2px',
+                  padding: '6px 10px',
+                  background: 'rgba(79, 195, 247, 0.08)',
+                  borderRadius: '5px',
+                  border: '1px solid rgba(79, 195, 247, 0.25)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '11px',
+                }}
+              >
+                <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>{isGround ? '🔭' : '📡'}</span>
+                  <span>{isGround ? 'Thermal & Optical Sight Horizon:' : 'Radar / Sensor Horizon:'}</span>
+                </span>
+                <strong style={{ color: '#4FC3F7' }}>
+                  {detectionKm} km
+                </strong>
+              </div>
+
+              {/* Equipped Weapons Arsenal & Interactive Range Toggles */}
+              {(() => {
+                const weapons = spec?.weapons || [];
+                if (weapons.length === 0) return null;
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                    <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
+                      Equipped Weapons (Click to toggle range envelope):
+                    </span>
+
+                    {weapons.map((w, idx) => {
+                      const isActive = activeWeaponIndex === idx;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => onToggleWeapon?.(idx)}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '6px 8px',
+                            borderRadius: '5px',
+                            border: `1px solid ${isActive ? '#FF9800' : 'var(--border)'}`,
+                            background: isActive ? 'rgba(255, 152, 0, 0.16)' : '#070C14',
+                            color: isActive ? '#FF9800' : 'var(--paper)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '13px' }}>{isActive ? '🎯' : '🚀'}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <strong style={{ fontSize: '11px', color: isActive ? '#FF9800' : '#FFFFFF' }}>
+                                {w.name || `Weapon #${idx + 1}`}
+                              </strong>
+                              {w.engages && w.engages.length > 0 && (
+                                <span style={{ fontSize: '8.5px', color: 'var(--paper-dim)' }}>
+                                  Engages: {w.engages.join(', ')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                            <strong style={{ color: '#FF9800', fontSize: '11px' }}>{w.rangeKm} km</strong>
+                            <span
+                              style={{
+                                fontSize: '8px',
+                                padding: '1px 4px',
+                                borderRadius: '2px',
+                                fontWeight: 600,
+                                background: isActive ? '#FF9800' : 'rgba(255, 255, 255, 0.06)',
+                                color: isActive ? '#070C14' : 'var(--paper-dim)',
+                              }}
+                            >
+                              {isActive ? '✓ ON MAP' : 'CLICK TO SHOW'}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Quick Tactical Actions */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                {(selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
+                  <button
+                    className="wg-btn"
+                    style={{ flex: 1, fontSize: '11px', padding: '5px', borderColor: '#FFB020', color: '#FFB020' }}
+                    onClick={() => onOrderRtb(selectedEntity.id)}
+                  >
+                    {isGround ? '🏠 Return to Base' : '🏠 Order RTB'}
+                  </button>
+                )}
+
+                <button
+                  className="wg-btn accent"
+                  style={{ flex: 1, fontSize: '11px', padding: '5px', fontWeight: 600 }}
+                  onClick={() => onStartSortie(selectedEntity)}
+                >
+                  {isGround ? '📍 Relocate Position' : '🎯 Retask Patrol'}
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }

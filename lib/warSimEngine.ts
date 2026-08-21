@@ -30,6 +30,7 @@ import {
   defaultBaseCapacity,
   calculateFuelBurnPct,
   calculateBingoFuelThreshold,
+  isGroundCombatUnit,
 } from './warSimRules';
 import {
   type SystemSpec,
@@ -226,19 +227,25 @@ export function tickWarSim(
         };
       }
 
-      if (distToTarget <= Math.max(8, stepDistanceKm)) {
-        // Arrived at patrol station
+      const isGround = isGroundCombatUnit(entity.typeId);
+      const effectiveAlt = isGround ? 0 : entity.altitudeM;
+
+      if (distToTarget <= Math.max(isGround ? 4 : 8, stepDistanceKm)) {
+        // Arrived at destination / station
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'rtb',
-          `On Station: ${entity.name}`,
-          `${entity.name} established patrol orbit at designated coordinates.`,
+          isGround ? `Unit In Position: ${entity.name}` : `On Station: ${entity.name}`,
+          isGround
+            ? `${entity.name} arrived at destination coordinates and assumed defensive posture.`
+            : `${entity.name} established patrol orbit at designated coordinates.`,
           targetPos
         );
         return {
           ...entity,
           lngLat: targetPos,
           status: 'on_station',
+          altitudeM: effectiveAlt,
           currentFuelPct: nextFuel,
         };
       }
@@ -252,15 +259,26 @@ export function tickWarSim(
         ...entity,
         lngLat: nextLngLat,
         headingDeg: nextHeading,
+        altitudeM: effectiveAlt,
         currentFuelPct: nextFuel,
       };
     }
 
-    // E. On Station Loitering Orbit
+    // E. On Station / Holding Position
     if (entity.status === 'on_station' && entity.patrolOrder) {
+      const isGround = isGroundCombatUnit(entity.typeId);
       const { centerLngLat, patrolRadiusKm, orbitAngleDeg } = entity.patrolOrder;
+
+      // Ground formations stay stationary at designated ground position
+      if (isGround || patrolRadiusKm <= 0) {
+        return {
+          ...entity,
+          lngLat: centerLngLat,
+          altitudeM: 0,
+        };
+      }
       
-      // Calculate angular step around orbit
+      // Calculate angular step around orbit for aircraft / surface ships
       const circumferenceKm = 2 * Math.PI * Math.max(5, patrolRadiusKm);
       const stepDistKm = (speedKmh / 3600) * dtSimSec;
       const angleStepDeg = (stepDistKm / circumferenceKm) * 360;
@@ -440,9 +458,20 @@ export function tickWarSim(
       for (const scanner of scanners) {
         const scanSpec = systemsLibrary.find((s) => s.id === scanner.systemId);
         const dist = distanceKm(scanner.lngLat, target.lngLat);
-        
+        const isGroundScanner = isGroundCombatUnit(scanner.typeId);
+
+        // Ground combat vehicles (tanks, IFVs, artillery, infantry) have optical/thermal sights (~8 km)
+        // and CANNOT detect high-altitude aircraft!
+        if (isGroundScanner && scanner.typeId !== 'mobile-ad' && scanner.typeId !== 'sam-launcher') {
+          if (targetDomain === 'air' && (target.altitudeM ?? 0) > 300) {
+            continue;
+          }
+        }
+
         // Sensor detection envelope
-        let maxRadarKm = scanSpec?.sensor?.detectionKm ?? (scanner.typeId === 'awacs' ? 450 : 220);
+        let maxRadarKm = scanSpec?.sensor?.detectionKm ?? (
+          isGroundScanner ? 8 : scanner.typeId === 'awacs' ? 450 : 220
+        );
         if (scanner.patrolOrder?.emcon === 'passive') {
           maxRadarKm = 0; // Passive silent running
         }
@@ -463,15 +492,15 @@ export function tickWarSim(
             bestTier = Math.max(bestTier, 1) as 1 | 2;
           }
         } else if (dist <= maxRadarKm) {
-          // Detected on Radar (Tier 1)
+          // Detected on Radar / Optics (Tier 1)
           bestTier = Math.max(bestTier, 1) as 1 | 2;
 
-          // If Recon Drone or SOF team or within visual range (<= 30 km), upgrade to PID (Tier 2)
+          // If Recon Drone or SOF team or within visual optic range (<= 15 km), upgrade to PID (Tier 2)
           if (
             scanner.typeId === 'uav' ||
             scanner.typeId === 'recon' ||
             scanner.typeId === 'special-forces' ||
-            dist <= 35
+            dist <= (isGroundScanner ? 8 : 35)
           ) {
             bestTier = 2;
           }
@@ -688,28 +717,34 @@ export function orderPatrol(
   session: WarSimSession,
   entityId: string,
   centerLngLat: [number, number],
-  patrolRadiusKm: number = 80,
+  patrolRadiusKm: number = 15,
   altitudeM: number = 7000,
   emcon: 'active' | 'passive' = 'active',
-  sortieCount?: number
+  sortieCount?: number,
+  customWeapons?: import('./specs').WeaponFacet[]
 ): WarSimSession {
   const targetEntity = session.entities.find((e) => e.id === entityId);
   if (!targetEntity || targetEntity.status === 'destroyed' || targetEntity.status === 'in_repair') {
     return session;
   }
 
+  const isGround = isGroundCombatUnit(targetEntity.typeId);
+  const effectiveRadiusKm = isGround ? 0 : patrolRadiusKm;
+  const effectiveAltM = isGround ? 0 : altitudeM;
+
   const effectiveCount = Math.max(1, Math.min(targetEntity.count, sortieCount ?? targetEntity.count));
   const isPartialSplit = effectiveCount < targetEntity.count && targetEntity.status === 'docked';
 
   const patrolOrder: PatrolOrder = {
     centerLngLat,
-    patrolRadiusKm,
-    altitudeM,
+    patrolRadiusKm: effectiveRadiusKm,
+    altitudeM: effectiveAltM,
     orbitAngleDeg: 0,
     emcon,
   };
 
   const faction: 'player' | 'enemy' = targetEntity.iso === session.playerIso ? 'player' : 'enemy';
+  const cleanName = targetEntity.name.replace(/^\d+\s*[×x]\s*/i, '');
 
   if (isPartialSplit) {
     const remainingCount = targetEntity.count - effectiveCount;
@@ -717,6 +752,7 @@ export function orderPatrol(
 
     const updatedDockedEntity: SimEntity = {
       ...targetEntity,
+      name: `${remainingCount > 1 ? `${remainingCount} × ` : ''}${cleanName}`,
       count: remainingCount,
       personnel: remainingCount * personnelPerUnit,
     };
@@ -724,11 +760,13 @@ export function orderPatrol(
     const sortieEntity: SimEntity = {
       ...targetEntity,
       id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+      name: `${effectiveCount > 1 ? `${effectiveCount} × ` : ''}${cleanName}`,
       count: effectiveCount,
       personnel: effectiveCount * personnelPerUnit,
       status: 'takeoff_ingress',
       patrolOrder,
-      altitudeM,
+      altitudeM: effectiveAltM,
+      customWeapons: customWeapons || targetEntity.customWeapons,
     };
 
     const homeBase = session.bases.find((b) => b.id === targetEntity.homeBaseId);
@@ -752,8 +790,10 @@ export function orderPatrol(
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
         type: 'rtb' as const,
-        title: `Sortie Launched: ${effectiveCount} × ${targetEntity.name}`,
-        detail: `Detached ${effectiveCount} × ${targetEntity.name} (${remainingCount} remaining at base) on designated patrol mission.`,
+        title: isGround ? `Ground Movement: ${effectiveCount} × ${cleanName}` : `Sortie Launched: ${effectiveCount} × ${cleanName}`,
+        detail: isGround
+          ? `Dispatched ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on road march to designated coordinates.`
+          : `Detached ${effectiveCount} × ${cleanName} (${remainingCount} remaining at base) on designated patrol mission.`,
         lngLat: centerLngLat,
       },
     ];
@@ -771,7 +811,8 @@ export function orderPatrol(
         ...e,
         status: 'takeoff_ingress' as const,
         patrolOrder,
-        altitudeM,
+        altitudeM: effectiveAltM,
+        customWeapons: customWeapons || e.customWeapons,
       };
     });
 
@@ -783,8 +824,10 @@ export function orderPatrol(
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
         type: 'rtb' as const,
-        title: `Sortie Launched: ${targetEntity.count > 1 ? `${targetEntity.count} × ` : ''}${targetEntity.name}`,
-        detail: `${targetEntity.name} (${targetEntity.count}x) departed base and is en route to designated patrol coordinates.`,
+        title: isGround ? `Ground Movement: ${cleanName}` : `Sortie Launched: ${cleanName}`,
+        detail: isGround
+          ? `${cleanName} (${targetEntity.count}x) departed base and is en route to designated defensive position.`
+          : `${cleanName} (${targetEntity.count}x) departed base and is en route to designated patrol coordinates.`,
         lngLat: centerLngLat,
       },
     ];

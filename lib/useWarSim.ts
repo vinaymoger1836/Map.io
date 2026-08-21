@@ -27,6 +27,7 @@ import {
   renameSimBase,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
+import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
 
 export interface TargetPickingState {
@@ -39,6 +40,10 @@ export interface TargetPickingState {
   originLngLat?: [number, number];
   maxRangeKm?: number;
   label?: string;
+  patrolRadiusKm?: number;
+  altitudeM?: number;
+  emcon?: 'active' | 'passive';
+  customWeapons?: import('./specs').WeaponFacet[];
 }
 
 export interface UseWarSimProps {
@@ -176,10 +181,18 @@ export function useWarSim({
   );
 
   const orderSortieToPoint = useCallback(
-    (entityId: string, targetLngLat: [number, number], patrolRadiusKm: number = 80, sortieCount?: number) => {
+    (
+      entityId: string,
+      targetLngLat: [number, number],
+      patrolRadiusKm: number = 15,
+      sortieCount?: number,
+      altitudeM: number = 7000,
+      emcon: 'active' | 'passive' = 'active',
+      customWeapons?: import('./specs').WeaponFacet[]
+    ) => {
       setSession((prev) => {
         if (!prev) return null;
-        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, 7000, 'active', sortieCount);
+        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, altitudeM, emcon, sortieCount, customWeapons);
       });
       setTargetPicking(null);
     },
@@ -220,8 +233,18 @@ export function useWarSim({
   );
 
   const startSortiePicking = useCallback(
-    (entity: SimEntity, requestedCount?: number) => {
+    (
+      entity: SimEntity,
+      options?: {
+        count?: number;
+        customWeapons?: import('./specs').WeaponFacet[];
+        patrolRadiusKm?: number;
+        altitudeM?: number;
+        emcon?: 'active' | 'passive';
+      }
+    ) => {
       const spec = systemsLibrary.find((s) => s.id === entity.systemId);
+      const isGround = isGroundCombatUnit(entity.typeId);
       const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (entity.typeId === 'fighter' ? 900 : 1500);
 
       // Check if tanker support is present in theater (extends radius by +75%)
@@ -229,12 +252,15 @@ export function useWarSim({
       const hasTanker = sessionRef.current?.entities.some(
         (e) => e.iso === iso && e.status === 'on_station' && e.typeId === 'tanker'
       );
-      const effectiveRadiusKm = hasTanker ? combatRadiusKm * 1.75 : combatRadiusKm;
+      const effectiveRadiusKm = isGround
+        ? (spec?.platform?.combatRadiusKm ? spec.platform.combatRadiusKm * 2 : 600)
+        : (hasTanker ? combatRadiusKm * 1.75 : combatRadiusKm);
 
       const base = sessionRef.current?.bases.find((b) => b.id === entity.homeBaseId);
       const originLngLat = base?.lngLat ?? entity.lngLat;
 
-      const taskCount = requestedCount ?? entity.count;
+      const taskCount = options?.count ?? entity.count;
+      const cleanName = entity.name.replace(/^\d+\s*[×x]\s*/i, '');
 
       setTargetPicking({
         mode: 'sortie',
@@ -242,7 +268,13 @@ export function useWarSim({
         count: taskCount,
         originLngLat,
         maxRangeKm: effectiveRadiusKm,
-        label: `Select Patrol Point for ${taskCount > 1 ? `${taskCount} × ` : ''}${entity.name} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
+        patrolRadiusKm: options?.patrolRadiusKm,
+        altitudeM: options?.altitudeM,
+        emcon: options?.emcon,
+        customWeapons: options?.customWeapons,
+        label: isGround
+          ? `Click on map to deploy ${taskCount > 1 ? `${taskCount} × ` : ''}${cleanName} (Road Range: ${effectiveRadiusKm.toFixed(0)} km)`
+          : `Select Patrol Point for ${taskCount > 1 ? `${taskCount} × ` : ''}${cleanName} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
       });
     },
     [systemsLibrary]
@@ -323,7 +355,15 @@ export function useWarSim({
       if (!targetPicking) return;
 
       if (targetPicking.mode === 'sortie' && targetPicking.entityId) {
-        orderSortieToPoint(targetPicking.entityId, lngLat, 80, targetPicking.count);
+        orderSortieToPoint(
+          targetPicking.entityId,
+          lngLat,
+          targetPicking.patrolRadiusKm ?? 15,
+          targetPicking.count,
+          targetPicking.altitudeM ?? 7000,
+          targetPicking.emcon ?? 'active',
+          targetPicking.customWeapons
+        );
       } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
         deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
       } else if (targetPicking.mode === 'place_base' && targetPicking.baseType) {
