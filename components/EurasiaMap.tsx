@@ -664,6 +664,7 @@ export default function EurasiaMap() {
             }}
             onOrderRtb={warSim.orderSortieToPoint ? (id) => warSim.orderSortieToPoint(id, [0, 0], 0) : () => {}}
             onStartBasePlacement={warSim.startBasePlacement}
+            onRenameBase={warSim.renameBase}
             targetPicking={warSim.targetPicking}
             onCancelTargetPicking={warSim.cancelTargetPicking}
             onOpenAar={() => setWarSimAarOpen(true)}

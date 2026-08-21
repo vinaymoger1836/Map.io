@@ -239,39 +239,6 @@ export function useWarSim({
     [systemsLibrary]
   );
 
-  const startBasePlacement = useCallback(
-    (baseType: BaseType, baseName?: string) => {
-      setTargetPicking({
-        mode: 'place_base',
-        baseType,
-        baseName,
-        label: `Click on map to construct ${baseName || baseType.replace('_', ' ').toUpperCase()}`,
-      });
-    },
-    []
-  );
-
-  const cancelTargetPicking = useCallback(() => {
-    setTargetPicking(null);
-  }, []);
-
-  const confirmTargetPick = useCallback(
-    (lngLat: [number, number]) => {
-      if (!targetPicking) return;
-
-      if (targetPicking.mode === 'sortie' && targetPicking.entityId) {
-        orderSortieToPoint(targetPicking.entityId, lngLat, 80);
-      } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
-        deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
-      } else if (targetPicking.mode === 'place_base' && targetPicking.baseType) {
-        const iso = session?.activeFaction === 'player' ? session?.playerIso : session?.enemyIso;
-        const defaultName = `${iso} ${targetPicking.baseType.replace('_', ' ').toUpperCase()} #${friendlyBases.length + 1}`;
-        createBaseAtLocation(targetPicking.baseName?.trim() || defaultName, targetPicking.baseType, lngLat);
-      }
-    },
-    [targetPicking, orderSortieToPoint, deployAutonomousBattery, createBaseAtLocation, session, friendlyBases.length]
-  );
-
   // -------------------------------------------------------------
   // Filtered State per Active Perspective
   // -------------------------------------------------------------
@@ -308,6 +275,43 @@ export function useWarSim({
   const selectedContact = useMemo(() => {
     return visibleContacts.find((c) => c.contactId === selectedContactId) ?? null;
   }, [visibleContacts, selectedContactId]);
+
+  // -------------------------------------------------------------
+  // Target Picking Handlers (Sortie target, Base placement, SAM battery)
+  // -------------------------------------------------------------
+
+  const startBasePlacement = useCallback(
+    (baseType: BaseType, baseName?: string) => {
+      setTargetPicking({
+        mode: 'place_base',
+        baseType,
+        baseName,
+        label: `Click on map to construct ${baseName || baseType.replace('_', ' ').toUpperCase()}`,
+      });
+    },
+    []
+  );
+
+  const cancelTargetPicking = useCallback(() => {
+    setTargetPicking(null);
+  }, []);
+
+  const confirmTargetPick = useCallback(
+    (lngLat: [number, number]) => {
+      if (!targetPicking) return;
+
+      if (targetPicking.mode === 'sortie' && targetPicking.entityId) {
+        orderSortieToPoint(targetPicking.entityId, lngLat, 80);
+      } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
+        deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
+      } else if (targetPicking.mode === 'place_base' && targetPicking.baseType) {
+        const iso = session?.activeFaction === 'player' ? session?.playerIso : session?.enemyIso;
+        const defaultName = `${iso} ${targetPicking.baseType.replace('_', ' ').toUpperCase()} #${friendlyBases.length + 1}`;
+        createBaseAtLocation(targetPicking.baseName?.trim() || defaultName, targetPicking.baseType, lngLat);
+      }
+    },
+    [targetPicking, orderSortieToPoint, deployAutonomousBattery, createBaseAtLocation, session, friendlyBases.length]
+  );
 
   return {
     session,

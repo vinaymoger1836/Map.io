@@ -25,6 +25,7 @@ export interface BaseInspectorModalProps {
   onStartSortie: (entity: SimEntity) => void;
   onOrderRtb: (entityId: string) => void;
   onDeployToThisBase: (systemId: string, count: number) => void;
+  onRenameBase?: (baseId: string, newName: string) => void;
   systemsLibrary: SystemSpec[];
 }
 
@@ -36,11 +37,14 @@ export function BaseInspectorModal({
   onStartSortie,
   onOrderRtb,
   onDeployToThisBase,
+  onRenameBase,
   systemsLibrary,
 }: BaseInspectorModalProps) {
   const [quickDeployOpen, setQuickDeployOpen] = useState(false);
   const [selectedSysId, setSelectedSysId] = useState<string>('');
   const [deployCount, setDeployCount] = useState<number>(12);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(base.name);
 
   const activeFaction = session.activeFaction;
   const quotaLedger = session.quotas[activeFaction] || {};
@@ -137,9 +141,68 @@ export function BaseInspectorModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '24px' }}>{getBaseIcon(base.type)}</span>
             <div>
-              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>
-                {base.name}
-              </h2>
+              {isEditingName ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    style={{
+                      background: '#070C14',
+                      border: '1px solid #4FC3F7',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      color: '#FFFFFF',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    className="wg-btn accent"
+                    style={{ padding: '2px 8px', fontSize: '11px' }}
+                    onClick={() => {
+                      if (onRenameBase && editName.trim()) {
+                        onRenameBase(base.id, editName.trim());
+                      }
+                      setIsEditingName(false);
+                    }}
+                  >
+                    ✓ Save
+                  </button>
+                  <button
+                    className="wg-btn"
+                    style={{ padding: '2px 6px', fontSize: '11px' }}
+                    onClick={() => {
+                      setEditName(base.name);
+                      setIsEditingName(false);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>
+                    {base.name}
+                  </h2>
+                  <button
+                    onClick={() => setIsEditingName(true)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#4FC3F7',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      padding: '1px 4px',
+                      borderRadius: '3px',
+                    }}
+                    title="Rename this installation"
+                  >
+                    ✏️ Rename
+                  </button>
+                </div>
+              )}
               <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>
                 {base.type.replace('_', ' ').toUpperCase()} · Sovereign {base.iso} Territory · Location: [{base.lngLat[0].toFixed(2)}°, {base.lngLat[1].toFixed(2)}°]
               </span>

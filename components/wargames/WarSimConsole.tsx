@@ -46,6 +46,7 @@ export interface WarSimConsoleProps {
   onStartSortie: (entity: SimEntity) => void;
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
+  onRenameBase?: (baseId: string, newName: string) => void;
   targetPicking: {
     mode: 'sortie' | 'place_autonomous' | 'place_base';
     label?: string;
@@ -76,6 +77,7 @@ export function WarSimConsole({
   onStartSortie,
   onOrderRtb,
   onStartBasePlacement,
+  onRenameBase,
   targetPicking,
   onCancelTargetPicking,
   onOpenAar,
@@ -88,6 +90,7 @@ export function WarSimConsole({
   const [deployModalSpec, setDeployModalSpec] = useState<{ spec: SystemSpec; quota: QuotaAllocation } | null>(null);
   const [systemDomainFilter, setSystemDomainFilter] = useState<string>('all');
   const [newBaseType, setNewBaseType] = useState<BaseType>('airbase');
+  const [customBaseName, setCustomBaseName] = useState<string>('');
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -529,43 +532,72 @@ export function WarSimConsole({
                     background: '#09101B',
                     border: '1px solid var(--border)',
                     borderRadius: '6px',
-                    padding: '10px',
+                    padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
+                    gap: '8px',
                   }}
                 >
-                  <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)' }}>
+                  <span style={{ fontSize: '10.5px', textTransform: 'uppercase', color: '#4FC3F7', fontWeight: 600 }}>
                     Construct Sovereign Base
                   </span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', color: 'var(--paper-dim)', marginBottom: '2px' }}>
+                      Base Installation Type:
+                    </label>
                     <select
                       value={newBaseType}
                       onChange={(e) => setNewBaseType(e.target.value as BaseType)}
                       style={{
-                        flex: 1,
+                        width: '100%',
                         background: '#0E1724',
                         border: '1px solid var(--border)',
                         color: 'var(--paper)',
                         fontSize: '11px',
-                        padding: '4px 6px',
+                        padding: '5px 8px',
                         borderRadius: '3px',
                       }}
                     >
-                      <option value="airbase">🛫 Airstrip / Airbase</option>
-                      <option value="naval_base">⚓ Naval Station / Port</option>
-                      <option value="army_base">🛡️ Forward Base (FOB) / HQ</option>
-                      <option value="silo_complex">🚀 Silo / SAM Site</option>
+                      <option value="airbase">🛫 Airstrip / Airbase (36 aircraft)</option>
+                      <option value="naval_base">⚓ Naval Station / Port (8 warships/subs)</option>
+                      <option value="army_base">🛡️ Forward Base (FOB) / HQ (24 battalions)</option>
+                      <option value="silo_complex">🚀 Silo / SAM Site (Strategic)</option>
                     </select>
-
-                    <button
-                      className="wg-btn accent"
-                      style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 600 }}
-                      onClick={() => onStartBasePlacement(newBaseType)}
-                    >
-                      + Build
-                    </button>
                   </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', color: 'var(--paper-dim)', marginBottom: '2px' }}>
+                      Custom Base Name:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={`e.g. ${activeCountryIso} ${newBaseType === 'airbase' ? 'Central Airbase' : newBaseType === 'naval_base' ? 'Fleet Port' : 'Forward HQ'}`}
+                      value={customBaseName}
+                      onChange={(e) => setCustomBaseName(e.target.value)}
+                      style={{
+                        width: '100%',
+                        background: '#0E1724',
+                        border: '1px solid var(--border)',
+                        color: 'var(--paper)',
+                        fontSize: '11px',
+                        padding: '5px 8px',
+                        borderRadius: '3px',
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    className="wg-btn accent"
+                    style={{ fontSize: '11px', padding: '6px', fontWeight: 600, marginTop: '2px' }}
+                    onClick={() => {
+                      const finalName = customBaseName.trim() || `${activeCountryIso} ${newBaseType.replace('_', ' ').toUpperCase()} #${friendlyBases.length + 1}`;
+                      onStartBasePlacement(newBaseType, finalName);
+                      setCustomBaseName('');
+                    }}
+                  >
+                    📍 Place Base on Map
+                  </button>
                 </div>
 
                 <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase' }}>
