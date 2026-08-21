@@ -752,6 +752,131 @@ export function WarSimConsole({
           systemsLibrary={systemsLibrary}
         />
       )}
+
+      {/* 5. FLOATING ENTITY TACTICAL HUD */}
+      {selectedEntity && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '24px',
+            right: '24px',
+            width: '380px',
+            background: 'rgba(9, 16, 27, 0.96)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(79, 195, 247, 0.4)',
+            borderRadius: '8px',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.8)',
+            zIndex: 620,
+            overflow: 'hidden',
+            fontFamily: 'var(--font-sans, system-ui, sans-serif)',
+            color: 'var(--paper)',
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: '10px 14px',
+              background: 'rgba(79, 195, 247, 0.08)',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>{getSimUnitIcon(selectedEntity.typeId)}</span>
+              <div>
+                <strong style={{ fontSize: '13px', color: '#FFFFFF' }}>{selectedEntity.name}</strong>
+                <div style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                  {selectedEntity.iso} Tactical Formation · {selectedEntity.personnel} Personnel
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onSelectEntity(null)}
+              style={{ background: 'none', border: 'none', color: 'var(--paper-dim)', cursor: 'pointer', fontSize: '16px' }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Kinematics & Status */}
+          <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+              <span>
+                Status:{' '}
+                <strong style={{ color: selectedEntity.status === 'on_station' ? '#BA68C8' : '#4FA85F' }}>
+                  {selectedEntity.status.replace('_', ' ').toUpperCase()}
+                </strong>
+              </span>
+              <span>
+                Fuel:{' '}
+                <strong style={{ color: selectedEntity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>
+                  {selectedEntity.currentFuelPct.toFixed(0)}%
+                </strong>
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+              <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
+              <span>Altitude: <strong>{(selectedEntity.altitudeM / 1000).toFixed(1)} km</strong></span>
+              <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+            </div>
+
+            {/* Tactical Envelopes Breakdown */}
+            <div
+              style={{
+                marginTop: '4px',
+                padding: '8px 10px',
+                background: '#070C14',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                fontSize: '10.5px',
+              }}
+            >
+              <div style={{ color: '#4FC3F7', display: 'flex', justifyContent: 'space-between' }}>
+                <span>📡 Radar / Sensor Horizon:</span>
+                <strong>{systemsLibrary.find(s => s.id === selectedEntity.systemId)?.sensor?.detectionKm ?? 250} km</strong>
+              </div>
+              <div style={{ color: '#FF9800', display: 'flex', justifyContent: 'space-between' }}>
+                <span>⚔️ Max Engagement Range:</span>
+                <strong>{systemsLibrary.find(s => s.id === selectedEntity.systemId)?.weapons?.[0]?.rangeKm ?? 120} km</strong>
+              </div>
+              {selectedEntity.homeBaseId && (
+                <div style={{ color: '#BA68C8', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>🎯 Combat Radius Reach:</span>
+                  <strong>{systemsLibrary.find(s => s.id === selectedEntity.systemId)?.platform?.combatRadiusKm ?? 900} km</strong>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Tactical Actions */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              {(selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
+                <button
+                  className="wg-btn"
+                  style={{ flex: 1, fontSize: '11px', padding: '5px', borderColor: '#FFB020', color: '#FFB020' }}
+                  onClick={() => onOrderRtb(selectedEntity.id)}
+                >
+                  🏠 Order RTB
+                </button>
+              )}
+
+              <button
+                className="wg-btn accent"
+                style={{ flex: 1, fontSize: '11px', padding: '5px', fontWeight: 600 }}
+                onClick={() => onStartSortie(selectedEntity)}
+              >
+                🎯 Retask Patrol
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

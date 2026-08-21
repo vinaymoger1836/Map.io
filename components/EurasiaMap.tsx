@@ -653,6 +653,8 @@ export default function EurasiaMap() {
             visibleContacts={warSim.visibleContacts}
             selectedBase={warSim.selectedBase}
             onSelectBase={warSim.setSelectedBaseId}
+            selectedEntity={warSim.selectedEntity}
+            onSelectEntity={warSim.setSelectedEntityId}
             onDeployUnitToBase={warSim.deployUnitToBase}
             onDeployAutonomous={(sysId, count) => {
               warSim.startAutonomousPicking(sysId, count);

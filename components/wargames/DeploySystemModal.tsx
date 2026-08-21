@@ -30,6 +30,8 @@ export function DeploySystemModal({
   onDeploy,
 }: DeploySystemModalProps) {
   const activeCountryIso = session.activeFaction === 'player' ? session.playerIso : session.enemyIso;
+  const remainingQuota = quota.count - quota.deployed;
+  const domain = domainOf(systemSpec);
 
   // Compatible friendly sovereign bases
   const compatibleBases = bases.filter((b) => {
