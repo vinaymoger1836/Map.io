@@ -1,4 +1,4 @@
-# Eurasia — geopolitical situation map
+# Geopolitical situation map
 
 An interactive MapLibre GL map of Europe, Russia and the Arctic, built on Next.js 15
 (App Router, TypeScript). Borders are coloured by *kind*, alliance blocs can be
