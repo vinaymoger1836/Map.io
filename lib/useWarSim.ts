@@ -16,6 +16,7 @@ import {
   type SimBase,
   type BaseType,
   type DetectedContact,
+  type PostStrikeAction,
 } from './warSimTypes';
 import {
   tickWarSim,
@@ -23,6 +24,7 @@ import {
   deployAutonomousEntity,
   orderPatrol,
   orderEntityRtb,
+  orderStrikeMission,
   addSimBase,
   renameSimBase,
 } from './warSimEngine';
@@ -210,6 +212,33 @@ export function useWarSim({
       setTargetPicking(null);
     },
     []
+  );
+
+  const orderStrike = useCallback(
+    (
+      attackerEntityId: string,
+      targetEntityId: string,
+      targetLngLat: [number, number],
+      weaponIndex: number,
+      postStrikeAction: PostStrikeAction = 'rtb',
+      customPostLngLat?: [number, number]
+    ) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return orderStrikeMission(
+          prev,
+          attackerEntityId,
+          targetEntityId,
+          targetLngLat,
+          weaponIndex,
+          postStrikeAction,
+          customPostLngLat,
+          systemsLibrary
+        );
+      });
+      setTargetPicking(null);
+    },
+    [systemsLibrary]
   );
 
   const createBaseAtLocation = useCallback(
@@ -459,6 +488,7 @@ export function useWarSim({
     deployAutonomousBattery,
     orderSortieToPoint,
     orderRtb,
+    orderStrike,
     createBaseAtLocation,
     renameBase,
     friendlyEntities,

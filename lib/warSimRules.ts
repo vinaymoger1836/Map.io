@@ -7,7 +7,7 @@
 
 import { type Domain, UNIT_BY_ID } from './warGames';
 import { type BaseType, type SimBase, type SimEntity } from './warSimTypes';
-import { type SystemSpec, domainOf } from './specs';
+import { type SystemSpec, type WeaponFacet, domainOf } from './specs';
 
 /* ------------------------------------------------------------------ */
 /* 1. Base Stationing & Compatibility Rules                           */
@@ -197,4 +197,76 @@ export function calculateBingoFuelThreshold(distanceToBaseKm: number, combatRadi
   const returnCostPct = (distanceToBaseKm / totalRangeKm) * 100;
   const safetyReservePct = 10; // 10% reserve for holding/divert
   return Math.min(95, returnCostPct + safetyReservePct);
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Weapon Compatibility & Combat Engagement Verification           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Checks whether a given weapon is capable of engaging a target of the specified domain.
+ */
+export function canWeaponEngageTarget(weapon: WeaponFacet, targetDomain: string): boolean {
+  if (!weapon.engages || weapon.engages.length === 0) return true; // Generic weapon
+  const domainLower = targetDomain.toLowerCase();
+
+  if (domainLower === 'air') {
+    return weapon.engages.includes('air');
+  }
+  if (domainLower === 'ground' || domainLower === 'site' || domainLower === 'land') {
+    return weapon.engages.includes('ground') || weapon.engages.includes('surface');
+  }
+  if (domainLower === 'naval' || domainLower === 'surface' || domainLower === 'sea') {
+    return weapon.engages.includes('surface') || weapon.engages.includes('ground');
+  }
+  if (domainLower === 'subsurface' || domainLower === 'sub') {
+    return weapon.engages.includes('subsurface');
+  }
+  return weapon.engages.some((e) => e.toLowerCase() === domainLower);
+}
+
+/**
+ * Checks whether a friendly unit is equipped with weapons capable of attacking a specific target domain.
+ */
+export function canEntityEngageTarget(
+  entity: SimEntity,
+  targetDomain: string,
+  spec?: SystemSpec
+): {
+  canEngage: boolean;
+  compatibleWeapons: WeaponFacet[];
+  reason?: string;
+} {
+  if (entity.status === 'destroyed') {
+    return { canEngage: false, compatibleWeapons: [], reason: 'Unit is destroyed' };
+  }
+  if (entity.status === 'in_repair') {
+    return { canEngage: false, compatibleWeapons: [], reason: 'Unit is undergoing depot repairs' };
+  }
+  if (entity.status === 'turnaround') {
+    return { canEngage: false, compatibleWeapons: [], reason: 'Unit is in turnaround/rearming' };
+  }
+
+  const weapons = (entity.customWeapons && entity.customWeapons.length > 0)
+    ? entity.customWeapons
+    : (spec?.weapons || []);
+
+  if (weapons.length === 0) {
+    return { canEngage: false, compatibleWeapons: [], reason: 'Unit has no equipped armament (e.g. unarmed recon/tanker)' };
+  }
+
+  const compatible = weapons.filter((w) => canWeaponEngageTarget(w, targetDomain));
+
+  if (compatible.length === 0) {
+    const isAirOnly = weapons.every((w) => w.engages && w.engages.every((e) => e === 'air'));
+    const isGroundOnly = weapons.every((w) => w.engages && w.engages.every((e) => e === 'ground' || e === 'surface'));
+
+    let reason = `No compatible munitions for ${targetDomain.toUpperCase()} targets.`;
+    if (isAirOnly) reason = `Equipped with Air-to-Air missiles only (cannot engage ${targetDomain} targets).`;
+    if (isGroundOnly && targetDomain === 'air') reason = `Equipped with Air-to-Ground munitions only (cannot intercept Air targets).`;
+
+    return { canEngage: false, compatibleWeapons: [], reason };
+  }
+
+  return { canEngage: true, compatibleWeapons: compatible };
 }

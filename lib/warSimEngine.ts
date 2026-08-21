@@ -24,6 +24,8 @@ import {
   type MissileFlyoutTrack,
   type SimBattleEvent,
   type PatrolOrder,
+  type PostStrikeAction,
+  type StrikePlan,
 } from './warSimTypes';
 import {
   canStationAtBase,
@@ -444,6 +446,153 @@ export function tickWarSim(
       const nextLngLat = interpolate(entity.lngLat, homeLngLat, fraction);
       const nextHeading = bearingDeg(entity.lngLat, homeLngLat);
       const nextFuel = Math.max(0, entity.currentFuelPct - (calculateFuelBurnPct(stepDistanceKm, combatRadiusKm, 0, speedKmh) * fuelRateMult));
+
+      return {
+        ...entity,
+        lngLat: nextLngLat,
+        headingDeg: nextHeading,
+        currentFuelPct: nextFuel,
+      };
+    }
+
+    // G. Strike Ingress & Weapon Release ('engaging')
+    if (entity.status === 'engaging' && entity.strikePlan) {
+      const plan = entity.strikePlan;
+      const targetEntity = session.entities.find((e) => e.id === plan.targetEntityId);
+      const targetPos: [number, number] = targetEntity && targetEntity.status !== 'destroyed'
+        ? targetEntity.lngLat
+        : plan.targetLngLat;
+
+      const distToTarget = distanceKm(entity.lngLat, targetPos);
+      const stepDistanceKm = (speedKmh / 3600) * dtSimSec;
+
+      // Fuel consumption during strike ingress
+      const fuelBurn = calculateFuelBurnPct(stepDistanceKm, combatRadiusKm, 0, speedKmh) * fuelRateMult;
+      const nextFuel = Math.max(0, entity.currentFuelPct - fuelBurn);
+
+      // Check Bingo Fuel threshold
+      const distToBase = distanceKm(entity.lngLat, homeLngLat);
+      const bingoThreshold = calculateBingoFuelThreshold(distToBase, combatRadiusKm);
+
+      if (nextFuel <= bingoThreshold) {
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'alert',
+          `Strike Aborted: ${entity.name}`,
+          `${entity.name} reached Bingo Fuel (${nextFuel.toFixed(1)}%). Aborting strike mission for RTB.`,
+          entity.lngLat
+        );
+        return {
+          ...entity,
+          status: 'bingo_rtb',
+          currentFuelPct: nextFuel,
+          strikePlan: undefined,
+        };
+      }
+
+      // Check if within weapon release range
+      const effectiveReleaseRange = Math.max(5, plan.weaponRangeKm);
+      if (distToTarget <= effectiveReleaseRange) {
+        // --- WEAPON RELEASE POINT REACHED ---
+        const weapons = (entity.customWeapons && entity.customWeapons.length > 0)
+          ? entity.customWeapons
+          : (spec?.weapons || []);
+        const weapon = weapons[plan.weaponIndex] || weapons[0];
+        const weaponName = weapon?.name || plan.weaponName || 'Ordnance';
+
+        const missileSpeed = weapon?.speedMach ? weapon.speedMach * 1225 : (weapon?.rangeKm > 100 ? 3200 : 1800);
+        const missileCategory: any = weapon?.engages?.includes('air')
+          ? 'air_to_air'
+          : weapon?.engages?.includes('subsurface')
+            ? 'torpedo'
+            : 'cruise';
+
+        const newMissile: MissileFlyoutTrack = {
+          id: `msl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          originLngLat: entity.lngLat,
+          targetLngLat: targetPos,
+          currentLngLat: entity.lngLat,
+          attackerEntityId: entity.id,
+          targetEntityId: plan.targetEntityId,
+          attackerIso: entity.iso,
+          targetIso: targetEntity?.iso ?? (entity.iso === session.playerIso ? session.enemyIso : session.playerIso),
+          weaponName,
+          weaponCategory: missileCategory,
+          speedKmh: missileSpeed,
+          startSimTimeSec: session.simTimeSec,
+          etaSimTimeSec: session.simTimeSec + Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)),
+          isIntercepted: false,
+          progress: 0,
+        };
+
+        session.activeMissiles.push(newMissile);
+
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'strike',
+          `🚀 Ordnance Released: ${entity.name}`,
+          `${entity.name} launched ${weaponName} against target at ${distToTarget.toFixed(0)} km range. Executing ${plan.postStrikeAction.toUpperCase()} protocol.`,
+          entity.lngLat
+        );
+
+        // Execute User-Selected Post-Strike Protocol
+        if (plan.postStrikeAction === 'rtb') {
+          return {
+            ...entity,
+            status: 'bingo_rtb',
+            currentFuelPct: nextFuel,
+            strikePlan: undefined,
+          };
+        } else if (plan.postStrikeAction === 'return_to_patrol' && plan.returnPatrolOrder) {
+          return {
+            ...entity,
+            status: 'takeoff_ingress',
+            patrolOrder: plan.returnPatrolOrder,
+            currentFuelPct: nextFuel,
+            strikePlan: undefined,
+          };
+        } else if (plan.postStrikeAction === 'loiter_target') {
+          return {
+            ...entity,
+            status: 'on_station',
+            patrolOrder: {
+              centerLngLat: targetPos,
+              patrolRadiusKm: 20,
+              altitudeM: entity.altitudeM || 7000,
+              orbitAngleDeg: 0,
+              emcon: 'active',
+            },
+            currentFuelPct: nextFuel,
+            strikePlan: undefined,
+          };
+        } else if (plan.postStrikeAction === 'designated_waypoint' && plan.customPostLngLat) {
+          return {
+            ...entity,
+            status: 'takeoff_ingress',
+            patrolOrder: {
+              centerLngLat: plan.customPostLngLat,
+              patrolRadiusKm: 15,
+              altitudeM: entity.altitudeM || 7000,
+              orbitAngleDeg: 0,
+              emcon: 'active',
+            },
+            currentFuelPct: nextFuel,
+            strikePlan: undefined,
+          };
+        }
+
+        return {
+          ...entity,
+          status: 'bingo_rtb',
+          currentFuelPct: nextFuel,
+          strikePlan: undefined,
+        };
+      }
+
+      // Ingress: move towards target
+      const fraction = Math.min(1, stepDistanceKm / Math.max(1, distToTarget));
+      const nextLngLat = interpolate(entity.lngLat, targetPos, fraction);
+      const nextHeading = bearingDeg(entity.lngLat, targetPos);
 
       return {
         ...entity,
@@ -1058,6 +1207,82 @@ export function orderEntityRtb(session: WarSimSession, entityId: string): WarSim
         },
       ]
     : session.eventLog;
+
+  return {
+    ...session,
+    entities: updatedEntities,
+    eventLog: newEvents.slice(-200),
+  };
+}
+
+/**
+ * Tasks an operational unit to conduct a targeted strike or intercept mission against an enemy contact/entity.
+ */
+export function orderStrikeMission(
+  session: WarSimSession,
+  attackerEntityId: string,
+  targetEntityId: string,
+  targetLngLat: [number, number],
+  weaponIndex: number,
+  postStrikeAction: PostStrikeAction = 'rtb',
+  customPostLngLat?: [number, number],
+  systemsLibrary: SystemSpec[] = []
+): WarSimSession {
+  const attacker = session.entities.find((e) => e.id === attackerEntityId);
+  if (!attacker || attacker.status === 'destroyed' || attacker.status === 'in_repair' || attacker.status === 'turnaround') {
+    return session;
+  }
+
+  const spec = systemsLibrary.find((s) => s.id === attacker.systemId);
+  const weapons = (attacker.customWeapons && attacker.customWeapons.length > 0)
+    ? attacker.customWeapons
+    : (spec?.weapons || []);
+
+  const weapon = weapons[weaponIndex] || weapons[0];
+  const weaponName = weapon?.name || 'Ordnance';
+  const weaponRangeKm = weapon?.rangeKm || 100;
+
+  const targetEntity = session.entities.find((e) => e.id === targetEntityId);
+  const targetName = targetEntity?.name || 'Hostile Target Track';
+
+  const strikePlan: StrikePlan = {
+    targetEntityId,
+    targetLngLat,
+    weaponIndex,
+    weaponName,
+    weaponRangeKm,
+    postStrikeAction,
+    returnPatrolOrder: attacker.patrolOrder ? { ...attacker.patrolOrder } : undefined,
+    customPostLngLat,
+  };
+
+  const isPlayer = attacker.iso === session.playerIso;
+  const faction: 'player' | 'enemy' = isPlayer ? 'player' : 'enemy';
+
+  const newEvents = [
+    ...session.eventLog,
+    {
+      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      simTimeSec: session.simTimeSec,
+      timeFormatted: formatSimTime(session.simTimeSec),
+      faction,
+      type: 'launch' as const,
+      title: `Strike Mission Tasked: ${attacker.name}`,
+      detail: `${attacker.name} tasked on strike mission against ${targetName} using ${weaponName} (Max Range: ${weaponRangeKm} km). Post-strike protocol: ${postStrikeAction.toUpperCase().replace(/_/g, ' ')}.`,
+      lngLat: attacker.lngLat,
+    },
+  ];
+
+  const updatedEntities = session.entities.map((e) => {
+    if (e.id !== attackerEntityId) return e;
+    return {
+      ...e,
+      status: 'engaging' as const,
+      assignedMission: 'strike' as const,
+      assignedTargetEntityId: targetEntityId,
+      strikePlan,
+    };
+  });
 
   return {
     ...session,

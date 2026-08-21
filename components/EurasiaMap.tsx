@@ -166,7 +166,7 @@ export default function EurasiaMap() {
         return;
       }
 
-      const layers = ['warsim-bases-circle', 'warsim-entities-symbol', 'warsim-contacts-circle'].filter(
+      const layers = ['warsim-bases-circle', 'warsim-entities-symbol', 'warsim-contacts-circle', 'warsim-contacts-label'].filter(
         (id) => map.getLayer(id)
       );
       const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
@@ -179,10 +179,14 @@ export default function EurasiaMap() {
         } else if (layerId === 'warsim-entities-symbol' && props.id) {
           warSim.setSelectedEntityId(props.id);
           warSim.setSelectedContactId(null);
-        } else if (layerId === 'warsim-contacts-circle' && props.id) {
+        } else if ((layerId === 'warsim-contacts-circle' || layerId === 'warsim-contacts-label') && props.id) {
           warSim.setSelectedContactId(props.id);
           warSim.setSelectedEntityId(null);
         }
+      } else {
+        warSim.setSelectedBaseId(null);
+        warSim.setSelectedEntityId(null);
+        warSim.setSelectedContactId(null);
       }
     };
 
@@ -665,6 +669,18 @@ export default function EurasiaMap() {
             onSelectBase={warSim.setSelectedBaseId}
             selectedEntity={warSim.selectedEntity}
             onSelectEntity={warSim.setSelectedEntityId}
+            selectedContact={warSim.selectedContact}
+            onSelectContact={warSim.setSelectedContactId}
+            onOrderStrike={(params) => {
+              warSim.orderStrike(
+                params.attackerEntityId,
+                params.targetEntityId,
+                params.targetLngLat,
+                params.weaponIndex,
+                params.postStrikeAction,
+                params.customPostLngLat
+              );
+            }}
             activeWeaponIndex={warSim.activeWeaponIndex}
             onToggleWeapon={(idx) => {
               warSim.setActiveWeaponIndex(warSim.activeWeaponIndex === idx ? null : idx);

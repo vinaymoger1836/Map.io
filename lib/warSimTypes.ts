@@ -114,6 +114,23 @@ export interface PatrolOrder {
   patrolDirection?: 1 | -1; // 1: forward (WP1 -> WPN), -1: reverse (WPN -> WP1)
 }
 
+export type PostStrikeAction =
+  | 'rtb'                  // Return to base for turnaround/re-arming
+  | 'return_to_patrol'     // Return to previous patrol orbit/corridor
+  | 'loiter_target'        // Loiter/orbit over target area for BDA
+  | 'designated_waypoint'; // Fly to a designated recovery waypoint
+
+export interface StrikePlan {
+  targetEntityId: string;
+  targetLngLat: [number, number];
+  weaponIndex: number;
+  weaponName: string;
+  weaponRangeKm: number;
+  postStrikeAction: PostStrikeAction;
+  returnPatrolOrder?: PatrolOrder;
+  customPostLngLat?: [number, number];
+}
+
 export interface SimEntity {
   id: string;
   iso: string;
@@ -132,6 +149,7 @@ export interface SimEntity {
   patrolOrder?: PatrolOrder;
   assignedMission?: 'patrol' | 'strike' | 'recon' | 'refuel_tanker' | 'cap';
   assignedTargetEntityId?: string;
+  strikePlan?: StrikePlan;
   turnaroundTimerSec: number;
   repairTimerSec: number;
   personnel: number;

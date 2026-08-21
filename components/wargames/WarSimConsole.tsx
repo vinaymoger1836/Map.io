@@ -24,6 +24,7 @@ import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
+import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 
@@ -72,6 +73,16 @@ export interface WarSimConsoleProps {
   onCancelTargetPicking: () => void;
   onConfirmCustomRoute?: () => void;
   onUndoLastWaypoint?: () => void;
+  selectedContact?: DetectedContact | null;
+  onSelectContact?: (id: string | null) => void;
+  onOrderStrike?: (params: {
+    attackerEntityId: string;
+    targetEntityId: string;
+    targetLngLat: [number, number];
+    weaponIndex: number;
+    postStrikeAction: import('@/lib/warSimTypes').PostStrikeAction;
+    customPostLngLat?: [number, number];
+  }) => void;
   onOpenAar: () => void;
   onExitSim: () => void;
   systemsLibrary: SystemSpec[];
@@ -93,6 +104,9 @@ export function WarSimConsole({
   onSelectBase,
   selectedEntity,
   onSelectEntity,
+  selectedContact,
+  onSelectContact,
+  onOrderStrike,
   onDeployUnitToBase,
   onDeployAutonomous,
   onStartSortie,
@@ -120,6 +134,7 @@ export function WarSimConsole({
   const [newBaseType, setNewBaseType] = useState<BaseType>('airbase');
   const [customBaseName, setCustomBaseName] = useState<string>('');
   const [hudTaskingEntity, setHudTaskingEntity] = useState<SimEntity | null>(null);
+  const [strikeModalTarget, setStrikeModalTarget] = useState<StrikeTargetInfo | null>(null);
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -1119,6 +1134,144 @@ export function WarSimConsole({
         );
       })()}
 
+      {/* 5.1. FLOATING HOSTILE CONTACT / ENEMY TARGET HUD */}
+      {selectedContact && (() => {
+        const contact = selectedContact;
+        const isPid = contact.intelTier === 2;
+        const targetDomain = contact.domain;
+        const targetTitle = isPid ? (contact.knownName || 'Hostile Platform') : `UNKNOWN ${contact.domain.toUpperCase()} TRACK`;
+        const targetCount = contact.knownCount ?? 1;
+
+        return (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '24px',
+              right: '24px',
+              width: '380px',
+              background: 'rgba(9, 16, 27, 0.96)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(217, 83, 79, 0.6)',
+              borderRadius: '8px',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.85)',
+              zIndex: 620,
+              overflow: 'hidden',
+              fontFamily: 'var(--font-sans, system-ui, sans-serif)',
+              color: 'var(--paper)',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: '10px 14px',
+                background: 'rgba(217, 83, 79, 0.15)',
+                borderBottom: '1px solid rgba(217, 83, 79, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>🎯</span>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '13px', color: '#FF5252', fontWeight: 700 }}>
+                    {targetTitle}
+                  </h4>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                    Hostile Faction: <strong>{contact.targetIso}</strong> · {targetDomain.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="wg-btn"
+                style={{ padding: '2px 7px', fontSize: '11px' }}
+                onClick={() => onSelectContact?.(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--paper-dim)' }}>
+                <span>Intel Status:</span>
+                <strong style={{ color: isPid ? '#4FA85F' : '#FFB020' }}>
+                  {isPid ? '✓ POSITIVE PID (TIER 2)' : '⚠️ SENSOR TRACK (TIER 1)'}
+                </strong>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px' }}>
+                <div style={{ background: '#070C14', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', display: 'block' }}>Strength</span>
+                  <strong style={{ color: '#FFFFFF' }}>{isPid ? `${targetCount} Units` : '1+ (Estimated)'}</strong>
+                </div>
+
+                <div style={{ background: '#070C14', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', display: 'block' }}>Estimated Speed</span>
+                  <strong style={{ color: '#FFFFFF' }}>{contact.speedKmh.toFixed(0)} km/h</strong>
+                </div>
+
+                <div style={{ background: '#070C14', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', display: 'block' }}>Heading Vector</span>
+                  <strong style={{ color: '#FFFFFF' }}>{contact.headingDeg.toFixed(0)}°</strong>
+                </div>
+
+                <div style={{ background: '#070C14', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', display: 'block' }}>Battle Damage</span>
+                  <strong style={{ color: contact.knownDamage === 'damaged' ? '#FFB020' : '#4FA85F' }}>
+                    {(contact.knownDamage || 'Intact').toUpperCase()}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Coordinates */}
+              <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', background: '#070C14', padding: '5px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                Coordinates: <strong>{contact.lastKnownLngLat[1].toFixed(4)}°N, {contact.lastKnownLngLat[0].toFixed(4)}°E</strong>
+              </div>
+
+              {/* Attack Action Button */}
+              <button
+                className="wg-btn accent"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: '#FF5252',
+                  color: '#FFFFFF',
+                  borderColor: '#FF5252',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  marginTop: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(255, 82, 82, 0.4)',
+                }}
+                onClick={() => {
+                  setStrikeModalTarget({
+                    targetId: contact.targetEntityId,
+                    name: targetTitle,
+                    count: targetCount,
+                    domain: targetDomain,
+                    iso: contact.targetIso,
+                    lngLat: contact.lastKnownLngLat,
+                    intelTier: contact.intelTier,
+                    damage: contact.knownDamage,
+                    speedKmh: contact.speedKmh,
+                  });
+                }}
+              >
+                <span>⚔️</span>
+                <span>Task Strike / Attack Mission</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Pre-Mission Tasking & Loadout Configurator Modal (When retasking from HUD) */}
       {hudTaskingEntity && (
         <SortieTaskingModal
@@ -1132,6 +1285,24 @@ export function WarSimConsole({
             setHudTaskingEntity(null);
             onSelectEntity(null);
             onStartSortie(hudTaskingEntity, params);
+          }}
+        />
+      )}
+
+      {/* 6. Strike & Attack Mission Tasking Modal */}
+      {strikeModalTarget && (
+        <StrikeTaskingModal
+          target={strikeModalTarget}
+          session={session}
+          friendlyEntities={friendlyEntities}
+          friendlyBases={friendlyBases}
+          systemsLibrary={systemsLibrary}
+          onClose={() => setStrikeModalTarget(null)}
+          onLaunchStrike={(params) => {
+            setStrikeModalTarget(null);
+            onSelectContact?.(null);
+            onSelectEntity(null);
+            onOrderStrike?.(params);
           }}
         />
       )}
