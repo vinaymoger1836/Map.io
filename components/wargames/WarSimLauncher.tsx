@@ -77,7 +77,7 @@ export function WarSimLauncher({
 
   // Available Nations list from world countries
   const availableNations = useMemo(() => {
-    const nations = wg.worldNations || [];
+    const nations = wg.countries || [];
     if (nations.length) return nations;
     return [
       { iso: 'US', name: 'United States' },
@@ -94,7 +94,7 @@ export function WarSimLauncher({
       { iso: 'IL', name: 'Israel' },
       { iso: 'IR', name: 'Iran' },
     ];
-  }, [wg.worldNations]);
+  }, [wg.countries]);
 
   // Seed default systems if empty on load
   useEffect(() => {

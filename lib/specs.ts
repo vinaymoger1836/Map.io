@@ -757,12 +757,12 @@ export function validateSimSystem(spec: SystemSpec): SystemValidationReport {
 
   if (isDedicatedSensor || isCombatPlatform) {
     const hasSensor = (spec.sensor?.detectionKm ?? 0) > 0;
-    const hasSonar = (spec.sonar?.detectionKm ?? 0) > 0;
+    const hasSonar = (spec.sensor?.sonar?.detectionKm ?? defaultSonarFor(spec, typeId).detectionKm ?? 0) > 0;
     
     if (domain === 'sub') {
       if (!hasSonar && !hasSensor) {
         missing.push({
-          field: 'sonar.detectionKm',
+          field: 'sensor.sonar.detectionKm',
           label: 'Sonar Detection Range',
           reason: 'Required for underwater acoustic detection and torpedo defense.',
         });
