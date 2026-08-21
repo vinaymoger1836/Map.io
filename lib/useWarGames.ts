@@ -197,11 +197,12 @@ export interface WarGames {
   /** How many of the current pick the active nation can still deploy; null = untracked. */
   stockLeft: number | null;
 
-  /** The library plus the player's own, merged. */
   systems: SystemSpec[];
   /** Every munition any system carries, keyed by id — the re-arming list. */
   munitions: MunitionCatalogue;
   saveSystem: (spec: SystemSpec) => void;
+  importSystems: (specs: unknown[]) => { count: number; ids: string[]; error?: string };
+  clearCustomSystems: () => void;
   deleteSystem: (id: string) => void;
   /** Where configuration is being kept, so the interface can say so. */
   storageKind: 'files' | 'browser' | 'unknown';
@@ -678,12 +679,65 @@ export function useWarGames({
     const tidied = tidySpec({ ...spec, custom: true, id: spec.id || nextSystemId(spec.name) });
     setCustomSystems((prev) => {
       const without = prev.filter((s) => s.id !== tidied.id);
-      return [...without, tidied];
+      const next = [...without, tidied];
+      void writeDoc(SYSTEMS_DOC, next);
+      return next;
     });
   }, []);
 
+  const importSystems = useCallback((items: unknown[]): { count: number; ids: string[]; error?: string } => {
+    if (!Array.isArray(items)) {
+      return { count: 0, ids: [], error: 'Expected an array of weapon system specifications.' };
+    }
+
+    const validSpecs: SystemSpec[] = [];
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue;
+      const raw = item as Partial<SystemSpec>;
+      if (!raw.name && !raw.id) continue;
+      const name = String(raw.name || raw.id || 'Custom System');
+      const id = String(raw.id || nextSystemId(name));
+      const spec: SystemSpec = {
+        ...raw,
+        id,
+        name,
+        typeId: raw.typeId || 'fighter',
+        custom: true,
+      };
+      validSpecs.push(tidySpec(spec));
+    }
+
+    if (validSpecs.length === 0) {
+      return { count: 0, ids: [], error: 'No valid weapon system specifications found in the data.' };
+    }
+
+    setCustomSystems((prev) => {
+      const map = new Map<string, SystemSpec>();
+      for (const s of prev) {
+        map.set(s.id, s);
+      }
+      for (const s of validSpecs) {
+        map.set(s.id, s);
+      }
+      const next = Array.from(map.values());
+      void writeDoc(SYSTEMS_DOC, next);
+      return next;
+    });
+
+    return { count: validSpecs.length, ids: validSpecs.map((s) => s.id) };
+  }, []);
+
+  const clearCustomSystems = useCallback(() => {
+    setCustomSystems([]);
+    void writeDoc(SYSTEMS_DOC, []);
+  }, []);
+
   const deleteSystem = useCallback((id: string) => {
-    setCustomSystems((prev) => prev.filter((s) => s.id !== id));
+    setCustomSystems((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      void writeDoc(SYSTEMS_DOC, next);
+      return next;
+    });
   }, []);
 
   /* ---------------- world roster ---------------- */
@@ -1910,6 +1964,8 @@ export function useWarGames({
     systems,
     munitions,
     saveSystem,
+    importSystems,
+    clearCustomSystems,
     deleteSystem,
     storageKind,
     pendingComposition,
