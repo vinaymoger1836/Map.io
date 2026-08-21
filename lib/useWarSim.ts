@@ -4,7 +4,8 @@
  * War Simulation React State Hook & Engine Driver
  *
  * Manages the live simulation state loop, user commands, base stationing,
- * patrol dispatching, fog of war contact filtering, and session persistence.
+ * patrol dispatching, fog of war contact filtering, autonomous battery placement,
+ * and session persistence.
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -19,11 +20,24 @@ import {
 import {
   tickWarSim,
   deployEntityToBase,
+  deployAutonomousEntity,
   orderPatrol,
   addSimBase,
 } from './warSimEngine';
-import { type SystemSpec } from './specs';
-import { writeDoc, readDoc } from './store';
+import { type SystemSpec, domainOf } from './specs';
+import { writeDoc } from './store';
+
+export interface TargetPickingState {
+  mode: 'sortie' | 'place_autonomous' | 'place_base';
+  entityId?: string;
+  systemId?: string;
+  count?: number;
+  baseType?: BaseType;
+  baseName?: string;
+  originLngLat?: [number, number];
+  maxRangeKm?: number;
+  label?: string;
+}
 
 export interface UseWarSimProps {
   initialSession: WarSimSession | null;
@@ -41,8 +55,8 @@ export function useWarSim({
   const [session, setSession] = useState<WarSimSession | null>(initialSession);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [patrolDesignateMode, setPatrolDesignateMode] = useState<boolean>(false);
-  const [basePlacementMode, setBasePlacementMode] = useState<BaseType | null>(null);
+  const [selectedBaseId, setSelectedBaseId] = useState<string | null>(null);
+  const [targetPicking, setTargetPicking] = useState<TargetPickingState | null>(null);
 
   const lastTickTimeRef = useRef<number>(Date.now());
   const sessionRef = useRef<WarSimSession | null>(session);
@@ -58,11 +72,10 @@ export function useWarSim({
   // Seed default sovereign bases if none exist
   useEffect(() => {
     if (session && session.bases.length === 0) {
-      // Create initial airbase & naval base for player and enemy
-      let s = addSimBase(session, 'Home Airbase North', 'airbase', session.playerIso, [-75.5, 38.5]);
-      s = addSimBase(s, 'Naval Station Atlantic', 'naval_base', session.playerIso, [-76.3, 36.9]);
-      s = addSimBase(s, 'Forward Airbase East', 'airbase', session.enemyIso, [37.2, 55.6]);
-      s = addSimBase(s, 'Red Fleet Naval Base', 'naval_base', session.enemyIso, [33.5, 44.6]);
+      let s = addSimBase(session, `${session.playerIso} Central Airbase`, 'airbase', session.playerIso, [-77.0, 38.8]);
+      s = addSimBase(s, `${session.playerIso} Naval Station`, 'naval_base', session.playerIso, [-76.3, 36.9]);
+      s = addSimBase(s, `${session.enemyIso} Strategic Airfield`, 'airbase', session.enemyIso, [37.6, 55.7]);
+      s = addSimBase(s, `${session.enemyIso} Fleet Command Port`, 'naval_base', session.enemyIso, [33.5, 44.6]);
       setSession(s);
     }
   }, [session]);
@@ -137,9 +150,11 @@ export function useWarSim({
     });
     setSelectedEntityId(null);
     setSelectedContactId(null);
+    setSelectedBaseId(null);
+    setTargetPicking(null);
   }, []);
 
-  const deployUnit = useCallback(
+  const deployUnitToBase = useCallback(
     (baseId: string, systemId: string, count: number) => {
       setSession((prev) => {
         if (!prev) return null;
@@ -149,13 +164,24 @@ export function useWarSim({
     [systemsLibrary]
   );
 
-  const dispatchPatrol = useCallback(
-    (entityId: string, centerLngLat: [number, number], patrolRadiusKm: number = 80, altitudeM: number = 7000) => {
+  const deployAutonomousBattery = useCallback(
+    (systemId: string, count: number, lngLat: [number, number]) => {
       setSession((prev) => {
         if (!prev) return null;
-        return orderPatrol(prev, entityId, centerLngLat, patrolRadiusKm, altitudeM, 'active');
+        return deployAutonomousEntity(prev, systemId, count, lngLat, systemsLibrary);
       });
-      setPatrolDesignateMode(false);
+      setTargetPicking(null);
+    },
+    [systemsLibrary]
+  );
+
+  const orderSortieToPoint = useCallback(
+    (entityId: string, targetLngLat: [number, number], patrolRadiusKm: number = 80) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, 7000, 'active');
+      });
+      setTargetPicking(null);
     },
     []
   );
@@ -167,31 +193,113 @@ export function useWarSim({
         const iso = prev.activeFaction === 'player' ? prev.playerIso : prev.enemyIso;
         return addSimBase(prev, name, type, iso, lngLat);
       });
-      setBasePlacementMode(null);
+      setTargetPicking(null);
     },
     []
   );
 
-  // Filter contacts visible to active faction under Fog of War
+  // -------------------------------------------------------------
+  // Target Picking Handlers (Sortie target, Base placement, SAM battery)
+  // -------------------------------------------------------------
+
+  const startSortiePicking = useCallback(
+    (entity: SimEntity) => {
+      const spec = systemsLibrary.find((s) => s.id === entity.systemId);
+      const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (entity.typeId === 'fighter' ? 900 : 1500);
+
+      // Check if tanker support is present in theater (extends radius by +75%)
+      const iso = entity.iso;
+      const hasTanker = sessionRef.current?.entities.some(
+        (e) => e.iso === iso && e.status === 'on_station' && e.typeId === 'tanker'
+      );
+      const effectiveRadiusKm = hasTanker ? combatRadiusKm * 1.75 : combatRadiusKm;
+
+      const base = sessionRef.current?.bases.find((b) => b.id === entity.homeBaseId);
+      const originLngLat = base?.lngLat ?? entity.lngLat;
+
+      setTargetPicking({
+        mode: 'sortie',
+        entityId: entity.id,
+        originLngLat,
+        maxRangeKm: effectiveRadiusKm,
+        label: `Select Patrol Point for ${entity.name} (Max Range: ${effectiveRadiusKm.toFixed(0)} km${hasTanker ? ' with AAR Tanker' : ''})`,
+      });
+    },
+    [systemsLibrary]
+  );
+
+  const startAutonomousPicking = useCallback(
+    (systemId: string, count: number) => {
+      const spec = systemsLibrary.find((s) => s.id === systemId);
+      setTargetPicking({
+        mode: 'place_autonomous',
+        systemId,
+        count,
+        label: `Click on sovereign territory to erect ${count} × ${spec?.name ?? 'Battery'}`,
+      });
+    },
+    [systemsLibrary]
+  );
+
+  const startBasePlacement = useCallback(
+    (baseType: BaseType, baseName?: string) => {
+      setTargetPicking({
+        mode: 'place_base',
+        baseType,
+        baseName,
+        label: `Click on map to construct ${baseName || baseType.replace('_', ' ').toUpperCase()}`,
+      });
+    },
+    []
+  );
+
+  const cancelTargetPicking = useCallback(() => {
+    setTargetPicking(null);
+  }, []);
+
+  const confirmTargetPick = useCallback(
+    (lngLat: [number, number]) => {
+      if (!targetPicking) return;
+
+      if (targetPicking.mode === 'sortie' && targetPicking.entityId) {
+        orderSortieToPoint(targetPicking.entityId, lngLat, 80);
+      } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
+        deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
+      } else if (targetPicking.mode === 'place_base' && targetPicking.baseType) {
+        createBaseAtLocation(targetPicking.baseName || 'New Sovereign Base', targetPicking.baseType, lngLat);
+      }
+    },
+    [targetPicking, orderSortieToPoint, deployAutonomousBattery, createBaseAtLocation]
+  );
+
+  // -------------------------------------------------------------
+  // Filtered State per Active Perspective
+  // -------------------------------------------------------------
+
+  const activeFaction = session?.activeFaction ?? 'player';
+  const activeCountryIso = activeFaction === 'player' ? session?.playerIso ?? 'US' : session?.enemyIso ?? 'RU';
+  const activeCountryColor = activeFaction === 'player' ? session?.playerColor ?? '#4F9FD6' : session?.enemyColor ?? '#D9534F';
+
   const visibleContacts: DetectedContact[] = useMemo(() => {
     if (!session) return [];
-    const faction = session.activeFaction;
-    return faction === 'player'
+    return activeFaction === 'player'
       ? session.fogOfWarContacts.playerContacts
       : session.fogOfWarContacts.enemyContacts;
-  }, [session]);
-
-  const activeFactionIso = session?.activeFaction === 'player' ? session?.playerIso : session?.enemyIso;
+  }, [session, activeFaction]);
 
   const friendlyEntities: SimEntity[] = useMemo(() => {
     if (!session) return [];
-    return session.entities.filter((e) => e.iso === activeFactionIso && e.status !== 'destroyed');
-  }, [session, activeFactionIso]);
+    return session.entities.filter((e) => e.iso === activeCountryIso && e.status !== 'destroyed');
+  }, [session, activeCountryIso]);
 
   const friendlyBases: SimBase[] = useMemo(() => {
     if (!session) return [];
-    return session.bases.filter((b) => b.iso === activeFactionIso);
-  }, [session, activeFactionIso]);
+    return session.bases.filter((b) => b.iso === activeCountryIso);
+  }, [session, activeCountryIso]);
+
+  const selectedBase = useMemo(() => {
+    return session?.bases.find((b) => b.id === selectedBaseId) ?? null;
+  }, [session, selectedBaseId]);
 
   const selectedEntity = useMemo(() => {
     return session?.entities.find((e) => e.id === selectedEntityId) ?? null;
@@ -204,26 +312,35 @@ export function useWarSim({
   return {
     session,
     setSession,
+    activeFaction,
+    activeCountryIso,
+    activeCountryColor,
     isPlaying: session?.status === 'running',
     togglePlay,
     speedMultiplier: session?.timeMultiplier ?? 3,
     setSpeedMultiplier,
     switchActiveFaction,
-    deployUnit,
-    dispatchPatrol,
+    deployUnitToBase,
+    deployAutonomousBattery,
+    orderSortieToPoint,
     createBaseAtLocation,
     friendlyEntities,
     friendlyBases,
     visibleContacts,
+    selectedBase,
+    selectedBaseId,
+    setSelectedBaseId,
     selectedEntity,
     selectedEntityId,
     setSelectedEntityId,
     selectedContact,
     selectedContactId,
     setSelectedContactId,
-    patrolDesignateMode,
-    setPatrolDesignateMode,
-    basePlacementMode,
-    setBasePlacementMode,
+    targetPicking,
+    startSortiePicking,
+    startAutonomousPicking,
+    startBasePlacement,
+    cancelTargetPicking,
+    confirmTargetPick,
   };
 }

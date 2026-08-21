@@ -117,7 +117,7 @@ export interface SimEntity {
   typeId: string;
   systemId?: string;
   count: number;
-  homeBaseId: string;
+  homeBaseId?: string;
   lngLat: [number, number];
   altitudeM: number;
   headingDeg: number;
@@ -171,6 +171,8 @@ export interface SimBattleEvent {
     | 'detection'
     | 'intel_pid'
     | 'launch'
+    | 'strike'
+    | 'deployment'
     | 'intercept'
     | 'impact'
     | 'loss'

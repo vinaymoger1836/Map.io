@@ -582,6 +582,87 @@ export function deployEntityToBase(
 }
 
 /**
+ * Deploys an autonomous platform directly onto sovereign territory without needing a base
+ * (e.g., SAM launcher batteries, early-warning radar arrays, strategic missile silos, field artillery).
+ */
+export function deployAutonomousEntity(
+  session: WarSimSession,
+  systemId: string,
+  count: number,
+  lngLat: [number, number],
+  systemsLibrary: SystemSpec[]
+): WarSimSession {
+  const spec = systemsLibrary.find((s) => s.id === systemId);
+  const typeId = spec?.typeId || 'sam-launcher';
+  const domain = spec ? domainOf(spec) : 'ground';
+  const faction = session.activeFaction;
+  const iso = faction === 'player' ? session.playerIso : session.enemyIso;
+
+  const quotaLedger = { ...session.quotas[faction] };
+  const quota = quotaLedger[systemId];
+
+  if (!quota || (quota.deployed + count > quota.count)) {
+    return session;
+  }
+
+  quotaLedger[systemId] = {
+    ...quota,
+    deployed: quota.deployed + count,
+  };
+
+  const newEntity: SimEntity = {
+    id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    iso,
+    name: `${count} × ${spec?.name ?? typeId}`,
+    typeId,
+    systemId,
+    count,
+    lngLat,
+    altitudeM: 0,
+    headingDeg: 0,
+    speedKmh: 0,
+    currentFuelPct: 100,
+    status: 'on_station',
+    damage: 'intact',
+    turnaroundTimerSec: 0,
+    repairTimerSec: 0,
+    personnel: (spec?.platform?.crew ?? 4) * count,
+    magazines: {},
+    patrolOrder: {
+      centerLngLat: lngLat,
+      patrolRadiusKm: 0,
+      altitudeM: 0,
+      orbitAngleDeg: 0,
+      emcon: 'active',
+    },
+  };
+
+  const newEvents = [
+    ...session.eventLog,
+    {
+      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      simTimeSec: session.simTimeSec,
+      timeFormatted: formatSimTime(session.simTimeSec),
+      faction,
+      type: 'strike' as const,
+      title: `Battery Erected: ${newEntity.name}`,
+      detail: `${newEntity.name} deployed to coordinates and initialized active radar/defense network.`,
+      lngLat,
+    },
+  ];
+
+  return {
+    ...session,
+    quotas: {
+      ...session.quotas,
+      [faction]: quotaLedger,
+    },
+    entities: [...session.entities, newEntity],
+    eventLog: newEvents.slice(-200),
+  };
+}
+
+/**
  * Tasks a stationed entity to sortie and establish a patrol orbit.
  */
 export function orderPatrol(
@@ -592,10 +673,16 @@ export function orderPatrol(
   altitudeM: number = 7000,
   emcon: 'active' | 'passive' = 'active'
 ): WarSimSession {
+  let sortieName = '';
+  let entityIso = session.playerIso;
+
   const updatedEntities = session.entities.map((e) => {
     if (e.id !== entityId || e.status === 'destroyed' || e.status === 'in_repair') {
       return e;
     }
+
+    sortieName = e.name;
+    entityIso = e.iso;
 
     const patrolOrder: PatrolOrder = {
       centerLngLat,
@@ -613,9 +700,27 @@ export function orderPatrol(
     };
   });
 
+  const faction: 'player' | 'enemy' = entityIso === session.playerIso ? 'player' : 'enemy';
+  const newEvents = sortieName
+    ? [
+        ...session.eventLog,
+        {
+          id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          simTimeSec: session.simTimeSec,
+          timeFormatted: formatSimTime(session.simTimeSec),
+          faction,
+          type: 'rtb' as const,
+          title: `Sortie Launched: ${sortieName}`,
+          detail: `${sortieName} departed base and is en route to designated patrol coordinates.`,
+          lngLat: centerLngLat,
+        },
+      ]
+    : session.eventLog;
+
   return {
     ...session,
     entities: updatedEntities,
+    eventLog: newEvents.slice(-200),
   };
 }
 
