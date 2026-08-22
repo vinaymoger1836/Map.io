@@ -533,7 +533,16 @@ export function ConfigurationSuite({
                   />
                 </div>
 
-                <div className="nations-list" style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' }}>
+                <div
+                  className="nations-list wg-custom-scroll"
+                  style={{
+                    maxHeight: 'calc(100vh - 260px)',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2)',
+                    paddingRight: '4px',
+                  }}
+                >
                   {allNationsList.map((nat) => {
                     const iso = nat.iso;
                     const isSelected = selectedIso === iso;

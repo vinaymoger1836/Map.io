@@ -192,6 +192,12 @@ export interface MissileFlyoutTrack {
   progress: number; // 0.0 to 1.0
   interceptorEntityId?: string;
   engagedByDefenderIds?: string[];
+  /** Target threat missile ID being intercepted (for SAM / interceptor tracks) */
+  targetMissileId?: string;
+  /** Probability of kill committed by this interceptor (0.0 to 1.0) */
+  interceptorPk?: number;
+  /** Timestamp when this threat was first acquired by defender radar (for reaction time delay) */
+  defenderDetectionTimes?: Record<string, number>;
 }
 
 /* ------------------------------------------------------------------ */
