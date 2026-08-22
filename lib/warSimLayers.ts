@@ -19,11 +19,12 @@ import {
   type DetectedContact,
   type MissileFlyoutTrack,
 } from './warSimTypes';
-import { type SystemSpec } from './specs';
+import { type SystemSpec, radarHorizonKm, domainOf } from './specs';
 import { distanceKm, geodesicRing, greatCirclePath, bearingDeg } from './geo';
 import { ensureIcons, ensurePlaybackIcons, unitIconId, type IconSpec } from './unitIcons';
 import { UNIT_BY_ID, type EchelonMark } from './warGames';
 import { isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
+import { isNavalCombatant } from './navalEngagement';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -608,6 +609,8 @@ export function renderWarSimStateToMap(
       const isSelected = e.id === selectedEntityId;
 
       const isGround = isGroundCombatUnit(e.typeId);
+      const isNaval = isNavalCombatant(e.typeId) || (spec ? domainOf(spec) === 'sea' : false);
+
       // Sensor horizon envelope
       const detectionRadiusKm = spec?.sensor?.detectionKm ?? (
         isGround ? 8 : e.typeId === 'awacs' ? 450 : e.typeId === 'radar' ? 400 : 200
@@ -621,9 +624,32 @@ export function renderWarSimStateToMap(
             color: '#4FC3F7',
             fillOpacity: isSelected ? 0.12 : 0.04,
             lineWidth: isSelected ? 1.8 : 1.0,
-            label: isGround ? `🔭 ${e.name} (${detectionRadiusKm} km)` : `📡 ${e.name} (${detectionRadiusKm} km)`,
+            label: isGround
+              ? `🔭 ${e.name} (${detectionRadiusKm} km)`
+              : isNaval
+                ? `📡 ${e.name} Air Search Radar (${detectionRadiusKm} km)`
+                : `📡 ${e.name} (${detectionRadiusKm} km)`,
           },
         });
+      }
+
+      // Surface search clipped horizon for naval surface combatants
+      if (isNaval && e.typeId !== 'submarine') {
+        const antennaM = spec?.sensor?.antennaM ?? 25;
+        const surfaceHorizonKm = Math.round(radarHorizonKm(antennaM, 25));
+        if (surfaceHorizonKm > 0 && surfaceHorizonKm < detectionRadiusKm) {
+          const surfCoords = geodesicRing(e.lngLat, surfaceHorizonKm, 48);
+          envelopeFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [surfCoords] },
+            properties: {
+              color: '#00E5FF',
+              fillOpacity: isSelected ? 0.10 : 0.03,
+              lineWidth: isSelected ? 1.6 : 0.9,
+              label: `🌊 ${e.name} Surface Horizon (${surfaceHorizonKm} km)`,
+            },
+          });
+        }
       }
 
       // Weapon range for selected entity if previewing a specific weapon
@@ -652,6 +678,7 @@ export function renderWarSimStateToMap(
     if (selectedEntity) {
       const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
       const isGround = isGroundCombatUnit(selectedEntity.typeId);
+      const isNaval = isNavalCombatant(selectedEntity.typeId) || (spec ? domainOf(spec) === 'sea' : false);
 
       // 1. Detection / Sensor Horizon Envelope (Always on for selected entity)
       const detectionRadiusKm = spec?.sensor?.detectionKm ?? (
@@ -668,9 +695,30 @@ export function renderWarSimStateToMap(
             lineWidth: 1.5,
             label: isGround
               ? `🔭 ${selectedEntity.name} Optic Horizon (${detectionRadiusKm} km)`
-              : `📡 ${selectedEntity.name} Sensor Horizon (${detectionRadiusKm} km)`,
+              : isNaval
+                ? `📡 ${selectedEntity.name} Air Search Radar (${detectionRadiusKm} km)`
+                : `📡 ${selectedEntity.name} Sensor Horizon (${detectionRadiusKm} km)`,
           },
         });
+      }
+
+      // 2. Surface Search / Clipped Horizon Envelope (For Naval Surface Assets)
+      if (isNaval && selectedEntity.typeId !== 'submarine') {
+        const antennaM = spec?.sensor?.antennaM ?? 25;
+        const surfaceHorizonKm = Math.round(radarHorizonKm(antennaM, 25));
+        if (surfaceHorizonKm > 0 && surfaceHorizonKm < detectionRadiusKm) {
+          const surfCoords = geodesicRing(selectedEntity.lngLat, surfaceHorizonKm, 64);
+          envelopeFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [surfCoords] },
+            properties: {
+              color: '#00E5FF',
+              fillOpacity: 0.12,
+              lineWidth: 1.8,
+              label: `🌊 ${selectedEntity.name} Surface Horizon (${surfaceHorizonKm} km)`,
+            },
+          });
+        }
       }
 
       // 2. Weapon Engagement Envelope (Displayed ONLY when a particular weapon is clicked)

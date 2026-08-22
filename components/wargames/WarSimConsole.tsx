@@ -19,7 +19,7 @@ import {
   type BaseType,
   type QuotaAllocation,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, domainOf } from '@/lib/specs';
+import { type SystemSpec, domainOf, radarHorizonKm } from '@/lib/specs';
 import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
@@ -27,6 +27,7 @@ import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
+import { isNavalCombatant } from '@/lib/navalEngagement';
 
 export type WarSimTab = 'systems' | 'bases' | 'intel' | 'log';
 
@@ -940,9 +941,11 @@ export function WarSimConsole({
         const isStaticAD = isStaticAirDefense(selectedEntity.typeId);
         const isGround = isGroundCombatUnit(selectedEntity.typeId);
         const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
+        const isNaval = (isNavalCombatant(selectedEntity.typeId) || (spec ? domainOf(spec) === 'sea' : false)) && selectedEntity.typeId !== 'submarine';
         const detectionKm = spec?.sensor?.detectionKm ?? (
           isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
         );
+        const surfaceHorizonKm = isNaval ? Math.round(radarHorizonKm(spec?.sensor?.antennaM ?? 25, 25)) : 0;
         const statusLabel =
           isStaticAD
             ? 'AIR DEFENSE (ON WATCH)'
@@ -1037,28 +1040,72 @@ export function WarSimConsole({
                 </div>
               )}
 
-              {/* Sensor / Sight Horizon */}
-              <div
-                style={{
-                  marginTop: '2px',
-                  padding: '6px 10px',
-                  background: 'rgba(79, 195, 247, 0.08)',
-                  borderRadius: '5px',
-                  border: '1px solid rgba(79, 195, 247, 0.25)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '11px',
-                }}
-              >
-                <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>{isGround ? '🔭' : '📡'}</span>
-                  <span>{isGround ? 'Thermal & Optical Sight Horizon:' : 'Radar / Sensor Horizon:'}</span>
-                </span>
-                <strong style={{ color: '#4FC3F7' }}>
-                  {detectionKm} km
-                </strong>
-              </div>
+              {/* Sensor / Sight Horizon Envelopes */}
+              {isNaval ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                  {/* Air Search Radar Envelope */}
+                  <div
+                    style={{
+                      padding: '5px 9px',
+                      background: 'rgba(79, 195, 247, 0.08)',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(79, 195, 247, 0.25)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>📡</span>
+                      <span>Air Search Radar (Full 3D):</span>
+                    </span>
+                    <strong style={{ color: '#4FC3F7' }}>{detectionKm} km</strong>
+                  </div>
+
+                  {/* Surface Search / Clipped Horizon Envelope */}
+                  <div
+                    style={{
+                      padding: '5px 9px',
+                      background: 'rgba(0, 229, 255, 0.08)',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(0, 229, 255, 0.25)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <span style={{ color: '#00E5FF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🌊</span>
+                      <span>Surface Search (Clipped Horizon):</span>
+                    </span>
+                    <strong style={{ color: '#00E5FF' }}>{surfaceHorizonKm} km</strong>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    marginTop: '2px',
+                    padding: '6px 10px',
+                    background: 'rgba(79, 195, 247, 0.08)',
+                    borderRadius: '5px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '11px',
+                  }}
+                >
+                  <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>{isGround ? '🔭' : '📡'}</span>
+                    <span>{isGround ? 'Thermal & Optical Sight Horizon:' : 'Radar / Sensor Horizon:'}</span>
+                  </span>
+                  <strong style={{ color: '#4FC3F7' }}>
+                    {detectionKm} km
+                  </strong>
+                </div>
+              )}
 
               {/* Equipped Weapons Arsenal & Interactive Range Toggles */}
               {(() => {

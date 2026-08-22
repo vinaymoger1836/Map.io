@@ -43,6 +43,7 @@ import {
   domainOf,
   radarHorizonKm,
   defaultSonarFor,
+  signatureRangeMultiplier,
 } from './specs';
 
 /* ------------------------------------------------------------------ */
@@ -1102,7 +1103,7 @@ export function tickWarSim(
         const dist = distanceKm(scanner.lngLat, target.lngLat);
         const isGroundScanner = isGroundCombatUnit(scanner.typeId);
 
-        // Ground combat vehicles (tanks, IFVs, artillery, infantry) have optical/thermal sights (~8 km)
+        // Ground combat vehicles (tanks, IFVs, artillery, infantry) have optical/thermal sights (~15 km)
         // and CANNOT detect high-altitude aircraft!
         if (isGroundScanner && scanner.typeId !== 'mobile-ad' && scanner.typeId !== 'sam-launcher') {
           if (targetDomain === 'air' && (target.altitudeM ?? 0) > 300) {
@@ -1111,18 +1112,29 @@ export function tickWarSim(
         }
 
         // Sensor detection envelope
-        let maxRadarKm = scanSpec?.sensor?.detectionKm ?? (
-          isGroundScanner ? 8 : scanner.typeId === 'awacs' ? 450 : 220
+        let ratedSensorKm = scanSpec?.sensor?.detectionKm ?? (
+          isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : 250
         );
+
         if (scanner.patrolOrder?.emcon === 'passive') {
-          maxRadarKm = 0; // Passive silent running
+          ratedSensorKm = 0; // Passive silent running
         }
 
-        // Radar Horizon modeling against altitude
-        if (scanSpec?.sensor?.horizonLimited) {
-          const antennaM = scanSpec.sensor.antennaM ?? 25;
-          const targetAltM = target.altitudeM ?? 3000;
-          const horizonKm = radarHorizonKm(antennaM, targetAltM);
+        // Apply target stealth signature reduction if target is stealthy
+        const targetSignature = targetSpec?.signature;
+        const sigMult = signatureRangeMultiplier(targetSignature);
+        let maxRadarKm = ratedSensorKm * sigMult;
+
+        // Radar Horizon modeling:
+        // - Air targets cruise high above the horizon and are detected at the full instrumented radar range (ratedSensorKm * sigMult).
+        // - Surface targets (ships, ground units) are clipped by Earth curvature line-of-sight if scanner is at surface level.
+        if (targetDomain !== 'air' && scanSpec?.sensor?.horizonLimited) {
+          const antennaM = (scanner.altitudeM && scanner.altitudeM > 50)
+            ? scanner.altitudeM
+            : (scanSpec.sensor.antennaM ?? (scanner.typeId === 'destroyer' || scanner.typeId === 'frigate' ? 25 : 15));
+
+          const targetEffectiveAltM = targetDomain === 'sea' ? 25 : 5;
+          const horizonKm = radarHorizonKm(antennaM, targetEffectiveAltM);
           maxRadarKm = Math.min(maxRadarKm, horizonKm);
         }
 
@@ -1134,15 +1146,19 @@ export function tickWarSim(
             bestTier = Math.max(bestTier, 1) as 1 | 2;
           }
         } else if (dist <= maxRadarKm) {
-          // Detected on Radar / Optics (Tier 1)
+          // Detected on Radar / Optics (Tier 1 baseline contact)
           bestTier = Math.max(bestTier, 1) as 1 | 2;
 
-          // If Recon Drone or SOF team or within visual optic range (<= 15 km), upgrade to PID (Tier 2)
+          // PID (Tier 2 Positive Identification) conditions:
+          // 1. Within 50% of sensor horizon (high-resolution NCTR / ISAR classification)
+          // 2. Or within visual / optical identification distance (<= 45 km)
+          // 3. Or scanner is a dedicated Recon UAV / Maritime Patrol / AWACS / SOF
           if (
             scanner.typeId === 'uav' ||
             scanner.typeId === 'recon' ||
+            scanner.typeId === 'awacs' ||
             scanner.typeId === 'special-forces' ||
-            dist <= (isGroundScanner ? 8 : 35)
+            dist <= Math.max(45, maxRadarKm * 0.50)
           ) {
             bestTier = 2;
           }
