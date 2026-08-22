@@ -143,9 +143,20 @@ export default function EurasiaMap() {
       warSim.selectedEntityId,
       war.systems,
       warSim.activeWeaponIndex,
-      warSim.showAllEnvelopes
+      warSim.showAllEnvelopes,
+      warSim.selectedContactId
     );
-  }, [ready, mode, warSim.session, warSim.targetPicking, warSim.selectedEntityId, war.systems, warSim.activeWeaponIndex, warSim.showAllEnvelopes]);
+  }, [
+    ready,
+    mode,
+    warSim.session,
+    warSim.targetPicking,
+    warSim.selectedEntityId,
+    war.systems,
+    warSim.activeWeaponIndex,
+    warSim.showAllEnvelopes,
+    warSim.selectedContactId,
+  ]);
 
   // Real-time Cursor Patrol Orbit Preview
   useEffect(() => {
@@ -166,9 +177,14 @@ export default function EurasiaMap() {
         return;
       }
 
-      const layers = ['warsim-bases-circle', 'warsim-entities-symbol', 'warsim-contacts-circle', 'warsim-contacts-label'].filter(
-        (id) => map.getLayer(id)
-      );
+      const layers = [
+        'warsim-bases-circle',
+        'warsim-entities-symbol',
+        'warsim-contacts-symbol',
+        'warsim-contacts-circle',
+        'warsim-contacts-label',
+        'warsim-contacts-halo',
+      ].filter((id) => map.getLayer(id));
       const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
       if (hits.length > 0) {
         const props = (hits[0].properties || {}) as Record<string, string>;
@@ -179,7 +195,13 @@ export default function EurasiaMap() {
         } else if (layerId === 'warsim-entities-symbol' && props.id) {
           warSim.setSelectedEntityId(props.id);
           warSim.setSelectedContactId(null);
-        } else if ((layerId === 'warsim-contacts-circle' || layerId === 'warsim-contacts-label') && props.id) {
+        } else if (
+          (layerId === 'warsim-contacts-symbol' ||
+            layerId === 'warsim-contacts-circle' ||
+            layerId === 'warsim-contacts-label' ||
+            layerId === 'warsim-contacts-halo') &&
+          props.id
+        ) {
           warSim.setSelectedContactId(props.id);
           warSim.setSelectedEntityId(null);
         }

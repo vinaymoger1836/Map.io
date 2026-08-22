@@ -46,8 +46,10 @@ const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
 const LYR_ENTITIES_HALO = 'warsim-entities-halo';
 const LYR_ENTITIES_SYMBOL = 'warsim-entities-symbol';
+const LYR_CONTACTS_HALO = 'warsim-contacts-halo';
 const LYR_CONTACTS_CIRCLE = 'warsim-contacts-circle';
 const LYR_CONTACTS_LABEL = 'warsim-contacts-label';
+const LYR_CONTACTS_SYMBOL = 'warsim-contacts-symbol';
 const LYR_PATROLS_LINE = 'warsim-patrols-line';
 const LYR_MISSILES_LINE = 'warsim-missiles-line';
 const LYR_MISSILES_HEAD = 'warsim-missiles-head';
@@ -402,22 +404,42 @@ export function installWarSimLayers(map: MLMap) {
     data: { type: 'FeatureCollection', features: [] },
   });
 
+  // Contacts Selection Halo
+  map.addLayer({
+    id: LYR_CONTACTS_HALO,
+    type: 'circle',
+    source: SRC_CONTACTS,
+    filter: ['==', ['get', 'selected'], true],
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 20, 6, 28, 10, 36],
+      'circle-color': '#D9534F',
+      'circle-opacity': 0.22,
+      'circle-stroke-color': '#FF5252',
+      'circle-stroke-width': 2,
+      'circle-stroke-opacity': 0.95,
+    },
+  });
+
+  // Tier 1 Sensor Track Radar Dot Blips
   map.addLayer({
     id: LYR_CONTACTS_CIRCLE,
     type: 'circle',
     source: SRC_CONTACTS,
+    filter: ['==', ['get', 'tier'], 1],
     paint: {
       'circle-radius': 7.5,
-      'circle-color': ['case', ['==', ['get', 'tier'], 2], '#D9534F', '#FFB020'],
+      'circle-color': '#FFB020',
       'circle-stroke-width': 2,
       'circle-stroke-color': '#FFFFFF',
     },
   });
 
+  // Tier 1 Sensor Track Labels
   map.addLayer({
     id: LYR_CONTACTS_LABEL,
     type: 'symbol',
     source: SRC_CONTACTS,
+    filter: ['==', ['get', 'tier'], 1],
     layout: {
       'text-field': ['get', 'label'],
       'text-size': 10,
@@ -426,9 +448,37 @@ export function installWarSimLayers(map: MLMap) {
       'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
     },
     paint: {
-      'text-color': ['case', ['==', ['get', 'tier'], 2], '#D9534F', '#FFB020'],
+      'text-color': '#FFB020',
       'text-halo-color': '#070C14',
       'text-halo-width': 1.5,
+    },
+  });
+
+  // Tier 2 Positively Identified (PID) NATO Tactical Badge Icons
+  map.addLayer({
+    id: LYR_CONTACTS_SYMBOL,
+    type: 'symbol',
+    source: SRC_CONTACTS,
+    filter: ['==', ['get', 'tier'], 2],
+    layout: {
+      'icon-image': ['get', 'icon'],
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 2, 0.55, 5, 0.78, 9, 0.96],
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+      'icon-anchor': 'center',
+      'text-field': ['get', 'label'],
+      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-size': 10.5,
+      'text-offset': [0, 1.5],
+      'text-anchor': 'top',
+      'text-optional': true,
+      'text-padding': 2,
+    },
+    paint: {
+      'text-color': '#FFFFFF',
+      'text-halo-color': '#070C14',
+      'text-halo-width': 1.6,
+      'text-halo-blur': 0.4,
     },
   });
 
@@ -513,7 +563,8 @@ export function renderWarSimStateToMap(
   selectedEntityId?: string | null,
   systemsLibrary: SystemSpec[] = [],
   activeWeaponIndex?: number | null,
-  showAllEnvelopes: boolean = false
+  showAllEnvelopes: boolean = false,
+  selectedContactId?: string | null
 ) {
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
@@ -776,16 +827,66 @@ export function renderWarSimStateToMap(
     ? session.fogOfWarContacts.playerContacts
     : session.fogOfWarContacts.enemyContacts;
 
-  const contactFeatures = contacts.map((c) => ({
-    type: 'Feature' as const,
-    geometry: { type: 'Point' as const, coordinates: c.lastKnownLngLat },
-    properties: {
-      id: c.contactId,
-      tier: c.intelTier,
-      label: c.intelTier === 2 ? `🎯 ${c.knownName} (${c.knownCount ?? 1}x)` : `⚠️ UNKNOWN ${c.domain.toUpperCase()} [?]`,
-      color: c.intelTier === 2 ? '#D9534F' : '#FFB020',
-    },
-  }));
+  const contactFeatures = contacts.map((c) => {
+    const isTier2 = c.intelTier === 2;
+    const isSelected = c.contactId === selectedContactId;
+    let iconId: string | undefined = undefined;
+    let label = '';
+
+    if (isTier2) {
+      const targetEntity = session.entities.find((e) => e.id === c.targetEntityId);
+      const iconColor = isPlayer ? session.enemyColor : session.playerColor;
+      let spec: IconSpec;
+
+      if (targetEntity) {
+        spec = simEntityIconSpec(targetEntity, iconColor);
+      } else {
+        const mappedKey =
+          c.domain === 'air'
+            ? 'fighter'
+            : c.domain === 'sea'
+              ? 'destroyer'
+              : c.domain === 'sub'
+                ? 'submarine'
+                : c.domain === 'site'
+                  ? 'silo'
+                  : 'infantry';
+        const typeDef = UNIT_BY_ID.get(mappedKey) ?? UNIT_BY_ID.get('infantry')!;
+        spec = {
+          typeId: typeDef.id,
+          glyph: typeDef.glyph,
+          domain: typeDef.domain,
+          color: iconColor,
+          mark: { kind: 'text', text: `${c.knownCount ?? 1}×` },
+        };
+      }
+      iconSpecs.push(spec);
+      iconId = unitIconId(spec.typeId, spec.mark, spec.color);
+
+      const cleanName = (c.knownName || targetEntity?.name || 'Enemy Unit').replace(/^\d+\s*[×x]\s*/i, '');
+      const count = c.knownCount ?? (targetEntity?.count ?? 1);
+      label = `${count > 1 ? `${count} × ` : ''}${cleanName}`;
+    } else {
+      label = `⚠️ UNKNOWN ${c.domain.toUpperCase()} [?]`;
+    }
+
+    return {
+      type: 'Feature' as const,
+      geometry: { type: 'Point' as const, coordinates: c.lastKnownLngLat },
+      properties: {
+        id: c.contactId,
+        selected: isSelected,
+        tier: c.intelTier,
+        icon: iconId,
+        label,
+        color: isTier2 ? (isPlayer ? session.enemyColor : session.playerColor) : '#FFB020',
+      },
+    };
+  });
+
+  // Ensure all NATO icon badges (for both friendly units and PID Tier 2 enemy contacts) are registered in MapLibre
+  ensureIcons(map, iconSpecs);
+
   (map.getSource(SRC_CONTACTS) as GeoJSONSource)?.setData({
     type: 'FeatureCollection',
     features: contactFeatures,
@@ -951,8 +1052,10 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_MISSILES_SYMBOL,
     LYR_MISSILES_HEAD,
     LYR_MISSILES_LINE,
+    LYR_CONTACTS_SYMBOL,
     LYR_CONTACTS_LABEL,
     LYR_CONTACTS_CIRCLE,
+    LYR_CONTACTS_HALO,
     LYR_ENTITIES_SYMBOL,
     LYR_ENTITIES_HALO,
     LYR_PATROLS_LINE,
