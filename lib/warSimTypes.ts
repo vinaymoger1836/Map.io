@@ -181,6 +181,7 @@ export interface MissileFlyoutTrack {
   isIntercepted: boolean;
   progress: number; // 0.0 to 1.0
   interceptorEntityId?: string;
+  engagedByDefenderIds?: string[];
 }
 
 /* ------------------------------------------------------------------ */
