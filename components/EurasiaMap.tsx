@@ -21,6 +21,12 @@ import { INTERACTIVE_LAYERS, applyVisibility, installLayers } from '@/lib/mapLay
 import { WORLD_VIEW, useWarGames } from '@/lib/useWarGames';
 import { PlaybackHUD } from './wargames/PlaybackHUD';
 import { ConfigurationSuite } from './wargames/ConfigurationSuite';
+import { WarSimLauncher } from './wargames/WarSimLauncher';
+import { WarSimConsole } from './wargames/WarSimConsole';
+import { WarSimAarModal } from './wargames/WarSimAarModal';
+import { useWarSim } from '@/lib/useWarSim';
+import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview } from '@/lib/warSimLayers';
+import { type WarSimSession } from '@/lib/warSimTypes';
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -99,6 +105,9 @@ export default function EurasiaMap() {
   const [panelOpen, setPanelOpen] = useState(true);
   const [mode, setMode] = useState<Mode>('situation');
   const [configOpen, setConfigOpen] = useState(false);
+  const [warSimLauncherOpen, setWarSimLauncherOpen] = useState(false);
+  const [activeWarSimSession, setActiveWarSimSession] = useState<WarSimSession | null>(null);
+  const [warSimAarOpen, setWarSimAarOpen] = useState(false);
 
   const modeRef = useRef(mode);
   const warHydrateRef = useRef<((map: MLMap) => void) | null>(null);
@@ -110,9 +119,113 @@ export default function EurasiaMap() {
     mapRef,
     mapReady: ready,
     active: mode === 'wargames',
+    simulationActive: Boolean(activeWarSimSession),
     darkBasemap: basemap === 'dark',
   });
   warHydrateRef.current = war.hydrate;
+
+  const warSim = useWarSim({
+    initialSession: activeWarSimSession,
+    systemsLibrary: war.systems,
+    mapRef,
+    onClose: () => setActiveWarSimSession(null),
+  });
+
+  // Sync War Sim state to MapLibre layers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+    renderWarSimStateToMap(
+      map,
+      warSim.session,
+      warSim.session.activeFaction,
+      warSim.targetPicking,
+      warSim.selectedEntityId,
+      war.systems,
+      warSim.activeWeaponIndex,
+      warSim.showAllEnvelopes,
+      warSim.selectedContactId
+    );
+  }, [
+    ready,
+    mode,
+    warSim.session,
+    warSim.targetPicking,
+    warSim.selectedEntityId,
+    war.systems,
+    warSim.activeWeaponIndex,
+    warSim.showAllEnvelopes,
+    warSim.selectedContactId,
+  ]);
+
+  // Real-time Cursor Patrol Orbit Preview
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+    updateWarSimPatrolPreview(map, warSim.targetPicking, cursor);
+  }, [cursor, warSim.targetPicking, ready, mode, warSim.session]);
+
+  // War Sim Map Click & Interaction
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+
+    const onSimClick = (e: maplibregl.MapMouseEvent) => {
+      // If currently designating a target (sortie, autonomous battery, base placement)
+      if (warSim.targetPicking) {
+        warSim.confirmTargetPick([e.lngLat.lng, e.lngLat.lat]);
+        return;
+      }
+
+      const layers = [
+        'warsim-bases-circle',
+        'warsim-entities-symbol',
+        'warsim-contacts-symbol',
+        'warsim-contacts-circle',
+        'warsim-contacts-label',
+        'warsim-contacts-halo',
+      ].filter((id) => map.getLayer(id));
+      const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
+      if (hits.length > 0) {
+        const props = (hits[0].properties || {}) as Record<string, string>;
+        const layerId = hits[0].layer.id;
+
+        if (layerId === 'warsim-bases-circle' && props.id) {
+          warSim.setSelectedBaseId(props.id);
+        } else if (layerId === 'warsim-entities-symbol' && props.id) {
+          warSim.setSelectedEntityId(props.id);
+          warSim.setSelectedContactId(null);
+        } else if (
+          (layerId === 'warsim-contacts-symbol' ||
+            layerId === 'warsim-contacts-circle' ||
+            layerId === 'warsim-contacts-label' ||
+            layerId === 'warsim-contacts-halo') &&
+          props.id
+        ) {
+          warSim.setSelectedContactId(props.id);
+          warSim.setSelectedEntityId(null);
+        }
+      } else {
+        warSim.setSelectedBaseId(null);
+        warSim.setSelectedEntityId(null);
+        warSim.setSelectedContactId(null);
+      }
+    };
+
+    map.on('click', onSimClick);
+    return () => {
+      map.off('click', onSimClick);
+    };
+  }, [
+    ready,
+    mode,
+    warSim.session,
+    warSim.targetPicking,
+    warSim.confirmTargetPick,
+    warSim.setSelectedBaseId,
+    warSim.setSelectedEntityId,
+    warSim.setSelectedContactId,
+  ]);
 
   /** Re-adds every source and layer. Safe to call after a basemap swap. */
   const hydrate = useCallback((map: MLMap) => {
@@ -417,88 +530,105 @@ export default function EurasiaMap() {
           </div>
         )}
 
-        <header className={`masthead${mode === 'wargames' ? ' wargames' : ''}`}>
-          <h1>{mode === 'wargames' ? 'War Games' : 'Eurasia'}</h1>
-          <div className="sub">
-            {mode === 'wargames'
-              ? 'Paint nations · deploy forces · the whole board'
-              : 'Borders · blocs · energy · the front'}
-          </div>
-        </header>
+        {!warSim.session && (
+          <header className={`masthead${mode === 'wargames' ? ' wargames' : ''}`}>
+            <h1>{mode === 'wargames' ? 'War Games' : 'Eurasia'}</h1>
+            <div className="sub">
+              {mode === 'wargames'
+                ? 'Paint nations · deploy forces · the whole board'
+                : 'Borders · blocs · energy · the front'}
+            </div>
+          </header>
+        )}
 
-        <div className="actions">
-          {mode === 'situation' ? (
-            <>
-              <button className="action" onClick={() => flyTo(WAR_VIEW)}>
-                The front
-              </button>
-              <button
-                className={`action${arcticOn ? ' active' : ''}`}
-                aria-pressed={arcticOn}
-                onClick={toggleArctic}
-                title={
-                  globeSupported ? undefined : 'Globe projection unavailable — polar view will be distorted'
-                }
-              >
-                {globeSupported ? 'Arctic' : 'Arctic (flat)'}
-              </button>
-              <button className="action" onClick={reset}>
-                Reset
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="action" onClick={() => flyTo(WORLD_VIEW)}>
-                World view
-              </button>
-              <button className="action" onClick={() => switchMode('situation')}>
-                Situation map
-              </button>
-              <button className="action accent" onClick={() => setConfigOpen(true)}>
-                ⚙️ Configuration
-              </button>
-            </>
-          )}
-          <button
-            className="action"
-            onClick={() =>
-              changeBasemap(basemap === 'dark' ? 'light' : basemap === 'light' ? 'detail' : 'dark')
-            }
-          >
-            {basemap}
-          </button>
-          {mode === 'situation' && (
-            <button className="action accent" onClick={() => switchMode('wargames')}>
-              War games
-            </button>
-          )}
-        </div>
-
-        {panelOpen ? (
-          <div className={`panel${mode === 'wargames' ? ' panel-wide' : ''}`}>
-            {mode === 'wargames' ? (
-              <WarGamesPanel {...war} onOpenConfiguration={() => setConfigOpen(true)} />
+        {!warSim.session && (
+          <div className="actions">
+            {mode === 'situation' ? (
+              <>
+                <button className="action" onClick={() => flyTo(WAR_VIEW)}>
+                  The front
+                </button>
+                <button
+                  className={`action${arcticOn ? ' active' : ''}`}
+                  aria-pressed={arcticOn}
+                  onClick={toggleArctic}
+                  title={
+                    globeSupported ? undefined : 'Globe projection unavailable — polar view will be distorted'
+                  }
+                >
+                  {globeSupported ? 'Arctic' : 'Arctic (flat)'}
+                </button>
+                <button className="action" onClick={reset}>
+                  Reset
+                </button>
+              </>
             ) : (
-              <ControlPanel
-                state={visibility}
-                onToggle={toggle}
-                asOf="1 Aug 2026"
-                warning={dataWarning}
-                note={projectionNote}
-              />
+              <>
+                <button className="action" onClick={() => flyTo(WORLD_VIEW)}>
+                  World view
+                </button>
+                <button className="action" onClick={() => switchMode('situation')}>
+                  Situation map
+                </button>
+                <button
+                  className="action"
+                  style={{ color: '#4FA85F', borderColor: 'rgba(79, 168, 95, 0.6)', fontWeight: 600 }}
+                  onClick={() => setWarSimLauncherOpen(true)}
+                >
+                  ⚔️ War Sim
+                </button>
+                <button className="action accent" onClick={() => setConfigOpen(true)}>
+                  ⚙️ Configuration
+                </button>
+              </>
             )}
             <button
-              className="panel-toggle"
-              style={{ position: 'static', borderLeft: 0, borderRight: 0, borderBottom: 0 }}
-              onClick={() => setPanelOpen(false)}
+              className="action"
+              onClick={() =>
+                changeBasemap(basemap === 'dark' ? 'light' : basemap === 'light' ? 'detail' : 'dark')
+              }
             >
-              {mode === 'wargames' ? 'Hide console' : 'Hide layers'}
+              {basemap}
             </button>
+            {mode === 'situation' && (
+              <button className="action accent" onClick={() => switchMode('wargames')}>
+                War games
+              </button>
+            )}
           </div>
-        ) : (
-          <button className="panel-toggle" onClick={() => setPanelOpen(true)}>
-            {mode === 'wargames' ? `Console · ${war.board.units.length} units` : `Layers · ${activeLayers} on`}
-          </button>
+        )}
+
+        {!warSim.session && (
+          panelOpen ? (
+            <div className={`panel${mode === 'wargames' ? ' panel-wide' : ''}`}>
+              {mode === 'wargames' ? (
+                <WarGamesPanel
+                  {...war}
+                  onOpenConfiguration={() => setConfigOpen(true)}
+                  onOpenWarSim={() => setWarSimLauncherOpen(true)}
+                />
+              ) : (
+                <ControlPanel
+                  state={visibility}
+                  onToggle={toggle}
+                  asOf="1 Aug 2026"
+                  warning={dataWarning}
+                  note={projectionNote}
+                />
+              )}
+              <button
+                className="panel-toggle"
+                style={{ position: 'static', borderLeft: 0, borderRight: 0, borderBottom: 0 }}
+                onClick={() => setPanelOpen(false)}
+              >
+                {mode === 'wargames' ? 'Hide console' : 'Hide layers'}
+              </button>
+            </div>
+          ) : (
+            <button className="panel-toggle" onClick={() => setPanelOpen(true)}>
+              {mode === 'wargames' ? `Console · ${war.board.units.length} units` : `Layers · ${activeLayers} on`}
+            </button>
+          )
         )}
 
         {mode === 'wargames' && war.loading && <div className="wg-loading">Loading world roster…</div>}
@@ -524,6 +654,98 @@ export default function EurasiaMap() {
           <ConfigurationSuite
             wg={war}
             onClose={() => setConfigOpen(false)}
+          />
+        )}
+
+        {warSimLauncherOpen && (
+          <WarSimLauncher
+            wg={war}
+            isOpen={warSimLauncherOpen}
+            onClose={() => setWarSimLauncherOpen(false)}
+            onLaunchSimulation={(session) => {
+              // 1. Atomically reset board to only the 2 selected simulation nations in their colors
+              war.setSimulationNations(session.playerIso, session.playerColor, session.enemyIso, session.enemyColor);
+              // 2. Launch the simulation session
+              setActiveWarSimSession(session);
+              setWarSimLauncherOpen(false);
+            }}
+            onOpenConfiguration={(sysId) => {
+              setWarSimLauncherOpen(false);
+              setConfigOpen(true);
+            }}
+          />
+        )}
+
+        {mode === 'wargames' && warSim.session && (
+          <WarSimConsole
+            session={warSim.session}
+            isPlaying={warSim.isPlaying}
+            onTogglePlay={warSim.togglePlay}
+            speedMultiplier={warSim.speedMultiplier}
+            onSetSpeed={warSim.setSpeedMultiplier}
+            onSwitchFaction={warSim.switchActiveFaction}
+            friendlyBases={warSim.friendlyBases}
+            friendlyEntities={warSim.friendlyEntities}
+            visibleContacts={warSim.visibleContacts}
+            selectedBase={warSim.selectedBase}
+            onSelectBase={warSim.setSelectedBaseId}
+            selectedEntity={warSim.selectedEntity}
+            onSelectEntity={warSim.setSelectedEntityId}
+            selectedContact={warSim.selectedContact}
+            onSelectContact={warSim.setSelectedContactId}
+            onOrderStrike={(params) => {
+              warSim.orderStrike(
+                params.attackerEntityId,
+                params.targetEntityId,
+                params.targetLngLat,
+                params.weaponIndex,
+                params.salvoCount,
+                params.postStrikeAction,
+                params.customPostLngLat,
+                params.sortieCount,
+                params.customWeapons
+              );
+            }}
+            activeWeaponIndex={warSim.activeWeaponIndex}
+            onToggleWeapon={(idx) => {
+              warSim.setActiveWeaponIndex(warSim.activeWeaponIndex === idx ? null : idx);
+            }}
+            showAllEnvelopes={warSim.showAllEnvelopes}
+            onToggleShowAllEnvelopes={() => {
+              warSim.setShowAllEnvelopes((prev) => !prev);
+            }}
+            onDeployUnitToBase={warSim.deployUnitToBase}
+            onDeployAutonomous={(sysId, count) => {
+              warSim.startAutonomousPicking(sysId, count);
+            }}
+            onStartSortie={(entity, options) => {
+              warSim.startSortiePicking(entity, options);
+            }}
+            onOrderRtb={warSim.orderRtb}
+            onStartBasePlacement={warSim.startBasePlacement}
+            onRenameBase={warSim.renameBase}
+            targetPicking={warSim.targetPicking}
+            onCancelTargetPicking={warSim.cancelTargetPicking}
+            onConfirmCustomRoute={warSim.confirmCustomRoute}
+            onUndoLastWaypoint={warSim.undoLastWaypoint}
+            onOpenAar={() => setWarSimAarOpen(true)}
+            onExitSim={() => {
+              if (mapRef.current) removeWarSimLayers(mapRef.current);
+              setActiveWarSimSession(null);
+            }}
+            systemsLibrary={war.systems}
+            countries={war.countries}
+            onFlyToBase={(lngLat) => {
+              mapRef.current?.flyTo({ center: lngLat, zoom: 6, duration: 1200 });
+            }}
+          />
+        )}
+
+        {warSimAarOpen && warSim.session && (
+          <WarSimAarModal
+            isOpen={warSimAarOpen}
+            onClose={() => setWarSimAarOpen(false)}
+            session={warSim.session}
           />
         )}
 

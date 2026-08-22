@@ -692,3 +692,192 @@ export function tidySpec(spec: SystemSpec): SystemSpec {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* War Simulation Pre-Flight Validation Engine                        */
+/* ------------------------------------------------------------------ */
+
+export interface MissingSpecField {
+  field: string;
+  label: string;
+  reason: string;
+}
+
+export interface SystemValidationReport {
+  systemId: string;
+  systemName: string;
+  typeId: string;
+  domain: Domain;
+  valid: boolean;
+  missingFields: MissingSpecField[];
+}
+
+export interface OrbatValidationResult {
+  valid: boolean;
+  failedCount: number;
+  passedCount: number;
+  reports: SystemValidationReport[];
+}
+
+/**
+ * Rigorously validates whether a military system possesses all critical
+ * physical, sensor, and kinematic fields required to participate in the
+ * live War Simulation engine.
+ */
+export function validateSimSystem(spec: SystemSpec): SystemValidationReport {
+  const domain = domainOf(spec);
+  const missing: MissingSpecField[] = [];
+  const typeId = spec.typeId || 'fighter';
+
+  // 1. Platform Kinematics & Fuel Constraints
+  const isPlatform = domain === 'air' || domain === 'sea' || domain === 'sub' || domain === 'ground';
+  if (isPlatform) {
+    const hasCombatRadius = (spec.platform?.combatRadiusKm ?? 0) > 0 || (spec.platform?.ferryRangeKm ?? 0) > 0;
+    if (domain === 'air' && !hasCombatRadius) {
+      missing.push({
+        field: 'platform.combatRadiusKm',
+        label: 'Combat Radius / Range',
+        reason: 'Required for calculating sortie reach, patrol orbit distance, and fuel burn.',
+      });
+    }
+
+    const hasSpeed = (spec.platform?.speedKmh ?? 0) > 0;
+    if ((domain === 'air' || domain === 'sea' || domain === 'ground') && !hasSpeed) {
+      missing.push({
+        field: 'platform.speedKmh',
+        label: 'Speed (km/h)',
+        reason: 'Required for physical transit velocity and kinematic interception timing.',
+      });
+    }
+  }
+
+  // 2. Sensor & Radar Horizon Checks
+  const isDedicatedSensor = typeId === 'radar' || typeId === 'awacs' || typeId === 'ew' || typeId === 'jammer';
+  const isCombatPlatform = typeId === 'fighter' || typeId === 'destroyer' || typeId === 'cruiser' || typeId === 'frigate' || typeId === 'sam-launcher';
+
+  if (isDedicatedSensor || isCombatPlatform) {
+    const hasSensor = (spec.sensor?.detectionKm ?? 0) > 0;
+    const hasSonar = (spec.sensor?.sonar?.detectionKm ?? defaultSonarFor(spec, typeId).detectionKm ?? 0) > 0;
+    
+    if (domain === 'sub') {
+      if (!hasSonar && !hasSensor) {
+        missing.push({
+          field: 'sensor.sonar.detectionKm',
+          label: 'Sonar Detection Range',
+          reason: 'Required for underwater acoustic detection and torpedo defense.',
+        });
+      }
+    } else if (!hasSensor && isDedicatedSensor) {
+      missing.push({
+        field: 'sensor.detectionKm',
+        label: 'Radar Detection Range',
+        reason: 'Required for early warning radar sweeps and aerial contact detection.',
+      });
+    }
+
+    if (spec.sensor && spec.sensor.horizonLimited && (spec.sensor.antennaM ?? 0) <= 0) {
+      missing.push({
+        field: 'sensor.antennaM',
+        label: 'Antenna Height (m)',
+        reason: 'Required for calculating earth-curvature radar horizon against low-altitude targets.',
+      });
+    }
+  }
+
+  // 3. Weapon Envelopes & Kill Probabilities
+  const isCombatUnit = typeId === 'fighter' || typeId === 'strike' || typeId === 'bomber' || 
+                       typeId === 'destroyer' || typeId === 'cruiser' || typeId === 'frigate' || 
+                       typeId === 'sam-launcher' || typeId === 'missile' || typeId === 'artillery' || 
+                       typeId === 'rocket' || typeId === 'armour';
+
+  if (isCombatUnit) {
+    const weapons = spec.weapons || [];
+    if (weapons.length === 0 && typeId !== 'armour') {
+      missing.push({
+        field: 'weapons',
+        label: 'Weapon Envelopes',
+        reason: 'Combat units must have at least one defined weapon system with range and munitions.',
+      });
+    } else {
+      weapons.forEach((w, idx) => {
+        const prefix = `weapons[${idx}]`;
+        const wName = w.name || `Weapon #${idx + 1}`;
+        if (!w.rangeKm || w.rangeKm <= 0) {
+          missing.push({
+            field: `${prefix}.rangeKm`,
+            label: `${wName} Range`,
+            reason: 'Weapon must have a valid maximum effective range in kilometres.',
+          });
+        }
+        if (w.pk === undefined || w.pk <= 0) {
+          missing.push({
+            field: `${prefix}.pk`,
+            label: `${wName} Kill Probability (Pk)`,
+            reason: 'Required for simulated hit/kill probability resolution.',
+          });
+        }
+      });
+    }
+  }
+
+  return {
+    systemId: spec.id,
+    systemName: spec.name || spec.id,
+    typeId: spec.typeId || 'unknown',
+    domain,
+    valid: missing.length === 0,
+    missingFields: missing,
+  };
+}
+
+/**
+ * Validates an entire allocated national ORBAT against the systems library.
+ * Returns a comprehensive report highlighting pass/fail metrics.
+ */
+export function validateOrbatRoster(
+  allocatedSystemIds: string[],
+  systemsLibrary: SystemSpec[]
+): OrbatValidationResult {
+  const reports: SystemValidationReport[] = [];
+  let passedCount = 0;
+  let failedCount = 0;
+
+  const uniqueIds = Array.from(new Set(allocatedSystemIds.filter(Boolean)));
+
+  for (const sysId of uniqueIds) {
+    const spec = systemsLibrary.find((s) => s.id === sysId);
+    if (!spec) {
+      reports.push({
+        systemId: sysId,
+        systemName: sysId,
+        typeId: 'unknown',
+        domain: 'ground',
+        valid: false,
+        missingFields: [
+          {
+            field: 'spec',
+            label: 'System Definition Missing',
+            reason: 'System was not found in the technical specifications library.',
+          },
+        ],
+      });
+      failedCount++;
+    } else {
+      const report = validateSimSystem(spec);
+      reports.push(report);
+      if (report.valid) {
+        passedCount++;
+      } else {
+        failedCount++;
+      }
+    }
+  }
+
+  return {
+    valid: failedCount === 0,
+    failedCount,
+    passedCount,
+    reports,
+  };
+}
+

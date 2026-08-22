@@ -76,7 +76,7 @@ export const WAR_LAYERS = [
 const BREAKS = [2, 3, 4, 5, 6, 7, 8];
 
 /** Features below this `z` are the handful the world view can hold at once. */
-const BASE_Z = 1.5;
+const BASE_Z = 2.5;
 
 /**
  * Builds a step-over-zoom expression that yields `visible` for features whose

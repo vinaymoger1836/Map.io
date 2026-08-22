@@ -24,9 +24,10 @@ import { NEUTRAL } from './wargames/icons';
 
 export interface WarGamesPanelProps extends WarGames {
   onOpenConfiguration?: () => void;
+  onOpenWarSim?: () => void;
 }
 
-export default function WarGamesPanel({ onOpenConfiguration, ...wg }: WarGamesPanelProps) {
+export default function WarGamesPanel({ onOpenConfiguration, onOpenWarSim, ...wg }: WarGamesPanelProps) {
   const [section, setSection] = useState<Section>('map');
   const activeColor = wg.activeNation?.color ?? wg.color;
   const paintColor = wg.activeIso ? activeColor : NEUTRAL;
@@ -43,6 +44,7 @@ export default function WarGamesPanel({ onOpenConfiguration, ...wg }: WarGamesPa
           boards: wg.scenarios.length || undefined,
         }}
         onOpenConfiguration={onOpenConfiguration}
+        onOpenWarSim={onOpenWarSim}
       />
 
       {section === 'map' && <MapSection wg={wg} color={paintColor} />}

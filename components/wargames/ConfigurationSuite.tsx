@@ -10,7 +10,7 @@
  * 4. Systems Backup & JSON Schema (import/export custom arsenals, backup scenario state).
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import type { WarGames } from '@/lib/useWarGames';
 import {
   DOMAINS,
@@ -104,6 +104,82 @@ export function ConfigurationSuite({
   });
 
   const [doctrineSaved, setDoctrineSaved] = useState(false);
+
+  // Arsenal Import / Export State
+  const [importResult, setImportResult] = useState<{
+    type: 'success' | 'error';
+    message: string;
+    count?: number;
+    names?: string[];
+  } | null>(null);
+  const [importJsonText, setImportJsonText] = useState('');
+  const [showJsonPaste, setShowJsonPaste] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+
+  const customSystemsCount = useMemo(() => {
+    return wg.systems.filter((s) => s.custom).length;
+  }, [wg.systems]);
+
+  const handleImportData = useCallback(
+    (rawJson: string, sourceName?: string) => {
+      try {
+        const parsed = JSON.parse(rawJson);
+        let items: unknown[] = [];
+
+        if (Array.isArray(parsed)) {
+          items = parsed;
+        } else if (parsed && typeof parsed === 'object') {
+          const obj = parsed as Record<string, unknown>;
+          if (Array.isArray(obj.systems)) {
+            items = obj.systems;
+          } else if (Array.isArray(obj.catalogue)) {
+            items = obj.catalogue;
+          } else if (Array.isArray(obj.specs)) {
+            items = obj.specs;
+          } else if (Array.isArray(obj.arsenal)) {
+            items = obj.arsenal;
+          } else if ('name' in obj || 'id' in obj) {
+            items = [obj];
+          }
+        }
+
+        if (!items.length) {
+          setImportResult({
+            type: 'error',
+            message: 'No valid weapon systems found in JSON data. Ensure file contains a system array or { systems: [...] } structure.',
+          });
+          return;
+        }
+
+        const res = wg.importSystems(items);
+        if (res.error || res.count === 0) {
+          setImportResult({
+            type: 'error',
+            message: res.error || 'Failed to import any valid weapon specifications.',
+          });
+        } else {
+          const names = items
+            .map((item) => (item as Record<string, unknown>).name || (item as Record<string, unknown>).id)
+            .filter((n): n is string => Boolean(n))
+            .slice(0, 10);
+
+          setImportResult({
+            type: 'success',
+            message: `Successfully imported ${res.count} weapon system${res.count > 1 ? 's' : ''}${sourceName ? ` from ${sourceName}` : ''}. Saved to your active arsenal and browser storage!`,
+            count: res.count,
+            names,
+          });
+          setImportJsonText('');
+        }
+      } catch (err) {
+        setImportResult({
+          type: 'error',
+          message: `Invalid JSON format: ${err instanceof Error ? err.message : 'Parse error'}`,
+        });
+      }
+    },
+    [wg]
+  );
 
   // Origins filter list
   const origins = useMemo(() => {
@@ -639,50 +715,227 @@ export function ConfigurationSuite({
         {/* ========================================================= */}
         {activeTab === 'backup' && (
           <div className="wg-config-section">
+            {importResult && (
+              <div
+                style={{
+                  marginBottom: '20px',
+                  padding: '14px 18px',
+                  borderRadius: '8px',
+                  background:
+                    importResult.type === 'success'
+                      ? 'rgba(79, 168, 95, 0.15)'
+                      : 'rgba(217, 83, 79, 0.15)',
+                  border: `1px solid ${importResult.type === 'success' ? '#4FA85F' : '#D9534F'}`,
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>
+                    {importResult.type === 'success' ? '✓ Arsenal Imported & Persisted' : '⚠️ Import Failed'}
+                  </span>
+                  <button
+                    onClick={() => setImportResult(null)}
+                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div style={{ fontSize: '12px', color: '#E2E8F0' }}>{importResult.message}</div>
+                {importResult.names && importResult.names.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                    {importResult.names.map((name, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {name}
+                      </span>
+                    ))}
+                    {importResult.count && importResult.count > importResult.names.length && (
+                      <span style={{ fontSize: '11px', color: '#94A3B8', alignSelf: 'center' }}>
+                        +{importResult.count - importResult.names.length} more
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="wg-backup-container">
+              {/* Card 1: Export */}
               <div className="backup-card">
                 <h3>📤 Export Weapon Systems JSON</h3>
-                <p>Export your full active weapon specifications and custom systems catalogue as a portable JSON file.</p>
-                <button
-                  className="wg-config-action-btn primary"
-                  onClick={() => {
-                    const dataStr = JSON.stringify(wg.systems, null, 2);
-                    const blob = new Blob([dataStr], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `wargames-arsenal-${new Date().toISOString().slice(0, 10)}.json`;
-                    link.click();
-                  }}
-                >
-                  Download systems.json
-                </button>
+                <p>
+                  Export your full active weapon specifications ({wg.systems.length} systems) or custom authored entries ({customSystemsCount} systems) as a portable JSON file.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                  <button
+                    className="wg-config-action-btn primary"
+                    onClick={() => {
+                      const dataStr = JSON.stringify(wg.systems, null, 2);
+                      const blob = new Blob([dataStr], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `wargames-arsenal-all-${new Date().toISOString().slice(0, 10)}.json`;
+                      link.click();
+                    }}
+                  >
+                    Download Full Arsenal ({wg.systems.length})
+                  </button>
+                  {customSystemsCount > 0 && (
+                    <button
+                      className="wg-config-action-btn"
+                      onClick={() => {
+                        const customOnly = wg.systems.filter((s) => s.custom);
+                        const dataStr = JSON.stringify(customOnly, null, 2);
+                        const blob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `wargames-arsenal-custom-${new Date().toISOString().slice(0, 10)}.json`;
+                        link.click();
+                      }}
+                    >
+                      Download Custom Only ({customSystemsCount})
+                    </button>
+                  )}
+                </div>
               </div>
 
+              {/* Card 2: Import */}
               <div className="backup-card">
                 <h3>📥 Import Custom Systems Catalogue</h3>
-                <p>Load an external systems JSON file to merge or update armaments specifications.</p>
-                <input
-                  type="file"
-                  accept=".json"
-                  className="file-input"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
+                <p>
+                  Upload a JSON file containing weapon specifications or paste JSON directly. Automatically merged into your active arsenal and persisted in browser storage.
+                </p>
+
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDraggingFile(true);
+                  }}
+                  onDragLeave={() => setIsDraggingFile(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingFile(false);
+                    const file = e.dataTransfer.files?.[0];
                     if (!file) return;
                     const reader = new FileReader();
-                    reader.onload = (event) => {
-                      try {
-                        const parsed = JSON.parse(event.target?.result as string);
-                        if (Array.isArray(parsed)) {
-                          alert(`Successfully loaded ${parsed.length} systems from ${file.name}`);
-                        }
-                      } catch (err) {
-                        alert('Invalid JSON file format.');
-                      }
+                    reader.onload = (evt) => {
+                      handleImportData(evt.target?.result as string, file.name);
                     };
                     reader.readAsText(file);
                   }}
-                />
+                  style={{
+                    border: `2px dashed ${isDraggingFile ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
+                    borderRadius: '8px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    background: isDraggingFile ? 'rgba(79, 195, 247, 0.05)' : 'rgba(0, 0, 0, 0.2)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <label style={{ display: 'block', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '20px', display: 'block', marginBottom: '4px' }}>📁</span>
+                    <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
+                      Click to choose JSON file or drag & drop here
+                    </span>
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      className="file-input"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          handleImportData(evt.target?.result as string, file.name);
+                        };
+                        reader.readAsText(file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                  <button
+                    className="wg-config-action-btn"
+                    style={{ fontSize: '11px' }}
+                    onClick={() => setShowJsonPaste(!showJsonPaste)}
+                  >
+                    {showJsonPaste ? '▲ Hide Direct Paste' : '📝 Paste JSON Text Directly'}
+                  </button>
+                </div>
+
+                {showJsonPaste && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                    <textarea
+                      rows={5}
+                      placeholder='[ { "id": "my-fighter", "name": "Custom Fighter", "typeId": "fighter", "platform": { "speedKmh": 1800, "combatRadiusKm": 1200 } } ]'
+                      value={importJsonText}
+                      onChange={(e) => setImportJsonText(e.target.value)}
+                      style={{
+                        background: '#09101B',
+                        border: '1px solid var(--border)',
+                        color: 'var(--paper)',
+                        fontFamily: 'monospace',
+                        fontSize: '11px',
+                        borderRadius: '4px',
+                        padding: '8px',
+                        width: '100%',
+                        resize: 'vertical',
+                      }}
+                    />
+                    <button
+                      className="wg-config-action-btn primary"
+                      style={{ alignSelf: 'flex-start' }}
+                      disabled={!importJsonText.trim()}
+                      onClick={() => handleImportData(importJsonText, 'Pasted JSON')}
+                    >
+                      Import Pasted JSON
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 3: Storage & Reset */}
+              <div className="backup-card">
+                <h3>⚙️ Storage & Arsenal Maintenance</h3>
+                <p>
+                  Active storage engine: <strong style={{ color: '#4FC3F7' }}>{wg.storageKind === 'files' ? 'Local Disk Files & Browser Cache' : 'Browser LocalStorage (Cloud Serverless / Vercel)'}</strong>.
+                </p>
+                <div style={{ fontSize: '12px', color: '#8C9CAE', lineHeight: '1.4' }}>
+                  Total Systems in Library: <strong style={{ color: '#FFFFFF' }}>{wg.systems.length}</strong> ({customSystemsCount} custom authored).
+                </div>
+                {customSystemsCount > 0 && (
+                  <button
+                    className="wg-config-action-btn"
+                    style={{ borderColor: 'rgba(217, 83, 79, 0.5)', color: '#D9534F', marginTop: 'auto' }}
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete all ${customSystemsCount} custom authored systems? Core library systems will be preserved.`)) {
+                        wg.clearCustomSystems();
+                        setImportResult({
+                          type: 'success',
+                          message: 'All custom authored weapon systems have been cleared.',
+                        });
+                      }
+                    }}
+                  >
+                    🗑️ Reset Custom Systems ({customSystemsCount})
+                  </button>
+                )}
               </div>
             </div>
           </div>

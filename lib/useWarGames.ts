@@ -197,11 +197,12 @@ export interface WarGames {
   /** How many of the current pick the active nation can still deploy; null = untracked. */
   stockLeft: number | null;
 
-  /** The library plus the player's own, merged. */
   systems: SystemSpec[];
   /** Every munition any system carries, keyed by id — the re-arming list. */
   munitions: MunitionCatalogue;
   saveSystem: (spec: SystemSpec) => void;
+  importSystems: (specs: unknown[]) => { count: number; ids: string[]; error?: string };
+  clearCustomSystems: () => void;
   deleteSystem: (id: string) => void;
   /** Where configuration is being kept, so the interface can say so. */
   storageKind: 'files' | 'browser' | 'unknown';
@@ -228,6 +229,7 @@ export interface WarGames {
 
   clearUnits: () => void;
   clearNations: () => void;
+  setSimulationNations: (playerIso: string, playerColor: string, enemyIso: string, enemyColor: string) => void;
 
   /** Boards kept under a name on this machine, newest first. */
   scenarios: Scenario[];
@@ -361,11 +363,13 @@ export function useWarGames({
   mapRef,
   mapReady,
   active,
+  simulationActive = false,
   darkBasemap = true,
 }: {
   mapRef: React.MutableRefObject<MLMap | null>;
   mapReady: boolean;
   active: boolean;
+  simulationActive?: boolean;
   /** Drives label ink: the board should read on whatever it is drawn on. */
   darkBasemap?: boolean;
 }): WarGames {
@@ -678,12 +682,65 @@ export function useWarGames({
     const tidied = tidySpec({ ...spec, custom: true, id: spec.id || nextSystemId(spec.name) });
     setCustomSystems((prev) => {
       const without = prev.filter((s) => s.id !== tidied.id);
-      return [...without, tidied];
+      const next = [...without, tidied];
+      void writeDoc(SYSTEMS_DOC, next);
+      return next;
     });
   }, []);
 
+  const importSystems = useCallback((items: unknown[]): { count: number; ids: string[]; error?: string } => {
+    if (!Array.isArray(items)) {
+      return { count: 0, ids: [], error: 'Expected an array of weapon system specifications.' };
+    }
+
+    const validSpecs: SystemSpec[] = [];
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue;
+      const raw = item as Partial<SystemSpec>;
+      if (!raw.name && !raw.id) continue;
+      const name = String(raw.name || raw.id || 'Custom System');
+      const id = String(raw.id || nextSystemId(name));
+      const spec: SystemSpec = {
+        ...raw,
+        id,
+        name,
+        typeId: raw.typeId || 'fighter',
+        custom: true,
+      };
+      validSpecs.push(tidySpec(spec));
+    }
+
+    if (validSpecs.length === 0) {
+      return { count: 0, ids: [], error: 'No valid weapon system specifications found in the data.' };
+    }
+
+    setCustomSystems((prev) => {
+      const map = new Map<string, SystemSpec>();
+      for (const s of prev) {
+        map.set(s.id, s);
+      }
+      for (const s of validSpecs) {
+        map.set(s.id, s);
+      }
+      const next = Array.from(map.values());
+      void writeDoc(SYSTEMS_DOC, next);
+      return next;
+    });
+
+    return { count: validSpecs.length, ids: validSpecs.map((s) => s.id) };
+  }, []);
+
+  const clearCustomSystems = useCallback(() => {
+    setCustomSystems([]);
+    void writeDoc(SYSTEMS_DOC, []);
+  }, []);
+
   const deleteSystem = useCallback((id: string) => {
-    setCustomSystems((prev) => prev.filter((s) => s.id !== id));
+    setCustomSystems((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      void writeDoc(SYSTEMS_DOC, next);
+      return next;
+    });
   }, []);
 
   /* ---------------- world roster ---------------- */
@@ -1035,6 +1092,23 @@ export function useWarGames({
     commit((prev) => ({ ...prev, nations: {} }));
   }, [commit]);
 
+  const setSimulationNations = useCallback(
+    (playerIso: string, playerColor: string, enemyIso: string, enemyColor: string) => {
+      const metaPlayer = countriesRef.current.get(playerIso);
+      const metaEnemy = countriesRef.current.get(enemyIso);
+      commit((prev) => ({
+        ...prev,
+        units: [],
+        formations: [],
+        nations: {
+          [playerIso]: { iso: playerIso, name: metaPlayer?.name ?? playerIso, color: playerColor },
+          [enemyIso]: { iso: enemyIso, name: metaEnemy?.name ?? enemyIso, color: enemyColor },
+        },
+      }));
+    },
+    [commit]
+  );
+
   /* ---------------- scenarios ---------------- */
 
   // A scenario holds the board object it was saved from, not a copy of it. The
@@ -1176,7 +1250,7 @@ export function useWarGames({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || !active) return;
+    if (!map || !mapReady || !active || simulationActive) return;
 
     const canvas = map.getCanvas();
     let drag: {
@@ -1365,15 +1439,15 @@ export function useWarGames({
       map.dragPan.enable();
       canvas.style.cursor = '';
     };
-  }, [active, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId, undo, redo]);
+  }, [active, simulationActive, mapReady, mapRef, deploy, applyColor, moveUnit, removeUnit, selectedId, undo, redo]);
 
   // The cursor is the clearest statement of which tool is armed.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !active) return;
+    if (!map || !active || simulationActive) return;
     map.getCanvas().style.cursor =
       waypointPlacingActive || tool === 'deploy' ? 'crosshair' : tool === 'paint' ? 'copy' : '';
-  }, [tool, waypointPlacingActive, active, mapRef]);
+  }, [tool, waypointPlacingActive, active, simulationActive, mapRef]);
 
   const selectedUnit = useMemo(
     () => board.units.find((u) => u.id === selectedId) ?? null,
@@ -1910,6 +1984,8 @@ export function useWarGames({
     systems,
     munitions,
     saveSystem,
+    importSystems,
+    clearCustomSystems,
     deleteSystem,
     storageKind,
     pendingComposition,
@@ -1929,6 +2005,7 @@ export function useWarGames({
     flyToUnit,
     clearUnits,
     clearNations,
+    setSimulationNations,
     scenarios: scenarioDoc.items,
     activeScenario: scenarioDoc.items.find((s) => s.id === scenarioDoc.active) ?? null,
     saveScenario,
