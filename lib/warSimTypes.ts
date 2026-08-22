@@ -120,6 +120,13 @@ export type PostStrikeAction =
   | 'loiter_target'        // Loiter/orbit over target area for BDA
   | 'designated_waypoint'; // Fly to a designated recovery waypoint
 
+export interface WeaponSalvoItem {
+  weaponIndex: number;
+  weaponName: string;
+  weaponRangeKm: number;
+  salvoCount: number;
+}
+
 export interface StrikePlan {
   targetEntityId: string;
   targetLngLat: [number, number];
@@ -130,6 +137,9 @@ export interface StrikePlan {
   postStrikeAction: PostStrikeAction;
   returnPatrolOrder?: PatrolOrder;
   customPostLngLat?: [number, number];
+  weaponsToFire?: WeaponSalvoItem[];
+  attackWaypoints?: [number, number][];
+  currentWaypointIdx?: number;
 }
 
 export interface SimEntity {

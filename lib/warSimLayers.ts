@@ -556,7 +556,7 @@ export function renderWarSimStateToMap(
   session: WarSimSession,
   activeFaction: 'player' | 'enemy',
   targetPicking?: {
-    mode: 'sortie' | 'place_autonomous' | 'place_base';
+    mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
     originLngLat?: [number, number];
     maxRangeKm?: number;
   } | null,
@@ -816,6 +816,23 @@ export function renderWarSimStateToMap(
         });
       }
     }
+
+    if (e.status === 'engaging' && e.strikePlan?.attackWaypoints && e.strikePlan.attackWaypoints.length > 0) {
+      const remainingWps = e.strikePlan.attackWaypoints.slice(e.strikePlan.currentWaypointIdx ?? 0);
+      const routeCoords = [e.lngLat, ...remainingWps, e.strikePlan.targetLngLat];
+      patrolFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: routeCoords },
+        properties: { color: '#FF9800' },
+      });
+      remainingWps.forEach((wp, idx) => {
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: wp },
+          properties: { color: '#FF9800' },
+        });
+      });
+    }
   });
   (map.getSource(SRC_PATROLS) as GeoJSONSource)?.setData({
     type: 'FeatureCollection',
@@ -896,19 +913,20 @@ export function renderWarSimStateToMap(
   ensurePlaybackIcons(map);
   const missileFeatures: GeoJSON.Feature[] = [];
   session.activeMissiles.forEach((m) => {
+    // Only render on map once launched and not intercepted
+    if (session.simTimeSec < m.startSimTimeSec || m.isIntercepted || m.progress <= 0) return;
+
     const bearing = bearingDeg(m.originLngLat, m.targetLngLat);
-    const icon = m.weaponCategory === 'air_to_air'
-      ? 'wg-icon-interceptor'
-      : m.weaponCategory === 'sam'
-        ? 'wg-icon-interceptor'
-        : 'wg-icon-missile';
+    const isDefensive = m.weaponCategory === 'sam' || m.weaponCategory === 'air_to_air';
+    const icon = isDefensive ? 'wg-icon-interceptor' : 'wg-icon-missile';
+    const trackColor = isDefensive ? '#00E5FF' : '#FF5252';
 
     // Missile line trajectory
     missileFeatures.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: [m.originLngLat, m.currentLngLat] },
       properties: {
-        color: '#FF5252',
+        color: trackColor,
       },
     });
     // Missile warhead tip with rotating playback vector icon & label
@@ -935,7 +953,7 @@ export function renderWarSimStateToMap(
 export function updateWarSimPatrolPreview(
   map: MLMap,
   targetPicking?: {
-    mode: 'sortie' | 'place_autonomous' | 'place_base';
+    mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
     originLngLat?: [number, number];
     maxRangeKm?: number;
     patrolRadiusKm?: number;
@@ -947,13 +965,15 @@ export function updateWarSimPatrolPreview(
   const source = map.getSource(SRC_PATROL_PREVIEW) as GeoJSONSource | undefined;
   if (!source) return;
 
-  if (!targetPicking || targetPicking.mode !== 'sortie') {
+  if (!targetPicking || (targetPicking.mode !== 'sortie' && targetPicking.mode !== 'strike_route')) {
     source.setData({ type: 'FeatureCollection', features: [] });
     return;
   }
 
-  const isCustomRoute = targetPicking.routeType === 'waypoints';
+  const isStrikeRoute = targetPicking.mode === 'strike_route';
+  const isCustomRoute = targetPicking.routeType === 'waypoints' || isStrikeRoute;
   const picked = targetPicking.pickedWaypoints ?? [];
+  const themeColor = isStrikeRoute ? '#FF9800' : '#4FC3F7';
   const features: GeoJSON.Feature[] = [];
 
   if (isCustomRoute) {
@@ -962,7 +982,7 @@ export function updateWarSimPatrolPreview(
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: wp },
-        properties: { color: '#4FC3F7', label: `WP-${idx + 1}` },
+        properties: { color: themeColor, label: `${isStrikeRoute ? 'ATK-WP' : 'WP'}-${idx + 1}` },
       });
     });
 
@@ -971,32 +991,27 @@ export function updateWarSimPatrolPreview(
       features.push({
         type: 'Feature',
         geometry: { type: 'LineString', coordinates: picked },
-        properties: { color: '#4FC3F7', lineWidth: 2.5 },
+        properties: { color: themeColor, lineWidth: 2.5 },
       });
     }
 
-    // 3. Dynamic line from last placed waypoint to cursor
+    // 3. Dynamic line from last placed waypoint (or origin) to cursor
     if (cursor) {
-      const isOutOfRange =
-        targetPicking.originLngLat && targetPicking.maxRangeKm
-          ? distanceKm(targetPicking.originLngLat, cursor) > targetPicking.maxRangeKm
-          : false;
-      const color = isOutOfRange ? '#FF5252' : '#4FC3F7';
-
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: cursor },
-        properties: { color, label: `WP-${picked.length + 1}` },
+        properties: { color: themeColor, label: `${isStrikeRoute ? 'ATK-WP' : 'WP'}-${picked.length + 1}` },
       });
 
-      if (picked.length >= 1) {
+      const startPoint = picked.length >= 1 ? picked[picked.length - 1] : targetPicking.originLngLat;
+      if (startPoint) {
         features.push({
           type: 'Feature',
           geometry: {
             type: 'LineString',
-            coordinates: [picked[picked.length - 1], cursor],
+            coordinates: [startPoint, cursor],
           },
-          properties: { color, lineWidth: 1.8 },
+          properties: { color: themeColor, lineWidth: 1.8 },
         });
       }
     }

@@ -703,8 +703,13 @@ export default function EurasiaMap() {
                 params.postStrikeAction,
                 params.customPostLngLat,
                 params.sortieCount,
-                params.customWeapons
+                params.customWeapons,
+                params.weaponsToFire,
+                params.attackWaypoints
               );
+            }}
+            onStartStrikeRoutePlanning={(params) => {
+              warSim.startStrikeRoutePicking(params);
             }}
             activeWeaponIndex={warSim.activeWeaponIndex}
             onToggleWeapon={(idx) => {

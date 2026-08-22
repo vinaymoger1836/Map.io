@@ -65,7 +65,7 @@ export interface WarSimConsoleProps {
   showAllEnvelopes?: boolean;
   onToggleShowAllEnvelopes?: () => void;
   targetPicking: {
-    mode: 'sortie' | 'place_autonomous' | 'place_base';
+    mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
     label?: string;
     routeType?: 'orbit' | 'waypoints';
     pickedWaypoints?: [number, number][];
@@ -85,6 +85,20 @@ export interface WarSimConsoleProps {
     customPostLngLat?: [number, number];
     sortieCount?: number;
     customWeapons?: import('@/lib/specs').WeaponFacet[];
+    weaponsToFire?: import('@/lib/warSimTypes').WeaponSalvoItem[];
+    attackWaypoints?: [number, number][];
+  }) => void;
+  onStartStrikeRoutePlanning?: (params: {
+    attackerEntityId: string;
+    targetEntityId: string;
+    targetLngLat: [number, number];
+    weaponIndex: number;
+    salvoCount: number;
+    postStrikeAction: import('@/lib/warSimTypes').PostStrikeAction;
+    customPostLngLat?: [number, number];
+    sortieCount?: number;
+    customWeapons?: import('@/lib/specs').WeaponFacet[];
+    weaponsToFire?: import('@/lib/warSimTypes').WeaponSalvoItem[];
   }) => void;
   onOpenAar: () => void;
   onExitSim: () => void;
@@ -110,6 +124,7 @@ export function WarSimConsole({
   selectedContact,
   onSelectContact,
   onOrderStrike,
+  onStartStrikeRoutePlanning,
   onDeployUnitToBase,
   onDeployAutonomous,
   onStartSortie,
@@ -340,12 +355,11 @@ export function WarSimConsole({
         <div
           style={{
             position: 'absolute',
-            top: '56px',
+            top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(9, 16, 27, 0.96)',
-            backdropFilter: 'blur(12px)',
-            border: `1px solid ${targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(232, 131, 58, 0.8)'}`,
+            background: 'rgba(7, 12, 20, 0.95)',
+            border: `1px solid ${targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
             borderRadius: '10px',
             padding: '8px 16px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
@@ -359,13 +373,15 @@ export function WarSimConsole({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '16px' }}>
-              {targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
+              {targetPicking.mode === 'strike_route' ? '🎯' : targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
             </span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
-                {targetPicking.routeType === 'waypoints'
-                  ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
-                  : 'Target Designation Active'}
+              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
+                {targetPicking.mode === 'strike_route'
+                  ? `Attack Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Ingress Waypoints Plotted`
+                  : targetPicking.routeType === 'waypoints'
+                    ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
+                    : 'Target Designation Active'}
               </span>
               <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                 {targetPicking.label}
@@ -374,15 +390,15 @@ export function WarSimConsole({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {targetPicking.routeType === 'waypoints' && (
+            {(targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route') && (
               <>
                 <button
                   type="button"
                   className="wg-btn accent"
                   style={{
-                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)',
+                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'rgba(255, 255, 255, 0.08)',
                     color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
-                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#4FA85F' : 'transparent',
+                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'transparent',
                     fontWeight: 700,
                     fontSize: '11px',
                     padding: '4px 10px',
@@ -391,7 +407,9 @@ export function WarSimConsole({
                   disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
                   onClick={onConfirmCustomRoute}
                 >
-                  ✓ Launch Route ({(targetPicking.pickedWaypoints?.length || 0)} WPs)
+                  {targetPicking.mode === 'strike_route'
+                    ? `✓ Launch Attack Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`
+                    : `✓ Launch Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`}
                 </button>
 
                 <button
@@ -1312,6 +1330,12 @@ export function WarSimConsole({
             onSelectContact?.(null);
             onSelectEntity(null);
             onOrderStrike?.(params);
+          }}
+          onStartStrikeRoutePlanning={(params) => {
+            setStrikeModalTarget(null);
+            onSelectContact?.(null);
+            onSelectEntity(null);
+            onStartStrikeRoutePlanning?.(params);
           }}
         />
       )}

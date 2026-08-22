@@ -505,65 +505,126 @@ export function tickWarSim(
         };
       }
 
-      // Check if within weapon release range
+      // Check if custom attack waypoints exist and are pending navigation
+      const hasAttackWaypoints = plan.attackWaypoints && plan.attackWaypoints.length > 0;
+      const wpIdx = plan.currentWaypointIdx ?? 0;
+      const areWaypointsPending = hasAttackWaypoints && wpIdx < plan.attackWaypoints!.length;
+
+      if (areWaypointsPending) {
+        const nextWp = plan.attackWaypoints![wpIdx];
+        const distToWp = distanceKm(entity.lngLat, nextWp);
+
+        if (distToWp <= Math.max(6, stepDistanceKm)) {
+          // Arrived at current attack waypoint! Advance to next waypoint index
+          const nextWpIdx = wpIdx + 1;
+          const updatedPlan: StrikePlan = {
+            ...plan,
+            currentWaypointIdx: nextWpIdx,
+          };
+
+          return {
+            ...entity,
+            lngLat: nextWp,
+            currentFuelPct: nextFuel,
+            strikePlan: updatedPlan,
+          };
+        }
+
+        // Steer along custom ingress corridor towards current waypoint
+        const fraction = Math.min(1, stepDistanceKm / Math.max(1, distToWp));
+        const nextLngLat = interpolate(entity.lngLat, nextWp, fraction);
+        const nextHeading = bearingDeg(entity.lngLat, nextWp);
+
+        return {
+          ...entity,
+          lngLat: nextLngLat,
+          headingDeg: nextHeading,
+          currentFuelPct: nextFuel,
+        };
+      }
+
+      // All waypoints completed (or direct ingress): Check if within weapon release stand-off envelope
       const effectiveReleaseRange = Math.max(5, plan.weaponRangeKm);
       if (distToTarget <= effectiveReleaseRange) {
         // --- WEAPON RELEASE POINT REACHED ---
-        const weapons = (entity.customWeapons && entity.customWeapons.length > 0)
+        const currentWeapons = (entity.customWeapons && entity.customWeapons.length > 0)
           ? entity.customWeapons
           : (spec?.weapons || []);
-        const weapon = weapons[plan.weaponIndex] || weapons[0];
-        const weaponName = weapon?.name || plan.weaponName || 'Ordnance';
 
-        const missileSpeed = weapon?.speedMach ? weapon.speedMach * 1225 : (weapon?.rangeKm > 100 ? 3200 : 1800);
-        const missileCategory: any = weapon?.engages?.includes('air')
-          ? 'air_to_air'
-          : weapon?.engages?.includes('subsurface')
-            ? 'torpedo'
-            : 'cruise';
+        const itemsToFire: import('./warSimTypes').WeaponSalvoItem[] =
+          plan.weaponsToFire && plan.weaponsToFire.length > 0
+            ? plan.weaponsToFire
+            : [
+                {
+                  weaponIndex: plan.weaponIndex,
+                  weaponName: plan.weaponName || 'Ordnance',
+                  weaponRangeKm: plan.weaponRangeKm || 100,
+                  salvoCount: Math.max(1, plan.salvoCount || 1),
+                },
+              ];
 
-        // Calculate salvo size & deduct ammunition
-        const salvoCount = Math.max(1, plan.salvoCount || 1);
-        const roundsPerUnit = weapon?.magazine ?? 1;
-        const totalRoundsBefore = entity.count * roundsPerUnit;
-        const totalRoundsAfter = Math.max(0, totalRoundsBefore - salvoCount);
-        const updatedMagazinePerUnit = Math.floor(totalRoundsAfter / entity.count);
+        let updatedCustomWeapons = [...currentWeapons];
+        let globalSalvoOffset = 0;
+        const firedSummaries: string[] = [];
 
-        const updatedCustomWeapons = weapons.map((w, idx) => {
-          if (idx !== plan.weaponIndex) return w;
-          return {
-            ...w,
-            magazine: updatedMagazinePerUnit,
-          };
-        });
+        for (const item of itemsToFire) {
+          const wIdx = item.weaponIndex;
+          const w = updatedCustomWeapons[wIdx] || updatedCustomWeapons[0];
+          const wName = w?.name || item.weaponName || 'Ordnance';
+          const missileSpeed = w?.speedMach ? w.speedMach * 1225 : ((w?.rangeKm ?? 100) > 100 ? 3200 : 1800);
+          const missileCategory: any = w?.engages?.includes('air')
+            ? 'air_to_air'
+            : w?.engages?.includes('subsurface')
+              ? 'torpedo'
+              : 'cruise';
 
-        // Spawn salvoCount missiles in activeMissiles
-        for (let s = 0; s < salvoCount; s++) {
-          const newMissile: MissileFlyoutTrack = {
-            id: `msl-${Date.now()}-${s}-${Math.random().toString(36).slice(2, 6)}`,
-            originLngLat: entity.lngLat,
-            targetLngLat: targetPos,
-            currentLngLat: entity.lngLat,
-            attackerEntityId: entity.id,
-            targetEntityId: plan.targetEntityId,
-            attackerIso: entity.iso,
-            targetIso: targetEntity?.iso ?? (entity.iso === session.playerIso ? session.enemyIso : session.playerIso),
-            weaponName,
-            weaponCategory: missileCategory,
-            speedKmh: missileSpeed,
-            startSimTimeSec: session.simTimeSec + s * 2,
-            etaSimTimeSec: session.simTimeSec + Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)) + s * 2,
-            isIntercepted: false,
-            progress: 0,
-          };
-          session.activeMissiles.push(newMissile);
+          const salvoCount = Math.max(1, item.salvoCount || 1);
+          const curMagPerUnit = w?.magazine ?? 1;
+          const totalRoundsBefore = entity.count * curMagPerUnit;
+          const totalRoundsAfter = Math.max(0, totalRoundsBefore - salvoCount);
+          const updatedMagazinePerUnit = Math.floor(totalRoundsAfter / entity.count);
+
+          updatedCustomWeapons = updatedCustomWeapons.map((cw, idx) => {
+            if (idx !== wIdx) return cw;
+            return {
+              ...cw,
+              magazine: updatedMagazinePerUnit,
+            };
+          });
+
+          // Spawn salvoCount missiles in activeMissiles with sequential ripple launch times
+          for (let s = 0; s < salvoCount; s++) {
+            const launchStaggerSec = globalSalvoOffset * 1.2;
+            globalSalvoOffset++;
+
+            const newMissile: MissileFlyoutTrack = {
+              id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+              originLngLat: entity.lngLat,
+              targetLngLat: targetPos,
+              currentLngLat: entity.lngLat,
+              attackerEntityId: entity.id,
+              targetEntityId: plan.targetEntityId,
+              attackerIso: entity.iso,
+              targetIso: targetEntity?.iso ?? (entity.iso === session.playerIso ? session.enemyIso : session.playerIso),
+              weaponName: wName,
+              weaponCategory: missileCategory,
+              speedKmh: missileSpeed,
+              startSimTimeSec: session.simTimeSec + launchStaggerSec,
+              etaSimTimeSec: session.simTimeSec + Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)) + launchStaggerSec,
+              isIntercepted: false,
+              progress: 0,
+            };
+            session.activeMissiles.push(newMissile);
+          }
+
+          firedSummaries.push(`${salvoCount} × ${wName}`);
         }
 
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'strike',
           `🚀 Ordnance Released: ${entity.name}`,
-          `${entity.name} launched ${salvoCount} × ${weaponName} against target at ${distToTarget.toFixed(0)} km stand-off range (${totalRoundsAfter} total rounds remaining). Executing ${plan.postStrikeAction.toUpperCase()} protocol.`,
+          `${entity.name} launched mixed salvo (${firedSummaries.join(' + ')}) against target at ${distToTarget.toFixed(0)} km stand-off range. Executing ${plan.postStrikeAction.toUpperCase()} protocol.`,
           entity.lngLat
         );
 
@@ -650,11 +711,17 @@ export function tickWarSim(
   for (const m of session.activeMissiles) {
     if (m.isIntercepted) continue;
 
+    // If this missile has a future launch time (sequential ripple salvo stagger), hold at launch platform
+    if (session.simTimeSec < m.startSimTimeSec) {
+      updatedMissiles.push(m);
+      continue;
+    }
+
     const totalDist = distanceKm(m.originLngLat, m.targetLngLat);
     const speedKmh = Math.max(600, m.speedKmh);
     const stepDist = (speedKmh / 3600) * dtSimSec;
-    const nextProgress = m.progress + (stepDist / Math.max(1, totalDist));
-    const nextLngLat = interpolate(m.originLngLat, m.targetLngLat, Math.min(1.0, nextProgress));
+    const nextProgress = Math.min(1.0, m.progress + (stepDist / Math.max(1, totalDist)));
+    const nextLngLat = interpolate(m.originLngLat, m.targetLngLat, nextProgress);
 
     // A. Defensive Interceptor SAMs / AAMs completed flyout
     if (m.weaponCategory === 'sam') {
@@ -678,11 +745,12 @@ export function tickWarSim(
       const alreadyEngaged = m.engagedByDefenderIds ?? [];
       const defendingIso = m.targetIso;
 
-      // Find all live friendly defenders defending against this incoming threat
+      // Find all live friendly defenders defending against this incoming threat (only active deployed systems, not docked in base)
       const potentialDefenders = updatedEntities.filter(
         (e) =>
           e.iso === defendingIso &&
           e.status !== 'destroyed' &&
+          e.status !== 'docked' &&
           e.status !== 'in_repair' &&
           e.status !== 'turnaround' &&
           !alreadyEngaged.includes(e.id)
@@ -792,7 +860,13 @@ export function tickWarSim(
       // Terminal Point Defense Layer (CIWS / Hard-kill Decoys / RAM) at target location
       if (!m.isIntercepted && nextProgress >= 0.85) {
         const targetEntity = updatedEntities.find((e) => e.id === m.targetEntityId);
-        if (targetEntity && targetEntity.status !== 'destroyed') {
+        if (
+          targetEntity &&
+          targetEntity.status !== 'destroyed' &&
+          targetEntity.status !== 'docked' &&
+          targetEntity.status !== 'in_repair' &&
+          targetEntity.status !== 'turnaround'
+        ) {
           const targetSpec = systemsLibrary.find((s) => s.id === targetEntity.systemId);
           const tWeapons = (targetEntity.customWeapons && targetEntity.customWeapons.length > 0)
             ? targetEntity.customWeapons
@@ -994,7 +1068,18 @@ export function tickWarSim(
         }
       }
 
+      // Check if contact was previously positively identified (Tier 2 PID)
+      const existingContacts = scanningFaction === 'player'
+        ? session.fogOfWarContacts.playerContacts
+        : session.fogOfWarContacts.enemyContacts;
+      const prevContact = existingContacts.find((c) => c.targetEntityId === target.id);
+
       if (bestTier > 0) {
+        // Once an enemy unit is PID (Tier 2), intel does not degrade as long as it remains within sensor range!
+        if (prevContact && prevContact.intelTier === 2) {
+          bestTier = 2;
+        }
+
         const tier: 1 | 2 = bestTier === 2 ? 2 : 1;
         contacts.push({
           contactId: `cnt-${target.id}-${scanningFaction}`,
@@ -1041,6 +1126,46 @@ export function tickWarSim(
 /* ------------------------------------------------------------------ */
 
 /**
+ * Uniquely identifies deployed formations of the same system specification.
+ * If multiple units of the same system exist (or are deployed), assigns sequential designators:
+ * e.g., "FREMM-class1", "FREMM-class2", "Su-35S-class1", etc.
+ */
+export function getUniqueSystemEntityName(
+  systemName: string,
+  systemId: string,
+  iso: string,
+  existingEntities: SimEntity[],
+  count: number = 1
+): string {
+  let baseName = systemName.trim();
+  // Clean trailing or duplicate "class" / "class ship" / "-class" patterns
+  baseName = baseName.replace(/\bclass(\s+ship|\s+frigate|\s+destroyer)?\b/gi, '').replace(/\s+/g, ' ').trim();
+  baseName = baseName.replace(/[- ]?class$/i, '').trim();
+
+  // Find all existing entities of this systemId for this faction
+  const sameSystemEntities = existingEntities.filter(
+    (e) => e.iso === iso && (e.systemId === systemId || e.name.toLowerCase().includes(baseName.toLowerCase()))
+  );
+
+  // Extract all existing sequence numbers
+  const usedSeqs = new Set<number>();
+  sameSystemEntities.forEach((e) => {
+    const match = e.name.match(/-class\s*(\d+)/i);
+    if (match) {
+      usedSeqs.add(parseInt(match[1], 10));
+    }
+  });
+
+  let nextSeq = 1;
+  while (usedSeqs.has(nextSeq)) {
+    nextSeq++;
+  }
+
+  const unitDesignator = `${baseName}-class${nextSeq}`;
+  return count > 1 ? `${count} × ${unitDesignator}` : unitDesignator;
+}
+
+/**
  * Deploys an authorized platform from national stock quota to a designated base.
  */
 export function deployEntityToBase(
@@ -1083,10 +1208,13 @@ export function deployEntityToBase(
     deployed: quota.deployed + count,
   };
 
+  const rawName = spec?.name ?? typeId;
+  const entityName = getUniqueSystemEntityName(rawName, systemId, base.iso, session.entities, count);
+
   const newEntity: SimEntity = {
     id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
     iso: base.iso,
-    name: `${count} × ${spec?.name ?? typeId}`,
+    name: entityName,
     typeId,
     systemId,
     count,
@@ -1144,10 +1272,13 @@ export function deployAutonomousEntity(
     deployed: quota.deployed + count,
   };
 
+  const rawName = spec?.name ?? typeId;
+  const entityName = getUniqueSystemEntityName(rawName, systemId, iso, session.entities, count);
+
   const newEntity: SimEntity = {
     id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
     iso,
-    name: `${count} × ${spec?.name ?? typeId}`,
+    name: entityName,
     typeId,
     systemId,
     count,
@@ -1476,7 +1607,9 @@ export function orderStrikeMission(
   customPostLngLat?: [number, number],
   systemsLibrary: SystemSpec[] = [],
   sortieCount?: number,
-  customWeapons?: import('./specs').WeaponFacet[]
+  customWeapons?: import('./specs').WeaponFacet[],
+  weaponsToFire?: import('./warSimTypes').WeaponSalvoItem[],
+  attackWaypoints?: [number, number][]
 ): WarSimSession {
   const attacker = session.entities.find((e) => e.id === attackerEntityId);
   if (!attacker || attacker.status === 'destroyed' || attacker.status === 'in_repair' || attacker.status === 'turnaround') {
@@ -1491,8 +1624,15 @@ export function orderStrikeMission(
       : (spec?.weapons || []);
 
   const weapon = effectiveWeapons[weaponIndex] || effectiveWeapons[0];
-  const weaponName = weapon?.name || 'Ordnance';
-  const weaponRangeKm = weapon?.rangeKm || 100;
+  const weaponName = (weaponsToFire && weaponsToFire.length > 0)
+    ? weaponsToFire.map((w) => `${w.salvoCount}× ${w.weaponName}`).join(' + ')
+    : (weapon?.name || 'Ordnance');
+  const weaponRangeKm = (weaponsToFire && weaponsToFire.length > 0)
+    ? Math.min(...weaponsToFire.map((w) => w.weaponRangeKm))
+    : (weapon?.rangeKm || 100);
+  const effectiveSalvo = (weaponsToFire && weaponsToFire.length > 0)
+    ? weaponsToFire.reduce((sum, w) => sum + w.salvoCount, 0)
+    : Math.max(1, salvoCount);
 
   const targetEntity = session.entities.find((e) => e.id === targetEntityId);
   const targetName = targetEntity?.name || 'Hostile Target Track';
@@ -1503,13 +1643,16 @@ export function orderStrikeMission(
   const strikePlan: StrikePlan = {
     targetEntityId,
     targetLngLat,
-    weaponIndex,
+    weaponIndex: (weaponsToFire && weaponsToFire.length > 0) ? weaponsToFire[0].weaponIndex : weaponIndex,
     weaponName,
     weaponRangeKm,
-    salvoCount: Math.max(1, salvoCount),
+    salvoCount: effectiveSalvo,
     postStrikeAction,
     returnPatrolOrder: attacker.patrolOrder ? { ...attacker.patrolOrder } : undefined,
     customPostLngLat,
+    weaponsToFire: (weaponsToFire && weaponsToFire.length > 0) ? weaponsToFire : undefined,
+    attackWaypoints: (attackWaypoints && attackWaypoints.length > 0) ? attackWaypoints : undefined,
+    currentWaypointIdx: (attackWaypoints && attackWaypoints.length > 0) ? 0 : undefined,
   };
 
   const isPlayer = attacker.iso === session.playerIso;
