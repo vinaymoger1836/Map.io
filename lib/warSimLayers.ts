@@ -612,9 +612,11 @@ export function renderWarSimStateToMap(
       const isNaval = isNavalCombatant(e.typeId) || (spec ? domainOf(spec) === 'sea' : false);
 
       // Sensor horizon envelope
-      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (
-        isGround ? 8 : e.typeId === 'awacs' ? 450 : e.typeId === 'radar' ? 400 : 200
-      );
+      const detectionRadiusKm = (e.typeId === 'uav' || e.typeId === 'recon')
+        ? Math.max(spec?.sensor?.detectionKm ?? 40, 180)
+        : (spec?.sensor?.detectionKm ?? (
+            isGround ? 8 : e.typeId === 'awacs' ? 450 : e.typeId === 'radar' ? 400 : 200
+          ));
       if (detectionRadiusKm > 0) {
         const detectCoords = geodesicRing(e.lngLat, detectionRadiusKm, 48);
         envelopeFeatures.push({
@@ -681,9 +683,11 @@ export function renderWarSimStateToMap(
       const isNaval = isNavalCombatant(selectedEntity.typeId) || (spec ? domainOf(spec) === 'sea' : false);
 
       // 1. Detection / Sensor Horizon Envelope (Always on for selected entity)
-      const detectionRadiusKm = spec?.sensor?.detectionKm ?? (
-        isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
-      );
+      const detectionRadiusKm = (selectedEntity.typeId === 'uav' || selectedEntity.typeId === 'recon')
+        ? Math.max(spec?.sensor?.detectionKm ?? 40, 180)
+        : (spec?.sensor?.detectionKm ?? (
+            isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
+          ));
       if (detectionRadiusKm > 0) {
         const detectCoords = geodesicRing(selectedEntity.lngLat, detectionRadiusKm, 64);
         envelopeFeatures.push({

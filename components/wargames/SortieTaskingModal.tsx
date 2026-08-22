@@ -51,6 +51,7 @@ export function SortieTaskingModal({
 
   const isGround = isGroundCombatUnit(entity.typeId);
   const isStaticAD = isStaticAirDefense(entity.typeId);
+  const isDeployed = entity.status !== 'docked';
 
   const platformDomain = useMemo(() => {
     if (spec) return domainOf(spec);
@@ -412,109 +413,125 @@ export function SortieTaskingModal({
                 2. Armament & Weapon Loadout ({equippedWeapons.length} Systems · {totalRoundsCount} Rounds)
               </label>
 
-              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                  onClick={handleRestoreStandard}
+              {isDeployed ? (
+                <span
+                  style={{
+                    fontSize: '9.5px',
+                    color: '#4FC3F7',
+                    background: 'rgba(79, 195, 247, 0.1)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    fontWeight: 600,
+                  }}
                 >
-                  Standard Fit
-                </button>
-                {platformDomain === 'sea' ? (
-                  <>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('cap')}
-                    >
-                      Air Defense
-                    </button>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('antiship')}
-                    >
-                      Anti-Ship
-                    </button>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('strike')}
-                    >
-                      Land Attack
-                    </button>
-                  </>
-                ) : platformDomain === 'sub' ? (
-                  <>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('antiship')}
-                    >
-                      Anti-Ship / ASW
-                    </button>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('strike')}
-                    >
-                      Land Attack
-                    </button>
-                  </>
-                ) : platformDomain === 'ground' || isGround || isStaticAD ? (
-                  <>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('cap')}
-                    >
-                      Air Defense
-                    </button>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('strike')}
-                    >
-                      Ground Strike
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('cap')}
-                    >
-                      CAP / Air
-                    </button>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('strike')}
-                    >
-                      Strike / Land
-                    </button>
-                    <button
-                      type="button"
-                      className="wg-btn"
-                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                      onClick={() => applyPreset('antiship')}
-                    >
-                      Anti-Ship
-                    </button>
-                  </>
-                )}
-              </div>
+                  🔒 Deployed (Fixed Loadout)
+                </span>
+              ) : (
+                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                    onClick={handleRestoreStandard}
+                  >
+                    Standard Fit
+                  </button>
+                  {platformDomain === 'sea' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('cap')}
+                      >
+                        Air Defense
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('antiship')}
+                      >
+                        Anti-Ship
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Land Attack
+                      </button>
+                    </>
+                  ) : platformDomain === 'sub' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('antiship')}
+                      >
+                        Anti-Ship / ASW
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Land Attack
+                      </button>
+                    </>
+                  ) : platformDomain === 'ground' || isGround || isStaticAD ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('cap')}
+                      >
+                        Air Defense
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Ground Strike
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('cap')}
+                      >
+                        CAP / Air
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Strike / Land
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('antiship')}
+                      >
+                        Anti-Ship
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Currently Equipped Weapons on Platform */}
@@ -527,7 +544,7 @@ export function SortieTaskingModal({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
-                marginBottom: '10px',
+                marginBottom: isDeployed ? '0' : '10px',
               }}
             >
               {equippedWeapons.length === 0 ? (
@@ -561,148 +578,181 @@ export function SortieTaskingModal({
                       </div>
                     </div>
 
-                    {/* Stepper Count & Remove */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div
+                    {isDeployed ? (
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          background: '#09101B',
-                          border: '1px solid var(--border)',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#4FC3F7',
+                          background: 'rgba(79, 195, 247, 0.08)',
+                          padding: '3px 9px',
                           borderRadius: '4px',
-                          padding: '1px 4px',
+                          border: '1px solid rgba(79, 195, 247, 0.2)',
                         }}
                       >
+                        {weapon.magazine ?? 2} Ready Rounds
+                      </span>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: '#09101B',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px',
+                            padding: '1px 4px',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#4FC3F7',
+                              cursor: 'pointer',
+                              padding: '1px 6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                            }}
+                            onClick={() => handleAdjustMagazine(idx, -1)}
+                          >
+                            −
+                          </button>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              minWidth: '22px',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {weapon.magazine ?? 2}
+                          </span>
+                          <button
+                            type="button"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#4FC3F7',
+                              cursor: 'pointer',
+                              padding: '1px 6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                            }}
+                            onClick={() => handleAdjustMagazine(idx, 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+
                         <button
                           type="button"
                           style={{
                             background: 'none',
                             border: 'none',
-                            color: '#4FC3F7',
+                            color: '#D9534F',
                             cursor: 'pointer',
-                            padding: '1px 6px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            padding: '2px 6px',
                           }}
-                          onClick={() => handleAdjustMagazine(idx, -1)}
+                          onClick={() => handleRemoveWeapon(idx)}
+                          title="Remove munition"
                         >
-                          −
-                        </button>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            color: '#FFFFFF',
-                            minWidth: '22px',
-                            textAlign: 'center',
-                          }}
-                        >
-                          {weapon.magazine ?? 2}
-                        </span>
-                        <button
-                          type="button"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#4FC3F7',
-                            cursor: 'pointer',
-                            padding: '1px 6px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                          }}
-                          onClick={() => handleAdjustMagazine(idx, 1)}
-                        >
-                          +
+                          ✕
                         </button>
                       </div>
-
-                      <button
-                        type="button"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#D9534F',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          padding: '2px 6px',
-                        }}
-                        onClick={() => handleRemoveWeapon(idx)}
-                        title="Remove munition"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
 
-            {/* Search and Equip from Compatible Munitions */}
-            <div>
-              <input
-                type="search"
-                className="wg-input"
-                style={{
-                  width: '100%',
-                  fontSize: '11px',
-                  padding: '6px 10px',
-                  marginBottom: '8px',
-                  background: '#070C14',
-                  border: '1px solid var(--border)',
-                  borderRadius: '4px',
-                  color: '#FFFFFF',
-                }}
-                placeholder={`Search ${compatible.length} compatible munitions…`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-
+            {isDeployed ? (
               <div
-                className="wg-custom-scroll"
                 style={{
-                  maxHeight: '140px',
-                  overflowY: 'auto',
-                  background: '#070C14',
-                  border: '1px solid var(--border)',
+                  fontSize: '11px',
+                  color: 'var(--paper-dim)',
+                  background: 'rgba(79, 195, 247, 0.04)',
+                  border: '1px dashed rgba(79, 195, 247, 0.25)',
                   borderRadius: '6px',
-                  padding: '6px',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                  gap: '5px',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2)',
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '6px',
                 }}
               >
-                {filteredCompatible.length === 0 ? (
-                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', padding: '10px', gridColumn: '1 / -1', textAlign: 'center' }}>
-                    No matching compatible munitions found.
-                  </div>
-                ) : (
-                  filteredCompatible.map((m) => {
-                    const equipped = isEquipped(m.name);
-                    const standard = isStandard(m.name);
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => handleToggleMunition(m)}
-                        style={{
-                          background: equipped ? 'rgba(79, 168, 95, 0.16)' : 'rgba(255, 255, 255, 0.03)',
-                          border: `1px solid ${equipped ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)'}`,
-                          borderRadius: '4px',
-                          padding: '6px 8px',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '2px',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: equipped ? '#FFFFFF' : 'var(--paper-dim)' }}>
-                            {m.name}
+                <span>🔒</span>
+                <span>Weapon loadout is locked while deployed in the field. To reload or change weapon configuration, order RTB to base.</span>
+              </div>
+            ) : (
+              <div>
+                <input
+                  type="search"
+                  className="wg-input"
+                  style={{
+                    width: '100%',
+                    fontSize: '11px',
+                    padding: '6px 10px',
+                    marginBottom: '8px',
+                    background: '#070C14',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    color: '#FFFFFF',
+                  }}
+                  placeholder={`Search ${compatible.length} compatible munitions…`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+
+                <div
+                  className="wg-custom-scroll"
+                  style={{
+                    maxHeight: '140px',
+                    overflowY: 'auto',
+                    background: '#070C14',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gap: '5px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2)',
+                  }}
+                >
+                  {filteredCompatible.length === 0 ? (
+                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', padding: '10px', gridColumn: '1 / -1', textAlign: 'center' }}>
+                      No matching compatible munitions found.
+                    </div>
+                  ) : (
+                    filteredCompatible.map((m) => {
+                      const equipped = isEquipped(m.name);
+                      const standard = isStandard(m.name);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => handleToggleMunition(m)}
+                          style={{
+                            background: equipped ? 'rgba(79, 168, 95, 0.16)' : 'rgba(255, 255, 255, 0.03)',
+                            border: `1px solid ${equipped ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)'}`,
+                            borderRadius: '4px',
+                            padding: '6px 8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '2px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: equipped ? '#FFFFFF' : 'var(--paper-dim)' }}>
+                              {m.name}
                           </span>
                           {standard && (
                             <span
@@ -732,7 +782,8 @@ export function SortieTaskingModal({
                 )}
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
           {/* 3. Domain-Specific Patrol & Sensor Profile */}
           <div>

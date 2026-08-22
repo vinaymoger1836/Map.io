@@ -942,9 +942,11 @@ export function WarSimConsole({
         const isGround = isGroundCombatUnit(selectedEntity.typeId);
         const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
         const isNaval = (isNavalCombatant(selectedEntity.typeId) || (spec ? domainOf(spec) === 'sea' : false)) && selectedEntity.typeId !== 'submarine';
-        const detectionKm = spec?.sensor?.detectionKm ?? (
-          isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
-        );
+        const detectionKm = (selectedEntity.typeId === 'uav' || selectedEntity.typeId === 'recon')
+          ? Math.max(spec?.sensor?.detectionKm ?? 40, 180)
+          : (spec?.sensor?.detectionKm ?? (
+              isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
+            ));
         const surfaceHorizonKm = isNaval ? Math.round(radarHorizonKm(spec?.sensor?.antennaM ?? 25, 25)) : 0;
         const statusLabel =
           isStaticAD

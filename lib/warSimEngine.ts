@@ -1087,6 +1087,9 @@ export function tickWarSim(
     const scanners = updatedEntities.filter(
       (e) => e.iso === scanningIso && e.status !== 'destroyed' && e.status !== 'docked'
     );
+    const friendlyBases = updatedBases.filter(
+      (b) => b.iso === scanningIso && b.runwayStatus !== 'destroyed'
+    );
 
     const opposingEntities = updatedEntities.filter(
       (e) => e.iso === targetIso && e.status !== 'destroyed' && e.status !== 'docked'
@@ -1098,6 +1101,7 @@ export function tickWarSim(
 
       let bestTier: 1 | 2 | 0 = 0;
 
+      // 1. Check all active friendly deployed platforms (aircraft, ships, drones, air defense, armor)
       for (const scanner of scanners) {
         const scanSpec = systemsLibrary.find((s) => s.id === scanner.systemId);
         const dist = distanceKm(scanner.lngLat, target.lngLat);
@@ -1113,8 +1117,13 @@ export function tickWarSim(
 
         // Sensor detection envelope
         let ratedSensorKm = scanSpec?.sensor?.detectionKm ?? (
-          isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : 250
+          isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : (scanner.typeId === 'uav' || scanner.typeId === 'recon') ? 180 : 250
         );
+
+        // High-altitude maritime search radar / SAR for UAVs & Recon aircraft against sea combatants
+        if ((scanner.typeId === 'uav' || scanner.typeId === 'recon') && targetDomain === 'sea') {
+          ratedSensorKm = Math.max(ratedSensorKm, 180);
+        }
 
         if (scanner.patrolOrder?.emcon === 'passive') {
           ratedSensorKm = 0; // Passive silent running
@@ -1165,6 +1174,17 @@ export function tickWarSim(
         }
       }
 
+      // 2. Check friendly military base early-warning and coastal surveillance radars
+      for (const base of friendlyBases) {
+        const distToBase = distanceKm(base.lngLat, target.lngLat);
+        const baseRadarReach = base.type === 'silo_complex' ? 300 : base.type === 'airbase' ? 220 : base.type === 'naval_base' || base.type === 'carrier_group' ? 140 : 60;
+        if (targetDomain === 'air' || (targetDomain === 'sea' && (base.type === 'naval_base' || base.type === 'carrier_group'))) {
+          if (distToBase <= baseRadarReach) {
+            bestTier = Math.max(bestTier, 1) as 1 | 2;
+          }
+        }
+      }
+
       // Check if contact was previously positively identified (Tier 2 PID)
       const existingContacts = scanningFaction === 'player'
         ? session.fogOfWarContacts.playerContacts
@@ -1189,12 +1209,21 @@ export function tickWarSim(
           headingDeg: target.headingDeg,
           speedKmh: target.speedKmh,
           lastDetectedSimTimeSec: newSimTimeSec,
-          decayTimerSec: 120, // Contact holds for 2 sim minutes
+          decayTimerSec: 180, // Contact holds for 3 sim minutes
           knownName: tier === 2 ? target.name : undefined,
           knownCount: tier === 2 ? target.count : undefined,
           knownPersonnel: tier === 2 ? target.personnel : undefined,
           knownDamage: tier === 2 ? target.damage : undefined,
         });
+      } else if (prevContact && prevContact.decayTimerSec > 0) {
+        // Platform is currently outside live sensor sweep, but holds in tactical memory as Last Known Position (LKP)
+        const nextDecay = Math.max(0, prevContact.decayTimerSec - dtSimSec);
+        if (nextDecay > 0) {
+          contacts.push({
+            ...prevContact,
+            decayTimerSec: nextDecay,
+          });
+        }
       }
     }
 
@@ -1603,15 +1632,19 @@ export function orderPatrol(
       targetEntity.count
     );
 
+    const isAlreadyDeployed = targetEntity.status !== 'docked';
     const updatedEntities = session.entities.map((e) => {
       if (e.id !== entityId) return e;
       return {
         ...e,
         name: uniqueName,
-        status: 'takeoff_ingress' as const,
+        status: isAlreadyDeployed && e.status === 'on_station' ? 'on_station' as const : 'takeoff_ingress' as const,
         patrolOrder,
         altitudeM: effectiveAltM,
-        customWeapons: customWeapons && customWeapons.length > 0 ? [...customWeapons] : e.customWeapons,
+        // Loadout can only be reconfigured at base — keep existing loadout if already deployed
+        customWeapons: isAlreadyDeployed
+          ? e.customWeapons
+          : (customWeapons && customWeapons.length > 0 ? [...customWeapons] : e.customWeapons),
       };
     });
 
@@ -1623,10 +1656,16 @@ export function orderPatrol(
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
         type: 'rtb' as const,
-        title: isGround ? `Ground Movement: ${uniqueName}` : `Sortie Launched: ${uniqueName}`,
-        detail: isGround
-          ? `${uniqueName} departed base and is en route to designated defensive position.`
-          : `${uniqueName} departed base and is en route to designated patrol coordinates.`,
+        title: isAlreadyDeployed
+          ? `Patrol Retasked: ${uniqueName}`
+          : isGround
+            ? `Ground Movement: ${uniqueName}`
+            : `Sortie Launched: ${uniqueName}`,
+        detail: isAlreadyDeployed
+          ? `${uniqueName} retasked to new operational coordinates while preserving equipped weapons.`
+          : isGround
+            ? `${uniqueName} departed base and is en route to designated defensive position.`
+            : `${uniqueName} departed base and is en route to designated patrol coordinates.`,
         lngLat: centerLngLat,
       },
     ];
