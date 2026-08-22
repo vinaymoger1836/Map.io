@@ -155,7 +155,7 @@ export function StrikeTaskingModal({
     return compatibleMunitionsList.filter((m) => canWeaponEngageTarget(m.weapon, target.domain));
   }, [compatibleMunitionsList, target.domain]);
 
-  // 4. Equipped Weapons loadout (can be modified directly if unit is at base)
+  // 4. Equipped Weapons loadout (can only be modified if unit is at base)
   const [equippedWeapons, setEquippedWeapons] = useState<WeaponFacet[]>(() => {
     if (!currentAttackerEval) return [];
     const baseWeapons = currentAttackerEval.entity.customWeapons && currentAttackerEval.entity.customWeapons.length > 0
@@ -164,14 +164,17 @@ export function StrikeTaskingModal({
         ? [...currentAttackerEval.spec.weapons]
         : [];
 
+    const isDocked = currentAttackerEval.entity.status === 'docked';
     // If unit is at base and currently has no compatible weapons for this target, auto-equip top matching munition
-    const hasCompatible = baseWeapons.some((w) => canWeaponEngageTarget(w, target.domain));
-    if (!hasCompatible && targetDomainMunitions.length > 0) {
-      const topMun = targetDomainMunitions[0];
-      return [
-        ...baseWeapons,
-        { ...topMun.weapon, name: topMun.name, magazine: topMun.weapon.magazine ?? 2 },
-      ];
+    if (isDocked) {
+      const hasCompatible = baseWeapons.some((w) => canWeaponEngageTarget(w, target.domain));
+      if (!hasCompatible && targetDomainMunitions.length > 0) {
+        const topMun = targetDomainMunitions[0];
+        return [
+          ...baseWeapons,
+          { ...topMun.weapon, name: topMun.name, magazine: topMun.weapon.magazine ?? 2 },
+        ];
+      }
     }
     return baseWeapons;
   });
@@ -186,14 +189,20 @@ export function StrikeTaskingModal({
           ? [...currentAttackerEval.spec.weapons]
           : [];
 
-      const hasCompatible = baseWeapons.some((w) => canWeaponEngageTarget(w, target.domain));
-      if (!hasCompatible && targetDomainMunitions.length > 0) {
-        const topMun = targetDomainMunitions[0];
-        setEquippedWeapons([
-          ...baseWeapons,
-          { ...topMun.weapon, name: topMun.name, magazine: topMun.weapon.magazine ?? 2 },
-        ]);
+      const isDocked = currentAttackerEval.entity.status === 'docked';
+      if (isDocked) {
+        const hasCompatible = baseWeapons.some((w) => canWeaponEngageTarget(w, target.domain));
+        if (!hasCompatible && targetDomainMunitions.length > 0) {
+          const topMun = targetDomainMunitions[0];
+          setEquippedWeapons([
+            ...baseWeapons,
+            { ...topMun.weapon, name: topMun.name, magazine: topMun.weapon.magazine ?? 2 },
+          ]);
+        } else {
+          setEquippedWeapons(baseWeapons);
+        }
       } else {
+        // Deployed units CANNOT change weapon loadout - strict read-only lock!
         setEquippedWeapons(baseWeapons);
       }
       setSelectedWeaponIdx(0);
@@ -207,13 +216,18 @@ export function StrikeTaskingModal({
   const activeCompatibleWeapons = useMemo(() => {
     const fromEquipped = equippedWeapons.filter((w) => canWeaponEngageTarget(w, target.domain));
     if (fromEquipped.length > 0) return fromEquipped;
-    // Fallback to targetDomainMunitions mapped to WeaponFacet
-    return targetDomainMunitions.map((m) => ({
-      ...m.weapon,
-      name: m.name,
-      magazine: m.weapon.magazine ?? 2,
-    }));
-  }, [equippedWeapons, target.domain, targetDomainMunitions]);
+    
+    // Only if docked at base and has no equipped weapons matching, fallback to targetDomainMunitions
+    if (isDockedAtBase && targetDomainMunitions.length > 0) {
+      return targetDomainMunitions.map((m) => ({
+        ...m.weapon,
+        name: m.name,
+        magazine: m.weapon.magazine ?? 2,
+      }));
+    }
+    // Deployed units have NO fallback — they can only fire what they are deployed with!
+    return [];
+  }, [equippedWeapons, target.domain, targetDomainMunitions, isDockedAtBase]);
 
   // 6. Multi-Weapon Salvo Selection map (weaponIdx -> count)
   const [weaponSalvoMap, setWeaponSalvoMap] = useState<Record<number, number>>({});
@@ -263,8 +277,9 @@ export function StrikeTaskingModal({
 
   const totalCommittedRounds = configuredWeaponsToFire.reduce((sum, w) => sum + w.salvoCount, 0);
 
-  // Loadout Swapping Helpers
+  // Loadout Swapping Helpers (Base only)
   const handleEquipMunition = (munition: Munition) => {
+    if (!isDockedAtBase) return;
     const existingIndex = equippedWeapons.findIndex(
       (w) => (w.name || '').toLowerCase() === munition.name.toLowerCase()
     );
@@ -281,6 +296,7 @@ export function StrikeTaskingModal({
   };
 
   const handleApplyPreset = (preset: 'strike' | 'antiship' | 'cap') => {
+    if (!isDockedAtBase) return;
     const matching = compatibleMunitionsList.filter((m) => {
       const engages = m.weapon.engages || [];
       if (preset === 'cap') return engages.includes('air');
@@ -301,6 +317,7 @@ export function StrikeTaskingModal({
   };
 
   const handleRestoreStandard = () => {
+    if (!isDockedAtBase) return;
     if (currentAttackerEval?.spec?.weapons) {
       setEquippedWeapons([...currentAttackerEval.spec.weapons]);
       setSelectedWeaponIdx(0);
@@ -605,21 +622,39 @@ export function StrikeTaskingModal({
 
           {/* Step 2: Weapon Selection & Base Loadout Configurator */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label
-                style={{
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  color: 'var(--paper-dim)',
-                  fontWeight: 700,
-                  display: 'block',
-                  margin: 0,
-                }}
-              >
-                2. Select Weapon System for Release
-              </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label
+                  style={{
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    color: 'var(--paper-dim)',
+                    fontWeight: 700,
+                    display: 'block',
+                    margin: 0,
+                  }}
+                >
+                  {isDockedAtBase ? '2. Configure Weapons & Select Munitions for Release' : '2. Select Weapon from Deployed Loadout'}
+                </label>
+                {!isDockedAtBase && (
+                  <span
+                    style={{
+                      fontSize: '9.5px',
+                      color: '#4FC3F7',
+                      background: 'rgba(79, 195, 247, 0.12)',
+                      border: '1px solid rgba(79, 195, 247, 0.3)',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontWeight: 600,
+                    }}
+                    title="Weapon loadout cannot be changed while deployed on the map. Return to base to rearm."
+                  >
+                    🔒 Deployed Loadout (Fixed in Flight)
+                  </span>
+                )}
+              </div>
 
-              {/* Stationed Loadout Presets Toolbar */}
+              {/* Stationed Loadout Presets Toolbar (Base only) */}
               {isDockedAtBase && (
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                   <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', marginRight: '2px' }}>Base Re-Arm:</span>
@@ -699,9 +734,17 @@ export function StrikeTaskingModal({
                   borderRadius: '6px',
                   fontSize: '11px',
                   color: '#FF5252',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
                 }}
               >
-                ⚠️ Selected attacking unit has no weapons capable of engaging {target.domain.toUpperCase()} targets.
+                <strong>⚠️ Selected Unit Cannot Engage {target.domain.toUpperCase()} Targets</strong>
+                <span>
+                  {isDockedAtBase
+                    ? `Stationed unit has no compatible weapons configured. Use the Base Re-Arm presets above or choose a munition from the base armory.`
+                    : `This deployed unit is currently carrying: ${equippedWeapons.map((w) => w.name).join(', ') || 'no weapons'}. None of these weapons can engage ${target.domain.toUpperCase()} targets. (Deployed units cannot change weapon loadout; only systems at base can be re-armed before launch).`}
+                </span>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

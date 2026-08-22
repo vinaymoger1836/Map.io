@@ -1069,9 +1069,14 @@ export function WarSimConsole({
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                    <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
-                      Equipped Weapons (Click to toggle range envelope):
-                    </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
+                        Equipped Weapons (Click to toggle reach):
+                      </span>
+                      <span style={{ fontSize: '9px', color: '#4FC3F7', background: 'rgba(79, 195, 247, 0.1)', padding: '1px 5px', borderRadius: '3px', border: '1px solid rgba(79, 195, 247, 0.25)' }}>
+                        🔒 Deployed (Fixed)
+                      </span>
+                    </div>
 
                     {weapons.map((w, idx) => {
                       const isActive = activeWeaponIndex === idx;
