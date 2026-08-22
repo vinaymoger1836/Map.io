@@ -27,7 +27,7 @@ import {
   type SystemSpec,
   type WeaponFacet,
 } from '@/lib/specs';
-import { holdingKey, keyOf, type Tally } from '@/lib/forces';
+import { holdingKey, keyOf, type Tally, getPreAssignedQuotasForCountry } from '@/lib/forces';
 import { Modal } from './Modal';
 import { SystemForm } from './SystemsEditor';
 
@@ -92,6 +92,10 @@ export function ConfigurationSuite({
   const [selectedIso, setSelectedIso] = useState<string>(
     wg.activeIso || Object.keys(wg.board.nations)[0] || 'US'
   );
+  const [forcesSearchQuery, setForcesSearchQuery] = useState('');
+  const [newSysIdToPreAssign, setNewSysIdToPreAssign] = useState('');
+  const [newSysCountToPreAssign, setNewSysCountToPreAssign] = useState<number>(24);
+  const [newSysDomainFilter, setNewSysDomainFilter] = useState<Domain | 'all'>('all');
 
   // Doctrine State
   const [doctrineSettings, setDoctrineSettings] = useState({
@@ -206,8 +210,65 @@ export function ConfigurationSuite({
     });
   }, [wg.systems, searchQuery, selectedDomain, selectedOrigin]);
 
-  const activeNation = wg.board.nations[selectedIso] ?? { name: selectedIso, color: '#4DD0E1' };
+  const allNationsList = useMemo(() => {
+    const list: { iso: string; name: string; color?: string }[] = [];
+    const seen = new Set<string>();
+
+    // Active board combatants first
+    Object.entries(wg.board.nations).forEach(([iso, nat]) => {
+      seen.add(iso);
+      list.push({ iso, name: nat.name || iso, color: nat.color });
+    });
+
+    // World nations
+    (wg.countries || []).forEach((c) => {
+      if (!seen.has(c.iso)) {
+        seen.add(c.iso);
+        list.push({ iso: c.iso, name: c.name });
+      }
+    });
+
+    if (!forcesSearchQuery.trim()) return list;
+    const q = forcesSearchQuery.toLowerCase().trim();
+    return list.filter((n) => n.name.toLowerCase().includes(q) || n.iso.toLowerCase().includes(q));
+  }, [wg.board.nations, wg.countries, forcesSearchQuery]);
+
+  const selectedCountryInfo = wg.countries?.find((c) => c.iso === selectedIso);
+  const activeNation = wg.board.nations[selectedIso] ?? {
+    name: selectedCountryInfo?.name || selectedIso,
+    color: '#4DD0E1',
+  };
   const nationTallies = wg.nationTally(selectedIso);
+
+  const availableSystemsToAssign = useMemo(() => {
+    return wg.systems
+      .filter((s) => {
+        if (newSysDomainFilter !== 'all' && domainOf(s) !== newSysDomainFilter) return false;
+        return true;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [wg.systems, newSysDomainFilter]);
+
+  const handleAutoPopulateNation = (iso: string) => {
+    const templateQuotas = getPreAssignedQuotasForCountry(iso, {}, wg.systems);
+    for (const [sysId, count] of Object.entries(templateQuotas)) {
+      const spec = wg.systems.find((s) => s.id === sysId);
+      if (spec) {
+        wg.setHolding(iso, {
+          typeId: spec.typeId,
+          systemId: spec.id,
+          count,
+        });
+      }
+    }
+  };
+
+  const handleClearNationHoldings = (iso: string) => {
+    const current = wg.forces[iso] ?? [];
+    for (const h of current) {
+      wg.removeHolding(iso, keyOf(h));
+    }
+  };
 
   const saveDoctrine = () => {
     setDoctrineSaved(true);
@@ -453,20 +514,48 @@ export function ConfigurationSuite({
             <div className="wg-orbat-layout">
               {/* Nation Selector Sidebar */}
               <aside className="wg-orbat-nations-sidebar">
-                <h4 className="sidebar-heading">ACTIVE COMBATANTS</h4>
-                <div className="nations-list">
-                  {Object.entries(wg.board.nations).map(([iso, nat]) => {
-                    const count = wg.board.units.filter((u) => u.iso === iso).length;
+                <div style={{ padding: '0 0 10px 0' }}>
+                  <h4 className="sidebar-heading" style={{ marginBottom: '8px' }}>NATIONAL ARSENALS</h4>
+                  <input
+                    type="text"
+                    placeholder="🔍 Filter countries..."
+                    value={forcesSearchQuery}
+                    onChange={(e) => setForcesSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: '#070C14',
+                      border: '1px solid var(--border)',
+                      color: 'var(--paper)',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                    }}
+                  />
+                </div>
+
+                <div className="nations-list" style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' }}>
+                  {allNationsList.map((nat) => {
+                    const iso = nat.iso;
                     const isSelected = selectedIso === iso;
+                    const assignedCount = wg.forces[iso]?.length || 0;
+
                     return (
                       <button
                         key={iso}
                         className={`nation-btn${isSelected ? ' on' : ''}`}
                         onClick={() => setSelectedIso(iso)}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '8px 10px' }}
                       >
-                        <span className="nation-flag-pip" style={{ background: nat.color }} />
-                        <span className="nation-name">{nat.name || iso}</span>
-                        <span className="nation-count">{count} units</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                          <span className="nation-flag-pip" style={{ background: nat.color || '#4DD0E1' }} />
+                          <span className="nation-name" style={{ fontWeight: 600, flex: 1, textAlign: 'left' }}>
+                            {nat.name}
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>{iso}</span>
+                        </div>
+                        <span style={{ fontSize: '10px', color: assignedCount > 0 ? '#4FA85F' : 'var(--paper-dim)', paddingLeft: '14px' }}>
+                          {assignedCount > 0 ? `✓ ${assignedCount} Pre-Assigned` : 'Default Template'}
+                        </span>
                       </button>
                     );
                   })}
@@ -475,25 +564,180 @@ export function ConfigurationSuite({
 
               {/* Nation Inventory & Holdings View */}
               <div className="wg-orbat-content">
-                <div className="wg-orbat-header-card">
-                  <div className="orbat-nation-title">
-                    <span className="flag-circle" style={{ background: activeNation.color }} />
-                    <h2>{activeNation.name} Order of Battle</h2>
-                    <span className="iso-tag">{selectedIso}</span>
+                <div className="wg-orbat-header-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div className="orbat-nation-title">
+                      <span className="flag-circle" style={{ background: activeNation.color || '#4DD0E1' }} />
+                      <h2>{activeNation.name} National Arsenal</h2>
+                      <span className="iso-tag">{selectedIso}</span>
+                    </div>
+                    <p className="orbat-desc">
+                      Pre-assign default weapon systems and starting quotas for this country. When selected in War Simulation, these systems are loaded automatically.
+                    </p>
                   </div>
-                  <p className="orbat-desc">
-                    Manage equipment inventory holdings, reserve allocations, and active deployed units.
-                  </p>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="wg-btn accent"
+                      style={{ fontSize: '11px', padding: '6px 12px', background: '#4FC3F7', color: '#070C14', borderColor: '#4FC3F7', fontWeight: 600 }}
+                      onClick={() => handleAutoPopulateNation(selectedIso)}
+                      title="Load standard indigenous or operational systems template for this country"
+                    >
+                      ⚡ Auto-Populate Native Preset
+                    </button>
+                    {(wg.forces[selectedIso]?.length || 0) > 0 && (
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '11px', padding: '6px 10px', borderColor: '#D9534F', color: '#D9534F' }}
+                        onClick={() => {
+                          if (window.confirm(`Clear all custom pre-assigned systems for ${activeNation.name}?`)) {
+                            handleClearNationHoldings(selectedIso);
+                          }
+                        }}
+                      >
+                        🗑️ Reset to Template
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pre-Assign New System Card */}
+                <div
+                  style={{
+                    background: '#0E1724',
+                    padding: '14px 16px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#4FC3F7', textTransform: 'uppercase' }}>
+                      ➕ Pre-Assign System to {activeNation.name}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>
+                      Available Systems in Library: {availableSystemsToAssign.length}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 0.8fr auto', gap: '10px', alignItems: 'flex-end' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)', marginBottom: '4px' }}>
+                        Select Weapon System:
+                      </label>
+                      <select
+                        value={newSysIdToPreAssign}
+                        onChange={(e) => setNewSysIdToPreAssign(e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: '#070C14',
+                          border: '1px solid var(--border)',
+                          color: 'var(--paper)',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <option value="">-- Choose system to pre-assign --</option>
+                        {availableSystemsToAssign.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            [{domainOf(s).toUpperCase()}] {s.name} ({s.origin || 'Generic'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)', marginBottom: '4px' }}>
+                        Domain Filter:
+                      </label>
+                      <select
+                        value={newSysDomainFilter}
+                        onChange={(e) => setNewSysDomainFilter(e.target.value as any)}
+                        style={{
+                          width: '100%',
+                          background: '#070C14',
+                          border: '1px solid var(--border)',
+                          color: 'var(--paper)',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <option value="all">All Domains</option>
+                        <option value="air">Air Combat</option>
+                        <option value="sea">Maritime Surface</option>
+                        <option value="ground">Ground / Artillery</option>
+                        <option value="subsurface">Subsurface</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)', marginBottom: '4px' }}>
+                        Default Quota:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={newSysCountToPreAssign}
+                        onChange={(e) => setNewSysCountToPreAssign(Math.max(1, Number(e.target.value)))}
+                        style={{
+                          width: '100%',
+                          background: '#070C14',
+                          border: '1px solid var(--border)',
+                          color: 'var(--paper)',
+                          padding: '5px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="wg-btn accent"
+                      style={{
+                        background: newSysIdToPreAssign ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)',
+                        color: newSysIdToPreAssign ? '#070C14' : 'var(--paper-dim)',
+                        borderColor: newSysIdToPreAssign ? '#4FA85F' : 'transparent',
+                        fontWeight: 700,
+                        fontSize: '11.5px',
+                        padding: '6px 16px',
+                        cursor: newSysIdToPreAssign ? 'pointer' : 'not-allowed',
+                      }}
+                      disabled={!newSysIdToPreAssign}
+                      onClick={() => {
+                        if (!newSysIdToPreAssign) return;
+                        const spec = wg.systems.find((s) => s.id === newSysIdToPreAssign);
+                        if (spec) {
+                          wg.setHolding(selectedIso, {
+                            typeId: spec.typeId,
+                            systemId: spec.id,
+                            count: newSysCountToPreAssign,
+                          });
+                          setNewSysIdToPreAssign('');
+                        }
+                      }}
+                    >
+                      + Pre-Assign System
+                    </button>
+                  </div>
                 </div>
 
                 {/* Holdings Inventory Table */}
                 <div className="wg-orbat-table-container">
-                  <h3 className="section-title">Equipment Inventory & Ready Reserves</h3>
+                  <h3 className="section-title">Pre-Assigned Systems & Reserve Stock ({nationTallies.length})</h3>
                   <table className="wg-orbat-table">
                     <thead>
                       <tr>
                         <th>System / Equipment</th>
-                        <th className="num">Held in Reserve</th>
+                        <th className="num">Default Starting Quota</th>
                         <th className="num">Deployed on Map</th>
                         <th className="num">Available Left</th>
                         <th>Actions</th>
@@ -512,6 +756,7 @@ export function ConfigurationSuite({
                               <td className="system-cell">
                                 <span className="domain-tag">{spec ? domainOf(spec) : 'generic'}</span>
                                 <span className="system-name">{name}</span>
+                                {spec?.origin && <span style={{ fontSize: '10px', color: 'var(--paper-dim)', marginLeft: '6px' }}>({spec.origin})</span>}
                               </td>
                               <td className="num">
                                 <div className="stepper">
@@ -545,7 +790,7 @@ export function ConfigurationSuite({
                                 <button
                                   className="remove-btn"
                                   onClick={() => wg.removeHolding(selectedIso, key)}
-                                  title="Remove from inventory"
+                                  title="Remove from pre-assigned roster"
                                 >
                                   ✕ Remove
                                 </button>
@@ -555,8 +800,18 @@ export function ConfigurationSuite({
                         })
                       ) : (
                         <tr>
-                          <td colSpan={5} className="empty-row">
-                            No inventory tracked for this nation. Deployments are unlimited.
+                          <td colSpan={5} className="empty-row" style={{ padding: '24px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '13px', color: 'var(--paper-dim)', marginBottom: '8px' }}>
+                              No custom systems pre-assigned yet for {activeNation.name}.
+                            </div>
+                            <button
+                              type="button"
+                              className="wg-btn"
+                              style={{ fontSize: '11px', color: '#4FC3F7', borderColor: '#4FC3F7' }}
+                              onClick={() => handleAutoPopulateNation(selectedIso)}
+                            >
+                              ⚡ Auto-Populate Standard Native Preset for {activeNation.name}
+                            </button>
                           </td>
                         </tr>
                       )}
