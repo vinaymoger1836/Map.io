@@ -456,6 +456,68 @@ export function CombatReportDetailModal({
                 <div style={{ fontSize: '11px', color: '#B0BEC5', lineHeight: 1.4 }}>
                   <span>Engagement Detail: <strong>{interception.responseDetail}</strong></span>
                 </div>
+
+                {/* Detailed Per-System Interception Breakdown */}
+                {interception.breakdown && interception.breakdown.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: '4px',
+                      padding: '10px 12px',
+                      background: 'rgba(79, 195, 247, 0.05)',
+                      border: '1px solid rgba(79, 195, 247, 0.2)',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, color: '#4FC3F7', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🛡️ Integrated Interception Breakdown by Defending Unit</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {interception.breakdown.map((item, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '11px',
+                            background: 'rgba(0, 0, 0, 0.4)',
+                            padding: '6px 10px',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{item.defenderName}</span>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                textTransform: 'uppercase',
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: '3px',
+                                background: item.interceptType === 'sam' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(255, 152, 0, 0.2)',
+                                color: item.interceptType === 'sam' ? '#64B5F6' : '#FFB74D',
+                                border: `1px solid ${item.interceptType === 'sam' ? 'rgba(33, 150, 243, 0.4)' : 'rgba(255, 152, 0, 0.4)'}`,
+                              }}
+                            >
+                              {item.interceptType === 'sam' ? '🚀 Area SAM' : '💥 Point CIWS'}
+                            </span>
+                            <span style={{ color: '#90A4AE', fontSize: '10.5px' }}>via {item.interceptorWeapon}</span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ color: '#90A4AE', fontSize: '10px' }}>
+                              Expended: <strong style={{ color: '#E0E6ED' }}>{item.roundsFired}</strong>
+                            </span>
+                            <span style={{ color: item.countDestroyed > 0 ? '#4FA85F' : '#90A4AE', fontWeight: 700 }}>
+                              {item.countDestroyed > 0 ? `🎯 ${item.countDestroyed} Intercepted` : '0 Hits'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

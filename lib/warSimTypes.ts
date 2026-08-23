@@ -204,6 +204,16 @@ export interface MissileFlyoutTrack {
   salvoId?: string;
 }
 
+export interface InterceptionBreakdownEntry {
+  defenderEntityId?: string;
+  defenderName: string;
+  interceptorWeapon: string;
+  interceptType: 'sam' | 'ciws';
+  countDestroyed: number;
+  roundsFired: number;
+  threatWeaponName?: string;
+}
+
 export interface StrikeSalvoTracker {
   salvoId: string;
   attackerEntityId: string;
@@ -219,6 +229,7 @@ export interface StrikeSalvoTracker {
   directHits: number;
   defendingSamSystems: string[];
   defendingCiwsSystems: string[];
+  interceptionBreakdowns?: InterceptionBreakdownEntry[];
   startSimTimeSec: number;
   concludedSimTimeSec?: number;
   targetInitialDamage: string;
@@ -322,6 +333,7 @@ export interface CombatReport {
     ciwsEngaged?: boolean;
     successRatePct: number;
     responseDetail: string;
+    breakdown?: InterceptionBreakdownEntry[];
   };
 
   // Damage / BDA Assessment
