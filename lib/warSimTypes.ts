@@ -164,6 +164,8 @@ export interface SimEntity {
   turnaroundTimerSec: number;
   repairTimerSec: number;
   personnel: number;
+  /** Explicit physical Radar Cross-Section (RCS in m²) */
+  rcs?: number;
   /** Weapon index -> remaining ready rounds in magazine */
   magazines: Record<number, number>;
   /** Custom equipped weapon facets configured during pre-mission sortie tasking */
@@ -307,6 +309,8 @@ export interface CombatReport {
     coordinatesText: string;
     estimatedComposition?: string;
     personnel?: number;
+    rcsM2?: number;
+    detectionBottleneck?: string;
   };
 }
 

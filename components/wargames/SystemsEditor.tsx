@@ -206,8 +206,8 @@ export function SystemForm({
 
         <label className="wg-field">
           <span>
-            Signature
-            <FieldInfo hint="Radar Cross Section (RCS) observable level. Low/VLO stealth delays hostile radar lock onset." />
+            Signature Tier
+            <FieldInfo hint="Generic classification fallback. Used dynamically when explicit RCS (m²) is omitted: Low (0.01 m²), Medium (5.0 m²), High (1000.0 m²)." />
           </span>
           <select
             value={draft.signature ?? ''}
@@ -215,11 +215,29 @@ export function SystemForm({
               patch({ signature: (e.target.value || undefined) as SystemSpec['signature'] })
             }
           >
-            <option value="">Not recorded</option>
-            <option value="low">Low — stealthy (VLO)</option>
-            <option value="medium">Medium</option>
-            <option value="high">High — conventional</option>
+            <option value="">Default (Medium — 5.0 m²)</option>
+            <option value="low">Low — stealthy (VLO / 0.01 m²)</option>
+            <option value="medium">Medium — standard (5.0 m²)</option>
+            <option value="high">High — conventional (1,000.0 m²)</option>
           </select>
+        </label>
+
+        <label className="wg-field">
+          <span>
+            RCS (m²)
+            <FieldInfo hint="Explicit physical Radar Cross-Section in square meters. Scaled against 5.0 m² baseline. e.g. 0.0001 (F-22), 0.001 (F-35), 0.01 (Visby), 1.0 (MQ-9), 5.0 (Su-35), 100.0 (FREMM), 5000.0 (Type 055)." />
+          </span>
+          <input
+            type="number"
+            step="any"
+            min="0.00001"
+            placeholder={draft.signature === 'low' ? '0.01' : draft.signature === 'high' ? '1000.0' : '5.0'}
+            value={draft.rcs !== undefined && draft.rcs !== null ? draft.rcs : ''}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              patch({ rcs: isNaN(val) || val <= 0 ? undefined : val });
+            }}
+          />
         </label>
 
         <label className="wg-field wide">

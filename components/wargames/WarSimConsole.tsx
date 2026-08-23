@@ -21,7 +21,7 @@ import {
   type CombatReport,
   type WarReportCategory,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, domainOf, radarHorizonKm } from '@/lib/specs';
+import { type SystemSpec, domainOf, radarHorizonKm, getSystemRcs } from '@/lib/specs';
 import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
@@ -1250,19 +1250,27 @@ export function WarSimConsole({
                 )}
               </div>
 
-              {!isStaticAD ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                  <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
-                  <span>Altitude: <strong>{isGround ? '0 m (Ground)' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
-                  <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
-                </div>
-              ) : (
-                <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Site: <strong>Fixed Firing Position</strong></span>
-                  <span>Altitude: <strong>0 m (Ground Level)</strong></span>
-                  <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
-                </div>
-              )}
+              {(() => {
+                const entityDomain = spec ? domainOf(spec) : isGround ? 'ground' : isNaval ? 'sea' : 'air';
+                const rcsVal = selectedEntity.rcs ?? (spec ? getSystemRcs(spec, entityDomain) : 5.0);
+                const rcsText = rcsVal >= 1 ? `${rcsVal.toFixed(1)} m²` : `${rcsVal} m²`;
+
+                return !isStaticAD ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                    <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
+                    <span>Alt: <strong>{isGround ? '0 m' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
+                    <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+                    <span>RCS: <strong style={{ color: '#4FC3F7' }}>{rcsText}</strong></span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Site: <strong>Fixed Position</strong></span>
+                    <span>Altitude: <strong>0 m</strong></span>
+                    <span>RCS: <strong style={{ color: '#4FC3F7' }}>{rcsText}</strong></span>
+                    <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
+                  </div>
+                );
+              })()}
 
               {/* Sensor / Sight Horizon Envelopes */}
               {isNaval ? (

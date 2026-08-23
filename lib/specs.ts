@@ -265,6 +265,12 @@ export interface SystemSpec {
   platform?: PlatformFacet;
   signature?: 'low' | 'medium' | 'high';
   /**
+   * Radar Cross-Section (RCS) observable footprint measured in square meters (m²).
+   * e.g. 0.0001 m² (F-22), 0.001 m² (F-35), 1.0 m² (MQ-9), 5.0 m² (Su-35/F-16), 100.0 m² (FREMM), 5000.0 m² (Type 055).
+   * If omitted or undefined, falls back dynamically to the signature tier baseline.
+   */
+  rcs?: number;
+  /**
    * Munition ids this system can be armed with, where the exact answer is known.
    * Omitted, compatibility is inferred from what other systems in the same
    * domain carry — right at the domain level, and free. Declare this on the
@@ -515,48 +521,116 @@ export function combineEnvelopes(specs: (SystemSpec | undefined)[]): Envelope[] 
 }
 
 /**
- * How far a surface radar can see something flying at `targetAltM`, given the
- * earth curves away underneath. Nothing sees a sea-skimmer at 400 km, whatever
- * the brochure says.
+ * Geometric Line-of-Sight Horizon Limit (Earth Curvature).
+ * Standard atmospheric refraction approximation (effective Earth radius 4/3):
+ * Range_horizon = 3.57 * (sqrt(Height_A) + sqrt(Height_B))
+ * where heights are in meters and range is in kilometers.
  */
 export function radarHorizonKm(antennaM: number, targetAltM: number): number {
-  return 4.12 * (Math.sqrt(Math.max(0, antennaM)) + Math.sqrt(Math.max(0, targetAltM)));
+  return 3.57 * (Math.sqrt(Math.max(0, antennaM)) + Math.sqrt(Math.max(0, targetAltM)));
+}
+
+/**
+ * Standard reference target size (RCS baseline) against which radar baseline
+ * detection envelopes are calibrated (configured to 5.0 m² as per standard framework).
+ */
+export const RCS_BASELINE_M2 = 5.0;
+
+/**
+ * Extracts or evaluates the target's physical Radar Cross-Section (RCS in m²).
+ * If explicit RCS is defined and > 0, returns that value.
+ * Otherwise, dynamically applies the signature tier fallbacks from the Unified Detection Framework:
+ * - 'low': 0.01 m² (Stealth profiling: Visby, 5th-gen fighter fallback, or 0.001 m² for dedicated VLO airframes)
+ * - 'high': 1000.0 m² (Massive surface combatants / strategic bombers / Type 055 / carriers)
+ * - 'medium' / default: 5.0 m² (Standard target profiling: 4th-gen fighters, FREMM frigates, general combatants)
+ */
+export function getSystemRcs(
+  spec?: SystemSpec,
+  domain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air'
+): number {
+  if (spec?.rcs && spec.rcs > 0) {
+    return spec.rcs;
+  }
+  const tier = spec?.signature || 'medium';
+  if (tier === 'low') {
+    return domain === 'air' ? 0.001 : 0.01;
+  }
+  if (tier === 'high') {
+    return 1000.0;
+  }
+  return RCS_BASELINE_M2; // 5.0 m²
 }
 
 /**
  * Radar detection range multiplier derived from the Radar Range Equation:
- * Range proportional to RCS^(1/4).
- * - Air domain:
- *   - 'low' (5th-gen VLO stealth, e.g. F-35, F-22, B-21, Su-57; RCS ~ 0.001 m²): ~0.25x radar detection reach
- *   - 'medium' (4.5-gen reduced RCS, e.g. Rafale, Typhoon, Super Hornet; RCS ~ 0.75 m²): ~0.65x radar detection reach
- *   - 'high' / undefined (4th-gen baseline; RCS ~ 4 m²): 1.0x radar detection reach
- * - Sea domain:
- *   - Large surface vessels (thousands of tonnes) have high RCS (~100–1000 m²). Stealth frigate shaping
- *     ('low' signature, e.g. FREMM, Visby) reduces radar range modestly (~0.85x), not down to 0.25x.
- * - Ground domain:
- *   - 'low' (camouflaged/stealth hull): ~0.70x reach
+ * Range proportional to (RCS / RCS_baseline)^0.25.
  */
 export function signatureRangeMultiplier(
   sig?: 'low' | 'medium' | 'high',
-  domain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air'
+  domain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air',
+  explicitRcs?: number
 ): number {
-  if (domain === 'sea') {
-    if (sig === 'low') return 0.85;
-    if (sig === 'medium') return 0.95;
-    return 1.0;
-  }
-  if (domain === 'ground') {
-    if (sig === 'low') return 0.70;
-    if (sig === 'medium') return 0.85;
-    return 1.0;
-  }
-  if (domain === 'sub') {
-    return 1.0;
-  }
-  // Air domain / default:
-  if (sig === 'low') return 0.25;
-  if (sig === 'medium') return 0.65;
-  return 1.0;
+  const targetRcs = explicitRcs && explicitRcs > 0 ? explicitRcs : getSystemRcs({ signature: sig } as SystemSpec, domain);
+  return Math.pow(targetRcs / RCS_BASELINE_M2, 0.25);
+}
+
+export interface DetectionRangeParams {
+  scannerHeightM: number;
+  scannerEnvelopeKm: number;
+  targetHeightM: number;
+  targetRcsM2?: number;
+  targetSignature?: 'low' | 'medium' | 'high';
+  targetDomain?: 'air' | 'sea' | 'sub' | 'ground' | 'site';
+  rcsBaselineM2?: number;
+  isJammed?: boolean;
+  horizonLimited?: boolean;
+}
+
+export interface DetectionRangeResult {
+  detectionRangeKm: number;
+  horizonLimitKm: number;
+  radarLimitKm: number;
+  effectiveRcsM2: number;
+  bottleneck: 'horizon' | 'radar_power';
+}
+
+/**
+ * Computes the maximum cross-domain detection range between two simulation systems
+ * based on the Unified Sensor Detection Framework:
+ * 1. Physical Line-of-Sight Limit (Earth Curvature): 3.57 * (sqrt(hA) + sqrt(hB))
+ * 2. Radar Energy Performance Limit (RCS Scaling): Envelope_A * (RCS_B / RCS_baseline)^0.25
+ * 3. Final Detection Distance: min(Range_horizon, Range_radar)
+ */
+export function calculateDetectionRange({
+  scannerHeightM,
+  scannerEnvelopeKm,
+  targetHeightM,
+  targetRcsM2,
+  targetSignature,
+  targetDomain = 'air',
+  rcsBaselineM2 = RCS_BASELINE_M2,
+  isJammed = false,
+  horizonLimited = true,
+}: DetectionRangeParams): DetectionRangeResult {
+  const effectiveRcsM2 = (targetRcsM2 && targetRcsM2 > 0)
+    ? targetRcsM2
+    : getSystemRcs({ signature: targetSignature } as SystemSpec, targetDomain);
+
+  const horizonLimitKm = radarHorizonKm(scannerHeightM, targetHeightM);
+  const jamMult = isJammed ? 0.6 : 1.0;
+  const radarLimitKm = scannerEnvelopeKm * Math.pow(effectiveRcsM2 / rcsBaselineM2, 0.25) * jamMult;
+
+  const detectionRangeKm = horizonLimited
+    ? Math.min(horizonLimitKm, radarLimitKm)
+    : radarLimitKm;
+
+  return {
+    detectionRangeKm,
+    horizonLimitKm,
+    radarLimitKm,
+    effectiveRcsM2,
+    bottleneck: horizonLimited && horizonLimitKm < radarLimitKm ? 'horizon' : 'radar_power',
+  };
 }
 
 /**
@@ -572,12 +646,17 @@ export function effectiveDetectionKm(
 ): number | null {
   const sensor = spec.sensor;
   if (!sensor?.detectionKm) return null;
-  const sigMult = signatureRangeMultiplier(targetSignature, targetDomain);
-  const jamMult = isJammed ? 0.6 : 1.0;
-  const rawReach = sensor.detectionKm * sigMult * jamMult;
-  if (!sensor.horizonLimited) return rawReach;
-  const horizon = radarHorizonKm(sensor.antennaM ?? 20, targetAltM);
-  return Math.min(rawReach, horizon);
+  const scannerHeight = sensor.antennaM ?? (targetDomain === 'sea' ? 25 : 7000);
+  const result = calculateDetectionRange({
+    scannerHeightM: scannerHeight,
+    scannerEnvelopeKm: sensor.detectionKm,
+    targetHeightM: targetAltM,
+    targetSignature,
+    targetDomain,
+    isJammed,
+    horizonLimited: Boolean(sensor.horizonLimited),
+  });
+  return result.detectionRangeKm;
 }
 
 /** Weapons on a system with stand-off reach (rangeKm > 0) that can engage surface or ground targets. */

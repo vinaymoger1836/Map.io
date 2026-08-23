@@ -45,6 +45,9 @@ import {
   radarHorizonKm,
   defaultSonarFor,
   signatureRangeMultiplier,
+  calculateDetectionRange,
+  getSystemRcs,
+  RCS_BASELINE_M2,
 } from './specs';
 
 /* ------------------------------------------------------------------ */
@@ -1441,6 +1444,13 @@ export function tickWarSim(
 
       let bestTier: 1 | 2 | 0 = 0;
 
+      // Target physical characteristics (altitude/mast height & physical RCS)
+      const targetHeightM = targetDomain === 'air'
+        ? (target.altitudeM && target.altitudeM > 50 ? target.altitudeM : 10000)
+        : (targetDomain === 'sea' ? (targetSpec?.sensor?.antennaM ?? (target.typeId === 'destroyer' ? 38 : 25)) : 3);
+
+      const targetRcsM2 = target.rcs ?? getSystemRcs(targetSpec, targetDomain);
+
       // 1. Check all active friendly deployed platforms (aircraft, ships, drones, air defense, armor)
       for (const scanner of scanners) {
         const scanSpec = systemsLibrary.find((s) => s.id === scanner.systemId);
@@ -1455,38 +1465,6 @@ export function tickWarSim(
           }
         }
 
-        // Sensor detection envelope
-        let ratedSensorKm = scanSpec?.sensor?.detectionKm ?? (
-          isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : (scanner.typeId === 'uav' || scanner.typeId === 'recon') ? 180 : 250
-        );
-
-        // High-altitude maritime search radar / SAR for UAVs & Recon aircraft against sea combatants
-        if ((scanner.typeId === 'uav' || scanner.typeId === 'recon') && targetDomain === 'sea') {
-          ratedSensorKm = Math.max(ratedSensorKm, 180);
-        }
-
-        if (scanner.patrolOrder?.emcon === 'passive') {
-          ratedSensorKm = 0; // Passive silent running
-        }
-
-        // Apply target stealth signature reduction if target is stealthy (domain-aware)
-        const targetSignature = targetSpec?.signature;
-        const sigMult = signatureRangeMultiplier(targetSignature, targetDomain);
-        let maxRadarKm = ratedSensorKm * sigMult;
-
-        // Radar Horizon modeling:
-        // - Air targets cruise high above the horizon and are detected at the full instrumented radar range (ratedSensorKm * sigMult).
-        // - Surface targets (ships, ground units) are clipped by Earth curvature line-of-sight if scanner is at surface level.
-        if (targetDomain !== 'air' && (scanSpec?.sensor?.horizonLimited || scanner.typeId === 'destroyer' || scanner.typeId === 'frigate' || isGroundScanner)) {
-          const antennaM = (scanner.altitudeM && scanner.altitudeM > 50)
-            ? scanner.altitudeM
-            : (scanSpec?.sensor?.antennaM ?? (scanner.typeId === 'destroyer' || scanner.typeId === 'frigate' ? 25 : 15));
-
-          const targetEffectiveAltM = targetDomain === 'sea' ? 25 : 5;
-          const horizonKm = radarHorizonKm(antennaM, targetEffectiveAltM);
-          maxRadarKm = Math.min(maxRadarKm, horizonKm);
-        }
-
         // Subsurface acoustic check
         if (targetDomain === 'sub') {
           const sonar = scanSpec?.sensor?.sonar ?? defaultSonarFor(scanSpec, scanner.typeId);
@@ -1494,7 +1472,44 @@ export function tickWarSim(
           if (dist <= maxSonarKm) {
             bestTier = Math.max(bestTier, 1) as 1 | 2;
           }
-        } else if (dist <= maxRadarKm) {
+          continue;
+        }
+
+        // Sensor detection envelope
+        let ratedEnvelopeKm = scanSpec?.sensor?.detectionKm ?? (
+          isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : (scanner.typeId === 'uav' || scanner.typeId === 'recon') ? 180 : 250
+        );
+
+        // High-altitude maritime search radar / SAR for UAVs & Recon aircraft against sea combatants
+        if ((scanner.typeId === 'uav' || scanner.typeId === 'recon') && targetDomain === 'sea') {
+          ratedEnvelopeKm = Math.max(ratedEnvelopeKm, 180);
+        }
+
+        if (scanner.patrolOrder?.emcon === 'passive') {
+          ratedEnvelopeKm = 0; // Passive silent running
+        }
+
+        // Scanner physical height
+        const isAirScanner = scanner.typeId === 'fighter' || scanner.typeId === 'bomber' || scanner.typeId === 'awacs' || scanner.typeId === 'uav' || scanner.typeId === 'recon' || scanner.typeId === 'tanker' || scanner.typeId === 'helicopter' || scanner.typeId === 'attack-heli' || scanner.typeId === 'transport-heli';
+        const scannerHeightM = isAirScanner
+          ? (scanner.altitudeM && scanner.altitudeM > 50 ? scanner.altitudeM : 7000)
+          : (scanSpec?.sensor?.antennaM ?? (scanner.typeId === 'destroyer' ? 38 : scanner.typeId === 'frigate' ? 25 : isGroundScanner ? 3 : 25));
+
+        const horizonLimited = targetDomain !== 'air' || Boolean(scanSpec?.sensor?.horizonLimited);
+
+        // Unified Sensor Detection Framework calculation
+        const detectionResult = calculateDetectionRange({
+          scannerHeightM,
+          scannerEnvelopeKm: ratedEnvelopeKm,
+          targetHeightM,
+          targetRcsM2,
+          targetDomain,
+          horizonLimited,
+        });
+
+        const maxDetectionKm = detectionResult.detectionRangeKm;
+
+        if (dist <= maxDetectionKm) {
           // Detected on Radar / Optics (Tier 1 baseline contact)
           bestTier = Math.max(bestTier, 1) as 1 | 2;
 
@@ -1507,7 +1522,7 @@ export function tickWarSim(
             scanner.typeId === 'recon' ||
             scanner.typeId === 'awacs' ||
             scanner.typeId === 'special-forces' ||
-            dist <= Math.max(45, maxRadarKm * 0.50)
+            dist <= Math.max(45, maxDetectionKm * 0.50)
           ) {
             bestTier = 2;
           }
@@ -1517,17 +1532,31 @@ export function tickWarSim(
       // 2. Check friendly military base early-warning and coastal surveillance radars
       for (const base of friendlyBases) {
         const distToBase = distanceKm(base.lngLat, target.lngLat);
+        const baseAntennaM = base.type === 'airbase' ? 45 : base.type === 'silo_complex' ? 35 : 30;
+        const baseEnvelopeKm = base.type === 'silo_complex' ? 300 : base.type === 'airbase' ? 220 : base.type === 'naval_base' ? 140 : 60;
 
         if (targetDomain === 'air') {
-          // Airbase / Silo early-warning 3D air surveillance radars detect high-altitude aircraft above the horizon
-          const baseAirReach = base.type === 'silo_complex' ? 300 : base.type === 'airbase' ? 220 : 60;
-          if (distToBase <= baseAirReach) {
+          const baseAirDetection = calculateDetectionRange({
+            scannerHeightM: baseAntennaM,
+            scannerEnvelopeKm: baseEnvelopeKm,
+            targetHeightM,
+            targetRcsM2,
+            targetDomain: 'air',
+            horizonLimited: false,
+          });
+          if (distToBase <= baseAirDetection.detectionRangeKm) {
             bestTier = Math.max(bestTier, 1) as 1 | 2;
           }
         } else if (targetDomain === 'sea' && (base.type === 'naval_base' || base.type === 'carrier_group')) {
-          // Coastal naval base surface search radar is strictly clipped by geometric radar horizon (antenna ~30m, ship mast ~25m => ~43 km)
-          const coastalHorizonKm = radarHorizonKm(30, 25);
-          if (distToBase <= coastalHorizonKm) {
+          const baseSeaDetection = calculateDetectionRange({
+            scannerHeightM: baseAntennaM,
+            scannerEnvelopeKm: baseEnvelopeKm,
+            targetHeightM,
+            targetRcsM2,
+            targetDomain: 'sea',
+            horizonLimited: true,
+          });
+          if (distToBase <= baseSeaDetection.detectionRangeKm) {
             bestTier = Math.max(bestTier, 1) as 1 | 2;
           }
         } else if (targetDomain === 'ground') {
@@ -1556,7 +1585,7 @@ export function tickWarSim(
           logReport({
             category: 'recon_intel',
             title: `📡 Reconnaissance: Positive PID of ${target.name}`,
-            summary: `${scanner?.name ?? 'Sensor Suite'} positively identified ${target.name} (${target.count} units, ${target.personnel} personnel, status: ${target.damage.toUpperCase()}).`,
+            summary: `${scanner?.name ?? 'Sensor Suite'} positively identified ${target.name} (${target.count} units, ${target.personnel} personnel, RCS: ${targetRcsM2 >= 1 ? targetRcsM2.toFixed(1) : targetRcsM2} m², status: ${target.damage.toUpperCase()}).`,
             lngLat: target.lngLat,
             countryIso: scanningIso,
             faction: scanningFaction,
@@ -1586,6 +1615,8 @@ export function tickWarSim(
               coordinatesText: `${target.lngLat[1].toFixed(3)}°N, ${target.lngLat[0].toFixed(3)}°E`,
               estimatedComposition: `${target.count} × ${target.name} (${target.damage.toUpperCase()})`,
               personnel: target.personnel,
+              rcsM2: targetRcsM2,
+              detectionBottleneck: 'Radar cross-section resolved against standard baseline',
             },
           });
         }

@@ -533,10 +533,24 @@ export function CombatReportDetailModal({
                   <strong style={{ color: '#FFFFFF' }}>{intel.discoveredDomain}</strong>
                 </div>
 
+                {intel.rcsM2 !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Target RCS Footprint:</span>
+                    <strong style={{ color: '#4FC3F7' }}>{intel.rcsM2 >= 1 ? `${intel.rcsM2.toFixed(1)} m²` : `${intel.rcsM2} m²`}</strong>
+                  </div>
+                )}
+
                 {intel.estimatedComposition && (
                   <div>
                     <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Verified Order of Battle:</span>
                     <strong style={{ color: '#4FA85F' }}>{intel.estimatedComposition}</strong>
+                  </div>
+                )}
+
+                {intel.detectionBottleneck && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Sensor Resolution:</span>
+                    <span style={{ color: '#90A4AE', fontSize: '10px' }}>{intel.detectionBottleneck}</span>
                   </div>
                 )}
               </div>
