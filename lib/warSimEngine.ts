@@ -1067,7 +1067,29 @@ export function tickWarSim(
           };
         }
 
-        if (Math.random() < 0.75) {
+        // Compute speed-dependent CIWS Kill Probability (Pk):
+        // 1. If missile speed is undefined/empty/0 -> default Pk = 0.30
+        // 2. Hypersonic (Mach 5+) -> Pk = 0.0 (cannot intercept)
+        // 3. High Supersonic (Mach 3 - 5) -> Pk = 0.20
+        // 4. Supersonic (Mach 1 - 3) -> Pk = 0.45
+        // 5. Subsonic (Mach < 1) -> Pk = 0.65
+        let ciwsPk = 0.30;
+        const threatSpeedKmh = m.speedKmh ?? 0;
+        const threatMach = threatSpeedKmh > 0 ? threatSpeedKmh / 1225 : 0;
+
+        if (threatSpeedKmh > 0) {
+          if (threatMach >= 5.0) {
+            ciwsPk = 0.0; // Hypersonic weapons bypass terminal point defense
+          } else if (threatMach >= 3.0) {
+            ciwsPk = 0.20;
+          } else if (threatMach >= 1.0) {
+            ciwsPk = 0.45;
+          } else {
+            ciwsPk = 0.65;
+          }
+        }
+
+        if (ciwsPk > 0 && Math.random() < ciwsPk) {
           m.isIntercepted = true;
 
           // Track CIWS kill in salvoTracker if present
@@ -1086,6 +1108,14 @@ export function tickWarSim(
             'intercept',
             `💥 CIWS Point Defense: ${targetEntity.name}`,
             `${targetEntity.name} terminal close-in weapon system (${ciwsWeaponName}) destroyed incoming ${m.weaponName} at point-blank range!`,
+            targetEntity.lngLat
+          );
+        } else if (threatMach >= 5.0) {
+          logEvent(
+            targetEntity.iso === session.playerIso ? 'player' : 'enemy',
+            'alert',
+            `⚠️ CIWS Bypassed: ${m.weaponName}`,
+            `${m.weaponName} traveling at hypersonic velocity (${threatMach.toFixed(1)} Mach) bypassed ${targetEntity.name} terminal point defense!`,
             targetEntity.lngLat
           );
         }
