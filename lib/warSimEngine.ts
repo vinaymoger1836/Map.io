@@ -1517,9 +1517,22 @@ export function tickWarSim(
       // 2. Check friendly military base early-warning and coastal surveillance radars
       for (const base of friendlyBases) {
         const distToBase = distanceKm(base.lngLat, target.lngLat);
-        const baseRadarReach = base.type === 'silo_complex' ? 300 : base.type === 'airbase' ? 220 : base.type === 'naval_base' || base.type === 'carrier_group' ? 140 : 60;
-        if (targetDomain === 'air' || (targetDomain === 'sea' && (base.type === 'naval_base' || base.type === 'carrier_group'))) {
-          if (distToBase <= baseRadarReach) {
+
+        if (targetDomain === 'air') {
+          // Airbase / Silo early-warning 3D air surveillance radars detect high-altitude aircraft above the horizon
+          const baseAirReach = base.type === 'silo_complex' ? 300 : base.type === 'airbase' ? 220 : 60;
+          if (distToBase <= baseAirReach) {
+            bestTier = Math.max(bestTier, 1) as 1 | 2;
+          }
+        } else if (targetDomain === 'sea' && (base.type === 'naval_base' || base.type === 'carrier_group')) {
+          // Coastal naval base surface search radar is strictly clipped by geometric radar horizon (antenna ~30m, ship mast ~25m => ~43 km)
+          const coastalHorizonKm = radarHorizonKm(30, 25);
+          if (distToBase <= coastalHorizonKm) {
+            bestTier = Math.max(bestTier, 1) as 1 | 2;
+          }
+        } else if (targetDomain === 'ground') {
+          // Base perimeter ground surveillance perimeter (~15 km)
+          if (distToBase <= 15) {
             bestTier = Math.max(bestTier, 1) as 1 | 2;
           }
         }
