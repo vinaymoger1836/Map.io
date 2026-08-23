@@ -200,6 +200,37 @@ export interface MissileFlyoutTrack {
   interceptorPk?: number;
   /** Timestamp when this threat was first acquired by defender radar (for reaction time delay) */
   defenderDetectionTimes?: Record<string, number>;
+  /** Salvo tracking ID for grouped strike mission reports */
+  salvoId?: string;
+}
+
+export interface StrikeSalvoTracker {
+  salvoId: string;
+  attackerEntityId: string;
+  attackerName: string;
+  attackerIso: string;
+  targetEntityId: string;
+  targetName: string;
+  targetIso: string;
+  weaponNames: string[];
+  totalLaunched: number;
+  interceptedBySam: number;
+  interceptedByCiws: number;
+  directHits: number;
+  defendingSamSystems: string[];
+  defendingCiwsSystems: string[];
+  startSimTimeSec: number;
+  concludedSimTimeSec?: number;
+  targetInitialDamage: string;
+  targetFinalDamage?: string;
+  targetPersonnelLosses?: number;
+  targetPlatformsDestroyed?: number;
+  standoffDistanceKm: number;
+  weaponSpeedMach?: number;
+  weaponRangeKm?: number;
+  targetLngLat: [number, number];
+  attackerLngLat: [number, number];
+  isConcluded: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -357,6 +388,7 @@ export interface WarSimSession {
   };
   eventLog: SimBattleEvent[];
   reports?: CombatReport[];
+  salvoTrackers?: StrikeSalvoTracker[];
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';

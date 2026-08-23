@@ -649,6 +649,8 @@ export function tickWarSim(
             };
           });
 
+          const salvoId = `salvo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
           // Spawn salvoCount missiles in activeMissiles with sequential ripple launch times
           for (let s = 0; s < salvoCount; s++) {
             const launchStaggerSec = globalSalvoOffset * 1.2;
@@ -670,6 +672,7 @@ export function tickWarSim(
               etaSimTimeSec: session.simTimeSec + Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)) + launchStaggerSec,
               isIntercepted: false,
               progress: 0,
+              salvoId,
             };
             session.activeMissiles.push(newMissile);
           }
@@ -686,57 +689,34 @@ export function tickWarSim(
           ? (targetEntity?.name ?? 'Hostile Entity')
           : `Hostile ${targetDomain.toUpperCase()} Track (Tier 1 Sensor Track)`;
 
-        logReport({
-          category: 'offensive_strike',
-          title: `🚀 Strike Salvo Launched: ${entity.name}`,
-          summary: `${entity.name} launched mixed salvo (${firedSummaries.join(' + ')}) against ${targetDisplayName} at ${distToTarget.toFixed(0)} km stand-off range.`,
-          lngLat: entity.lngLat,
-          countryIso: entity.iso,
-          faction: attackerFaction,
-          primaryEntity: {
-            id: entity.id,
-            name: entity.name,
-            typeId: entity.typeId,
-            domain: spec ? domainOf(spec) : 'air',
-            iso: entity.iso,
-            isFriendly: true,
-            isPID: true,
-            count: entity.count,
-            rcsM2: entity.rcs ?? (spec ? getSystemRcs(spec, spec ? domainOf(spec) : 'air') : 5.0),
-          },
-          opposingEntity: {
-            id: plan.targetEntityId,
-            name: targetDisplayName,
-            typeId: targetPID.isPID ? targetEntity?.typeId : undefined,
-            domain: targetDomain,
-            iso: targetEntity?.iso ?? (isAttackerPlayer ? session.enemyIso : session.playerIso),
-            isFriendly: false,
-            isPID: targetPID.isPID,
-            count: targetPID.isPID ? targetEntity?.count : undefined,
-            rcsM2: targetPID.isPID && targetEntity ? (targetEntity.rcs ?? (targetSpec ? getSystemRcs(targetSpec, targetDomain) : 5.0)) : undefined,
-          },
-          munitionsDetails: {
-            weaponName: firedSummaries.join(' + '),
-            salvoCount: itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0),
-            rangeKm: plan.weaponRangeKm,
-            speedMach: spec?.weapons?.[plan.weaponIndex]?.speedMach,
-            launchedBy: entity.name,
-            standoffDistanceKm: distToTarget,
-          },
-          interceptionTelemetry: {
-            defenseSystemName: 'Hostile Air Defense Network',
-            interceptorType: 'Defensive SAM / CIWS',
-            interceptorsLaunched: 0,
-            missilesIntercepted: 0,
-            missilesPenetrated: itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0),
-            successRatePct: 0,
-            responseDetail: 'Inbound flight trajectory — awaiting air defense zone penetration',
-          },
-          damageAssessment: {
-            targetResultState: targetEntity?.damage ?? 'intact',
-            damageInflicted: 'none',
-            bdaSummary: 'Missile package en route to target coordinates.',
-          },
+        const totalSalvoSize = itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0);
+        const activeSalvoId = session.activeMissiles[session.activeMissiles.length - 1]?.salvoId ?? `salvo-${Date.now()}`;
+
+        // Register Salvo in Tracker to consolidate into a single comprehensive After-Action Report
+        session.salvoTrackers = session.salvoTrackers || [];
+        session.salvoTrackers.push({
+          salvoId: activeSalvoId,
+          attackerEntityId: entity.id,
+          attackerName: entity.name,
+          attackerIso: entity.iso,
+          targetEntityId: plan.targetEntityId,
+          targetName: targetDisplayName,
+          targetIso: targetEntity?.iso ?? (isAttackerPlayer ? session.enemyIso : session.playerIso),
+          weaponNames: firedSummaries,
+          totalLaunched: totalSalvoSize,
+          interceptedBySam: 0,
+          interceptedByCiws: 0,
+          directHits: 0,
+          defendingSamSystems: [],
+          defendingCiwsSystems: [],
+          startSimTimeSec: session.simTimeSec,
+          targetInitialDamage: targetEntity?.damage ?? 'intact',
+          standoffDistanceKm: distToTarget,
+          weaponSpeedMach: spec?.weapons?.[plan.weaponIndex]?.speedMach,
+          weaponRangeKm: plan.weaponRangeKm,
+          targetLngLat: targetPos,
+          attackerLngLat: entity.lngLat,
+          isConcluded: false,
         });
 
         logEvent(
@@ -879,62 +859,17 @@ export function tickWarSim(
           threat.isIntercepted = true;
           sam.isIntercepted = true;
 
-          const isDefenderPlayer = sam.attackerIso === session.playerIso;
-          const defenderFaction: 'player' | 'enemy' = isDefenderPlayer ? 'player' : 'enemy';
-          const threatAttacker = updatedEntities.find((e) => e.id === threat.attackerEntityId);
-          const defender = updatedEntities.find((e) => e.id === sam.attackerEntityId);
-          const attackerPID = getContactPID(threat.attackerEntityId, defenderFaction, session.fogOfWarContacts);
-          const attackerDisplayName = attackerPID.isPID
-            ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
-            : 'Hostile Platform (Unverified PID)';
-
-          logReport({
-            category: 'under_attack',
-            title: `💥 Mid-Air Kinetic Interception: ${sam.weaponName}`,
-            summary: `${sam.weaponName} achieved direct kinetic collision with incoming ${threat.weaponName} at ${collisionLngLat[1].toFixed(3)}°N, ${collisionLngLat[0].toFixed(3)}°E. Threat destroyed.`,
-            lngLat: collisionLngLat,
-            countryIso: sam.attackerIso,
-            faction: defenderFaction,
-            primaryEntity: {
-              id: defender?.id ?? sam.attackerEntityId,
-              name: defender?.name ?? sam.weaponName,
-              typeId: defender?.typeId ?? 'sam',
-              domain: 'land',
-              iso: sam.attackerIso,
-              isFriendly: true,
-              isPID: true,
-              rcsM2: defender?.rcs ?? 20.0,
-            },
-            opposingEntity: {
-              id: threat.attackerEntityId,
-              name: attackerDisplayName,
-              typeId: attackerPID.isPID ? threatAttacker?.typeId : undefined,
-              domain: 'air',
-              iso: threat.attackerIso,
-              isFriendly: false,
-              isPID: attackerPID.isPID,
-              rcsM2: attackerPID.isPID && threatAttacker ? (threatAttacker.rcs ?? 5.0) : undefined,
-            },
-            munitionsDetails: {
-              weaponName: threat.weaponName,
-              salvoCount: 1,
-              launchedBy: attackerDisplayName,
-            },
-            interceptionTelemetry: {
-              defenseSystemName: defender?.name ?? 'Air Defense System',
-              interceptorType: sam.weaponName,
-              interceptorsLaunched: 1,
-              missilesIntercepted: 1,
-              missilesPenetrated: 0,
-              successRatePct: 100,
-              responseDetail: 'Direct kinetic collision kill verified by telemetry',
-            },
-            damageAssessment: {
-              targetResultState: defender?.damage ?? 'intact',
-              damageInflicted: 'none',
-              bdaSummary: 'Threat neutralized mid-air before entering terminal defense footprint.',
-            },
-          });
+          // Track SAM kill in salvoTracker if present
+          if (threat.salvoId) {
+            const tracker = session.salvoTrackers?.find((t) => t.salvoId === threat.salvoId);
+            const defender = updatedEntities.find((e) => e.id === sam.attackerEntityId);
+            if (tracker) {
+              tracker.interceptedBySam++;
+              if (defender && !tracker.defendingSamSystems.includes(defender.name)) {
+                tracker.defendingSamSystems.push(defender.name);
+              }
+            }
+          }
 
           logEvent(
             sam.attackerIso === session.playerIso ? 'player' : 'enemy',
@@ -1081,54 +1016,7 @@ export function tickWarSim(
           ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
           : 'Hostile Platform (Unverified PID)';
 
-        logReport({
-          category: 'under_attack',
-          title: `🛡️ Defensive Response: ${def.name} Engaging Inbound Threat`,
-          summary: `${def.name} acquired incoming ${m.weaponName} at ${distToMissile.toFixed(0)} km range. Launched ${salvoCommit} × ${bestWeapon.name} on collision intercept trajectory.`,
-          lngLat: def.lngLat,
-          countryIso: def.iso,
-          faction: defFaction,
-          primaryEntity: {
-            id: def.id,
-            name: def.name,
-            typeId: def.typeId,
-            domain: defSpec ? domainOf(defSpec) : 'land',
-            iso: def.iso,
-            isFriendly: true,
-            isPID: true,
-            count: def.count,
-            rcsM2: def.rcs ?? (defSpec ? getSystemRcs(defSpec, 'ground') : 20.0),
-          },
-          opposingEntity: {
-            id: m.attackerEntityId,
-            name: attackerDisplayName,
-            typeId: attackerPID.isPID ? threatAttacker?.typeId : undefined,
-            domain: 'air',
-            iso: m.attackerIso,
-            isFriendly: false,
-            isPID: attackerPID.isPID,
-            rcsM2: attackerPID.isPID && threatAttacker ? (threatAttacker.rcs ?? 5.0) : undefined,
-          },
-          munitionsDetails: {
-            weaponName: m.weaponName,
-            salvoCount: 1,
-            launchedBy: attackerDisplayName,
-          },
-          interceptionTelemetry: {
-            defenseSystemName: def.name,
-            interceptorType: bestWeapon.name,
-            interceptorsLaunched: salvoCommit,
-            missilesIntercepted: 0,
-            missilesPenetrated: 1,
-            successRatePct: 0,
-            responseDetail: `Target acquired by fire-control radar. ${salvoCommit} × ${bestWeapon.name} interceptors in flight.`,
-          },
-          damageAssessment: {
-            targetResultState: def.damage,
-            damageInflicted: 'none',
-            bdaSummary: 'Active air defense engagement in progress.',
-          },
-        });
+
 
         logEvent(
           def.iso === session.playerIso ? 'player' : 'enemy',
@@ -1158,14 +1046,21 @@ export function tickWarSim(
         ? targetEntity.customWeapons
         : (targetSpec?.weapons || []);
 
+      const isNaval = isNavalCombatant(targetEntity.typeId) || (targetSpec ? domainOf(targetSpec) === 'sea' : false);
+      const isSubmarine = targetEntity.typeId === 'submarine';
+      const hasInherentNavalCiws = isNaval && !isSubmarine;
+
       const ciwsIdx = tWeapons.findIndex(
         (w) => w.rangeKm <= 15 && (canWeaponEngageTarget(w, 'air') || w.engages?.includes('air')) && (w.magazine ?? 2) > 0
       );
 
-      if (ciwsIdx >= 0) {
-        const ciwsWeapon = tWeapons[ciwsIdx];
-        const curCiwsMag = ciwsWeapon.magazine ?? 2;
-        if (targetEntity.customWeapons && targetEntity.customWeapons[ciwsIdx]) {
+      if (ciwsIdx >= 0 || hasInherentNavalCiws) {
+        const ciwsWeaponName = ciwsIdx >= 0
+          ? tWeapons[ciwsIdx].name
+          : (targetEntity.typeId === 'destroyer' || targetEntity.typeId === 'frigate' ? '76mm / 30mm CIWS Point Defense' : 'Point Defense Countermeasures');
+
+        if (ciwsIdx >= 0 && targetEntity.customWeapons && targetEntity.customWeapons[ciwsIdx]) {
+          const curCiwsMag = tWeapons[ciwsIdx].magazine ?? 2;
           targetEntity.customWeapons[ciwsIdx] = {
             ...targetEntity.customWeapons[ciwsIdx],
             magazine: Math.max(0, curCiwsMag - 1),
@@ -1175,50 +1070,22 @@ export function tickWarSim(
         if (Math.random() < 0.75) {
           m.isIntercepted = true;
 
-          logReport({
-            category: 'under_attack',
-            title: `💥 CIWS Interception: ${targetEntity.name}`,
-            summary: `${targetEntity.name} terminal CIWS (${ciwsWeapon.name}) destroyed incoming ${m.weaponName} at point-blank range.`,
-            lngLat: targetEntity.lngLat,
-            countryIso: targetEntity.iso,
-            faction: targetEntity.iso === session.playerIso ? 'player' : 'enemy',
-            primaryEntity: {
-              id: targetEntity.id,
-              name: targetEntity.name,
-              typeId: targetEntity.typeId,
-              domain: targetSpec ? domainOf(targetSpec) : 'sea',
-              iso: targetEntity.iso,
-              isFriendly: true,
-              isPID: true,
-              rcsM2: targetEntity.rcs ?? (targetSpec ? getSystemRcs(targetSpec, 'sea') : 100.0),
-            },
-            munitionsDetails: {
-              weaponName: m.weaponName,
-              salvoCount: 1,
-              launchedBy: 'Hostile Platform',
-            },
-            interceptionTelemetry: {
-              defenseSystemName: targetEntity.name,
-              interceptorType: ciwsWeapon.name,
-              interceptorsLaunched: 1,
-              missilesIntercepted: 1,
-              missilesPenetrated: 0,
-              ciwsEngaged: true,
-              successRatePct: 100,
-              responseDetail: 'Terminal point defense auto-engaged; high rate of fire shredded incoming threat.',
-            },
-            damageAssessment: {
-              targetResultState: targetEntity.damage,
-              damageInflicted: 'none',
-              bdaSummary: 'Threat destroyed at close perimeter — hull/facility intact.',
-            },
-          });
+          // Track CIWS kill in salvoTracker if present
+          if (m.salvoId) {
+            const tracker = session.salvoTrackers?.find((t) => t.salvoId === m.salvoId);
+            if (tracker) {
+              tracker.interceptedByCiws++;
+              if (!tracker.defendingCiwsSystems.includes(targetEntity.name)) {
+                tracker.defendingCiwsSystems.push(targetEntity.name);
+              }
+            }
+          }
 
           logEvent(
             targetEntity.iso === session.playerIso ? 'player' : 'enemy',
             'intercept',
             `💥 CIWS Point Defense: ${targetEntity.name}`,
-            `${targetEntity.name} terminal close-in weapon system (${ciwsWeapon.name}) destroyed incoming ${m.weaponName} at point-blank range!`,
+            `${targetEntity.name} terminal close-in weapon system (${ciwsWeaponName}) destroyed incoming ${m.weaponName} at point-blank range!`,
             targetEntity.lngLat
           );
         }
@@ -1295,115 +1162,14 @@ export function tickWarSim(
         }
       }
 
-      // Generate Combat Report for Defender & Attacker BDA
-      const isTargetPlayer = targetEntity.iso === session.playerIso;
-      const targetFaction: 'player' | 'enemy' = isTargetPlayer ? 'player' : 'enemy';
-      const threatAttacker = updatedEntities.find((e) => e.id === m.attackerEntityId);
-      const attackerPID = getContactPID(m.attackerEntityId, targetFaction, session.fogOfWarContacts);
-      const attackerDisplayName = attackerPID.isPID
-        ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
-        : 'Hostile Platform (Unverified PID)';
-
-      const isCatastrophic = targetEntity.damage === 'destroyed';
-      const bdaSummary = isCatastrophic
-        ? `Catastrophic impact: ${targetEntity.name} neutralized and removed from theater.`
-        : `Heavy battle damage: ${targetEntity.name} superstructure/airframe compromised; executing emergency RTB.`;
-
-      // 1. Under Attack Report for Defender
-      logReport({
-        category: 'under_attack',
-        title: isCatastrophic ? `💥 Catastrophic Loss: ${targetEntity.name} Destroyed` : `⚠️ Direct Hit: ${targetEntity.name} Damaged`,
-        summary: `${targetEntity.name} struck by incoming ${m.weaponName}. Status: ${targetEntity.damage.toUpperCase()}.`,
-        lngLat: targetEntity.lngLat,
-        countryIso: targetEntity.iso,
-        faction: targetFaction,
-        primaryEntity: {
-          id: targetEntity.id,
-          name: targetEntity.name,
-          typeId: targetEntity.typeId,
-          domain: isNaval ? 'sea' : isAir ? 'air' : 'land',
-          iso: targetEntity.iso,
-          isFriendly: true,
-          isPID: true,
-          count: targetEntity.count,
-          rcsM2: targetEntity.rcs ?? (isNaval ? 100.0 : isAir ? 5.0 : 20.0),
-        },
-        opposingEntity: {
-          id: m.attackerEntityId,
-          name: attackerDisplayName,
-          typeId: attackerPID.isPID ? threatAttacker?.typeId : undefined,
-          domain: 'air',
-          iso: m.attackerIso,
-          isFriendly: false,
-          isPID: attackerPID.isPID,
-          rcsM2: attackerPID.isPID && threatAttacker ? (threatAttacker.rcs ?? 5.0) : undefined,
-        },
-        munitionsDetails: {
-          weaponName: m.weaponName,
-          salvoCount: 1,
-          launchedBy: attackerDisplayName,
-        },
-        interceptionTelemetry: {
-          defenseSystemName: targetEntity.name,
-          interceptorsLaunched: 0,
-          missilesIntercepted: 0,
-          missilesPenetrated: 1,
-          successRatePct: 0,
-          responseDetail: 'Threat penetrated defensive countermeasures and impacted hull/structure.',
-        },
-        damageAssessment: {
-          targetResultState: targetEntity.damage,
-          damageInflicted: isCatastrophic ? 'destroyed' : 'heavy',
-          personnelLosses: isCatastrophic ? targetEntity.personnel : Math.round(targetEntity.personnel * 0.4),
-          platformsDestroyed: isCatastrophic ? targetEntity.count : 0,
-          bdaSummary,
-        },
-      });
-
-      // 2. Offensive Strike BDA Report for Attacker
-      const isAttackerPlayer = m.attackerIso === session.playerIso;
-      const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
-      const targetPID = getContactPID(targetEntity.id, attackerFaction, session.fogOfWarContacts);
-
-      logReport({
-        category: 'offensive_strike',
-        title: `🎯 BDA Assessment: Direct Hit on ${targetPID.isPID ? targetEntity.name : 'Hostile Track'}`,
-        summary: `${m.weaponName} scored direct impact on ${targetPID.isPID ? targetEntity.name : 'Hostile Target'}. Target confirmed ${targetEntity.damage.toUpperCase()}.`,
-        lngLat: targetEntity.lngLat,
-        countryIso: m.attackerIso,
-        faction: attackerFaction,
-        primaryEntity: {
-          id: threatAttacker?.id ?? m.attackerEntityId,
-          name: threatAttacker?.name ?? 'Friendly Strike Wing',
-          typeId: threatAttacker?.typeId ?? 'strike',
-          domain: 'air',
-          iso: m.attackerIso,
-          isFriendly: true,
-          isPID: true,
-          rcsM2: threatAttacker?.rcs ?? 5.0,
-        },
-        opposingEntity: {
-          id: targetEntity.id,
-          name: targetPID.isPID ? targetEntity.name : 'Hostile Target Track',
-          typeId: targetPID.isPID ? targetEntity.typeId : undefined,
-          domain: isNaval ? 'sea' : isAir ? 'air' : 'land',
-          iso: targetEntity.iso,
-          isFriendly: false,
-          isPID: targetPID.isPID,
-          count: targetPID.isPID ? targetEntity.count : undefined,
-          rcsM2: targetPID.isPID ? (targetEntity.rcs ?? (isNaval ? 100.0 : isAir ? 5.0 : 20.0)) : undefined,
-        },
-        munitionsDetails: {
-          weaponName: m.weaponName,
-          salvoCount: 1,
-          launchedBy: threatAttacker?.name ?? 'Friendly Strike',
-        },
-        damageAssessment: {
-          targetResultState: targetEntity.damage,
-          damageInflicted: isCatastrophic ? 'destroyed' : 'heavy',
-          bdaSummary: isCatastrophic ? 'BDA Confirmed: Target completely neutralized.' : 'BDA Confirmed: Heavy battle damage inflicted.',
-        },
-      });
+      // Track direct hit in salvoTracker
+      if (m.salvoId) {
+        const tracker = session.salvoTrackers?.find((t) => t.salvoId === m.salvoId);
+        if (tracker) {
+          tracker.directHits++;
+          tracker.targetFinalDamage = targetEntity.damage;
+        }
+      }
     } else if (targetBase) {
       targetBase.runwayStatus = 'damaged';
       targetBase.repairCountdownSec = 30 * 60;
@@ -1414,13 +1180,202 @@ export function tickWarSim(
         `${m.weaponName} cratered runways at ${targetBase.name}. Flight operations halted for repairs.`,
         targetBase.lngLat
       );
+      if (m.salvoId) {
+        const tracker = session.salvoTrackers?.find((t) => t.salvoId === m.salvoId);
+        if (tracker) {
+          tracker.directHits++;
+        }
+      }
     }
 
     // Impacted missile is consumed
     m.isIntercepted = true;
   }
 
-  // Pass 6: Assemble Clean Active Missiles List
+  // Pass 6: Check Concluded Strike Salvos & Emit Exactly ONE Consolidated Report per Strike
+  if (session.salvoTrackers && session.salvoTrackers.length > 0) {
+    for (const tracker of session.salvoTrackers) {
+      if (tracker.isConcluded) continue;
+
+      const remainingInFlight = session.activeMissiles.some(
+        (m) => m.salvoId === tracker.salvoId && !m.isIntercepted && m.progress < 1.0
+      );
+
+      if (!remainingInFlight) {
+        tracker.isConcluded = true;
+        tracker.concludedSimTimeSec = session.simTimeSec;
+
+        const totalMissiles = tracker.totalLaunched;
+        const samKills = tracker.interceptedBySam;
+        const ciwsKills = tracker.interceptedByCiws;
+        const totalIntercepted = samKills + ciwsKills;
+        const directHits = tracker.directHits;
+        const defenseSuccessRate = totalMissiles > 0 ? Math.round((totalIntercepted / totalMissiles) * 100) : 0;
+
+        const targetEntity = updatedEntities.find((e) => e.id === tracker.targetEntityId);
+        const attackerEntity = updatedEntities.find((e) => e.id === tracker.attackerEntityId);
+        const targetSpec = targetEntity ? systemsLibrary.find((s) => s.id === targetEntity.systemId) : undefined;
+        const attackerSpec = attackerEntity ? systemsLibrary.find((s) => s.id === attackerEntity.systemId) : undefined;
+
+        const isNaval = targetEntity ? (isNavalCombatant(targetEntity.typeId) || (targetSpec ? domainOf(targetSpec) === 'sea' : false)) : false;
+        const isAir = targetEntity ? (targetEntity.typeId === 'fighter' || targetEntity.typeId === 'bomber' || targetEntity.typeId === 'uav' || targetEntity.typeId === 'recon') : false;
+        const targetDomain = targetSpec ? domainOf(targetSpec) : (isNaval ? 'sea' : isAir ? 'air' : 'ground');
+
+        const finalDamageState = targetEntity?.damage ?? (directHits > 0 ? 'damaged' : tracker.targetInitialDamage);
+        const isCatastrophic = finalDamageState === 'destroyed';
+
+        const allDefenseSystems = [...tracker.defendingSamSystems, ...tracker.defendingCiwsSystems];
+        const defenseSystemName = allDefenseSystems.length > 0 ? allDefenseSystems.join(', ') : (targetEntity?.name ?? 'Defensive Countermeasures');
+
+        let defenseDetail = '';
+        if (totalIntercepted === totalMissiles) {
+          defenseDetail = `100% Interception: All ${totalMissiles} incoming missiles neutralized by air defense (${samKills} by SAMs, ${ciwsKills} by CIWS). Target suffered zero damage.`;
+        } else if (totalIntercepted > 0) {
+          defenseDetail = `Partial Defense (${defenseSuccessRate}%): ${totalIntercepted}/${totalMissiles} missiles intercepted (${samKills} SAM kills, ${ciwsKills} CIWS kills). ${directHits} missiles penetrated defensive envelope scoring direct impacts.`;
+        } else {
+          defenseDetail = `Defense Penetrated: All ${totalMissiles} missiles bypassed or saturated local air defense networks, scoring ${directHits} direct hits.`;
+        }
+
+        const bdaSummary = isCatastrophic
+          ? `Catastrophic battle damage: ${tracker.targetName} received ${directHits} direct missile impacts and was completely DESTROYED.`
+          : directHits > 0
+            ? `Heavy battle damage: ${tracker.targetName} sustained ${directHits} direct missile impacts. Platform severely compromised (${finalDamageState.toUpperCase()}).`
+            : `Target intact: Defensive countermeasures intercepted all incoming threats. No damage sustained.`;
+
+        // 1. Log SINGLE Unified Strike Report for Attacker
+        const isAttackerPlayer = tracker.attackerIso === session.playerIso;
+        const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
+        const targetPID = getContactPID(tracker.targetEntityId, attackerFaction, session.fogOfWarContacts);
+
+        logReport({
+          category: 'offensive_strike',
+          title: isCatastrophic
+            ? `🚀 Strike Mission: ${tracker.targetName} Destroyed`
+            : directHits > 0
+              ? `🚀 Strike Mission: Direct Hits on ${tracker.targetName}`
+              : `🚀 Strike Mission: Salvo Intercepted by ${tracker.targetName}`,
+          summary: `${tracker.attackerName} fired salvo of ${totalMissiles} × ${tracker.weaponNames.join('+')} against ${tracker.targetName} at ${tracker.standoffDistanceKm.toFixed(0)} km standoff. ${directHits} scored direct hits, ${totalIntercepted} intercepted (${samKills} SAM, ${ciwsKills} CIWS). Target confirmed ${finalDamageState.toUpperCase()}.`,
+          lngLat: tracker.targetLngLat,
+          countryIso: tracker.attackerIso,
+          faction: attackerFaction,
+          primaryEntity: {
+            id: tracker.attackerEntityId,
+            name: tracker.attackerName,
+            typeId: attackerEntity?.typeId ?? 'strike',
+            domain: attackerSpec ? domainOf(attackerSpec) : 'air',
+            iso: tracker.attackerIso,
+            isFriendly: true,
+            isPID: true,
+            count: attackerEntity?.count,
+            rcsM2: tracker.attackerEntityId ? (attackerEntity?.rcs ?? (attackerSpec ? getSystemRcs(attackerSpec, attackerSpec ? domainOf(attackerSpec) : 'air') : 5.0)) : 5.0,
+          },
+          opposingEntity: {
+            id: tracker.targetEntityId,
+            name: targetPID.isPID ? (targetEntity?.name ?? tracker.targetName) : tracker.targetName,
+            typeId: targetPID.isPID ? targetEntity?.typeId : undefined,
+            domain: targetDomain,
+            iso: tracker.targetIso,
+            isFriendly: false,
+            isPID: targetPID.isPID,
+            count: targetPID.isPID ? targetEntity?.count : undefined,
+            rcsM2: targetPID.isPID && targetEntity ? (targetEntity.rcs ?? (targetSpec ? getSystemRcs(targetSpec, targetDomain) : 5.0)) : undefined,
+          },
+          munitionsDetails: {
+            weaponName: tracker.weaponNames.join(' + '),
+            salvoCount: totalMissiles,
+            speedMach: tracker.weaponSpeedMach,
+            rangeKm: tracker.weaponRangeKm,
+            launchedBy: tracker.attackerName,
+            standoffDistanceKm: tracker.standoffDistanceKm,
+          },
+          interceptionTelemetry: {
+            defenseSystemName,
+            interceptorType: 'SAM & CIWS Point Defense',
+            interceptorsLaunched: totalIntercepted * 2,
+            missilesIntercepted: totalIntercepted,
+            missilesPenetrated: directHits,
+            ciwsEngaged: ciwsKills > 0,
+            successRatePct: defenseSuccessRate,
+            responseDetail: defenseDetail,
+          },
+          damageAssessment: {
+            targetInitialState: tracker.targetInitialDamage,
+            targetResultState: finalDamageState,
+            damageInflicted: isCatastrophic ? 'destroyed' : directHits > 0 ? 'heavy' : 'none',
+            personnelLosses: isCatastrophic ? targetEntity?.personnel : (directHits > 0 ? Math.round((targetEntity?.personnel ?? 100) * 0.35) : 0),
+            platformsDestroyed: isCatastrophic ? (targetEntity?.count ?? 1) : 0,
+            bdaSummary,
+          },
+        });
+
+        // 2. Log SINGLE Unified Under Attack Report for Defender
+        const targetFaction: 'player' | 'enemy' = isAttackerPlayer ? 'enemy' : 'player';
+        const attackerPID = getContactPID(tracker.attackerEntityId, targetFaction, session.fogOfWarContacts);
+
+        logReport({
+          category: 'under_attack',
+          title: isCatastrophic
+            ? `💥 Catastrophic Loss: ${targetEntity?.name ?? tracker.targetName} Destroyed`
+            : directHits > 0
+              ? `⚠️ Air Defense Penetrated: ${targetEntity?.name ?? tracker.targetName} Damaged`
+              : `🛡️ Defense Successful: ${targetEntity?.name ?? tracker.targetName} Neutralized Inbound Salvo`,
+          summary: `${targetEntity?.name ?? tracker.targetName} engaged incoming salvo of ${totalMissiles} × ${tracker.weaponNames.join('+')} from ${tracker.attackerName}. Neutralized ${totalIntercepted}/${totalMissiles} threats (${samKills} SAM, ${ciwsKills} CIWS, ${defenseSuccessRate}% success). Target status: ${finalDamageState.toUpperCase()}.`,
+          lngLat: tracker.targetLngLat,
+          countryIso: tracker.targetIso,
+          faction: targetFaction,
+          primaryEntity: {
+            id: tracker.targetEntityId,
+            name: targetEntity?.name ?? tracker.targetName,
+            typeId: targetEntity?.typeId ?? 'target',
+            domain: targetDomain,
+            iso: tracker.targetIso,
+            isFriendly: true,
+            isPID: true,
+            count: targetEntity?.count,
+            rcsM2: targetEntity?.rcs ?? (targetSpec ? getSystemRcs(targetSpec, targetDomain) : 100.0),
+          },
+          opposingEntity: {
+            id: tracker.attackerEntityId,
+            name: attackerPID.isPID ? tracker.attackerName : 'Hostile Strike Platform (Unverified PID)',
+            typeId: attackerPID.isPID ? attackerEntity?.typeId : undefined,
+            domain: attackerSpec ? domainOf(attackerSpec) : 'air',
+            iso: tracker.attackerIso,
+            isFriendly: false,
+            isPID: attackerPID.isPID,
+            rcsM2: attackerPID.isPID && attackerEntity ? (attackerEntity.rcs ?? (attackerSpec ? getSystemRcs(attackerSpec, attackerSpec ? domainOf(attackerSpec) : 'air') : 5.0)) : undefined,
+          },
+          munitionsDetails: {
+            weaponName: tracker.weaponNames.join(' + '),
+            salvoCount: totalMissiles,
+            speedMach: tracker.weaponSpeedMach,
+            rangeKm: tracker.weaponRangeKm,
+            launchedBy: attackerPID.isPID ? tracker.attackerName : 'Hostile Strike Force',
+            standoffDistanceKm: tracker.standoffDistanceKm,
+          },
+          interceptionTelemetry: {
+            defenseSystemName,
+            interceptorType: 'SAM & CIWS Point Defense',
+            interceptorsLaunched: totalIntercepted * 2,
+            missilesIntercepted: totalIntercepted,
+            missilesPenetrated: directHits,
+            ciwsEngaged: ciwsKills > 0,
+            successRatePct: defenseSuccessRate,
+            responseDetail: defenseDetail,
+          },
+          damageAssessment: {
+            targetInitialState: tracker.targetInitialDamage,
+            targetResultState: finalDamageState,
+            damageInflicted: isCatastrophic ? 'destroyed' : directHits > 0 ? 'heavy' : 'none',
+            personnelLosses: isCatastrophic ? targetEntity?.personnel : (directHits > 0 ? Math.round((targetEntity?.personnel ?? 100) * 0.35) : 0),
+            platformsDestroyed: isCatastrophic ? (targetEntity?.count ?? 1) : 0,
+            bdaSummary,
+          },
+        });
+      }
+    }
+  }
+
+  // Pass 7: Assemble Clean Active Missiles List
   const updatedMissiles = [
     ...session.activeMissiles.filter((m) => !m.isIntercepted && (m.progress < 1.0 || session.simTimeSec < m.startSimTimeSec)),
     ...newDefensiveInterceptors,
