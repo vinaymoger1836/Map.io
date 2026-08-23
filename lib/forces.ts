@@ -363,3 +363,103 @@ export function reviveForces(parsed: unknown): Forces {
   }
   return out;
 }
+
+export interface ArsenalPackage {
+  format: 'mapio-arsenal-package';
+  version: 1;
+  exportedAt: string;
+  description?: string;
+  systems: SystemSpec[];
+  forces: Forces;
+  metadata?: {
+    systemsCount: number;
+    customSystemsCount: number;
+    nationsCount: number;
+    totalHoldingsCount: number;
+  };
+}
+
+/**
+ * Merges incoming Forces into existing Forces without losing other countries.
+ * For countries present in both, holdings are merged by their holding key.
+ */
+export function mergeForces(
+  existing: Forces,
+  incoming: Forces
+): { merged: Forces; addedCount: number; nationsCount: number } {
+  const merged: Forces = { ...existing };
+  let addedCount = 0;
+  const affectedNations = new Set<string>();
+
+  for (const [iso, holdings] of Object.entries(incoming)) {
+    if (!Array.isArray(holdings) || holdings.length === 0) continue;
+    const upperIso = iso.toUpperCase();
+    affectedNations.add(upperIso);
+    const curr = [...(merged[upperIso] || [])];
+
+    for (const h of holdings) {
+      const key = keyOf(h);
+      const idx = curr.findIndex((x) => keyOf(x) === key);
+      if (idx >= 0) {
+        curr[idx] = { ...h };
+      } else {
+        curr.push({ ...h });
+      }
+      addedCount++;
+    }
+    merged[upperIso] = curr;
+  }
+
+  return {
+    merged,
+    addedCount,
+    nationsCount: affectedNations.size,
+  };
+}
+
+/**
+ * Builds a portable Arsenal Package containing weapon systems specs and national ORBAT holdings.
+ */
+export function buildArsenalPackage(
+  systems: SystemSpec[],
+  forces: Forces,
+  options?: {
+    customOnly?: boolean;
+    iso?: string;
+    description?: string;
+  }
+): ArsenalPackage {
+  const targetSystems = options?.customOnly
+    ? systems.filter((s) => s.custom)
+    : systems;
+
+  let targetForces: Forces = forces;
+  if (options?.iso) {
+    const upper = options.iso.toUpperCase();
+    targetForces = forces[upper] ? { [upper]: forces[upper] } : {};
+  }
+
+  const nationsCount = Object.keys(targetForces).length;
+  let totalHoldingsCount = 0;
+  Object.values(targetForces).forEach((list) => {
+    totalHoldingsCount += list.length;
+  });
+
+  return {
+    format: 'mapio-arsenal-package',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    description:
+      options?.description ||
+      'Map.io Tactical Weapon Systems & National Arsenals ORBAT Package',
+    systems: targetSystems,
+    forces: targetForces,
+    metadata: {
+      systemsCount: targetSystems.length,
+      customSystemsCount: targetSystems.filter((s) => s.custom).length,
+      nationsCount,
+      totalHoldingsCount,
+    },
+  };
+}
+
