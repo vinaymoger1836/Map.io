@@ -13,7 +13,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { type SimEntity, type SimBase, type WarSimSession } from '@/lib/warSimTypes';
-import { type SystemSpec, type WeaponFacet, describeTargets, domainOf } from '@/lib/specs';
+import { type SystemSpec, type WeaponFacet, describeTargets, domainOf, getSystemRcs } from '@/lib/specs';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { buildMunitions, compatibleMunitions, type Munition } from '@/lib/munitions';
@@ -32,6 +32,7 @@ export interface SortieTaskingModalProps {
     altitudeM: number;
     emcon: 'active' | 'passive';
     routeType: 'orbit' | 'waypoints';
+    rcs?: number;
   }) => void;
 }
 
@@ -98,6 +99,12 @@ export function SortieTaskingModal({
     return 15;
   });
   const [emcon, setEmcon] = useState<'active' | 'passive'>('active');
+
+  const defaultRcs = useMemo(() => {
+    return entity.rcs ?? (spec ? getSystemRcs(spec, platformDomain) : 5.0);
+  }, [entity.rcs, spec, platformDomain]);
+
+  const [rcsM2, setRcsM2] = useState<number>(defaultRcs);
 
   const cleanName = entity.name.replace(/^\d+\s*[×x]\s*/i, '');
   const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (entity.typeId === 'fighter' ? 900 : 1500);
@@ -201,6 +208,7 @@ export function SortieTaskingModal({
       altitudeM: isGround || isStaticAD ? 0 : altitudeM,
       emcon,
       routeType: patrolMode,
+      rcs: rcsM2 > 0 ? rcsM2 : undefined,
     });
   };
 
@@ -1016,6 +1024,122 @@ export function SortieTaskingModal({
                   )}
                 </select>
               </div>
+            </div>
+
+            {/* Radar Cross-Section (RCS) Configuration */}
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '10px 12px',
+                background: 'rgba(15, 23, 42, 0.65)',
+                border: '1px solid rgba(79, 195, 247, 0.25)',
+                borderRadius: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10.5px', textTransform: 'uppercase', color: '#4FC3F7', fontWeight: 700, letterSpacing: '0.4px' }}>
+                  🎯 Physical Radar Cross-Section (RCS)
+                </span>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                  Default Baseline: <strong style={{ color: '#E0E6ED' }}>{defaultRcs >= 1 ? `${defaultRcs.toFixed(1)} m²` : `${defaultRcs} m²`}</strong>
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.00001"
+                    className="wg-input"
+                    style={{ width: '90px', fontSize: '12px', padding: '5px 8px', fontWeight: 700, color: '#4FC3F7' }}
+                    value={rcsM2}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val > 0) setRcsM2(val);
+                    }}
+                  />
+                  <span style={{ fontSize: '11.5px', color: '#90A4AE', fontWeight: 600 }}>m²</span>
+                </div>
+
+                {/* Quick Presets based on domain */}
+                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', flex: 1 }}>
+                  {platformDomain === 'air' && (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 0.001 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(0.001)}
+                        title="VLO Stealth Clean (e.g. F-35/F-22 internal weapons bay)"
+                      >
+                        Clean (0.001 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 0.2 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(0.2)}
+                        title="Stealth with External Wing Pylons / Missiles"
+                      >
+                        Pylons (0.2 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 5.0 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(5.0)}
+                        title="Standard 4th-Gen Fighter (e.g. Su-35, F-16)"
+                      >
+                        Standard (5.0 m²)
+                      </button>
+                    </>
+                  )}
+                  {platformDomain === 'sea' && (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 0.01 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(0.01)}
+                      >
+                        Stealth (0.01 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 100.0 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(100.0)}
+                      >
+                        Frigate (100 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 1000.0 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(1000.0)}
+                      >
+                        Destroyer (1,000 m²)
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ fontSize: '9.5px', padding: '3px 7px' }}
+                    onClick={() => setRcsM2(defaultRcs)}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              <span style={{ fontSize: '10px', color: 'var(--paper-dim)', lineHeight: 1.35 }}>
+                💡 <em>External weapon pylons, drop tanks, and ECM pods increase aircraft radar reflectivity footprint.</em>
+              </span>
             </div>
 
             {/* Waypoint Guidance notice */}

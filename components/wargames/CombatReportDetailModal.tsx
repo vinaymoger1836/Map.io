@@ -211,10 +211,16 @@ export function CombatReportDetailModal({
                   )}
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                   <span>Domain: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{primary.domain}</strong></span>
                   <span>•</span>
                   <span>Type: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{primary.typeId}</strong></span>
+                  {primary.rcsM2 !== undefined && (
+                    <>
+                      <span>•</span>
+                      <span>RCS: <strong style={{ color: '#4FC3F7' }}>{primary.rcsM2 >= 1 ? `${primary.rcsM2.toFixed(1)} m²` : `${primary.rcsM2} m²`}</strong></span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -260,7 +266,23 @@ export function CombatReportDetailModal({
                     )}
                   </div>
 
-                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', lineHeight: 1.35 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                    <span>Domain: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{opposing.domain}</strong></span>
+                    {opposing.typeId && (
+                      <>
+                        <span>•</span>
+                        <span>Type: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{opposing.typeId}</strong></span>
+                      </>
+                    )}
+                    {opposing.rcsM2 !== undefined && (
+                      <>
+                        <span>•</span>
+                        <span>RCS: <strong style={{ color: '#4FC3F7' }}>{opposing.rcsM2 >= 1 ? `${opposing.rcsM2.toFixed(1)} m²` : `${opposing.rcsM2} m²`}</strong></span>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', lineHeight: 1.35, marginTop: '2px' }}>
                     {opposing.isPID ? (
                       <span>
                         Verified by friendly radar/reconnaissance assets. Platform type, classification and weapons signature verified.

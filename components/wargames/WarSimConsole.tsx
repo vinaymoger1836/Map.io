@@ -59,8 +59,10 @@ export interface WarSimConsoleProps {
       altitudeM?: number;
       emcon?: 'active' | 'passive';
       routeType?: 'orbit' | 'waypoints';
+      rcs?: number;
     }
   ) => void;
+  onUpdateEntityRcs?: (entityId: string, rcs: number) => void;
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
@@ -132,6 +134,7 @@ export function WarSimConsole({
   onDeployUnitToBase,
   onDeployAutonomous,
   onStartSortie,
+  onUpdateEntityRcs,
   onOrderRtb,
   onStartBasePlacement,
   onRenameBase,
@@ -146,7 +149,7 @@ export function WarSimConsole({
   onOpenAar,
   onExitSim,
   systemsLibrary,
-  countries,
+  countries = [],
   onFlyToBase,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -159,6 +162,8 @@ export function WarSimConsole({
   const [strikeModalTarget, setStrikeModalTarget] = useState<StrikeTargetInfo | null>(null);
   const [selectedReport, setSelectedReport] = useState<CombatReport | null>(null);
   const [reportCategoryFilter, setReportCategoryFilter] = useState<'all' | WarReportCategory>('all');
+  const [editingRcs, setEditingRcs] = useState<boolean>(false);
+  const [rcsInputDraft, setRcsInputDraft] = useState<string>('');
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -1052,21 +1057,37 @@ export function WarSimConsole({
                             <strong style={{ fontSize: '11.5px', color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {rep.title}
                             </strong>
-                            {rep.opposingEntity && (
-                              <span
-                                style={{
-                                  fontSize: '8.5px',
-                                  color: rep.opposingEntity.isPID ? '#4FA85F' : '#FF9800',
-                                  background: rep.opposingEntity.isPID ? 'rgba(79, 168, 95, 0.15)' : 'rgba(255, 152, 0, 0.15)',
-                                  padding: '1px 4px',
-                                  borderRadius: '2px',
-                                  fontWeight: 700,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {rep.opposingEntity.isPID ? 'PID ✓' : 'UNPID ⚠️'}
-                              </span>
-                            )}
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                              {rep.primaryEntity?.rcsM2 !== undefined && (
+                                <span
+                                  style={{
+                                    fontSize: '8.5px',
+                                    color: '#4FC3F7',
+                                    background: 'rgba(79, 195, 247, 0.15)',
+                                    padding: '1px 4px',
+                                    borderRadius: '2px',
+                                    fontWeight: 700,
+                                  }}
+                                  title={`Primary System RCS: ${rep.primaryEntity.rcsM2} m²`}
+                                >
+                                  RCS: {rep.primaryEntity.rcsM2 >= 1 ? rep.primaryEntity.rcsM2.toFixed(1) : rep.primaryEntity.rcsM2}m²
+                                </span>
+                              )}
+                              {rep.opposingEntity && (
+                                <span
+                                  style={{
+                                    fontSize: '8.5px',
+                                    color: rep.opposingEntity.isPID ? '#4FA85F' : '#FF9800',
+                                    background: rep.opposingEntity.isPID ? 'rgba(79, 168, 95, 0.15)' : 'rgba(255, 152, 0, 0.15)',
+                                    padding: '1px 4px',
+                                    borderRadius: '2px',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {rep.opposingEntity.isPID ? 'PID ✓' : 'UNPID ⚠️'}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <p style={{ margin: 0, fontSize: '10.5px', color: 'var(--paper-dim)', lineHeight: 1.35 }}>
@@ -1255,20 +1276,101 @@ export function WarSimConsole({
                 const rcsVal = selectedEntity.rcs ?? (spec ? getSystemRcs(spec, entityDomain) : 5.0);
                 const rcsText = rcsVal >= 1 ? `${rcsVal.toFixed(1)} m²` : `${rcsVal} m²`;
 
-                return !isStaticAD ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                    <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
-                    <span>Alt: <strong>{isGround ? '0 m' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
-                    <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
-                    <span>RCS: <strong style={{ color: '#4FC3F7' }}>{rcsText}</strong></span>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Site: <strong>Fixed Position</strong></span>
-                    <span>Altitude: <strong>0 m</strong></span>
-                    <span>RCS: <strong style={{ color: '#4FC3F7' }}>{rcsText}</strong></span>
-                    <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
-                  </div>
+                return (
+                  <>
+                    {!isStaticAD ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                        <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
+                        <span>Alt: <strong>{isGround ? '0 m' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
+                        <span>Hdg: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+                        <span
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                          title="Click to customize platform RCS footprint (e.g. for external weapons/pylons)"
+                          onClick={() => {
+                            setRcsInputDraft(rcsVal.toString());
+                            setEditingRcs((prev) => !prev);
+                          }}
+                        >
+                          RCS: <strong style={{ color: '#4FC3F7', textDecoration: 'underline dotted' }}>{rcsText}</strong> ✏️
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Site: <strong>Fixed Position</strong></span>
+                        <span>Altitude: <strong>0 m</strong></span>
+                        <span
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                          title="Click to customize platform RCS footprint"
+                          onClick={() => {
+                            setRcsInputDraft(rcsVal.toString());
+                            setEditingRcs((prev) => !prev);
+                          }}
+                        >
+                          RCS: <strong style={{ color: '#4FC3F7', textDecoration: 'underline dotted' }}>{rcsText}</strong> ✏️
+                        </span>
+                        <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
+                      </div>
+                    )}
+
+                    {editingRcs && (
+                      <div
+                        style={{
+                          marginTop: '4px',
+                          padding: '6px 8px',
+                          background: 'rgba(7, 12, 20, 0.95)',
+                          border: '1px solid rgba(79, 195, 247, 0.4)',
+                          borderRadius: '5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '10.5px',
+                        }}
+                      >
+                        <span style={{ color: 'var(--paper-dim)' }}>Set RCS:</span>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.00001"
+                          style={{
+                            width: '70px',
+                            fontSize: '11px',
+                            padding: '2px 4px',
+                            background: '#0E1724',
+                            color: '#4FC3F7',
+                            border: '1px solid var(--border)',
+                            borderRadius: '3px',
+                            fontWeight: 700,
+                          }}
+                          value={rcsInputDraft}
+                          onChange={(e) => setRcsInputDraft(e.target.value)}
+                          autoFocus
+                        />
+                        <span style={{ color: '#90A4AE' }}>m²</span>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{ fontSize: '9.5px', padding: '2px 6px', background: 'rgba(79, 195, 247, 0.25)', color: '#4FC3F7' }}
+                          onClick={() => {
+                            const val = parseFloat(rcsInputDraft);
+                            if (!isNaN(val) && val > 0) {
+                              onUpdateEntityRcs?.(selectedEntity.id, val);
+                            }
+                            setEditingRcs(false);
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{ fontSize: '9.5px', padding: '2px 6px' }}
+                          onClick={() => setEditingRcs(false)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
 

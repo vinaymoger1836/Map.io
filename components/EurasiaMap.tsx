@@ -726,6 +726,7 @@ export default function EurasiaMap() {
             onStartSortie={(entity, options) => {
               warSim.startSortiePicking(entity, options);
             }}
+            onUpdateEntityRcs={warSim.setEntityRcs}
             onOrderRtb={warSim.orderRtb}
             onStartBasePlacement={warSim.startBasePlacement}
             onRenameBase={warSim.renameBase}

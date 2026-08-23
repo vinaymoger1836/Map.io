@@ -679,7 +679,8 @@ export function tickWarSim(
         const isAttackerPlayer = entity.iso === session.playerIso;
         const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
         const targetPID = getContactPID(plan.targetEntityId, attackerFaction, session.fogOfWarContacts);
-        const targetDomain = targetEntity ? (spec ? domainOf(spec) : 'surface') : 'surface';
+        const targetSpec = targetEntity ? systemsLibrary.find((s) => s.id === targetEntity.systemId) : undefined;
+        const targetDomain = targetSpec ? domainOf(targetSpec) : 'ground';
         const targetDisplayName = targetPID.isPID
           ? (targetEntity?.name ?? 'Hostile Entity')
           : `Hostile ${targetDomain.toUpperCase()} Track (Tier 1 Sensor Track)`;
@@ -700,6 +701,7 @@ export function tickWarSim(
             isFriendly: true,
             isPID: true,
             count: entity.count,
+            rcsM2: entity.rcs ?? (spec ? getSystemRcs(spec, spec ? domainOf(spec) : 'air') : 5.0),
           },
           opposingEntity: {
             id: plan.targetEntityId,
@@ -710,6 +712,7 @@ export function tickWarSim(
             isFriendly: false,
             isPID: targetPID.isPID,
             count: targetPID.isPID ? targetEntity?.count : undefined,
+            rcsM2: targetPID.isPID && targetEntity ? (targetEntity.rcs ?? (targetSpec ? getSystemRcs(targetSpec, targetDomain) : 5.0)) : undefined,
           },
           munitionsDetails: {
             weaponName: firedSummaries.join(' + '),
@@ -899,6 +902,7 @@ export function tickWarSim(
               iso: sam.attackerIso,
               isFriendly: true,
               isPID: true,
+              rcsM2: defender?.rcs ?? 20.0,
             },
             opposingEntity: {
               id: threat.attackerEntityId,
@@ -908,6 +912,7 @@ export function tickWarSim(
               iso: threat.attackerIso,
               isFriendly: false,
               isPID: attackerPID.isPID,
+              rcsM2: attackerPID.isPID && threatAttacker ? (threatAttacker.rcs ?? 5.0) : undefined,
             },
             munitionsDetails: {
               weaponName: threat.weaponName,
@@ -1091,6 +1096,7 @@ export function tickWarSim(
             isFriendly: true,
             isPID: true,
             count: def.count,
+            rcsM2: def.rcs ?? (defSpec ? getSystemRcs(defSpec, 'ground') : 20.0),
           },
           opposingEntity: {
             id: m.attackerEntityId,
@@ -1100,6 +1106,7 @@ export function tickWarSim(
             iso: m.attackerIso,
             isFriendly: false,
             isPID: attackerPID.isPID,
+            rcsM2: attackerPID.isPID && threatAttacker ? (threatAttacker.rcs ?? 5.0) : undefined,
           },
           munitionsDetails: {
             weaponName: m.weaponName,
@@ -1182,6 +1189,7 @@ export function tickWarSim(
               iso: targetEntity.iso,
               isFriendly: true,
               isPID: true,
+              rcsM2: targetEntity.rcs ?? (targetSpec ? getSystemRcs(targetSpec, 'sea') : 100.0),
             },
             munitionsDetails: {
               weaponName: m.weaponName,
@@ -1317,6 +1325,7 @@ export function tickWarSim(
           isFriendly: true,
           isPID: true,
           count: targetEntity.count,
+          rcsM2: targetEntity.rcs ?? (isNaval ? 100.0 : isAir ? 5.0 : 20.0),
         },
         opposingEntity: {
           id: m.attackerEntityId,
@@ -1326,6 +1335,7 @@ export function tickWarSim(
           iso: m.attackerIso,
           isFriendly: false,
           isPID: attackerPID.isPID,
+          rcsM2: attackerPID.isPID && threatAttacker ? (threatAttacker.rcs ?? 5.0) : undefined,
         },
         munitionsDetails: {
           weaponName: m.weaponName,
@@ -1369,6 +1379,7 @@ export function tickWarSim(
           iso: m.attackerIso,
           isFriendly: true,
           isPID: true,
+          rcsM2: threatAttacker?.rcs ?? 5.0,
         },
         opposingEntity: {
           id: targetEntity.id,
@@ -1379,6 +1390,7 @@ export function tickWarSim(
           isFriendly: false,
           isPID: targetPID.isPID,
           count: targetPID.isPID ? targetEntity.count : undefined,
+          rcsM2: targetPID.isPID ? (targetEntity.rcs ?? (isNaval ? 100.0 : isAir ? 5.0 : 20.0)) : undefined,
         },
         munitionsDetails: {
           weaponName: m.weaponName,
@@ -1582,6 +1594,7 @@ export function tickWarSim(
         // New Positive Identification (Tier 2 PID) Discovery Event & Report
         if (bestTier === 2 && (!prevContact || prevContact.intelTier !== 2)) {
           const scanner = scanners[0];
+          const scanSpec = scanner ? systemsLibrary.find((s) => s.id === scanner.systemId) : undefined;
           logReport({
             category: 'recon_intel',
             title: `📡 Reconnaissance: Positive PID of ${target.name}`,
@@ -1597,6 +1610,7 @@ export function tickWarSim(
               iso: scanningIso,
               isFriendly: true,
               isPID: true,
+              rcsM2: scanner?.rcs ?? (scanSpec ? getSystemRcs(scanSpec, 'air') : 1.0),
             },
             opposingEntity: {
               id: target.id,
@@ -1607,6 +1621,7 @@ export function tickWarSim(
               isFriendly: false,
               isPID: true,
               count: target.count,
+              rcsM2: targetRcsM2,
             },
             intelDetails: {
               discoveredDomain: targetDomain.toUpperCase(),
@@ -1842,7 +1857,9 @@ export function deployAutonomousEntity(
   systemId: string,
   count: number,
   lngLat: [number, number],
-  systemsLibrary: SystemSpec[]
+  systemsLibrary: SystemSpec[],
+  altitudeM: number = 0,
+  rcs?: number
 ): WarSimSession {
   const spec = systemsLibrary.find((s) => s.id === systemId);
   const typeId = spec?.typeId || 'sam-launcher';
@@ -1865,6 +1882,10 @@ export function deployAutonomousEntity(
   const rawName = spec?.name ?? typeId;
   const entityName = getUniqueSystemEntityName(rawName, systemId, iso, session.entities, count);
 
+  const effectiveRcs = (rcs !== undefined && rcs > 0)
+    ? rcs
+    : (spec?.rcs ?? (spec ? getSystemRcs(spec, domain) : 5.0));
+
   const newEntity: SimEntity = {
     id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
     iso,
@@ -1873,7 +1894,7 @@ export function deployAutonomousEntity(
     systemId,
     count,
     lngLat,
-    altitudeM: 0,
+    altitudeM: altitudeM || 0,
     headingDeg: 0,
     speedKmh: 0,
     currentFuelPct: 100,
@@ -1882,12 +1903,13 @@ export function deployAutonomousEntity(
     turnaroundTimerSec: 0,
     repairTimerSec: 0,
     personnel: (spec?.platform?.crew ?? 4) * count,
+    rcs: effectiveRcs,
     magazines: {},
     customWeapons: spec?.weapons ? [...spec.weapons] : [],
     patrolOrder: {
       centerLngLat: lngLat,
       patrolRadiusKm: 0,
-      altitudeM: 0,
+      altitudeM: altitudeM || 0,
       orbitAngleDeg: 0,
       emcon: 'active',
     },
@@ -1902,7 +1924,7 @@ export function deployAutonomousEntity(
       faction,
       type: 'strike' as const,
       title: `Battery Erected: ${newEntity.name}`,
-      detail: `${newEntity.name} deployed to coordinates and initialized active radar/defense network.`,
+      detail: `${newEntity.name} deployed to coordinates (RCS: ${effectiveRcs.toFixed(2)} m²) and initialized active radar/defense network.`,
       lngLat,
     },
   ];
@@ -1933,7 +1955,8 @@ export function orderPatrol(
   sortieCount?: number,
   customWeapons?: import('./specs').WeaponFacet[],
   routeType: 'orbit' | 'waypoints' = 'orbit',
-  waypoints?: [number, number][]
+  waypoints?: [number, number][],
+  rcs?: number
 ): WarSimSession {
   const targetEntity = session.entities.find((e) => e.id === entityId);
   if (!targetEntity || targetEntity.status === 'destroyed' || targetEntity.status === 'in_repair') {
@@ -2003,6 +2026,7 @@ export function orderPatrol(
       status: 'takeoff_ingress',
       patrolOrder,
       altitudeM: effectiveAltM,
+      rcs: (rcs !== undefined && rcs > 0) ? rcs : targetEntity.rcs,
       customWeapons: customWeapons && customWeapons.length > 0 ? [...customWeapons] : targetEntity.customWeapons,
     };
 
@@ -2036,7 +2060,7 @@ export function orderPatrol(
           ? `Emplaced ${sortieName} air defense battery (${remainingCount} in depot) at designated coordinates.`
           : isGround
             ? `Dispatched ${sortieName} (${remainingCount} remaining at base) on road march to designated coordinates.`
-            : `Detached ${sortieName} (${remainingCount} remaining at base) on designated patrol mission.`,
+            : `Detached ${sortieName} (${remainingCount} remaining at base) on designated patrol mission (RCS: ${sortieEntity.rcs ?? 'default'} m²).`,
         lngLat: centerLngLat,
       },
     ];
@@ -2066,6 +2090,7 @@ export function orderPatrol(
         status: isAlreadyDeployed && e.status === 'on_station' ? 'on_station' as const : 'takeoff_ingress' as const,
         patrolOrder,
         altitudeM: effectiveAltM,
+        rcs: (rcs !== undefined && rcs > 0) ? rcs : e.rcs,
         // Loadout can only be reconfigured at base — keep existing loadout if already deployed
         customWeapons: isAlreadyDeployed
           ? e.customWeapons
@@ -2101,6 +2126,23 @@ export function orderPatrol(
       eventLog: newEvents.slice(-200),
     };
   }
+}
+
+/**
+ * Manually updates the physical Radar Cross-Section (RCS in m²) of a deployed or stationed entity
+ * (e.g. adjusting for external weapon pylons, drop tanks, or stealth coating degradation).
+ */
+export function updateEntityRcs(
+  session: WarSimSession,
+  entityId: string,
+  rcs: number
+): WarSimSession {
+  return {
+    ...session,
+    entities: session.entities.map((e) =>
+      e.id === entityId ? { ...e, rcs: rcs > 0 ? rcs : undefined } : e
+    ),
+  };
 }
 
 /**

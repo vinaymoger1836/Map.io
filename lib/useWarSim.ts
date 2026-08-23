@@ -27,6 +27,7 @@ import {
   orderStrikeMission,
   addSimBase,
   renameSimBase,
+  updateEntityRcs,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
@@ -45,6 +46,7 @@ export interface TargetPickingState {
   patrolRadiusKm?: number;
   altitudeM?: number;
   emcon?: 'active' | 'passive';
+  rcs?: number;
   customWeapons?: import('./specs').WeaponFacet[];
   routeType?: 'orbit' | 'waypoints';
   pickedWaypoints?: [number, number][];
@@ -204,11 +206,12 @@ export function useWarSim({
       sortieCount?: number,
       altitudeM: number = 7000,
       emcon: 'active' | 'passive' = 'active',
-      customWeapons?: import('./specs').WeaponFacet[]
+      customWeapons?: import('./specs').WeaponFacet[],
+      rcs?: number
     ) => {
       setSession((prev) => {
         if (!prev) return null;
-        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, altitudeM, emcon, sortieCount, customWeapons);
+        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, altitudeM, emcon, sortieCount, customWeapons, 'orbit', undefined, rcs);
       });
       setTargetPicking(null);
     },
@@ -295,6 +298,7 @@ export function useWarSim({
         altitudeM?: number;
         emcon?: 'active' | 'passive';
         routeType?: 'orbit' | 'waypoints';
+        rcs?: number;
       }
     ) => {
       const spec = systemsLibrary.find((s) => s.id === entity.systemId);
@@ -326,6 +330,7 @@ export function useWarSim({
         patrolRadiusKm: options?.patrolRadiusKm,
         altitudeM: options?.altitudeM,
         emcon: options?.emcon,
+        rcs: options?.rcs,
         customWeapons: options?.customWeapons,
         routeType,
         pickedWaypoints: [],
@@ -485,7 +490,8 @@ export function useWarSim({
           targetPicking.count,
           targetPicking.altitudeM ?? 7000,
           targetPicking.emcon ?? 'active',
-          targetPicking.customWeapons
+          targetPicking.customWeapons,
+          targetPicking.rcs
         );
       } else if (targetPicking.mode === 'place_autonomous' && targetPicking.systemId && targetPicking.count) {
         deployAutonomousBattery(targetPicking.systemId, targetPicking.count, lngLat);
@@ -543,7 +549,8 @@ export function useWarSim({
         targetPicking.count,
         targetPicking.altitudeM ?? 7000,
         targetPicking.emcon ?? 'active',
-        targetPicking.customWeapons
+        targetPicking.customWeapons,
+        targetPicking.rcs
       );
       return;
     }
@@ -560,7 +567,8 @@ export function useWarSim({
         targetPicking.count,
         targetPicking.customWeapons,
         'waypoints',
-        waypoints
+        waypoints,
+        targetPicking.rcs
       );
     });
     setTargetPicking(null);
@@ -578,6 +586,16 @@ export function useWarSim({
     });
   }, [targetPicking]);
 
+  const setEntityRcs = useCallback(
+    (entityId: string, rcs: number) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return updateEntityRcs(prev, entityId, rcs);
+      });
+    },
+    []
+  );
+
   return {
     session,
     setSession,
@@ -592,6 +610,7 @@ export function useWarSim({
     deployUnitToBase,
     deployAutonomousBattery,
     orderSortieToPoint,
+    setEntityRcs,
     orderRtb,
     orderStrike,
     createBaseAtLocation,

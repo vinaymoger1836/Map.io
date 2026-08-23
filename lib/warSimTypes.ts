@@ -255,6 +255,7 @@ export interface CombatReport {
     isPID: boolean;
     count?: number;
     baseName?: string;
+    rcsM2?: number;
   };
 
   // Opposing Platform / Target (if applicable)
@@ -267,6 +268,7 @@ export interface CombatReport {
     isFriendly: boolean;
     isPID: boolean;
     count?: number;
+    rcsM2?: number;
   };
 
   // Munitions / Attack telemetry (if applicable)
