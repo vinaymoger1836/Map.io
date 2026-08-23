@@ -1469,18 +1469,18 @@ export function tickWarSim(
           ratedSensorKm = 0; // Passive silent running
         }
 
-        // Apply target stealth signature reduction if target is stealthy
+        // Apply target stealth signature reduction if target is stealthy (domain-aware)
         const targetSignature = targetSpec?.signature;
-        const sigMult = signatureRangeMultiplier(targetSignature);
+        const sigMult = signatureRangeMultiplier(targetSignature, targetDomain);
         let maxRadarKm = ratedSensorKm * sigMult;
 
         // Radar Horizon modeling:
         // - Air targets cruise high above the horizon and are detected at the full instrumented radar range (ratedSensorKm * sigMult).
         // - Surface targets (ships, ground units) are clipped by Earth curvature line-of-sight if scanner is at surface level.
-        if (targetDomain !== 'air' && scanSpec?.sensor?.horizonLimited) {
+        if (targetDomain !== 'air' && (scanSpec?.sensor?.horizonLimited || scanner.typeId === 'destroyer' || scanner.typeId === 'frigate' || isGroundScanner)) {
           const antennaM = (scanner.altitudeM && scanner.altitudeM > 50)
             ? scanner.altitudeM
-            : (scanSpec.sensor.antennaM ?? (scanner.typeId === 'destroyer' || scanner.typeId === 'frigate' ? 25 : 15));
+            : (scanSpec?.sensor?.antennaM ?? (scanner.typeId === 'destroyer' || scanner.typeId === 'frigate' ? 25 : 15));
 
           const targetEffectiveAltM = targetDomain === 'sea' ? 25 : 5;
           const horizonKm = radarHorizonKm(antennaM, targetEffectiveAltM);

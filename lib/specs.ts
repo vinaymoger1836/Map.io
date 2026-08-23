@@ -526,11 +526,34 @@ export function radarHorizonKm(antennaM: number, targetAltM: number): number {
 /**
  * Radar detection range multiplier derived from the Radar Range Equation:
  * Range proportional to RCS^(1/4).
- * - 'low' (5th-gen VLO stealth, e.g. F-35, F-22, B-21, Su-57; RCS ~ 0.001 m²): ~0.25x radar detection reach
- * - 'medium' (4.5-gen reduced RCS, e.g. Rafale, Typhoon, Super Hornet; RCS ~ 0.75 m²): ~0.65x radar detection reach
- * - 'high' / undefined (4th-gen baseline; RCS ~ 4 m²): 1.0x radar detection reach
+ * - Air domain:
+ *   - 'low' (5th-gen VLO stealth, e.g. F-35, F-22, B-21, Su-57; RCS ~ 0.001 m²): ~0.25x radar detection reach
+ *   - 'medium' (4.5-gen reduced RCS, e.g. Rafale, Typhoon, Super Hornet; RCS ~ 0.75 m²): ~0.65x radar detection reach
+ *   - 'high' / undefined (4th-gen baseline; RCS ~ 4 m²): 1.0x radar detection reach
+ * - Sea domain:
+ *   - Large surface vessels (thousands of tonnes) have high RCS (~100–1000 m²). Stealth frigate shaping
+ *     ('low' signature, e.g. FREMM, Visby) reduces radar range modestly (~0.85x), not down to 0.25x.
+ * - Ground domain:
+ *   - 'low' (camouflaged/stealth hull): ~0.70x reach
  */
-export function signatureRangeMultiplier(sig?: 'low' | 'medium' | 'high'): number {
+export function signatureRangeMultiplier(
+  sig?: 'low' | 'medium' | 'high',
+  domain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air'
+): number {
+  if (domain === 'sea') {
+    if (sig === 'low') return 0.85;
+    if (sig === 'medium') return 0.95;
+    return 1.0;
+  }
+  if (domain === 'ground') {
+    if (sig === 'low') return 0.70;
+    if (sig === 'medium') return 0.85;
+    return 1.0;
+  }
+  if (domain === 'sub') {
+    return 1.0;
+  }
+  // Air domain / default:
   if (sig === 'low') return 0.25;
   if (sig === 'medium') return 0.65;
   return 1.0;
@@ -544,11 +567,12 @@ export function effectiveDetectionKm(
   spec: SystemSpec,
   targetAltM = 10_000,
   targetSignature?: 'low' | 'medium' | 'high',
-  isJammed = false
+  isJammed = false,
+  targetDomain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air'
 ): number | null {
   const sensor = spec.sensor;
   if (!sensor?.detectionKm) return null;
-  const sigMult = signatureRangeMultiplier(targetSignature);
+  const sigMult = signatureRangeMultiplier(targetSignature, targetDomain);
   const jamMult = isJammed ? 0.6 : 1.0;
   const rawReach = sensor.detectionKm * sigMult * jamMult;
   if (!sensor.horizonLimited) return rawReach;
