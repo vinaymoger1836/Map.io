@@ -172,14 +172,18 @@ export function WarSimConsole({
 
   const quotaLedger = session.quotas[activeFaction] || {};
 
-  const filteredReports = useMemo(() => {
+  const activeFactionReports = useMemo(() => {
     const list = session.reports || [];
-    const factionFiltered = list.filter((r) => {
+    return list.filter((r) => r.faction === activeFaction || r.countryIso === activeCountryIso);
+  }, [session.reports, activeFaction, activeCountryIso]);
+
+  const filteredReports = useMemo(() => {
+    const factionFiltered = activeFactionReports.filter((r) => {
       if (reportCategoryFilter !== 'all' && r.category !== reportCategoryFilter) return false;
       return true;
     });
     return factionFiltered.slice().reverse();
-  }, [session.reports, reportCategoryFilter]);
+  }, [activeFactionReports, reportCategoryFilter]);
 
   return (
     <>
@@ -528,7 +532,7 @@ export function WarSimConsole({
                 }}
                 onClick={() => setActiveTab('reports')}
               >
-                📊 Reports ({session.reports?.length || 0})
+                📊 Reports ({activeFactionReports.length})
               </button>
               <button
                 className={`wg-btn ${activeTab === 'log' ? 'accent' : ''}`}
@@ -903,7 +907,7 @@ export function WarSimConsole({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
-                    After-Action Reports ({filteredReports.length})
+                    {activeCountryName} After-Action Reports ({filteredReports.length})
                   </span>
                   <span style={{ fontSize: '9.5px', color: '#4FC3F7' }}>
                     Click report for analysis
@@ -926,7 +930,7 @@ export function WarSimConsole({
                       fontWeight: 600,
                     }}
                   >
-                    All ({session.reports?.length || 0})
+                    All ({activeFactionReports.length})
                   </button>
                   <button
                     type="button"
@@ -942,7 +946,7 @@ export function WarSimConsole({
                       fontWeight: 600,
                     }}
                   >
-                    🛡️ Under Attack ({session.reports?.filter((r) => r.category === 'under_attack').length || 0})
+                    🛡️ Under Attack ({activeFactionReports.filter((r) => r.category === 'under_attack').length})
                   </button>
                   <button
                     type="button"
@@ -958,7 +962,7 @@ export function WarSimConsole({
                       fontWeight: 600,
                     }}
                   >
-                    🚀 Strikes ({session.reports?.filter((r) => r.category === 'offensive_strike').length || 0})
+                    🚀 Strikes ({activeFactionReports.filter((r) => r.category === 'offensive_strike').length})
                   </button>
                   <button
                     type="button"
@@ -974,7 +978,7 @@ export function WarSimConsole({
                       fontWeight: 600,
                     }}
                   >
-                    📡 Intel / PID ({session.reports?.filter((r) => r.category === 'recon_intel').length || 0})
+                    📡 Intel / PID ({activeFactionReports.filter((r) => r.category === 'recon_intel').length})
                   </button>
                 </div>
 
