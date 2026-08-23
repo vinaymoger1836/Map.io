@@ -201,7 +201,7 @@ export interface MissileFlyoutTrack {
 }
 
 /* ------------------------------------------------------------------ */
-/* 6. Battle Logging & Real-Time Events                               */
+/* 6. Battle Logging, Reports & After-Action Analytics                */
 /* ------------------------------------------------------------------ */
 
 export interface SimBattleEvent {
@@ -224,6 +224,90 @@ export interface SimBattleEvent {
   title: string;
   detail: string;
   lngLat?: [number, number];
+}
+
+export type WarReportCategory =
+  | 'under_attack'      // Incoming attack / defensive engagement / damage sustained
+  | 'offensive_strike'  // Strike executed against hostile forces
+  | 'recon_intel';      // Positive identification (PID) & reconnaissance gathered
+
+export interface CombatReport {
+  id: string;
+  simTimeSec: number;
+  timeFormatted: string;
+  category: WarReportCategory;
+  title: string;
+  summary: string;
+  lngLat?: [number, number];
+  countryIso: string;
+  faction: 'player' | 'enemy';
+
+  // Primary Platform / Actor
+  primaryEntity: {
+    id: string;
+    name: string;
+    typeId: string;
+    domain: string;
+    iso: string;
+    isFriendly: boolean;
+    isPID: boolean;
+    count?: number;
+    baseName?: string;
+  };
+
+  // Opposing Platform / Target (if applicable)
+  opposingEntity?: {
+    id?: string;
+    name: string;
+    typeId?: string;
+    domain: string;
+    iso: string;
+    isFriendly: boolean;
+    isPID: boolean;
+    count?: number;
+  };
+
+  // Munitions / Attack telemetry (if applicable)
+  munitionsDetails?: {
+    weaponName: string;
+    salvoCount: number;
+    rangeKm?: number;
+    speedMach?: number;
+    launchedBy: string;
+    standoffDistanceKm?: number;
+  };
+
+  // Interception / Air Defense response telemetry (if applicable)
+  interceptionTelemetry?: {
+    defenseSystemName?: string;
+    interceptorType?: string;
+    interceptorsLaunched: number;
+    missilesIntercepted: number;
+    missilesPenetrated: number;
+    ciwsEngaged?: boolean;
+    successRatePct: number;
+    responseDetail: string;
+  };
+
+  // Damage / BDA Assessment
+  damageAssessment?: {
+    targetInitialState?: DamageState | string;
+    targetResultState: DamageState | string;
+    damageInflicted: 'none' | 'light' | 'moderate' | 'heavy' | 'destroyed';
+    personnelLosses?: number;
+    platformsDestroyed?: number;
+    bdaSummary: string;
+  };
+
+  // Intel Gathering details (if recon report)
+  intelDetails?: {
+    discoveredDomain: string;
+    confidenceTier: 1 | 2;
+    sensorUsed: string;
+    coordinatesText: string;
+    estimatedComposition?: string;
+    personnel?: number;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -259,6 +343,7 @@ export interface WarSimSession {
     enemyContacts: DetectedContact[];
   };
   eventLog: SimBattleEvent[];
+  reports?: CombatReport[];
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';

@@ -23,6 +23,7 @@ import {
   type DetectedContact,
   type MissileFlyoutTrack,
   type SimBattleEvent,
+  type CombatReport,
   type PatrolOrder,
   type PostStrikeAction,
   type StrikePlan,
@@ -57,6 +58,20 @@ export function formatSimTime(totalSec: number): string {
   return `T+${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+export function getContactPID(
+  entityId: string,
+  observerFaction: 'player' | 'enemy',
+  contacts: { playerContacts: DetectedContact[]; enemyContacts: DetectedContact[] }
+): { isPID: boolean; knownName?: string; intelTier: number } {
+  const contactList = observerFaction === 'player' ? contacts.playerContacts : contacts.enemyContacts;
+  const c = contactList.find((item) => item.targetEntityId === entityId);
+  return {
+    isPID: c?.intelTier === 2,
+    knownName: c?.knownName,
+    intelTier: c?.intelTier ?? 0,
+  };
+}
+
 export function tickWarSim(
   session: WarSimSession,
   dtRealSec: number,
@@ -72,6 +87,7 @@ export function tickWarSim(
   const timeFormatted = formatSimTime(newSimTimeSec);
 
   const newEvents: SimBattleEvent[] = [...session.eventLog];
+  const newReports: CombatReport[] = [...(session.reports || [])];
 
   const logEvent = (
     faction: 'player' | 'enemy' | 'neutral',
@@ -89,6 +105,15 @@ export function tickWarSim(
       title,
       detail,
       lngLat,
+    });
+  };
+
+  const logReport = (report: Omit<CombatReport, 'id' | 'simTimeSec' | 'timeFormatted'>) => {
+    newReports.push({
+      id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      simTimeSec: newSimTimeSec,
+      timeFormatted,
+      ...report,
     });
   };
 
@@ -648,6 +673,65 @@ export function tickWarSim(
           firedSummaries.push(`${salvoCount} × ${wName}`);
         }
 
+        const isAttackerPlayer = entity.iso === session.playerIso;
+        const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
+        const targetPID = getContactPID(plan.targetEntityId, attackerFaction, session.fogOfWarContacts);
+        const targetDomain = targetEntity ? (spec ? domainOf(spec) : 'surface') : 'surface';
+        const targetDisplayName = targetPID.isPID
+          ? (targetEntity?.name ?? 'Hostile Entity')
+          : `Hostile ${targetDomain.toUpperCase()} Track (Tier 1 Sensor Track)`;
+
+        logReport({
+          category: 'offensive_strike',
+          title: `🚀 Strike Salvo Launched: ${entity.name}`,
+          summary: `${entity.name} launched mixed salvo (${firedSummaries.join(' + ')}) against ${targetDisplayName} at ${distToTarget.toFixed(0)} km stand-off range.`,
+          lngLat: entity.lngLat,
+          countryIso: entity.iso,
+          faction: attackerFaction,
+          primaryEntity: {
+            id: entity.id,
+            name: entity.name,
+            typeId: entity.typeId,
+            domain: spec ? domainOf(spec) : 'air',
+            iso: entity.iso,
+            isFriendly: true,
+            isPID: true,
+            count: entity.count,
+          },
+          opposingEntity: {
+            id: plan.targetEntityId,
+            name: targetDisplayName,
+            typeId: targetPID.isPID ? targetEntity?.typeId : undefined,
+            domain: targetDomain,
+            iso: targetEntity?.iso ?? (isAttackerPlayer ? session.enemyIso : session.playerIso),
+            isFriendly: false,
+            isPID: targetPID.isPID,
+            count: targetPID.isPID ? targetEntity?.count : undefined,
+          },
+          munitionsDetails: {
+            weaponName: firedSummaries.join(' + '),
+            salvoCount: itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0),
+            rangeKm: plan.weaponRangeKm,
+            speedMach: spec?.weapons?.[plan.weaponIndex]?.speedMach,
+            launchedBy: entity.name,
+            standoffDistanceKm: distToTarget,
+          },
+          interceptionTelemetry: {
+            defenseSystemName: 'Hostile Air Defense Network',
+            interceptorType: 'Defensive SAM / CIWS',
+            interceptorsLaunched: 0,
+            missilesIntercepted: 0,
+            missilesPenetrated: itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0),
+            successRatePct: 0,
+            responseDetail: 'Inbound flight trajectory — awaiting air defense zone penetration',
+          },
+          damageAssessment: {
+            targetResultState: targetEntity?.damage ?? 'intact',
+            damageInflicted: 'none',
+            bdaSummary: 'Missile package en route to target coordinates.',
+          },
+        });
+
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'strike',
@@ -787,6 +871,62 @@ export function tickWarSim(
           // Both missiles collide and are neutralized simultaneously
           threat.isIntercepted = true;
           sam.isIntercepted = true;
+
+          const isDefenderPlayer = sam.attackerIso === session.playerIso;
+          const defenderFaction: 'player' | 'enemy' = isDefenderPlayer ? 'player' : 'enemy';
+          const threatAttacker = updatedEntities.find((e) => e.id === threat.attackerEntityId);
+          const defender = updatedEntities.find((e) => e.id === sam.attackerEntityId);
+          const attackerPID = getContactPID(threat.attackerEntityId, defenderFaction, session.fogOfWarContacts);
+          const attackerDisplayName = attackerPID.isPID
+            ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
+            : 'Hostile Platform (Unverified PID)';
+
+          logReport({
+            category: 'under_attack',
+            title: `💥 Mid-Air Kinetic Interception: ${sam.weaponName}`,
+            summary: `${sam.weaponName} achieved direct kinetic collision with incoming ${threat.weaponName} at ${collisionLngLat[1].toFixed(3)}°N, ${collisionLngLat[0].toFixed(3)}°E. Threat destroyed.`,
+            lngLat: collisionLngLat,
+            countryIso: sam.attackerIso,
+            faction: defenderFaction,
+            primaryEntity: {
+              id: defender?.id ?? sam.attackerEntityId,
+              name: defender?.name ?? sam.weaponName,
+              typeId: defender?.typeId ?? 'sam',
+              domain: 'land',
+              iso: sam.attackerIso,
+              isFriendly: true,
+              isPID: true,
+            },
+            opposingEntity: {
+              id: threat.attackerEntityId,
+              name: attackerDisplayName,
+              typeId: attackerPID.isPID ? threatAttacker?.typeId : undefined,
+              domain: 'air',
+              iso: threat.attackerIso,
+              isFriendly: false,
+              isPID: attackerPID.isPID,
+            },
+            munitionsDetails: {
+              weaponName: threat.weaponName,
+              salvoCount: 1,
+              launchedBy: attackerDisplayName,
+            },
+            interceptionTelemetry: {
+              defenseSystemName: defender?.name ?? 'Air Defense System',
+              interceptorType: sam.weaponName,
+              interceptorsLaunched: 1,
+              missilesIntercepted: 1,
+              missilesPenetrated: 0,
+              successRatePct: 100,
+              responseDetail: 'Direct kinetic collision kill verified by telemetry',
+            },
+            damageAssessment: {
+              targetResultState: defender?.damage ?? 'intact',
+              damageInflicted: 'none',
+              bdaSummary: 'Threat neutralized mid-air before entering terminal defense footprint.',
+            },
+          });
+
           logEvent(
             sam.attackerIso === session.playerIso ? 'player' : 'enemy',
             'intercept',
@@ -924,6 +1064,61 @@ export function tickWarSim(
         newDefensiveInterceptors.push(interceptorTrack);
 
         const remainingMag = def.customWeapons?.[bestWeaponIdx]?.magazine ?? 0;
+        const isDefPlayer = def.iso === session.playerIso;
+        const defFaction: 'player' | 'enemy' = isDefPlayer ? 'player' : 'enemy';
+        const threatAttacker = updatedEntities.find((e) => e.id === m.attackerEntityId);
+        const attackerPID = getContactPID(m.attackerEntityId, defFaction, session.fogOfWarContacts);
+        const attackerDisplayName = attackerPID.isPID
+          ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
+          : 'Hostile Platform (Unverified PID)';
+
+        logReport({
+          category: 'under_attack',
+          title: `🛡️ Defensive Response: ${def.name} Engaging Inbound Threat`,
+          summary: `${def.name} acquired incoming ${m.weaponName} at ${distToMissile.toFixed(0)} km range. Launched ${salvoCommit} × ${bestWeapon.name} on collision intercept trajectory.`,
+          lngLat: def.lngLat,
+          countryIso: def.iso,
+          faction: defFaction,
+          primaryEntity: {
+            id: def.id,
+            name: def.name,
+            typeId: def.typeId,
+            domain: defSpec ? domainOf(defSpec) : 'land',
+            iso: def.iso,
+            isFriendly: true,
+            isPID: true,
+            count: def.count,
+          },
+          opposingEntity: {
+            id: m.attackerEntityId,
+            name: attackerDisplayName,
+            typeId: attackerPID.isPID ? threatAttacker?.typeId : undefined,
+            domain: 'air',
+            iso: m.attackerIso,
+            isFriendly: false,
+            isPID: attackerPID.isPID,
+          },
+          munitionsDetails: {
+            weaponName: m.weaponName,
+            salvoCount: 1,
+            launchedBy: attackerDisplayName,
+          },
+          interceptionTelemetry: {
+            defenseSystemName: def.name,
+            interceptorType: bestWeapon.name,
+            interceptorsLaunched: salvoCommit,
+            missilesIntercepted: 0,
+            missilesPenetrated: 1,
+            successRatePct: 0,
+            responseDetail: `Target acquired by fire-control radar. ${salvoCommit} × ${bestWeapon.name} interceptors in flight.`,
+          },
+          damageAssessment: {
+            targetResultState: def.damage,
+            damageInflicted: 'none',
+            bdaSummary: 'Active air defense engagement in progress.',
+          },
+        });
+
         logEvent(
           def.iso === session.playerIso ? 'player' : 'enemy',
           'intercept',
@@ -968,6 +1163,45 @@ export function tickWarSim(
 
         if (Math.random() < 0.75) {
           m.isIntercepted = true;
+
+          logReport({
+            category: 'under_attack',
+            title: `💥 CIWS Interception: ${targetEntity.name}`,
+            summary: `${targetEntity.name} terminal CIWS (${ciwsWeapon.name}) destroyed incoming ${m.weaponName} at point-blank range.`,
+            lngLat: targetEntity.lngLat,
+            countryIso: targetEntity.iso,
+            faction: targetEntity.iso === session.playerIso ? 'player' : 'enemy',
+            primaryEntity: {
+              id: targetEntity.id,
+              name: targetEntity.name,
+              typeId: targetEntity.typeId,
+              domain: targetSpec ? domainOf(targetSpec) : 'sea',
+              iso: targetEntity.iso,
+              isFriendly: true,
+              isPID: true,
+            },
+            munitionsDetails: {
+              weaponName: m.weaponName,
+              salvoCount: 1,
+              launchedBy: 'Hostile Platform',
+            },
+            interceptionTelemetry: {
+              defenseSystemName: targetEntity.name,
+              interceptorType: ciwsWeapon.name,
+              interceptorsLaunched: 1,
+              missilesIntercepted: 1,
+              missilesPenetrated: 0,
+              ciwsEngaged: true,
+              successRatePct: 100,
+              responseDetail: 'Terminal point defense auto-engaged; high rate of fire shredded incoming threat.',
+            },
+            damageAssessment: {
+              targetResultState: targetEntity.damage,
+              damageInflicted: 'none',
+              bdaSummary: 'Threat destroyed at close perimeter — hull/facility intact.',
+            },
+          });
+
           logEvent(
             targetEntity.iso === session.playerIso ? 'player' : 'enemy',
             'intercept',
@@ -1048,6 +1282,112 @@ export function tickWarSim(
           );
         }
       }
+
+      // Generate Combat Report for Defender & Attacker BDA
+      const isTargetPlayer = targetEntity.iso === session.playerIso;
+      const targetFaction: 'player' | 'enemy' = isTargetPlayer ? 'player' : 'enemy';
+      const threatAttacker = updatedEntities.find((e) => e.id === m.attackerEntityId);
+      const attackerPID = getContactPID(m.attackerEntityId, targetFaction, session.fogOfWarContacts);
+      const attackerDisplayName = attackerPID.isPID
+        ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
+        : 'Hostile Platform (Unverified PID)';
+
+      const isCatastrophic = targetEntity.damage === 'destroyed';
+      const bdaSummary = isCatastrophic
+        ? `Catastrophic impact: ${targetEntity.name} neutralized and removed from theater.`
+        : `Heavy battle damage: ${targetEntity.name} superstructure/airframe compromised; executing emergency RTB.`;
+
+      // 1. Under Attack Report for Defender
+      logReport({
+        category: 'under_attack',
+        title: isCatastrophic ? `💥 Catastrophic Loss: ${targetEntity.name} Destroyed` : `⚠️ Direct Hit: ${targetEntity.name} Damaged`,
+        summary: `${targetEntity.name} struck by incoming ${m.weaponName}. Status: ${targetEntity.damage.toUpperCase()}.`,
+        lngLat: targetEntity.lngLat,
+        countryIso: targetEntity.iso,
+        faction: targetFaction,
+        primaryEntity: {
+          id: targetEntity.id,
+          name: targetEntity.name,
+          typeId: targetEntity.typeId,
+          domain: isNaval ? 'sea' : isAir ? 'air' : 'land',
+          iso: targetEntity.iso,
+          isFriendly: true,
+          isPID: true,
+          count: targetEntity.count,
+        },
+        opposingEntity: {
+          id: m.attackerEntityId,
+          name: attackerDisplayName,
+          typeId: attackerPID.isPID ? threatAttacker?.typeId : undefined,
+          domain: 'air',
+          iso: m.attackerIso,
+          isFriendly: false,
+          isPID: attackerPID.isPID,
+        },
+        munitionsDetails: {
+          weaponName: m.weaponName,
+          salvoCount: 1,
+          launchedBy: attackerDisplayName,
+        },
+        interceptionTelemetry: {
+          defenseSystemName: targetEntity.name,
+          interceptorsLaunched: 0,
+          missilesIntercepted: 0,
+          missilesPenetrated: 1,
+          successRatePct: 0,
+          responseDetail: 'Threat penetrated defensive countermeasures and impacted hull/structure.',
+        },
+        damageAssessment: {
+          targetResultState: targetEntity.damage,
+          damageInflicted: isCatastrophic ? 'destroyed' : 'heavy',
+          personnelLosses: isCatastrophic ? targetEntity.personnel : Math.round(targetEntity.personnel * 0.4),
+          platformsDestroyed: isCatastrophic ? targetEntity.count : 0,
+          bdaSummary,
+        },
+      });
+
+      // 2. Offensive Strike BDA Report for Attacker
+      const isAttackerPlayer = m.attackerIso === session.playerIso;
+      const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
+      const targetPID = getContactPID(targetEntity.id, attackerFaction, session.fogOfWarContacts);
+
+      logReport({
+        category: 'offensive_strike',
+        title: `🎯 BDA Assessment: Direct Hit on ${targetPID.isPID ? targetEntity.name : 'Hostile Track'}`,
+        summary: `${m.weaponName} scored direct impact on ${targetPID.isPID ? targetEntity.name : 'Hostile Target'}. Target confirmed ${targetEntity.damage.toUpperCase()}.`,
+        lngLat: targetEntity.lngLat,
+        countryIso: m.attackerIso,
+        faction: attackerFaction,
+        primaryEntity: {
+          id: threatAttacker?.id ?? m.attackerEntityId,
+          name: threatAttacker?.name ?? 'Friendly Strike Wing',
+          typeId: threatAttacker?.typeId ?? 'strike',
+          domain: 'air',
+          iso: m.attackerIso,
+          isFriendly: true,
+          isPID: true,
+        },
+        opposingEntity: {
+          id: targetEntity.id,
+          name: targetPID.isPID ? targetEntity.name : 'Hostile Target Track',
+          typeId: targetPID.isPID ? targetEntity.typeId : undefined,
+          domain: isNaval ? 'sea' : isAir ? 'air' : 'land',
+          iso: targetEntity.iso,
+          isFriendly: false,
+          isPID: targetPID.isPID,
+          count: targetPID.isPID ? targetEntity.count : undefined,
+        },
+        munitionsDetails: {
+          weaponName: m.weaponName,
+          salvoCount: 1,
+          launchedBy: threatAttacker?.name ?? 'Friendly Strike',
+        },
+        damageAssessment: {
+          targetResultState: targetEntity.damage,
+          damageInflicted: isCatastrophic ? 'destroyed' : 'heavy',
+          bdaSummary: isCatastrophic ? 'BDA Confirmed: Target completely neutralized.' : 'BDA Confirmed: Heavy battle damage inflicted.',
+        },
+      });
     } else if (targetBase) {
       targetBase.runwayStatus = 'damaged';
       targetBase.repairCountdownSec = 30 * 60;
@@ -1197,6 +1537,46 @@ export function tickWarSim(
           bestTier = 2;
         }
 
+        // New Positive Identification (Tier 2 PID) Discovery Event & Report
+        if (bestTier === 2 && (!prevContact || prevContact.intelTier !== 2)) {
+          const scanner = scanners[0];
+          logReport({
+            category: 'recon_intel',
+            title: `📡 Reconnaissance: Positive PID of ${target.name}`,
+            summary: `${scanner?.name ?? 'Sensor Suite'} positively identified ${target.name} (${target.count} units, ${target.personnel} personnel, status: ${target.damage.toUpperCase()}).`,
+            lngLat: target.lngLat,
+            countryIso: scanningIso,
+            faction: scanningFaction,
+            primaryEntity: {
+              id: scanner?.id ?? 'sensor-net',
+              name: scanner?.name ?? `${scanningFaction.toUpperCase()} Recon Asset`,
+              typeId: scanner?.typeId ?? 'uav',
+              domain: 'air',
+              iso: scanningIso,
+              isFriendly: true,
+              isPID: true,
+            },
+            opposingEntity: {
+              id: target.id,
+              name: target.name,
+              typeId: target.typeId,
+              domain: targetDomain,
+              iso: target.iso,
+              isFriendly: false,
+              isPID: true,
+              count: target.count,
+            },
+            intelDetails: {
+              discoveredDomain: targetDomain.toUpperCase(),
+              confidenceTier: 2,
+              sensorUsed: scanner?.typeId === 'uav' ? 'Lynx Multi-Mode Radar (SAR/GMTI) + EO/IR Optical' : scanner?.typeId === 'awacs' ? 'APY-2 3D Surveillance Radar' : 'Surface Search & Fire-Control Radar',
+              coordinatesText: `${target.lngLat[1].toFixed(3)}°N, ${target.lngLat[0].toFixed(3)}°E`,
+              estimatedComposition: `${target.count} × ${target.name} (${target.damage.toUpperCase()})`,
+              personnel: target.personnel,
+            },
+          });
+        }
+
         const tier: 1 | 2 = bestTier === 2 ? 2 : 1;
         contacts.push({
           contactId: `cnt-${target.id}-${scanningFaction}`,
@@ -1244,6 +1624,7 @@ export function tickWarSim(
       enemyContacts: updatedEnemyContacts,
     },
     eventLog: newEvents.slice(-200), // Keep recent 200 events
+    reports: newReports.slice(-150), // Keep recent 150 operational reports
   };
 }
 
@@ -1918,6 +2299,63 @@ export function orderStrikeMission(
     const updatedEntities = session.entities.map((e) => (e.id === attacker.id ? updatedDockedEntity : e));
     updatedEntities.push(sortieEntity);
 
+    const targetPID = getContactPID(targetEntityId, faction, session.fogOfWarContacts);
+    const targetDisplayName = targetPID.isPID ? targetName : 'Hostile Target Track (Unverified PID)';
+
+    const newReports: CombatReport[] = [
+      ...(session.reports || []),
+      {
+        id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        simTimeSec: session.simTimeSec,
+        timeFormatted: formatSimTime(session.simTimeSec),
+        category: 'offensive_strike',
+        title: `🚀 Strike Sortie Tasked: ${sortieName}`,
+        summary: `Scrambled ${sortieName} on strike mission against ${targetDisplayName} committing ${salvoCount} × ${weaponName} (Stand-off range: ${weaponRangeKm} km).`,
+        lngLat: attacker.lngLat,
+        countryIso: attacker.iso,
+        faction,
+        primaryEntity: {
+          id: sortieEntity.id,
+          name: sortieName,
+          typeId: sortieEntity.typeId,
+          domain: spec ? domainOf(spec) : 'air',
+          iso: sortieEntity.iso,
+          isFriendly: true,
+          isPID: true,
+          count: effectiveCount,
+        },
+        opposingEntity: {
+          id: targetEntityId,
+          name: targetDisplayName,
+          typeId: targetPID.isPID ? targetEntity?.typeId : undefined,
+          domain: 'surface',
+          iso: targetEntity?.iso ?? (isPlayer ? session.enemyIso : session.playerIso),
+          isFriendly: false,
+          isPID: targetPID.isPID,
+        },
+        munitionsDetails: {
+          weaponName,
+          salvoCount: effectiveSalvo,
+          rangeKm: weaponRangeKm,
+          speedMach: weapon?.speedMach,
+          launchedBy: sortieName,
+        },
+        interceptionTelemetry: {
+          defenseSystemName: 'Hostile Air Defense Network',
+          interceptorsLaunched: 0,
+          missilesIntercepted: 0,
+          missilesPenetrated: effectiveSalvo,
+          successRatePct: 0,
+          responseDetail: 'Sortie in flight — ingress to weapon release envelope',
+        },
+        damageAssessment: {
+          targetResultState: targetEntity?.damage ?? 'intact',
+          damageInflicted: 'none',
+          bdaSummary: 'Sortie en route to strike waypoint.',
+        },
+      },
+    ];
+
     const newEvents = [
       ...session.eventLog,
       {
@@ -1937,6 +2375,7 @@ export function orderStrikeMission(
       bases: updatedBases,
       entities: updatedEntities,
       eventLog: newEvents.slice(-200),
+      reports: newReports.slice(-150),
     };
   } else {
     const uniqueName = ensureUniqueEntityName(
@@ -1961,6 +2400,63 @@ export function orderStrikeMission(
       };
     });
 
+    const targetPID = getContactPID(targetEntityId, faction, session.fogOfWarContacts);
+    const targetDisplayName = targetPID.isPID ? targetName : 'Hostile Target Track (Unverified PID)';
+
+    const newReports: CombatReport[] = [
+      ...(session.reports || []),
+      {
+        id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        simTimeSec: session.simTimeSec,
+        timeFormatted: formatSimTime(session.simTimeSec),
+        category: 'offensive_strike',
+        title: `🚀 Strike Mission Tasked: ${uniqueName}`,
+        summary: `${uniqueName} tasked on strike mission against ${targetDisplayName} committing ${salvoCount} × ${weaponName} (Stand-off range: ${weaponRangeKm} km).`,
+        lngLat: attacker.lngLat,
+        countryIso: attacker.iso,
+        faction,
+        primaryEntity: {
+          id: attacker.id,
+          name: uniqueName,
+          typeId: attacker.typeId,
+          domain: spec ? domainOf(spec) : 'air',
+          iso: attacker.iso,
+          isFriendly: true,
+          isPID: true,
+          count: attacker.count,
+        },
+        opposingEntity: {
+          id: targetEntityId,
+          name: targetDisplayName,
+          typeId: targetPID.isPID ? targetEntity?.typeId : undefined,
+          domain: 'surface',
+          iso: targetEntity?.iso ?? (isPlayer ? session.enemyIso : session.playerIso),
+          isFriendly: false,
+          isPID: targetPID.isPID,
+        },
+        munitionsDetails: {
+          weaponName,
+          salvoCount: effectiveSalvo,
+          rangeKm: weaponRangeKm,
+          speedMach: weapon?.speedMach,
+          launchedBy: uniqueName,
+        },
+        interceptionTelemetry: {
+          defenseSystemName: 'Hostile Air Defense Network',
+          interceptorsLaunched: 0,
+          missilesIntercepted: 0,
+          missilesPenetrated: effectiveSalvo,
+          successRatePct: 0,
+          responseDetail: 'Platform maneuvering to stand-off release envelope',
+        },
+        damageAssessment: {
+          targetResultState: targetEntity?.damage ?? 'intact',
+          damageInflicted: 'none',
+          bdaSummary: 'Platform en route to stand-off release position.',
+        },
+      },
+    ];
+
     const newEvents = [
       ...session.eventLog,
       {
@@ -1979,6 +2475,7 @@ export function orderStrikeMission(
       ...session,
       entities: updatedEntities,
       eventLog: newEvents.slice(-200),
+      reports: newReports.slice(-150),
     };
   }
 }

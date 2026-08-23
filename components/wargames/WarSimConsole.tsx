@@ -10,7 +10,7 @@
  * 4. Bases list with live capacity gauges, status indicators, and one-click map focusing.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   type WarSimSession,
   type SimEntity,
@@ -18,6 +18,8 @@ import {
   type DetectedContact,
   type BaseType,
   type QuotaAllocation,
+  type CombatReport,
+  type WarReportCategory,
 } from '@/lib/warSimTypes';
 import { type SystemSpec, domainOf, radarHorizonKm } from '@/lib/specs';
 import { formatSimTime } from '@/lib/warSimEngine';
@@ -25,11 +27,12 @@ import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
+import { CombatReportDetailModal } from './CombatReportDetailModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -154,6 +157,8 @@ export function WarSimConsole({
   const [customBaseName, setCustomBaseName] = useState<string>('');
   const [hudTaskingEntity, setHudTaskingEntity] = useState<SimEntity | null>(null);
   const [strikeModalTarget, setStrikeModalTarget] = useState<StrikeTargetInfo | null>(null);
+  const [selectedReport, setSelectedReport] = useState<CombatReport | null>(null);
+  const [reportCategoryFilter, setReportCategoryFilter] = useState<'all' | WarReportCategory>('all');
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -166,6 +171,15 @@ export function WarSimConsole({
   const otherColor = isPlayer ? session.enemyColor : session.playerColor;
 
   const quotaLedger = session.quotas[activeFaction] || {};
+
+  const filteredReports = useMemo(() => {
+    const list = session.reports || [];
+    const factionFiltered = list.filter((r) => {
+      if (reportCategoryFilter !== 'all' && r.category !== reportCategoryFilter) return false;
+      return true;
+    });
+    return factionFiltered.slice().reverse();
+  }, [session.reports, reportCategoryFilter]);
 
   return (
     <>
@@ -480,31 +494,45 @@ export function WarSimConsole({
           }}
         >
           {sidebarOpen ? (
-            <div style={{ display: 'flex', gap: '4px', flex: 1, overflowX: 'auto' }}>
+            <div style={{ display: 'flex', gap: '3px', flex: 1, overflowX: 'auto' }}>
               <button
                 className={`wg-btn ${activeTab === 'systems' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('systems')}
               >
                 🎯 Systems
               </button>
               <button
                 className={`wg-btn ${activeTab === 'bases' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('bases')}
               >
                 🏰 Bases ({friendlyBases.length})
               </button>
               <button
                 className={`wg-btn ${activeTab === 'intel' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('intel')}
               >
                 🛰️ Intel ({visibleContacts.length})
               </button>
               <button
+                className={`wg-btn ${activeTab === 'reports' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'reports' ? undefined : (session.reports && session.reports.length > 0 ? 'rgba(79, 195, 247, 0.08)' : undefined),
+                  borderColor: activeTab === 'reports' ? undefined : (session.reports && session.reports.length > 0 ? 'rgba(79, 195, 247, 0.3)' : undefined),
+                  color: activeTab === 'reports' ? undefined : (session.reports && session.reports.length > 0 ? '#4FC3F7' : undefined),
+                }}
+                onClick={() => setActiveTab('reports')}
+              >
+                📊 Reports ({session.reports?.length || 0})
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'log' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('log')}
               >
                 📜 Log
@@ -515,6 +543,7 @@ export function WarSimConsole({
               <button onClick={() => { setSidebarOpen(true); setActiveTab('systems'); }} title="Systems" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🎯</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('bases'); }} title="Bases" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🏰</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('intel'); }} title="Intel" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🛰️</button>
+              <button onClick={() => { setSidebarOpen(true); setActiveTab('reports'); }} title="Reports" style={{ background: 'none', border: 'none', color: '#4FC3F7', cursor: 'pointer', fontSize: '16px' }}>📊</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('log'); }} title="Log" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>📜</button>
             </div>
           )}
@@ -868,7 +897,196 @@ export function WarSimConsole({
             )}
 
             {/* ========================================================= */}
-            {/* TAB 4: BATTLE LOG TICKER                                  */}
+            {/* TAB 4: COMBAT & INTELLIGENCE REPORTS                      */}
+            {/* ========================================================= */}
+            {activeTab === 'reports' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    After-Action Reports ({filteredReports.length})
+                  </span>
+                  <span style={{ fontSize: '9.5px', color: '#4FC3F7' }}>
+                    Click report for analysis
+                  </span>
+                </div>
+
+                {/* Report Category Filters */}
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('all')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'all' ? '#4FC3F7' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'all' ? 'rgba(79, 195, 247, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'all' ? '#4FC3F7' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    All ({session.reports?.length || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('under_attack')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'under_attack' ? '#FF5252' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'under_attack' ? 'rgba(255, 82, 82, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'under_attack' ? '#FF5252' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    🛡️ Under Attack ({session.reports?.filter((r) => r.category === 'under_attack').length || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('offensive_strike')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'offensive_strike' ? '#FF9800' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'offensive_strike' ? 'rgba(255, 152, 0, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'offensive_strike' ? '#FF9800' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    🚀 Strikes ({session.reports?.filter((r) => r.category === 'offensive_strike').length || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('recon_intel')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'recon_intel' ? '#4FC3F7' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'recon_intel' ? 'rgba(79, 195, 247, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'recon_intel' ? '#4FC3F7' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    📡 Intel / PID ({session.reports?.filter((r) => r.category === 'recon_intel').length || 0})
+                  </button>
+                </div>
+
+                {filteredReports.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '24px 12px',
+                      textAlign: 'center',
+                      color: 'var(--paper-dim)',
+                      fontSize: '11px',
+                      background: '#070C14',
+                      borderRadius: '6px',
+                      border: '1px dashed var(--border)',
+                    }}
+                  >
+                    <span>📊 No tactical reports logged under this filter.</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {filteredReports.map((rep) => {
+                      const isDef = rep.category === 'under_attack';
+                      const isOff = rep.category === 'offensive_strike';
+                      const repColor = isDef ? '#FF5252' : isOff ? '#FF9800' : '#4FC3F7';
+
+                      return (
+                        <div
+                          key={rep.id}
+                          onClick={() => setSelectedReport(rep)}
+                          style={{
+                            padding: '8px 10px',
+                            background: '#09101B',
+                            border: '1px solid var(--border)',
+                            borderLeft: `3px solid ${repColor}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = repColor;
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border)';
+                            e.currentTarget.style.borderLeftColor = repColor;
+                            e.currentTarget.style.background = '#09101B';
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                fontWeight: 800,
+                                color: repColor,
+                                background: `${repColor}18`,
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {isDef ? '🛡️ Under Attack' : isOff ? '🚀 Strike' : '📡 Intel PID'}
+                            </span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                              {rep.timeFormatted}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                            <strong style={{ fontSize: '11.5px', color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {rep.title}
+                            </strong>
+                            {rep.opposingEntity && (
+                              <span
+                                style={{
+                                  fontSize: '8.5px',
+                                  color: rep.opposingEntity.isPID ? '#4FA85F' : '#FF9800',
+                                  background: rep.opposingEntity.isPID ? 'rgba(79, 168, 95, 0.15)' : 'rgba(255, 152, 0, 0.15)',
+                                  padding: '1px 4px',
+                                  borderRadius: '2px',
+                                  fontWeight: 700,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {rep.opposingEntity.isPID ? 'PID ✓' : 'UNPID ⚠️'}
+                              </span>
+                            )}
+                          </div>
+
+                          <p style={{ margin: 0, fontSize: '10.5px', color: 'var(--paper-dim)', lineHeight: 1.35 }}>
+                            {rep.summary}
+                          </p>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px', fontSize: '9.5px', color: '#4FC3F7' }}>
+                            <span>Details & Interception Analysis ➔</span>
+                            {rep.damageAssessment && (
+                              <span style={{ color: rep.damageAssessment.damageInflicted === 'destroyed' ? '#FF5252' : rep.damageAssessment.damageInflicted === 'heavy' ? '#FF9800' : '#4FA85F', fontWeight: 600 }}>
+                                {rep.damageAssessment.targetResultState.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB 5: BATTLE LOG TICKER                                  */}
             {/* ========================================================= */}
             {activeTab === 'log' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1391,6 +1609,17 @@ export function WarSimConsole({
             onSelectEntity(null);
             onStartStrikeRoutePlanning?.(params);
           }}
+        />
+      )}
+
+      {/* 7. Combat After-Action Report (AAR) & Tactical Analysis Modal */}
+      {selectedReport && (
+        <CombatReportDetailModal
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+          onFlyToLocation={onFlyToBase}
+          playerCountryName={playerCountryName}
+          enemyCountryName={enemyCountryName}
         />
       )}
     </>
