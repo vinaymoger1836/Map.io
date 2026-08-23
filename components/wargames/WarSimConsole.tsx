@@ -1195,9 +1195,9 @@ export function WarSimConsole({
           isStaticAD
             ? 'AIR DEFENSE (ON WATCH)'
             : selectedEntity.status === 'on_station'
-              ? (isGround ? 'ENTRENCHED' : 'PATROL')
+              ? (isGround ? 'ENTRENCHED' : isNaval ? 'MARITIME PATROL' : 'AIR PATROL')
               : selectedEntity.status === 'takeoff_ingress'
-                ? (isGround ? 'ROAD MARCH' : 'TAKEOFF INGRESS')
+                ? (isGround ? 'ROAD MARCH' : isNaval ? 'TRANSIT INGRESS' : 'TAKEOFF INGRESS')
                 : selectedEntity.status.replace('_', ' ').toUpperCase();
 
         return (

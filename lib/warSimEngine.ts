@@ -41,6 +41,7 @@ import { isNavalCombatant } from './navalEngagement';
 import {
   type SystemSpec,
   type WeaponFacet,
+  type DetectionRangeResult,
   domainOf,
   radarHorizonKm,
   defaultSonarFor,
@@ -1455,6 +1456,12 @@ export function tickWarSim(
       const targetDomain = targetSpec ? domainOf(targetSpec) : 'air';
 
       let bestTier: 1 | 2 | 0 = 0;
+      let bestScanner: SimEntity | null = null;
+      let bestBase: SimBase | null = null;
+      let bestDetectionResult: DetectionRangeResult | null = null;
+      let bestScannerDistKm: number = 0;
+      let bestRatedEnvelopeKm: number = 0;
+      let bestScannerHeightM: number = 0;
 
       // Target physical characteristics (altitude/mast height & physical RCS)
       const targetHeightM = targetDomain === 'air'
@@ -1482,7 +1489,12 @@ export function tickWarSim(
           const sonar = scanSpec?.sensor?.sonar ?? defaultSonarFor(scanSpec, scanner.typeId);
           const maxSonarKm = sonar.detectionKm ?? 35;
           if (dist <= maxSonarKm) {
-            bestTier = Math.max(bestTier, 1) as 1 | 2;
+            if (bestTier === 0) {
+              bestTier = 1;
+              bestScanner = scanner;
+              bestScannerDistKm = dist;
+              bestRatedEnvelopeKm = maxSonarKm;
+            }
           }
           continue;
         }
@@ -1522,21 +1534,26 @@ export function tickWarSim(
         const maxDetectionKm = detectionResult.detectionRangeKm;
 
         if (dist <= maxDetectionKm) {
-          // Detected on Radar / Optics (Tier 1 baseline contact)
-          bestTier = Math.max(bestTier, 1) as 1 | 2;
-
           // PID (Tier 2 Positive Identification) conditions:
-          // 1. Within 50% of sensor horizon (high-resolution NCTR / ISAR classification)
-          // 2. Or within visual / optical identification distance (<= 45 km)
-          // 3. Or scanner is a dedicated Recon UAV / Maritime Patrol / AWACS / SOF
-          if (
-            scanner.typeId === 'uav' ||
-            scanner.typeId === 'recon' ||
-            scanner.typeId === 'awacs' ||
-            scanner.typeId === 'special-forces' ||
-            dist <= Math.max(45, maxDetectionKm * 0.50)
-          ) {
-            bestTier = 2;
+          // 1. High-resolution ISAR / NCTR radar imaging (AWACS, Recon UAVs, Maritime Patrol):
+          //    Physically requires high SNR: dist <= min(90 km, ratedEnvelopeKm * 0.50)
+          // 2. Optical / EO-IR camera zoom identification: dist <= 45 km (or 20 km for special forces)
+          // 3. Visual / close-range combat sensors: dist <= 35 km
+          // At standoff distances (>90 km), targets remain Tier 1 (Unidentified Kinematic Radar Track)
+          const isDedicatedRecon = scanner.typeId === 'uav' || scanner.typeId === 'recon' || scanner.typeId === 'awacs' || scanner.typeId === 'special-forces';
+          const isOpticalRange = dist <= (scanner.typeId === 'special-forces' ? 20 : 45);
+          const isIsarRadarPidRange = isDedicatedRecon && dist <= Math.min(90, ratedEnvelopeKm * 0.50);
+          const isVisualCombatRange = dist <= 35;
+          const currentTier: 1 | 2 = (isOpticalRange || isIsarRadarPidRange || isVisualCombatRange) ? 2 : 1;
+
+          if (currentTier > bestTier || (currentTier === bestTier && (!bestScanner || dist < bestScannerDistKm))) {
+            bestTier = currentTier;
+            bestScanner = scanner;
+            bestBase = null;
+            bestDetectionResult = detectionResult;
+            bestScannerDistKm = dist;
+            bestRatedEnvelopeKm = ratedEnvelopeKm;
+            bestScannerHeightM = scannerHeightM;
           }
         }
       }
@@ -1557,7 +1574,15 @@ export function tickWarSim(
             horizonLimited: false,
           });
           if (distToBase <= baseAirDetection.detectionRangeKm) {
-            bestTier = Math.max(bestTier, 1) as 1 | 2;
+            if (bestTier === 0) {
+              bestTier = 1;
+              bestBase = base;
+              bestScanner = null;
+              bestDetectionResult = baseAirDetection;
+              bestScannerDistKm = distToBase;
+              bestRatedEnvelopeKm = baseEnvelopeKm;
+              bestScannerHeightM = baseAntennaM;
+            }
           }
         } else if (targetDomain === 'sea' && (base.type === 'naval_base' || base.type === 'carrier_group')) {
           const baseSeaDetection = calculateDetectionRange({
@@ -1569,12 +1594,27 @@ export function tickWarSim(
             horizonLimited: true,
           });
           if (distToBase <= baseSeaDetection.detectionRangeKm) {
-            bestTier = Math.max(bestTier, 1) as 1 | 2;
+            if (bestTier === 0) {
+              bestTier = 1;
+              bestBase = base;
+              bestScanner = null;
+              bestDetectionResult = baseSeaDetection;
+              bestScannerDistKm = distToBase;
+              bestRatedEnvelopeKm = baseEnvelopeKm;
+              bestScannerHeightM = baseAntennaM;
+            }
           }
         } else if (targetDomain === 'ground') {
           // Base perimeter ground surveillance perimeter (~15 km)
           if (distToBase <= 15) {
-            bestTier = Math.max(bestTier, 1) as 1 | 2;
+            if (bestTier === 0) {
+              bestTier = 1;
+              bestBase = base;
+              bestScanner = null;
+              bestScannerDistKm = distToBase;
+              bestRatedEnvelopeKm = 15;
+              bestScannerHeightM = baseAntennaM;
+            }
           }
         }
       }
@@ -1591,26 +1631,112 @@ export function tickWarSim(
           bestTier = 2;
         }
 
-        // New Positive Identification (Tier 2 PID) Discovery Event & Report
-        if (bestTier === 2 && (!prevContact || prevContact.intelTier !== 2)) {
-          const scanner = scanners[0];
-          const scanSpec = scanner ? systemsLibrary.find((s) => s.id === scanner.systemId) : undefined;
+        // 1. Initial Tier 1 Sensor Track Discovery Event
+        if (bestTier === 1 && !prevContact) {
+          const detectingEntity = bestScanner;
+          const detectingBase = bestBase;
+          const scanSpec = detectingEntity ? systemsLibrary.find((s) => s.id === detectingEntity.systemId) : undefined;
+          const isAirDetecting = detectingEntity ? (detectingEntity.typeId === 'fighter' || detectingEntity.typeId === 'bomber' || detectingEntity.typeId === 'awacs' || detectingEntity.typeId === 'uav' || detectingEntity.typeId === 'recon' || detectingEntity.typeId === 'tanker' || detectingEntity.typeId === 'helicopter' || detectingEntity.typeId === 'attack-heli' || detectingEntity.typeId === 'transport-heli') : false;
+          const isNavalDetecting = detectingEntity ? (isNavalCombatant(detectingEntity.typeId) || (scanSpec ? domainOf(scanSpec) === 'sea' : false)) : false;
+          const detectingDomain = detectingEntity ? (scanSpec ? domainOf(scanSpec) : (isAirDetecting ? 'air' : isNavalDetecting ? 'sea' : 'ground')) : 'site';
+
+          const nominalRangeKm = bestRatedEnvelopeKm;
+          const effectiveRangeKm = bestDetectionResult?.detectionRangeKm ?? nominalRangeKm;
+          const radarHorizonKmVal = bestDetectionResult?.horizonLimitKm ?? 0;
+          const rcsMultiplier = Math.pow(targetRcsM2 / 5.0, 0.25);
+          const detectingName = detectingEntity ? detectingEntity.name : (detectingBase ? detectingBase.name : `${scanningFaction.toUpperCase()} Early Warning Net`);
+
           logReport({
             category: 'recon_intel',
-            title: `📡 Reconnaissance: Positive PID of ${target.name}`,
-            summary: `${scanner?.name ?? 'Sensor Suite'} positively identified ${target.name} (${target.count} units, ${target.personnel} personnel, RCS: ${targetRcsM2 >= 1 ? targetRcsM2.toFixed(1) : targetRcsM2} m², status: ${target.damage.toUpperCase()}).`,
+            title: `📡 Radar Track Established: Hostile ${targetDomain.toUpperCase()} Track`,
+            summary: `${detectingName} established radar track on an unidentified ${targetDomain} contact at ${bestScannerDistKm.toFixed(0)} km standoff (estimated RCS: ~${targetRcsM2 >= 1 ? targetRcsM2.toFixed(1) : targetRcsM2} m²). Target identity unconfirmed (Tier 1 Raw Track). Close within 90 km or dispatch recon UAV to achieve Positive Identification (PID).`,
             lngLat: target.lngLat,
             countryIso: scanningIso,
             faction: scanningFaction,
             primaryEntity: {
-              id: scanner?.id ?? 'sensor-net',
-              name: scanner?.name ?? `${scanningFaction.toUpperCase()} Recon Asset`,
-              typeId: scanner?.typeId ?? 'uav',
-              domain: 'air',
+              id: detectingEntity?.id ?? detectingBase?.id ?? 'sensor-net',
+              name: detectingName,
+              typeId: detectingEntity?.typeId ?? (detectingBase ? detectingBase.type : 'uav'),
+              domain: detectingDomain,
               iso: scanningIso,
               isFriendly: true,
               isPID: true,
-              rcsM2: scanner?.rcs ?? (scanSpec ? getSystemRcs(scanSpec, 'air') : 1.0),
+              count: detectingEntity?.count,
+              rcsM2: detectingEntity?.rcs ?? (scanSpec ? getSystemRcs(scanSpec, detectingDomain) : (isAirDetecting ? 1.0 : 100.0)),
+            },
+            opposingEntity: {
+              id: target.id,
+              name: `Hostile ${targetDomain.toUpperCase()} Track (Unidentified)`,
+              domain: targetDomain,
+              iso: target.iso,
+              isFriendly: false,
+              isPID: false,
+              rcsM2: targetRcsM2,
+            },
+            intelDetails: {
+              discoveredDomain: targetDomain.toUpperCase(),
+              confidenceTier: 1,
+              sensorUsed: detectingEntity?.typeId === 'uav' ? 'Lynx Multi-Mode Radar (Wide-Area Search Mode)' : detectingEntity?.typeId === 'awacs' ? 'APY-2 3D Surveillance Radar' : isNavalDetecting ? '3D Air & Surface Search Radar' : 'Early Warning & Coastal Surveillance Radar',
+              coordinatesText: `${target.lngLat[1].toFixed(3)}°N, ${target.lngLat[0].toFixed(3)}°E`,
+              rcsM2: targetRcsM2,
+              nominalRangeKm,
+              effectiveRangeKm,
+              radarHorizonKm: radarHorizonKmVal,
+              scannerAltitudeM: bestScannerHeightM,
+              distanceKm: bestScannerDistKm,
+              rcsMultiplier,
+              detectionBottleneck: 'Standoff range beyond optical / ISAR resolution limit (>90 km). Target identity unconfirmed.',
+            },
+          });
+        }
+
+        // 2. New Positive Identification (Tier 2 PID) Discovery / Upgrade Event
+        if (bestTier === 2 && (!prevContact || prevContact.intelTier !== 2)) {
+          const detectingEntity = bestScanner;
+          const detectingBase = bestBase;
+          const scanSpec = detectingEntity ? systemsLibrary.find((s) => s.id === detectingEntity.systemId) : undefined;
+          const isAirDetecting = detectingEntity ? (detectingEntity.typeId === 'fighter' || detectingEntity.typeId === 'bomber' || detectingEntity.typeId === 'awacs' || detectingEntity.typeId === 'uav' || detectingEntity.typeId === 'recon' || detectingEntity.typeId === 'tanker' || detectingEntity.typeId === 'helicopter' || detectingEntity.typeId === 'attack-heli' || detectingEntity.typeId === 'transport-heli') : false;
+          const isNavalDetecting = detectingEntity ? (isNavalCombatant(detectingEntity.typeId) || (scanSpec ? domainOf(scanSpec) === 'sea' : false)) : false;
+          const detectingDomain = detectingEntity ? (scanSpec ? domainOf(scanSpec) : (isAirDetecting ? 'air' : isNavalDetecting ? 'sea' : 'ground')) : 'site';
+
+          const nominalRangeKm = bestRatedEnvelopeKm;
+          const effectiveRangeKm = bestDetectionResult?.detectionRangeKm ?? nominalRangeKm;
+          const radarHorizonKmVal = bestDetectionResult?.horizonLimitKm ?? 0;
+          const rcsMultiplier = Math.pow(targetRcsM2 / 5.0, 0.25);
+          const unclippedRadarKm = bestDetectionResult?.radarLimitKm ?? (nominalRangeKm * rcsMultiplier);
+
+          let physicsExplanation = `Standard radar detection baseline is calibrated for a 5.0 m² target. `;
+          if (targetRcsM2 > 5.0) {
+            physicsExplanation += `Target's large radar cross-section (${targetRcsM2 >= 1 ? targetRcsM2.toFixed(1) : targetRcsM2} m²) amplified radar echo reflectivity by +${((rcsMultiplier - 1) * 100).toFixed(0)}% (unclipped radar reach: ${unclippedRadarKm.toFixed(0)} km). `;
+          } else if (targetRcsM2 < 5.0) {
+            physicsExplanation += `Target's low radar cross-section (${targetRcsM2} m²) attenuated radar reflectivity by -${((1 - rcsMultiplier) * 100).toFixed(0)}% (unclipped reach: ${unclippedRadarKm.toFixed(0)} km). `;
+          }
+
+          if (bestScannerHeightM > 100) {
+            physicsExplanation += `High operating altitude (${(bestScannerHeightM / 1000).toFixed(1)} km) extended line-of-sight radar horizon to ${radarHorizonKmVal.toFixed(0)} km, enabling contact tracking at ${bestScannerDistKm.toFixed(0)} km standoff (effective reach: ${effectiveRangeKm.toFixed(0)} km).`;
+          } else {
+            physicsExplanation += `Surface mast height (${bestScannerHeightM.toFixed(0)} m) resulted in a ${radarHorizonKmVal.toFixed(0)} km Earth-curvature horizon limit (effective reach: ${effectiveRangeKm.toFixed(0)} km).`;
+          }
+
+          const detectingName = detectingEntity ? detectingEntity.name : (detectingBase ? detectingBase.name : `${scanningFaction.toUpperCase()} Early Warning Net`);
+
+          logReport({
+            category: 'recon_intel',
+            title: `📡 Reconnaissance: Positive PID of ${target.name}`,
+            summary: `${detectingName} positively identified ${target.name} (${target.count} units, RCS: ${targetRcsM2 >= 1 ? targetRcsM2.toFixed(1) : targetRcsM2} m²) at ${bestScannerDistKm.toFixed(0)} km standoff (reach expanded from nominal ${nominalRangeKm} km to ${effectiveRangeKm.toFixed(0)} km via target RCS scaling & sensor altitude).`,
+            lngLat: target.lngLat,
+            countryIso: scanningIso,
+            faction: scanningFaction,
+            primaryEntity: {
+              id: detectingEntity?.id ?? detectingBase?.id ?? 'sensor-net',
+              name: detectingName,
+              typeId: detectingEntity?.typeId ?? (detectingBase ? detectingBase.type : 'uav'),
+              domain: detectingDomain,
+              iso: scanningIso,
+              isFriendly: true,
+              isPID: true,
+              count: detectingEntity?.count,
+              rcsM2: detectingEntity?.rcs ?? (scanSpec ? getSystemRcs(scanSpec, detectingDomain) : (isAirDetecting ? 1.0 : 100.0)),
             },
             opposingEntity: {
               id: target.id,
@@ -1626,12 +1752,19 @@ export function tickWarSim(
             intelDetails: {
               discoveredDomain: targetDomain.toUpperCase(),
               confidenceTier: 2,
-              sensorUsed: scanner?.typeId === 'uav' ? 'Lynx Multi-Mode Radar (SAR/GMTI) + EO/IR Optical' : scanner?.typeId === 'awacs' ? 'APY-2 3D Surveillance Radar' : 'Surface Search & Fire-Control Radar',
+              sensorUsed: detectingEntity?.typeId === 'uav' ? 'Lynx Multi-Mode SAR/GMTI Radar + EO/IR Optical Pod' : detectingEntity?.typeId === 'awacs' ? 'APY-2 3D Air/Maritime Surveillance Radar' : isNavalDetecting ? 'MR-750 Fregat-MA 3D Air & Surface Search Radar' : 'Early Warning & Coastal Surveillance Radar',
               coordinatesText: `${target.lngLat[1].toFixed(3)}°N, ${target.lngLat[0].toFixed(3)}°E`,
               estimatedComposition: `${target.count} × ${target.name} (${target.damage.toUpperCase()})`,
               personnel: target.personnel,
               rcsM2: targetRcsM2,
-              detectionBottleneck: 'Radar cross-section resolved against standard baseline',
+              nominalRangeKm,
+              effectiveRangeKm,
+              radarHorizonKm: radarHorizonKmVal,
+              scannerAltitudeM: bestScannerHeightM,
+              distanceKm: bestScannerDistKm,
+              rcsMultiplier,
+              detectionBottleneck: `${effectiveRangeKm >= radarHorizonKmVal ? 'Radar line-of-sight horizon limited' : 'Radar power-aperture RCS limited'} (${effectiveRangeKm.toFixed(0)} km reach)`,
+              physicsExplanation,
             },
           });
         }

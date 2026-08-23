@@ -312,7 +312,14 @@ export interface CombatReport {
     estimatedComposition?: string;
     personnel?: number;
     rcsM2?: number;
+    nominalRangeKm?: number;
+    effectiveRangeKm?: number;
+    radarHorizonKm?: number;
+    scannerAltitudeM?: number;
+    distanceKm?: number;
+    rcsMultiplier?: number;
     detectionBottleneck?: string;
+    physicsExplanation?: string;
   };
 }
 
