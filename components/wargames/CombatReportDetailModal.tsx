@@ -1,0 +1,741 @@
+'use client';
+
+/**
+ * Combat After-Action Report (AAR) & Tactical Analysis Modal
+ *
+ * Provides in-depth tactical telemetry and battle damage analysis for:
+ * 1. Incoming attacks / defensive interceptions & damage sustained.
+ * 2. Offensive strikes executed against enemy targets (with PID status, missiles launched/intercepted, and BDA).
+ * 3. Reconnaissance & positive identification (PID) discoveries.
+ */
+
+import React from 'react';
+import { type CombatReport } from '@/lib/warSimTypes';
+
+export interface CombatReportDetailModalProps {
+  report: CombatReport;
+  onClose: () => void;
+  onFlyToLocation?: (lngLat: [number, number]) => void;
+  playerCountryName?: string;
+  enemyCountryName?: string;
+}
+
+export function CombatReportDetailModal({
+  report,
+  onClose,
+  onFlyToLocation,
+  playerCountryName = 'Friendly',
+  enemyCountryName = 'Hostile',
+}: CombatReportDetailModalProps) {
+  const isOffensive = report.category === 'offensive_strike';
+  const isDefensive = report.category === 'under_attack';
+  const isRecon = report.category === 'recon_intel';
+
+  const categoryColor = isDefensive ? '#FF5252' : isOffensive ? '#FF9800' : '#4FC3F7';
+  const categoryLabel = isDefensive
+    ? '🛡️ DEFENSIVE ENGAGEMENT / UNDER ATTACK'
+    : isOffensive
+      ? '🚀 OFFENSIVE STRIKE MISSION'
+      : '📡 RECONNAISSANCE & POSITIVE IDENTIFICATION (PID)';
+  const primary = report.primaryEntity;
+  const opposing = report.opposingEntity;
+  const munitions = report.munitionsDetails;
+  const interception = report.interceptionTelemetry;
+  const bda = report.damageAssessment;
+  const intel = report.intelDetails;
+
+  const getHeaderBadge = () => {
+    switch (report.category) {
+      case 'under_attack':
+        return { text: 'DEFENSIVE ENGAGEMENT & THREAT REPORT', color: '#FF5252', bg: 'rgba(255, 82, 82, 0.15)' };
+      case 'offensive_strike':
+        return { text: 'OFFENSIVE STRIKE & TARGETING REPORT', color: '#FF9800', bg: 'rgba(255, 152, 0, 0.15)' };
+      case 'recon_intel':
+        return { text: 'RECONNAISSANCE & POSITIVE IDENTIFICATION (PID)', color: '#4FC3F7', bg: 'rgba(79, 195, 247, 0.15)' };
+      default:
+        return { text: 'COMBAT ACTION REPORT', color: '#B0BEC5', bg: 'rgba(176, 190, 197, 0.15)' };
+    }
+  };
+
+  const badge = getHeaderBadge();
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1200,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        fontFamily: 'var(--font-sans, system-ui, sans-serif)',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '780px',
+          maxHeight: '90vh',
+          backgroundColor: '#090F19',
+          border: `1px solid ${badge.color}40`,
+          borderRadius: '10px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.85)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          color: '#E0E6ED',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '14px 18px',
+            borderBottom: '1px solid var(--border)',
+            background: '#0D1624',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: badge.color,
+                  background: badge.bg,
+                  border: `1px solid ${badge.color}40`,
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {badge.text}
+              </span>
+              <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--paper-dim)' }}>
+                {report.timeFormatted}
+              </span>
+            </div>
+            <h3 style={{ margin: 0, fontSize: '15.5px', color: '#FFFFFF', fontWeight: 700 }}>
+              {report.title}
+            </h3>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {report.lngLat && onFlyToLocation && (
+              <button
+                type="button"
+                className="wg-btn"
+                onClick={() => onFlyToLocation(report.lngLat!)}
+                style={{
+                  padding: '5px 10px',
+                  fontSize: '11px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  color: '#4FC3F7',
+                }}
+                title="Center tactical map on this engagement coordinate"
+              >
+                <span>📍</span> MAP LOCATION
+              </button>
+            )}
+            <button
+              type="button"
+              className="wg-btn"
+              onClick={onClose}
+              style={{ padding: '5px 9px', fontSize: '13px' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <div
+          style={{
+            padding: '16px 18px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+          }}
+        >
+          {/* Operational Incident Summary */}
+          <div
+            style={{
+              padding: '10px 12px',
+              background: '#070C14',
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 800,
+                color: 'var(--paper-dim)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                display: 'block',
+                marginBottom: '3px',
+              }}
+            >
+              Operational Incident Summary
+            </span>
+            <p style={{ margin: 0, fontSize: '12px', color: '#E0E6ED', lineHeight: 1.45 }}>
+              {report.summary}
+            </p>
+          </div>
+
+          {/* Section 1: Forces Involved & Positive Identification Status */}
+          <div>
+            <label
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 800,
+                color: 'var(--paper-dim)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                display: 'block',
+                marginBottom: '8px',
+              }}
+            >
+              1. Forces Involved & Positive Identification (PID) Status
+            </label>
+
+            <div style={{ display: 'grid', gridTemplateColumns: opposing ? '1fr 1fr' : '1fr', gap: '10px' }}>
+              {/* Friendly Force Card */}
+              <div
+                style={{
+                  background: '#0B131E',
+                  border: '1px solid rgba(79, 195, 247, 0.25)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', color: '#4FC3F7', fontWeight: 700, textTransform: 'uppercase' }}>
+                    {isRecon ? '📡 Detecting Sensor Asset' : isDefensive ? '🛡️ Defending Platform' : '🚀 Attacking Platform'}
+                  </span>
+                  <span style={{ fontSize: '9.5px', background: 'rgba(79, 195, 247, 0.15)', color: '#4FC3F7', padding: '1px 6px', borderRadius: '3px' }}>
+                    {primary.iso} Force
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <strong style={{ fontSize: '13.5px', color: '#FFFFFF' }}>{primary.name}</strong>
+                  {primary.count && primary.count > 1 && (
+                    <span style={{ fontSize: '11px', color: '#4FC3F7', fontWeight: 600 }}>({primary.count} units)</span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                  <span>Domain: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{primary.domain}</strong></span>
+                  <span>•</span>
+                  <span>Type: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{primary.typeId}</strong></span>
+                </div>
+              </div>
+
+              {/* Opposing Force Card (with PID Highlight) */}
+              {opposing && (
+                <div
+                  style={{
+                    background: '#0B131E',
+                    border: `1px solid ${opposing.isPID ? 'rgba(79, 168, 95, 0.35)' : 'rgba(255, 152, 0, 0.35)'}`,
+                    borderRadius: '8px',
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: opposing.isPID ? '#4FA85F' : '#FF9800', fontWeight: 700, textTransform: 'uppercase' }}>
+                      {isRecon ? '🎯 Discovered Contact' : isDefensive ? '⚔️ Opposing Threat' : '🎯 Target Force'}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        letterSpacing: '0.4px',
+                        background: opposing.isPID ? 'rgba(79, 168, 95, 0.18)' : 'rgba(255, 152, 0, 0.18)',
+                        color: opposing.isPID ? '#4FA85F' : '#FF9800',
+                        border: `1px solid ${opposing.isPID ? 'rgba(79, 168, 95, 0.4)' : 'rgba(255, 152, 0, 0.4)'}`,
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      {opposing.isPID ? '✓ POSITIVE PID (TIER 2)' : '⚠️ SENSOR TRACK ONLY (TIER 1)'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                    <strong style={{ fontSize: '13.5px', color: opposing.isPID ? '#FFFFFF' : '#FFB020' }}>
+                      {opposing.name}
+                    </strong>
+                    {opposing.count && (
+                      <span style={{ fontSize: '11px', color: '#B0BEC5' }}>({opposing.count} units)</span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                    <span>Domain: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{opposing.domain}</strong></span>
+                    {opposing.typeId && (
+                      <>
+                        <span>•</span>
+                        <span>Type: <strong style={{ color: '#E0E6ED', textTransform: 'capitalize' }}>{opposing.typeId}</strong></span>
+                      </>
+                    )}
+                    {opposing.rcsM2 !== undefined && (
+                      <>
+                        <span>•</span>
+                        <span>RCS: <strong style={{ color: '#4FC3F7' }}>{opposing.rcsM2 >= 1 ? `${opposing.rcsM2.toFixed(1)} m²` : `${opposing.rcsM2} m²`}</strong></span>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', lineHeight: 1.35, marginTop: '2px' }}>
+                    {opposing.isPID ? (
+                      <span>
+                        Verified by friendly radar/reconnaissance assets. Platform type, classification and weapons signature verified.
+                      </span>
+                    ) : (
+                      <span style={{ color: '#FFB020' }}>
+                        Raw kinematic sensor radar/sonar track. Target identity unconfirmed; dispatch AWACS or recon UAV to achieve optical/ISAR Positive Identification (PID).
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Section 2: Munitions & Weapon Release Telemetry */}
+          {munitions && (
+            <div>
+              <label
+                style={{
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: 'var(--paper-dim)',
+                  display: 'block',
+                  marginBottom: '8px',
+                }}
+              >
+                2. Munitions & Weapon Release Telemetry
+              </label>
+
+              <div
+                style={{
+                  background: '#070C14',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                  gap: '12px',
+                  fontSize: '11px',
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Ordnance / Missiles:</span>
+                  <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>{munitions.weaponName}</strong>
+                </div>
+
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Salvo Commitment:</span>
+                  <strong style={{ color: '#4FC3F7', fontSize: '12px' }}>{munitions.salvoCount} Rounds</strong>
+                </div>
+
+                {munitions.standoffDistanceKm !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Release Stand-off:</span>
+                    <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>{munitions.standoffDistanceKm.toFixed(0)} km</strong>
+                  </div>
+                )}
+
+                {munitions.rangeKm !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Max Weapon Range:</span>
+                    <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>{munitions.rangeKm} km</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Section 3: Air Defense & Interception Telemetry */}
+          {interception && (
+            <div>
+              <label
+                style={{
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: 'var(--paper-dim)',
+                  display: 'block',
+                  marginBottom: '8px',
+                }}
+              >
+                3. Air Defense Countermeasures & Interception Telemetry
+              </label>
+
+              <div
+                style={{
+                  background: '#070C14',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', fontSize: '11px' }}>
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Air Defense Network:</span>
+                    <strong style={{ color: '#FFFFFF' }}>{interception.defenseSystemName || 'Active Defense Grid'}</strong>
+                  </div>
+
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Interceptors Fired:</span>
+                    <strong style={{ color: '#4FC3F7' }}>{interception.interceptorsLaunched} × {interception.interceptorType || 'SAM'}</strong>
+                  </div>
+
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Threats Intercepted:</span>
+                    <strong style={{ color: interception.missilesIntercepted > 0 ? '#4FA85F' : 'var(--paper-dim)' }}>
+                      {interception.missilesIntercepted} Destroyed in Mid-Air
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Penetrating Missiles:</span>
+                    <strong style={{ color: interception.missilesPenetrated > 0 ? '#FF5252' : '#4FA85F' }}>
+                      {interception.missilesPenetrated} Leakers
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Progress bar for interception efficiency */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '4px' }}>
+                    <span style={{ color: 'var(--paper-dim)' }}>Interception Kill Rate:</span>
+                    <strong style={{ color: interception.successRatePct >= 70 ? '#4FA85F' : interception.successRatePct > 0 ? '#FF9800' : '#FF5252' }}>
+                      {interception.successRatePct.toFixed(0)}%
+                    </strong>
+                  </div>
+                  <div style={{ height: '6px', width: '100%', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${Math.min(100, Math.max(0, interception.successRatePct))}%`,
+                        background: interception.successRatePct >= 70 ? '#4FA85F' : interception.successRatePct > 0 ? '#FF9800' : '#FF5252',
+                        borderRadius: '3px',
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '11px', color: '#B0BEC5', lineHeight: 1.4 }}>
+                  <span>Engagement Detail: <strong>{interception.responseDetail}</strong></span>
+                </div>
+
+                {/* Detailed Per-System Interception Breakdown */}
+                {interception.breakdown && interception.breakdown.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: '4px',
+                      padding: '10px 12px',
+                      background: 'rgba(79, 195, 247, 0.05)',
+                      border: '1px solid rgba(79, 195, 247, 0.2)',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, color: '#4FC3F7', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🛡️ Integrated Interception Breakdown by Defending Unit</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {interception.breakdown.map((item, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '11px',
+                            background: 'rgba(0, 0, 0, 0.4)',
+                            padding: '6px 10px',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{item.defenderName}</span>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                textTransform: 'uppercase',
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: '3px',
+                                background: item.interceptType === 'sam' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(255, 152, 0, 0.2)',
+                                color: item.interceptType === 'sam' ? '#64B5F6' : '#FFB74D',
+                                border: `1px solid ${item.interceptType === 'sam' ? 'rgba(33, 150, 243, 0.4)' : 'rgba(255, 152, 0, 0.4)'}`,
+                              }}
+                            >
+                              {item.interceptType === 'sam' ? '🚀 Area SAM' : '💥 Point CIWS'}
+                            </span>
+                            <span style={{ color: '#90A4AE', fontSize: '10.5px' }}>via {item.interceptorWeapon}</span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ color: '#90A4AE', fontSize: '10px' }}>
+                              Expended: <strong style={{ color: '#E0E6ED' }}>{item.roundsFired}</strong>
+                            </span>
+                            <span style={{ color: item.countDestroyed > 0 ? '#4FA85F' : '#90A4AE', fontWeight: 700 }}>
+                              {item.countDestroyed > 0 ? `🎯 ${item.countDestroyed} Intercepted` : '0 Hits'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Section 4: Battle Damage Assessment (BDA) */}
+          {bda && (
+            <div>
+              <label
+                style={{
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: 'var(--paper-dim)',
+                  display: 'block',
+                  marginBottom: '8px',
+                }}
+              >
+                4. Battle Damage Assessment (BDA) & Target State
+              </label>
+
+              <div
+                style={{
+                  background: '#070C14',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>Confirmed Result:</span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      textTransform: 'uppercase',
+                      background:
+                        bda.damageInflicted === 'destroyed'
+                          ? 'rgba(217, 83, 79, 0.2)'
+                          : bda.damageInflicted === 'heavy'
+                            ? 'rgba(255, 152, 0, 0.2)'
+                            : 'rgba(79, 168, 95, 0.2)',
+                      color:
+                        bda.damageInflicted === 'destroyed'
+                          ? '#FF5252'
+                          : bda.damageInflicted === 'heavy'
+                            ? '#FF9800'
+                            : '#4FA85F',
+                      border: `1px solid ${
+                        bda.damageInflicted === 'destroyed'
+                          ? 'rgba(217, 83, 79, 0.4)'
+                          : bda.damageInflicted === 'heavy'
+                            ? 'rgba(255, 152, 0, 0.4)'
+                            : 'rgba(79, 168, 95, 0.4)'
+                      }`,
+                    }}
+                  >
+                    {bda.targetResultState} ({bda.damageInflicted.toUpperCase()} DAMAGE)
+                  </span>
+
+                  {bda.personnelLosses !== undefined && bda.personnelLosses > 0 && (
+                    <span style={{ fontSize: '11px', color: '#FF5252' }}>
+                      • <strong>{bda.personnelLosses}</strong> Personnel Casualties
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ fontSize: '11.5px', color: '#CFD8DC', lineHeight: 1.4 }}>
+                  {bda.bdaSummary}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section 5: Reconnaissance & Sensor Intel (if Recon report) */}
+          {intel && (
+            <div>
+              <label
+                style={{
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: 'var(--paper-dim)',
+                  display: 'block',
+                  marginBottom: '8px',
+                }}
+              >
+                Intel & Electronic Sensor Reconnaissance
+              </label>
+
+              <div
+                style={{
+                  background: '#070C14',
+                  border: '1px solid rgba(79, 195, 247, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: '12px',
+                  fontSize: '11px',
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Sensors Used:</span>
+                  <strong style={{ color: '#4FC3F7' }}>{intel.sensorUsed}</strong>
+                </div>
+
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Coordinates:</span>
+                  <strong style={{ color: '#FFFFFF' }}>{intel.coordinatesText}</strong>
+                </div>
+
+                {intel.distanceKm !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Contact Distance:</span>
+                    <strong style={{ color: '#4FC3F7' }}>{intel.distanceKm.toFixed(0)} km from Sensor</strong>
+                  </div>
+                )}
+
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Domain Classification:</span>
+                  <strong style={{ color: '#FFFFFF' }}>{intel.discoveredDomain}</strong>
+                </div>
+
+                {intel.rcsM2 !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Target Physical RCS:</span>
+                    <strong style={{ color: '#4FC3F7' }}>
+                      {intel.rcsM2 >= 1 ? `${intel.rcsM2.toFixed(1)} m²` : `${intel.rcsM2} m²`}
+                      {intel.rcsMultiplier ? ` (×${intel.rcsMultiplier.toFixed(2)} radar echo)` : ''}
+                    </strong>
+                  </div>
+                )}
+
+                {intel.nominalRangeKm !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Nominal Baseline Range:</span>
+                    <strong style={{ color: '#90A4AE' }}>{intel.nominalRangeKm} km (5 m² target)</strong>
+                  </div>
+                )}
+
+                {intel.effectiveRangeKm !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Effective Radar Reach:</span>
+                    <strong style={{ color: '#4FA85F' }}>{intel.effectiveRangeKm.toFixed(0)} km</strong>
+                  </div>
+                )}
+
+                {intel.radarHorizonKm !== undefined && intel.radarHorizonKm > 0 && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Line-of-Sight Horizon:</span>
+                    <strong style={{ color: '#E0E6ED' }}>{intel.radarHorizonKm.toFixed(0)} km</strong>
+                  </div>
+                )}
+
+                {intel.estimatedComposition && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Verified Order of Battle:</span>
+                    <strong style={{ color: '#4FA85F' }}>{intel.estimatedComposition}</strong>
+                  </div>
+                )}
+
+                {intel.detectionBottleneck && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Sensor Resolution:</span>
+                    <span style={{ color: '#90A4AE', fontSize: '10px' }}>{intel.detectionBottleneck}</span>
+                  </div>
+                )}
+              </div>
+
+              {intel.physicsExplanation && (
+                <div
+                  style={{
+                    marginTop: '10px',
+                    padding: '10px 12px',
+                    background: 'rgba(79, 195, 247, 0.08)',
+                    border: '1px solid rgba(79, 195, 247, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    color: '#B3E5FC',
+                    lineHeight: '1.45',
+                  }}
+                >
+                  <strong style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '3px' }}>
+                    🔬 Sensor Horizon & RCS Physics Analysis:
+                  </strong>
+                  <span style={{ color: '#E0E6ED' }}>{intel.physicsExplanation}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: '12px 20px',
+            borderTop: '1px solid var(--border)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>
+            War Simulation Tactical Command • After-Action Analysis System
+          </span>
+          <button className="wg-btn" onClick={onClose}>
+            Close Report
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

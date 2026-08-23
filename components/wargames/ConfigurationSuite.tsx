@@ -27,7 +27,7 @@ import {
   type SystemSpec,
   type WeaponFacet,
 } from '@/lib/specs';
-import { holdingKey, keyOf, type Tally } from '@/lib/forces';
+import { holdingKey, keyOf, type Tally, getPreAssignedQuotasForCountry } from '@/lib/forces';
 import { Modal } from './Modal';
 import { SystemForm } from './SystemsEditor';
 
@@ -92,6 +92,10 @@ export function ConfigurationSuite({
   const [selectedIso, setSelectedIso] = useState<string>(
     wg.activeIso || Object.keys(wg.board.nations)[0] || 'US'
   );
+  const [forcesSearchQuery, setForcesSearchQuery] = useState('');
+  const [newSysIdToPreAssign, setNewSysIdToPreAssign] = useState('');
+  const [newSysCountToPreAssign, setNewSysCountToPreAssign] = useState<number>(24);
+  const [newSysDomainFilter, setNewSysDomainFilter] = useState<Domain | 'all'>('all');
 
   // Doctrine State
   const [doctrineSettings, setDoctrineSettings] = useState({
@@ -120,57 +124,72 @@ export function ConfigurationSuite({
     return wg.systems.filter((s) => s.custom).length;
   }, [wg.systems]);
 
+  const totalForcesHoldingsCount = useMemo(() => {
+    let count = 0;
+    Object.values(wg.forces).forEach((list) => {
+      count += list.length;
+    });
+    return count;
+  }, [wg.forces]);
+
+  const configuredNationsCount = useMemo(() => {
+    return Object.keys(wg.forces).filter((iso) => (wg.forces[iso]?.length || 0) > 0).length;
+  }, [wg.forces]);
+
   const handleImportData = useCallback(
     (rawJson: string, sourceName?: string) => {
       try {
         const parsed = JSON.parse(rawJson);
-        let items: unknown[] = [];
+        const res = wg.importArsenalPackage(parsed);
 
-        if (Array.isArray(parsed)) {
-          items = parsed;
-        } else if (parsed && typeof parsed === 'object') {
-          const obj = parsed as Record<string, unknown>;
-          if (Array.isArray(obj.systems)) {
-            items = obj.systems;
-          } else if (Array.isArray(obj.catalogue)) {
-            items = obj.catalogue;
-          } else if (Array.isArray(obj.specs)) {
-            items = obj.specs;
-          } else if (Array.isArray(obj.arsenal)) {
-            items = obj.arsenal;
-          } else if ('name' in obj || 'id' in obj) {
-            items = [obj];
-          }
-        }
-
-        if (!items.length) {
+        if (res.error) {
           setImportResult({
             type: 'error',
-            message: 'No valid weapon systems found in JSON data. Ensure file contains a system array or { systems: [...] } structure.',
+            message: res.error,
           });
           return;
         }
 
-        const res = wg.importSystems(items);
-        if (res.error || res.count === 0) {
-          setImportResult({
-            type: 'error',
-            message: res.error || 'Failed to import any valid weapon specifications.',
-          });
-        } else {
-          const names = items
+        const parts: string[] = [];
+        if (res.systemsCount > 0) {
+          parts.push(`${res.systemsCount} weapon system${res.systemsCount > 1 ? 's' : ''}`);
+        }
+        if (res.holdingsCount > 0) {
+          parts.push(
+            `${res.holdingsCount} national arsenal quota${res.holdingsCount > 1 ? 's' : ''} across ${res.nationsCount} countr${res.nationsCount > 1 ? 'ies' : 'y'}`
+          );
+        }
+
+        const msg = `Successfully imported ${parts.join(' and ')}${sourceName ? ` from ${sourceName}` : ''}. Saved to your active arsenal and browser storage!`;
+
+        let names: string[] = [];
+        if (Array.isArray(parsed)) {
+          names = parsed
             .map((item) => (item as Record<string, unknown>).name || (item as Record<string, unknown>).id)
             .filter((n): n is string => Boolean(n))
-            .slice(0, 10);
-
-          setImportResult({
-            type: 'success',
-            message: `Successfully imported ${res.count} weapon system${res.count > 1 ? 's' : ''}${sourceName ? ` from ${sourceName}` : ''}. Saved to your active arsenal and browser storage!`,
-            count: res.count,
-            names,
-          });
-          setImportJsonText('');
+            .slice(0, 8);
+        } else if (parsed && typeof parsed === 'object') {
+          const obj = parsed as Record<string, unknown>;
+          if (Array.isArray(obj.systems)) {
+            const sysNames = obj.systems
+              .map((item) => (item as Record<string, unknown>).name || (item as Record<string, unknown>).id)
+              .filter((n): n is string => Boolean(n))
+              .slice(0, 6);
+            names = [...names, ...sysNames];
+          }
+          if (obj.forces && typeof obj.forces === 'object') {
+            const forceIsos = Object.keys(obj.forces as Record<string, unknown>).map((iso) => `🏳️ ${iso}`);
+            names = [...names, ...forceIsos.slice(0, 6)];
+          }
         }
+
+        setImportResult({
+          type: 'success',
+          message: msg,
+          count: res.systemsCount + res.holdingsCount,
+          names,
+        });
+        setImportJsonText('');
       } catch (err) {
         setImportResult({
           type: 'error',
@@ -206,8 +225,65 @@ export function ConfigurationSuite({
     });
   }, [wg.systems, searchQuery, selectedDomain, selectedOrigin]);
 
-  const activeNation = wg.board.nations[selectedIso] ?? { name: selectedIso, color: '#4DD0E1' };
+  const allNationsList = useMemo(() => {
+    const list: { iso: string; name: string; color?: string }[] = [];
+    const seen = new Set<string>();
+
+    // Active board combatants first
+    Object.entries(wg.board.nations).forEach(([iso, nat]) => {
+      seen.add(iso);
+      list.push({ iso, name: nat.name || iso, color: nat.color });
+    });
+
+    // World nations
+    (wg.countries || []).forEach((c) => {
+      if (!seen.has(c.iso)) {
+        seen.add(c.iso);
+        list.push({ iso: c.iso, name: c.name });
+      }
+    });
+
+    if (!forcesSearchQuery.trim()) return list;
+    const q = forcesSearchQuery.toLowerCase().trim();
+    return list.filter((n) => n.name.toLowerCase().includes(q) || n.iso.toLowerCase().includes(q));
+  }, [wg.board.nations, wg.countries, forcesSearchQuery]);
+
+  const selectedCountryInfo = wg.countries?.find((c) => c.iso === selectedIso);
+  const activeNation = wg.board.nations[selectedIso] ?? {
+    name: selectedCountryInfo?.name || selectedIso,
+    color: '#4DD0E1',
+  };
   const nationTallies = wg.nationTally(selectedIso);
+
+  const availableSystemsToAssign = useMemo(() => {
+    return wg.systems
+      .filter((s) => {
+        if (newSysDomainFilter !== 'all' && domainOf(s) !== newSysDomainFilter) return false;
+        return true;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [wg.systems, newSysDomainFilter]);
+
+  const handleAutoPopulateNation = (iso: string) => {
+    const templateQuotas = getPreAssignedQuotasForCountry(iso, {}, wg.systems);
+    for (const [sysId, count] of Object.entries(templateQuotas)) {
+      const spec = wg.systems.find((s) => s.id === sysId);
+      if (spec) {
+        wg.setHolding(iso, {
+          typeId: spec.typeId,
+          systemId: spec.id,
+          count,
+        });
+      }
+    }
+  };
+
+  const handleClearNationHoldings = (iso: string) => {
+    const current = wg.forces[iso] ?? [];
+    for (const h of current) {
+      wg.removeHolding(iso, keyOf(h));
+    }
+  };
 
   const saveDoctrine = () => {
     setDoctrineSaved(true);
@@ -453,20 +529,57 @@ export function ConfigurationSuite({
             <div className="wg-orbat-layout">
               {/* Nation Selector Sidebar */}
               <aside className="wg-orbat-nations-sidebar">
-                <h4 className="sidebar-heading">ACTIVE COMBATANTS</h4>
-                <div className="nations-list">
-                  {Object.entries(wg.board.nations).map(([iso, nat]) => {
-                    const count = wg.board.units.filter((u) => u.iso === iso).length;
+                <div style={{ padding: '0 0 10px 0' }}>
+                  <h4 className="sidebar-heading" style={{ marginBottom: '8px' }}>NATIONAL ARSENALS</h4>
+                  <input
+                    type="text"
+                    placeholder="🔍 Filter countries..."
+                    value={forcesSearchQuery}
+                    onChange={(e) => setForcesSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: '#070C14',
+                      border: '1px solid var(--border)',
+                      color: 'var(--paper)',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                    }}
+                  />
+                </div>
+
+                <div
+                  className="nations-list wg-custom-scroll"
+                  style={{
+                    maxHeight: 'calc(100vh - 260px)',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2)',
+                    paddingRight: '4px',
+                  }}
+                >
+                  {allNationsList.map((nat) => {
+                    const iso = nat.iso;
                     const isSelected = selectedIso === iso;
+                    const assignedCount = wg.forces[iso]?.length || 0;
+
                     return (
                       <button
                         key={iso}
                         className={`nation-btn${isSelected ? ' on' : ''}`}
                         onClick={() => setSelectedIso(iso)}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '8px 10px' }}
                       >
-                        <span className="nation-flag-pip" style={{ background: nat.color }} />
-                        <span className="nation-name">{nat.name || iso}</span>
-                        <span className="nation-count">{count} units</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                          <span className="nation-flag-pip" style={{ background: nat.color || '#4DD0E1' }} />
+                          <span className="nation-name" style={{ fontWeight: 600, flex: 1, textAlign: 'left' }}>
+                            {nat.name}
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>{iso}</span>
+                        </div>
+                        <span style={{ fontSize: '10px', color: assignedCount > 0 ? '#4FA85F' : 'var(--paper-dim)', paddingLeft: '14px' }}>
+                          {assignedCount > 0 ? `✓ ${assignedCount} Pre-Assigned` : 'Default Template'}
+                        </span>
                       </button>
                     );
                   })}
@@ -475,25 +588,216 @@ export function ConfigurationSuite({
 
               {/* Nation Inventory & Holdings View */}
               <div className="wg-orbat-content">
-                <div className="wg-orbat-header-card">
-                  <div className="orbat-nation-title">
-                    <span className="flag-circle" style={{ background: activeNation.color }} />
-                    <h2>{activeNation.name} Order of Battle</h2>
-                    <span className="iso-tag">{selectedIso}</span>
+                <div className="wg-orbat-header-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div className="orbat-nation-title">
+                      <span className="flag-circle" style={{ background: activeNation.color || '#4DD0E1' }} />
+                      <h2>{activeNation.name} National Arsenal</h2>
+                      <span className="iso-tag">{selectedIso}</span>
+                    </div>
+                    <p className="orbat-desc">
+                      Pre-assign default weapon systems and starting quotas for this country. When selected in War Simulation, these systems are loaded automatically.
+                    </p>
                   </div>
-                  <p className="orbat-desc">
-                    Manage equipment inventory holdings, reserve allocations, and active deployed units.
-                  </p>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="wg-btn accent"
+                      style={{ fontSize: '11px', padding: '6px 12px', background: '#4FC3F7', color: '#070C14', borderColor: '#4FC3F7', fontWeight: 600 }}
+                      onClick={() => handleAutoPopulateNation(selectedIso)}
+                      title="Load standard indigenous or operational systems template for this country"
+                    >
+                      ⚡ Auto-Populate Native Preset
+                    </button>
+                    <button
+                      type="button"
+                      className="wg-btn"
+                      style={{ fontSize: '11px', padding: '6px 10px', borderColor: '#4FC3F7', color: '#4FC3F7' }}
+                      onClick={() => {
+                        const pkg = wg.exportArsenalPackage({ iso: selectedIso });
+                        const dataStr = JSON.stringify(pkg, null, 2);
+                        const blob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `wargames-arsenal-${selectedIso.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.json`;
+                        link.click();
+                      }}
+                      title={`Export ${activeNation.name} weapon systems and national arsenal quotas as a portable JSON`}
+                    >
+                      📤 Export {selectedIso} Arsenal
+                    </button>
+                    <button
+                      type="button"
+                      className="wg-btn"
+                      style={{ fontSize: '11px', padding: '6px 10px', borderColor: 'var(--border)' }}
+                      onClick={() => {
+                        const pkg = wg.exportArsenalPackage();
+                        const dataStr = JSON.stringify(pkg, null, 2);
+                        const blob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `wargames-arsenal-all-nations-${new Date().toISOString().slice(0, 10)}.json`;
+                        link.click();
+                      }}
+                      title="Export all configured national arsenals and systems as an Arsenal Package"
+                    >
+                      📦 Export All Nations
+                    </button>
+                    {(wg.forces[selectedIso]?.length || 0) > 0 && (
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '11px', padding: '6px 10px', borderColor: '#D9534F', color: '#D9534F' }}
+                        onClick={() => {
+                          if (window.confirm(`Clear all custom pre-assigned systems for ${activeNation.name}?`)) {
+                            handleClearNationHoldings(selectedIso);
+                          }
+                        }}
+                      >
+                        🗑️ Reset to Template
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pre-Assign New System Card */}
+                <div
+                  style={{
+                    background: '#0E1724',
+                    padding: '14px 16px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#4FC3F7', textTransform: 'uppercase' }}>
+                      ➕ Pre-Assign System to {activeNation.name}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>
+                      Available Systems in Library: {availableSystemsToAssign.length}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 0.8fr auto', gap: '10px', alignItems: 'flex-end' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)', marginBottom: '4px' }}>
+                        Select Weapon System:
+                      </label>
+                      <select
+                        value={newSysIdToPreAssign}
+                        onChange={(e) => setNewSysIdToPreAssign(e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: '#070C14',
+                          border: '1px solid var(--border)',
+                          color: 'var(--paper)',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <option value="">-- Choose system to pre-assign --</option>
+                        {availableSystemsToAssign.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            [{domainOf(s).toUpperCase()}] {s.name} ({s.origin || 'Generic'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)', marginBottom: '4px' }}>
+                        Domain Filter:
+                      </label>
+                      <select
+                        value={newSysDomainFilter}
+                        onChange={(e) => setNewSysDomainFilter(e.target.value as any)}
+                        style={{
+                          width: '100%',
+                          background: '#070C14',
+                          border: '1px solid var(--border)',
+                          color: 'var(--paper)',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <option value="all">All Domains</option>
+                        <option value="air">Air Combat</option>
+                        <option value="sea">Maritime Surface</option>
+                        <option value="ground">Ground / Artillery</option>
+                        <option value="subsurface">Subsurface</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--paper-dim)', marginBottom: '4px' }}>
+                        Default Quota:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={newSysCountToPreAssign}
+                        onChange={(e) => setNewSysCountToPreAssign(Math.max(1, Number(e.target.value)))}
+                        style={{
+                          width: '100%',
+                          background: '#070C14',
+                          border: '1px solid var(--border)',
+                          color: 'var(--paper)',
+                          padding: '5px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="wg-btn accent"
+                      style={{
+                        background: newSysIdToPreAssign ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)',
+                        color: newSysIdToPreAssign ? '#070C14' : 'var(--paper-dim)',
+                        borderColor: newSysIdToPreAssign ? '#4FA85F' : 'transparent',
+                        fontWeight: 700,
+                        fontSize: '11.5px',
+                        padding: '6px 16px',
+                        cursor: newSysIdToPreAssign ? 'pointer' : 'not-allowed',
+                      }}
+                      disabled={!newSysIdToPreAssign}
+                      onClick={() => {
+                        if (!newSysIdToPreAssign) return;
+                        const spec = wg.systems.find((s) => s.id === newSysIdToPreAssign);
+                        if (spec) {
+                          wg.setHolding(selectedIso, {
+                            typeId: spec.typeId,
+                            systemId: spec.id,
+                            count: newSysCountToPreAssign,
+                          });
+                          setNewSysIdToPreAssign('');
+                        }
+                      }}
+                    >
+                      + Pre-Assign System
+                    </button>
+                  </div>
                 </div>
 
                 {/* Holdings Inventory Table */}
                 <div className="wg-orbat-table-container">
-                  <h3 className="section-title">Equipment Inventory & Ready Reserves</h3>
+                  <h3 className="section-title">Pre-Assigned Systems & Reserve Stock ({nationTallies.length})</h3>
                   <table className="wg-orbat-table">
                     <thead>
                       <tr>
                         <th>System / Equipment</th>
-                        <th className="num">Held in Reserve</th>
+                        <th className="num">Default Starting Quota</th>
                         <th className="num">Deployed on Map</th>
                         <th className="num">Available Left</th>
                         <th>Actions</th>
@@ -512,6 +816,7 @@ export function ConfigurationSuite({
                               <td className="system-cell">
                                 <span className="domain-tag">{spec ? domainOf(spec) : 'generic'}</span>
                                 <span className="system-name">{name}</span>
+                                {spec?.origin && <span style={{ fontSize: '10px', color: 'var(--paper-dim)', marginLeft: '6px' }}>({spec.origin})</span>}
                               </td>
                               <td className="num">
                                 <div className="stepper">
@@ -545,7 +850,7 @@ export function ConfigurationSuite({
                                 <button
                                   className="remove-btn"
                                   onClick={() => wg.removeHolding(selectedIso, key)}
-                                  title="Remove from inventory"
+                                  title="Remove from pre-assigned roster"
                                 >
                                   ✕ Remove
                                 </button>
@@ -555,8 +860,18 @@ export function ConfigurationSuite({
                         })
                       ) : (
                         <tr>
-                          <td colSpan={5} className="empty-row">
-                            No inventory tracked for this nation. Deployments are unlimited.
+                          <td colSpan={5} className="empty-row" style={{ padding: '24px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '13px', color: 'var(--paper-dim)', marginBottom: '8px' }}>
+                              No custom systems pre-assigned yet for {activeNation.name}.
+                            </div>
+                            <button
+                              type="button"
+                              className="wg-btn"
+                              style={{ fontSize: '11px', color: '#4FC3F7', borderColor: '#4FC3F7' }}
+                              onClick={() => handleAutoPopulateNation(selectedIso)}
+                            >
+                              ⚡ Auto-Populate Standard Native Preset for {activeNation.name}
+                            </button>
                           </td>
                         </tr>
                       )}
@@ -773,50 +1088,67 @@ export function ConfigurationSuite({
             <div className="wg-backup-container">
               {/* Card 1: Export */}
               <div className="backup-card">
-                <h3>📤 Export Weapon Systems JSON</h3>
+                <h3>📤 Export Weapon Systems & National Arsenals</h3>
                 <p>
-                  Export your full active weapon specifications ({wg.systems.length} systems) or custom authored entries ({customSystemsCount} systems) as a portable JSON file.
+                  Export your active weapon specifications ({wg.systems.length} systems) and all national arsenals ({configuredNationsCount} configured countries, {totalForcesHoldingsCount} quotas) as a portable Arsenal Package JSON.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto' }}>
                   <button
                     className="wg-config-action-btn primary"
+                    onClick={() => {
+                      const pkg = wg.exportArsenalPackage();
+                      const dataStr = JSON.stringify(pkg, null, 2);
+                      const blob = new Blob([dataStr], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `wargames-arsenal-complete-${new Date().toISOString().slice(0, 10)}.json`;
+                      link.click();
+                    }}
+                    title="Export complete arsenal package with all weapon specifications and all country ORBAT quotas"
+                  >
+                    📦 Download Complete Arsenal Package (Systems + National ORBAT)
+                  </button>
+                  <button
+                    className="wg-config-action-btn"
+                    onClick={() => {
+                      const pkg = wg.exportArsenalPackage({ customOnly: true });
+                      const dataStr = JSON.stringify(pkg, null, 2);
+                      const blob = new Blob([dataStr], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `wargames-arsenal-custom-pkg-${new Date().toISOString().slice(0, 10)}.json`;
+                      link.click();
+                    }}
+                    title="Export custom authored weapon systems and all national ORBAT holdings"
+                  >
+                    Download Custom Systems & National ORBAT
+                  </button>
+                  <button
+                    className="wg-config-action-btn"
+                    style={{ fontSize: '10.5px' }}
                     onClick={() => {
                       const dataStr = JSON.stringify(wg.systems, null, 2);
                       const blob = new Blob([dataStr], { type: 'application/json' });
                       const url = URL.createObjectURL(blob);
                       const link = document.createElement('a');
                       link.href = url;
-                      link.download = `wargames-arsenal-all-${new Date().toISOString().slice(0, 10)}.json`;
+                      link.download = `wargames-systems-only-${new Date().toISOString().slice(0, 10)}.json`;
                       link.click();
                     }}
+                    title="Export plain array of weapon system specifications"
                   >
-                    Download Full Arsenal ({wg.systems.length})
+                    Weapons Catalogue Only (Legacy JSON)
                   </button>
-                  {customSystemsCount > 0 && (
-                    <button
-                      className="wg-config-action-btn"
-                      onClick={() => {
-                        const customOnly = wg.systems.filter((s) => s.custom);
-                        const dataStr = JSON.stringify(customOnly, null, 2);
-                        const blob = new Blob([dataStr], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `wargames-arsenal-custom-${new Date().toISOString().slice(0, 10)}.json`;
-                        link.click();
-                      }}
-                    >
-                      Download Custom Only ({customSystemsCount})
-                    </button>
-                  )}
                 </div>
               </div>
 
               {/* Card 2: Import */}
               <div className="backup-card">
-                <h3>📥 Import Custom Systems Catalogue</h3>
+                <h3>📥 Import Arsenal Package & Custom Systems</h3>
                 <p>
-                  Upload a JSON file containing weapon specifications or paste JSON directly. Automatically merged into your active arsenal and persisted in browser storage.
+                  Upload an Arsenal Package JSON (containing weapon systems and/or national ORBAT holdings) or paste JSON directly. Systems and national quotas are automatically imported, linked, and saved in browser storage.
                 </p>
 
                 <div
@@ -848,7 +1180,7 @@ export function ConfigurationSuite({
                   <label style={{ display: 'block', cursor: 'pointer' }}>
                     <span style={{ fontSize: '20px', display: 'block', marginBottom: '4px' }}>📁</span>
                     <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
-                      Click to choose JSON file or drag & drop here
+                      Click to choose Arsenal JSON file or drag & drop here
                     </span>
                     <input
                       type="file"
@@ -883,7 +1215,7 @@ export function ConfigurationSuite({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                     <textarea
                       rows={5}
-                      placeholder='[ { "id": "my-fighter", "name": "Custom Fighter", "typeId": "fighter", "platform": { "speedKmh": 1800, "combatRadiusKm": 1200 } } ]'
+                      placeholder='{ "format": "mapio-arsenal-package", "systems": [ ... ], "forces": { "US": [ ... ] } }'
                       value={importJsonText}
                       onChange={(e) => setImportJsonText(e.target.value)}
                       style={{
@@ -916,26 +1248,46 @@ export function ConfigurationSuite({
                 <p>
                   Active storage engine: <strong style={{ color: '#4FC3F7' }}>{wg.storageKind === 'files' ? 'Local Disk Files & Browser Cache' : 'Browser LocalStorage (Cloud Serverless / Vercel)'}</strong>.
                 </p>
-                <div style={{ fontSize: '12px', color: '#8C9CAE', lineHeight: '1.4' }}>
-                  Total Systems in Library: <strong style={{ color: '#FFFFFF' }}>{wg.systems.length}</strong> ({customSystemsCount} custom authored).
+                <div style={{ fontSize: '12px', color: '#8C9CAE', lineHeight: '1.5' }}>
+                  <div>Total Systems in Library: <strong style={{ color: '#FFFFFF' }}>{wg.systems.length}</strong> ({customSystemsCount} custom authored).</div>
+                  <div>Configured National Arsenals: <strong style={{ color: '#4FA85F' }}>{configuredNationsCount}</strong> countries ({totalForcesHoldingsCount} quotas allocated).</div>
                 </div>
-                {customSystemsCount > 0 && (
-                  <button
-                    className="wg-config-action-btn"
-                    style={{ borderColor: 'rgba(217, 83, 79, 0.5)', color: '#D9534F', marginTop: 'auto' }}
-                    onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete all ${customSystemsCount} custom authored systems? Core library systems will be preserved.`)) {
-                        wg.clearCustomSystems();
-                        setImportResult({
-                          type: 'success',
-                          message: 'All custom authored weapon systems have been cleared.',
-                        });
-                      }
-                    }}
-                  >
-                    🗑️ Reset Custom Systems ({customSystemsCount})
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                  {customSystemsCount > 0 && (
+                    <button
+                      className="wg-config-action-btn"
+                      style={{ borderColor: 'rgba(217, 83, 79, 0.5)', color: '#D9534F' }}
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete all ${customSystemsCount} custom authored systems? Core library systems will be preserved.`)) {
+                          wg.clearCustomSystems();
+                          setImportResult({
+                            type: 'success',
+                            message: 'All custom authored weapon systems have been cleared.',
+                          });
+                        }
+                      }}
+                    >
+                      🗑️ Reset Custom Systems ({customSystemsCount})
+                    </button>
+                  )}
+                  {totalForcesHoldingsCount > 0 && (
+                    <button
+                      className="wg-config-action-btn"
+                      style={{ borderColor: 'rgba(217, 83, 79, 0.5)', color: '#D9534F' }}
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to reset all custom national arsenal holdings across all countries? Default native templates will be used.`)) {
+                          wg.importForces({}, 'replace');
+                          setImportResult({
+                            type: 'success',
+                            message: 'All custom national arsenal quotas have been reset to default templates.',
+                          });
+                        }
+                      }}
+                    >
+                      🗑️ Reset National Arsenals ({configuredNationsCount} nations)
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

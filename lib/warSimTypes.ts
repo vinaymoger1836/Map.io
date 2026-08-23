@@ -120,6 +120,13 @@ export type PostStrikeAction =
   | 'loiter_target'        // Loiter/orbit over target area for BDA
   | 'designated_waypoint'; // Fly to a designated recovery waypoint
 
+export interface WeaponSalvoItem {
+  weaponIndex: number;
+  weaponName: string;
+  weaponRangeKm: number;
+  salvoCount: number;
+}
+
 export interface StrikePlan {
   targetEntityId: string;
   targetLngLat: [number, number];
@@ -130,6 +137,9 @@ export interface StrikePlan {
   postStrikeAction: PostStrikeAction;
   returnPatrolOrder?: PatrolOrder;
   customPostLngLat?: [number, number];
+  weaponsToFire?: WeaponSalvoItem[];
+  attackWaypoints?: [number, number][];
+  currentWaypointIdx?: number;
 }
 
 export interface SimEntity {
@@ -154,6 +164,8 @@ export interface SimEntity {
   turnaroundTimerSec: number;
   repairTimerSec: number;
   personnel: number;
+  /** Explicit physical Radar Cross-Section (RCS in m²) */
+  rcs?: number;
   /** Weapon index -> remaining ready rounds in magazine */
   magazines: Record<number, number>;
   /** Custom equipped weapon facets configured during pre-mission sortie tasking */
@@ -181,10 +193,59 @@ export interface MissileFlyoutTrack {
   isIntercepted: boolean;
   progress: number; // 0.0 to 1.0
   interceptorEntityId?: string;
+  engagedByDefenderIds?: string[];
+  /** Target threat missile ID being intercepted (for SAM / interceptor tracks) */
+  targetMissileId?: string;
+  /** Probability of kill committed by this interceptor (0.0 to 1.0) */
+  interceptorPk?: number;
+  /** Timestamp when this threat was first acquired by defender radar (for reaction time delay) */
+  defenderDetectionTimes?: Record<string, number>;
+  /** Salvo tracking ID for grouped strike mission reports */
+  salvoId?: string;
+}
+
+export interface InterceptionBreakdownEntry {
+  defenderEntityId?: string;
+  defenderName: string;
+  interceptorWeapon: string;
+  interceptType: 'sam' | 'ciws';
+  countDestroyed: number;
+  roundsFired: number;
+  threatWeaponName?: string;
+}
+
+export interface StrikeSalvoTracker {
+  salvoId: string;
+  attackerEntityId: string;
+  attackerName: string;
+  attackerIso: string;
+  targetEntityId: string;
+  targetName: string;
+  targetIso: string;
+  weaponNames: string[];
+  totalLaunched: number;
+  interceptedBySam: number;
+  interceptedByCiws: number;
+  directHits: number;
+  defendingSamSystems: string[];
+  defendingCiwsSystems: string[];
+  interceptionBreakdowns?: InterceptionBreakdownEntry[];
+  startSimTimeSec: number;
+  concludedSimTimeSec?: number;
+  targetInitialDamage: string;
+  targetFinalDamage?: string;
+  targetPersonnelLosses?: number;
+  targetPlatformsDestroyed?: number;
+  standoffDistanceKm: number;
+  weaponSpeedMach?: number;
+  weaponRangeKm?: number;
+  targetLngLat: [number, number];
+  attackerLngLat: [number, number];
+  isConcluded: boolean;
 }
 
 /* ------------------------------------------------------------------ */
-/* 6. Battle Logging & Real-Time Events                               */
+/* 6. Battle Logging, Reports & After-Action Analytics                */
 /* ------------------------------------------------------------------ */
 
 export interface SimBattleEvent {
@@ -207,6 +268,102 @@ export interface SimBattleEvent {
   title: string;
   detail: string;
   lngLat?: [number, number];
+}
+
+export type WarReportCategory =
+  | 'under_attack'      // Incoming attack / defensive engagement / damage sustained
+  | 'offensive_strike'  // Strike executed against hostile forces
+  | 'recon_intel';      // Positive identification (PID) & reconnaissance gathered
+
+export interface CombatReport {
+  id: string;
+  simTimeSec: number;
+  timeFormatted: string;
+  category: WarReportCategory;
+  title: string;
+  summary: string;
+  lngLat?: [number, number];
+  countryIso: string;
+  faction: 'player' | 'enemy';
+
+  // Primary Platform / Actor
+  primaryEntity: {
+    id: string;
+    name: string;
+    typeId: string;
+    domain: string;
+    iso: string;
+    isFriendly: boolean;
+    isPID: boolean;
+    count?: number;
+    baseName?: string;
+    rcsM2?: number;
+  };
+
+  // Opposing Platform / Target (if applicable)
+  opposingEntity?: {
+    id?: string;
+    name: string;
+    typeId?: string;
+    domain: string;
+    iso: string;
+    isFriendly: boolean;
+    isPID: boolean;
+    count?: number;
+    rcsM2?: number;
+  };
+
+  // Munitions / Attack telemetry (if applicable)
+  munitionsDetails?: {
+    weaponName: string;
+    salvoCount: number;
+    rangeKm?: number;
+    speedMach?: number;
+    launchedBy: string;
+    standoffDistanceKm?: number;
+  };
+
+  // Interception / Air Defense response telemetry (if applicable)
+  interceptionTelemetry?: {
+    defenseSystemName?: string;
+    interceptorType?: string;
+    interceptorsLaunched: number;
+    missilesIntercepted: number;
+    missilesPenetrated: number;
+    ciwsEngaged?: boolean;
+    successRatePct: number;
+    responseDetail: string;
+    breakdown?: InterceptionBreakdownEntry[];
+  };
+
+  // Damage / BDA Assessment
+  damageAssessment?: {
+    targetInitialState?: DamageState | string;
+    targetResultState: DamageState | string;
+    damageInflicted: 'none' | 'light' | 'moderate' | 'heavy' | 'destroyed';
+    personnelLosses?: number;
+    platformsDestroyed?: number;
+    bdaSummary: string;
+  };
+
+  // Intel Gathering details (if recon report)
+  intelDetails?: {
+    discoveredDomain: string;
+    confidenceTier: 1 | 2;
+    sensorUsed: string;
+    coordinatesText: string;
+    estimatedComposition?: string;
+    personnel?: number;
+    rcsM2?: number;
+    nominalRangeKm?: number;
+    effectiveRangeKm?: number;
+    radarHorizonKm?: number;
+    scannerAltitudeM?: number;
+    distanceKm?: number;
+    rcsMultiplier?: number;
+    detectionBottleneck?: string;
+    physicsExplanation?: string;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -242,6 +399,8 @@ export interface WarSimSession {
     enemyContacts: DetectedContact[];
   };
   eventLog: SimBattleEvent[];
+  reports?: CombatReport[];
+  salvoTrackers?: StrikeSalvoTracker[];
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';

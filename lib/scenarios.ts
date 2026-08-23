@@ -221,7 +221,25 @@ export function readBundle(text: string): BundleRead {
 
   const raw = parsed as Record<string, unknown>;
   if (raw.kind !== BUNDLE_KIND) {
-    return { ok: false, error: 'That is not a War Games export — it carries no bundle marker.' };
+    if (raw.format === 'mapio-arsenal-package' || Array.isArray(raw.systems) || (raw.forces && typeof raw.forces === 'object')) {
+      const systems = Array.isArray(raw.systems)
+        ? raw.systems.map(reviveImportedSpec).filter((s): s is SystemSpec => Boolean(s))
+        : [];
+      return {
+        ok: true,
+        bundle: {
+          kind: BUNDLE_KIND,
+          version: BUNDLE_VERSION,
+          exportedAt: typeof raw.exportedAt === 'string' ? raw.exportedAt : new Date().toISOString(),
+          name: typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : 'Imported Arsenal Package',
+          note: typeof raw.description === 'string' ? raw.description : undefined,
+          board: { units: [], nations: {}, formations: [] },
+          systems,
+          forces: reviveForces(raw.forces),
+        },
+      };
+    }
+    return { ok: false, error: 'That is not a War Games export — it carries no bundle or arsenal package marker.' };
   }
   if (typeof raw.version === 'number' && raw.version > BUNDLE_VERSION) {
     return {

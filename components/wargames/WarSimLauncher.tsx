@@ -24,6 +24,7 @@ import {
   type BranchPersonnel,
   type FactionQuotaLedger,
 } from '@/lib/warSimTypes';
+import { getPreAssignedQuotasForCountry, keyOf } from '@/lib/forces';
 import { PreFlightValidationModal } from './PreFlightValidationModal';
 
 export interface WarSimLauncherProps {
@@ -74,6 +75,7 @@ export function WarSimLauncher({
 
   // Validation Modal State
   const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [saveNotification, setSaveNotification] = useState<string | null>(null);
 
   // Available Nations list from world countries
   const availableNations = useMemo(() => {
@@ -96,35 +98,67 @@ export function WarSimLauncher({
     ];
   }, [wg.countries]);
 
-  // Seed default systems if empty on load
+  // Seed default systems from pre-assignments on load if empty
   useEffect(() => {
     if (Object.keys(playerQuotas).length === 0 && wg.systems.length > 0) {
-      // Find prominent air, sea, ground, and air defense systems
-      const f35 = wg.systems.find((s) => s.id.includes('f-35') || s.id.includes('f-16') || s.typeId === 'fighter');
-      const burke = wg.systems.find((s) => s.id.includes('burke') || s.typeId === 'destroyer');
-      const patriot = wg.systems.find((s) => s.id.includes('patriot') || s.typeId === 'sam-launcher');
-      const abrams = wg.systems.find((s) => s.id.includes('abrams') || s.typeId === 'armour');
-
-      const initialPlayer: Record<string, number> = {};
-      if (f35) initialPlayer[f35.id] = 24;
-      if (burke) initialPlayer[burke.id] = 3;
-      if (patriot) initialPlayer[patriot.id] = 4;
-      if (abrams) initialPlayer[abrams.id] = 40;
+      const initialPlayer = getPreAssignedQuotasForCountry(playerIso, wg.forces, wg.systems);
       setPlayerQuotas(initialPlayer);
-
-      const su35 = wg.systems.find((s) => s.id.includes('su-35') || s.id.includes('su-30') || s.typeId === 'fighter');
-      const s400 = wg.systems.find((s) => s.id.includes('s-400') || s.typeId === 'sam-launcher');
-      const frigate = wg.systems.find((s) => s.id.includes('gorshkov') || s.typeId === 'frigate');
-      const t90 = wg.systems.find((s) => s.id.includes('t-90') || s.typeId === 'armour');
-
-      const initialEnemy: Record<string, number> = {};
-      if (su35) initialEnemy[su35.id] = 24;
-      if (s400) initialEnemy[s400.id] = 4;
-      if (frigate) initialEnemy[frigate.id] = 2;
-      if (t90) initialEnemy[t90.id] = 40;
+    }
+    if (Object.keys(enemyQuotas).length === 0 && wg.systems.length > 0) {
+      const initialEnemy = getPreAssignedQuotasForCountry(enemyIso, wg.forces, wg.systems);
       setEnemyQuotas(initialEnemy);
     }
-  }, [wg.systems, playerQuotas]);
+  }, [wg.systems, wg.forces, playerIso, enemyIso, playerQuotas, enemyQuotas]);
+
+  // Country Change Handlers with Auto-Load of Pre-Assigned Systems
+  const handlePlayerCountryChange = (newIso: string) => {
+    setPlayerIso(newIso);
+    const quotas = getPreAssignedQuotasForCountry(newIso, wg.forces, wg.systems);
+    setPlayerQuotas(quotas);
+  };
+
+  const handleEnemyCountryChange = (newIso: string) => {
+    setEnemyIso(newIso);
+    const quotas = getPreAssignedQuotasForCountry(newIso, wg.forces, wg.systems);
+    setEnemyQuotas(quotas);
+  };
+
+  // Reload country pre-assignments from configuration
+  const handleReloadCountryPreAssignments = (target: 'player' | 'enemy') => {
+    const iso = target === 'player' ? playerIso : enemyIso;
+    const setter = target === 'player' ? setPlayerQuotas : setEnemyQuotas;
+    const quotas = getPreAssignedQuotasForCountry(iso, wg.forces, wg.systems);
+    setter(quotas);
+    setSaveNotification(`Reloaded pre-assigned arsenal for ${target === 'player' ? playerName : enemyName}!`);
+    setTimeout(() => setSaveNotification(null), 3000);
+  };
+
+  // Save current launcher quotas as country pre-assignment
+  const handleSaveCurrentAsDefault = (target: 'player' | 'enemy') => {
+    const iso = target === 'player' ? playerIso : enemyIso;
+    const quotas = target === 'player' ? playerQuotas : enemyQuotas;
+    const name = target === 'player' ? playerName : enemyName;
+
+    // Clear old holdings and save current quota systems into wg.forces[iso]
+    const currentHoldings = wg.forces[iso] ?? [];
+    for (const h of currentHoldings) {
+      wg.removeHolding(iso, keyOf(h));
+    }
+
+    for (const [sysId, count] of Object.entries(quotas)) {
+      const spec = wg.systems.find((s) => s.id === sysId);
+      if (spec) {
+        wg.setHolding(iso, {
+          typeId: spec.typeId,
+          systemId: spec.id,
+          count,
+        });
+      }
+    }
+
+    setSaveNotification(`Saved ${Object.keys(quotas).length} systems as default pre-assignment for ${name}!`);
+    setTimeout(() => setSaveNotification(null), 3000);
+  };
 
   // Recalculate personnel totals
   const updatePlayerPersonnel = (field: keyof BranchPersonnel, val: number) => {
@@ -404,7 +438,7 @@ export function WarSimLauncher({
                     </label>
                     <select
                       value={playerIso}
-                      onChange={(e) => setPlayerIso(e.target.value)}
+                      onChange={(e) => handlePlayerCountryChange(e.target.value)}
                       style={{ width: '100%', background: '#070C14', border: '1px solid var(--border)', color: 'var(--paper)', padding: '6px 8px', borderRadius: '4px' }}
                     >
                       {availableNations.map((n) => (
@@ -499,7 +533,7 @@ export function WarSimLauncher({
                     </label>
                     <select
                       value={enemyIso}
-                      onChange={(e) => setEnemyIso(e.target.value)}
+                      onChange={(e) => handleEnemyCountryChange(e.target.value)}
                       style={{ width: '100%', background: '#070C14', border: '1px solid var(--border)', color: 'var(--paper)', padding: '6px 8px', borderRadius: '4px' }}
                     >
                       {availableNations.map((n) => (
@@ -596,22 +630,56 @@ export function WarSimLauncher({
 
               return (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <h2 style={{ margin: 0, fontSize: '16px', color }}>
                         {nationName} — Authorised Force Inventory Quotas
                       </h2>
                       <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>
-                        In simulation, this country can deploy only up to these designated stock counts.
+                        In simulation, this country can deploy only up to these designated stock counts. Pre-assigned systems auto-loaded on selection.
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <span className={`wg-tag ${currentValidation.valid ? 'success' : 'loss'}`}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '11px', padding: '5px 10px', color: '#4FC3F7', borderColor: 'rgba(79, 195, 247, 0.4)' }}
+                        onClick={() => handleReloadCountryPreAssignments(target)}
+                        title="Reload pre-assigned systems from configuration or template"
+                      >
+                        🔄 Reload Country Default
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '11px', padding: '5px 10px', color: '#4FA85F', borderColor: 'rgba(79, 168, 95, 0.4)' }}
+                        onClick={() => handleSaveCurrentAsDefault(target)}
+                        title="Save this current custom roster as the permanent default pre-assignment for this country"
+                      >
+                        💾 Save as Default Pre-Assignment
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '11px', padding: '5px 10px' }}
+                        onClick={() => onOpenConfiguration()}
+                        title="Open full Configuration Suite to manage country arsenals & specs"
+                      >
+                        ⚙️ Configure Arsenals
+                      </button>
+                      <span className={`wg-tag ${currentValidation.valid ? 'success' : 'loss'}`} style={{ marginLeft: '4px' }}>
                         {currentValidation.valid ? '✅ All Systems Valid' : `⚠️ ${currentValidation.failedCount} Incomplete Specs`}
                       </span>
                     </div>
                   </div>
+
+                  {saveNotification && (
+                    <div style={{ background: 'rgba(79, 168, 95, 0.15)', border: '1px solid #4FA85F', color: '#4FA85F', padding: '8px 14px', borderRadius: '4px', fontSize: '12px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>✓</span>
+                      <span>{saveNotification}</span>
+                    </div>
+                  )}
 
                   {/* Add System Box */}
                   <div style={{ background: '#0E1724', padding: '14px', borderRadius: '6px', border: '1px solid var(--border)', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>

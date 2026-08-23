@@ -7,10 +7,29 @@ import {
   type SimBase,
   type PostStrikeAction,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, type WeaponFacet } from '@/lib/specs';
+import { type SystemSpec, type WeaponFacet, domainOf } from '@/lib/specs';
 import { distanceKm } from '@/lib/geo';
 import { canEntityEngageTarget, canWeaponEngageTarget, isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { buildMunitions, compatibleMunitions, type Munition } from '@/lib/munitions';
+
+function getPlatformTerminology(typeId?: string, domain?: string): { plural: string; singular: string; strengthLabel: string } {
+  const tid = (typeId || '').toLowerCase();
+  const d = (domain || '').toLowerCase();
+
+  if (d === 'sea' || ['destroyer', 'cruiser', 'frigate', 'corvette', 'carrier-ship', 'carrier', 'warship'].includes(tid)) {
+    return { plural: 'warships', singular: 'warship', strengthLabel: 'Task Force Strength (From Naval Base)' };
+  }
+  if (d === 'sub' || ['submarine', 'ssbn', 'ssn'].includes(tid)) {
+    return { plural: 'submarines', singular: 'submarine', strengthLabel: 'Submarine Detachment Strength' };
+  }
+  if (d === 'ground' || d === 'site' || ['sam-launcher', 'mobile-ad', 'tank', 'ifv', 'artillery', 'mlrs', 'silo', 'coastal-missile', 'infantry', 'special-forces'].includes(tid)) {
+    if (['sam-launcher', 'mobile-ad', 'silo', 'coastal-missile', 'mlrs', 'artillery'].includes(tid)) {
+      return { plural: 'launchers', singular: 'launcher', strengthLabel: 'Battery Strength (From Base Force)' };
+    }
+    return { plural: 'vehicles', singular: 'vehicle', strengthLabel: 'Battalion Strength (From Base Force)' };
+  }
+  return { plural: 'aircraft', singular: 'airframe', strengthLabel: 'Sortie Scramble Strength (From Base Squadron)' };
+}
 
 export interface StrikeTargetInfo {
   targetId: string;
@@ -42,6 +61,20 @@ export interface StrikeTaskingModalProps {
     customPostLngLat?: [number, number];
     sortieCount?: number;
     customWeapons?: WeaponFacet[];
+    weaponsToFire?: import('@/lib/warSimTypes').WeaponSalvoItem[];
+    attackWaypoints?: [number, number][];
+  }) => void;
+  onStartStrikeRoutePlanning?: (params: {
+    attackerEntityId: string;
+    targetEntityId: string;
+    targetLngLat: [number, number];
+    weaponIndex: number;
+    salvoCount: number;
+    postStrikeAction: PostStrikeAction;
+    customPostLngLat?: [number, number];
+    sortieCount?: number;
+    customWeapons?: WeaponFacet[];
+    weaponsToFire?: import('@/lib/warSimTypes').WeaponSalvoItem[];
   }) => void;
 }
 
@@ -51,10 +84,11 @@ export function StrikeTaskingModal({
   systemsLibrary,
   onClose,
   onLaunchStrike,
+  onStartStrikeRoutePlanning,
 }: StrikeTaskingModalProps) {
   // 1. Attacker entity evaluation
   const evaluatedAttackers = useMemo(() => {
-    return friendlyEntities.map((entity) => {
+    const list = friendlyEntities.map((entity) => {
       const spec = systemsLibrary.find((s) => s.id === entity.systemId);
       const isGround = isGroundCombatUnit(entity.typeId);
       const isStaticAD = isStaticAirDefense(entity.typeId);
@@ -80,11 +114,14 @@ export function StrikeTaskingModal({
         entity.status !== 'in_repair' &&
         entity.status !== 'turnaround';
 
+      const isDeployed = entity.status !== 'docked';
+
       return {
         entity,
         spec,
         isGround,
         isStaticAD,
+        isDeployed,
         distToTarget,
         effectiveRadiusKm,
         isOutOfRange,
@@ -93,13 +130,24 @@ export function StrikeTaskingModal({
         isEligible,
       };
     });
+
+    // Priority Sorting:
+    // 1. Systems already deployed on the map (isDeployed = true) are placed at the top (high selection)
+    // 2. Systems still stationed/docked at base (isDeployed = false) are placed at the bottom
+    // 3. Within each tier, eligible units come before ineligible units, then sorted by distance
+    return list.sort((a, b) => {
+      if (a.isDeployed !== b.isDeployed) {
+        return a.isDeployed ? -1 : 1;
+      }
+      if (a.isEligible !== b.isEligible) {
+        return a.isEligible ? -1 : 1;
+      }
+      return a.distToTarget - b.distToTarget;
+    });
   }, [friendlyEntities, target, systemsLibrary]);
 
-  // Default selected attacker: first eligible entity
-  const [selectedAttackerId, setSelectedAttackerId] = useState<string>(() => {
-    const firstEligible = evaluatedAttackers.find((a) => a.isEligible);
-    return firstEligible?.entity.id || (evaluatedAttackers[0]?.entity.id ?? '');
-  });
+  // Do NOT select any system by default (starts empty)
+  const [selectedAttackerId, setSelectedAttackerId] = useState<string>('');
 
   const currentAttackerEval = evaluatedAttackers.find((a) => a.entity.id === selectedAttackerId);
   const isDockedAtBase = currentAttackerEval?.entity.status === 'docked';
@@ -121,28 +169,17 @@ export function StrikeTaskingModal({
     return compatibleMunitionsList.filter((m) => canWeaponEngageTarget(m.weapon, target.domain));
   }, [compatibleMunitionsList, target.domain]);
 
-  // 4. Equipped Weapons loadout (can be modified directly if unit is at base)
+  // 4. Equipped Weapons loadout (can only be modified if unit is at base)
   const [equippedWeapons, setEquippedWeapons] = useState<WeaponFacet[]>(() => {
     if (!currentAttackerEval) return [];
-    const baseWeapons = currentAttackerEval.entity.customWeapons && currentAttackerEval.entity.customWeapons.length > 0
+    return currentAttackerEval.entity.customWeapons && currentAttackerEval.entity.customWeapons.length > 0
       ? [...currentAttackerEval.entity.customWeapons]
       : currentAttackerEval.spec?.weapons
         ? [...currentAttackerEval.spec.weapons]
         : [];
-
-    // If unit is at base and currently has no compatible weapons for this target, auto-equip top matching munition
-    const hasCompatible = baseWeapons.some((w) => canWeaponEngageTarget(w, target.domain));
-    if (!hasCompatible && targetDomainMunitions.length > 0) {
-      const topMun = targetDomainMunitions[0];
-      return [
-        ...baseWeapons,
-        { ...topMun.weapon, name: topMun.name, magazine: topMun.weapon.magazine ?? 2 },
-      ];
-    }
-    return baseWeapons;
   });
 
-  // When selected attacker changes, sync weapons and count
+  // When selected attacker changes, sync weapons, count, and reset salvo selections
   useEffect(() => {
     if (currentAttackerEval) {
       setScrambleCount(Math.min(2, currentAttackerEval.entity.count));
@@ -152,17 +189,12 @@ export function StrikeTaskingModal({
           ? [...currentAttackerEval.spec.weapons]
           : [];
 
-      const hasCompatible = baseWeapons.some((w) => canWeaponEngageTarget(w, target.domain));
-      if (!hasCompatible && targetDomainMunitions.length > 0) {
-        const topMun = targetDomainMunitions[0];
-        setEquippedWeapons([
-          ...baseWeapons,
-          { ...topMun.weapon, name: topMun.name, magazine: topMun.weapon.magazine ?? 2 },
-        ]);
-      } else {
-        setEquippedWeapons(baseWeapons);
-      }
+      setEquippedWeapons(baseWeapons);
       setSelectedWeaponIdx(0);
+      setWeaponSalvoMap({}); // Reset weapon selection so no weapon is selected by default
+    } else {
+      setEquippedWeapons([]);
+      setWeaponSalvoMap({});
     }
   }, [selectedAttackerId, target.domain, targetDomainMunitions]);
 
@@ -173,32 +205,67 @@ export function StrikeTaskingModal({
   const activeCompatibleWeapons = useMemo(() => {
     const fromEquipped = equippedWeapons.filter((w) => canWeaponEngageTarget(w, target.domain));
     if (fromEquipped.length > 0) return fromEquipped;
-    // Fallback to targetDomainMunitions mapped to WeaponFacet
-    return targetDomainMunitions.map((m) => ({
-      ...m.weapon,
-      name: m.name,
-      magazine: m.weapon.magazine ?? 2,
-    }));
-  }, [equippedWeapons, target.domain, targetDomainMunitions]);
+    
+    // Only if docked at base and has no equipped weapons matching, fallback to targetDomainMunitions
+    if (isDockedAtBase && targetDomainMunitions.length > 0) {
+      return targetDomainMunitions.map((m) => ({
+        ...m.weapon,
+        name: m.name,
+        magazine: m.weapon.magazine ?? 2,
+      }));
+    }
+    // Deployed units have NO fallback — they can only fire what they are deployed with!
+    return [];
+  }, [equippedWeapons, target.domain, targetDomainMunitions, isDockedAtBase]);
 
-  const activeWeapon = activeCompatibleWeapons[selectedWeaponIdx] || activeCompatibleWeapons[0];
+  // 6. Multi-Weapon Salvo Selection map (weaponIdx -> count) — No weapon selected by default!
+  const [weaponSalvoMap, setWeaponSalvoMap] = useState<Record<number, number>>({});
 
-  // 6. Salvo / Ordnance count selection
-  const [userSalvoCount, setUserSalvoCount] = useState<number>(1);
+  // 7. Ingress Route selection
+  const [ingressRouteType, setIngressRouteType] = useState<'direct' | 'waypoints'>('direct');
 
-  // 7. Post-Strike Protocol selection
+  // 8. Post-Strike Protocol selection
   const [postStrikeAction, setPostStrikeAction] = useState<PostStrikeAction>('rtb');
 
   const effectiveAirframeSortieCount = isDockedAtBase
     ? Math.min(Math.max(1, scrambleCount), currentAttackerEval?.entity.count || 1)
     : (currentAttackerEval?.entity.count || 1);
 
-  const roundsPerUnit = activeWeapon?.magazine ?? 2;
-  const totalFormationRounds = effectiveAirframeSortieCount * roundsPerUnit;
-  const effectiveSalvoCount = Math.min(Math.max(1, userSalvoCount), Math.max(1, totalFormationRounds));
+  // Default to 0 rounds for all weapons (no weapon selected by default)
+  const getSalvoForWeapon = (wIdx: number, weapon: WeaponFacet): number => {
+    const maxAvail = effectiveAirframeSortieCount * (weapon.magazine ?? 2);
+    return Math.min(weaponSalvoMap[wIdx] ?? 0, maxAvail);
+  };
 
-  // Loadout Swapping Helpers
+  const setSalvoForWeapon = (wIdx: number, weapon: WeaponFacet, count: number) => {
+    const maxAvail = effectiveAirframeSortieCount * (weapon.magazine ?? 2);
+    const newCount = Math.max(0, Math.min(maxAvail, count));
+    setWeaponSalvoMap((prev) => ({
+      ...prev,
+      [wIdx]: newCount,
+    }));
+  };
+
+  const configuredWeaponsToFire: import('@/lib/warSimTypes').WeaponSalvoItem[] = useMemo(() => {
+    return activeCompatibleWeapons
+      .map((w, idx) => {
+        const salvo = getSalvoForWeapon(idx, w);
+        const realIdx = equippedWeapons.findIndex((ew) => ew.name === w.name);
+        return {
+          weaponIndex: realIdx >= 0 ? realIdx : idx,
+          weaponName: w.name || 'Munition',
+          weaponRangeKm: w.rangeKm || 100,
+          salvoCount: salvo,
+        };
+      })
+      .filter((w) => w.salvoCount > 0);
+  }, [activeCompatibleWeapons, equippedWeapons, effectiveAirframeSortieCount, weaponSalvoMap]);
+
+  const totalCommittedRounds = configuredWeaponsToFire.reduce((sum, w) => sum + w.salvoCount, 0);
+
+  // Loadout Swapping Helpers (Base only)
   const handleEquipMunition = (munition: Munition) => {
+    if (!isDockedAtBase) return;
     const existingIndex = equippedWeapons.findIndex(
       (w) => (w.name || '').toLowerCase() === munition.name.toLowerCase()
     );
@@ -215,6 +282,7 @@ export function StrikeTaskingModal({
   };
 
   const handleApplyPreset = (preset: 'strike' | 'antiship' | 'cap') => {
+    if (!isDockedAtBase) return;
     const matching = compatibleMunitionsList.filter((m) => {
       const engages = m.weapon.engages || [];
       if (preset === 'cap') return engages.includes('air');
@@ -235,6 +303,7 @@ export function StrikeTaskingModal({
   };
 
   const handleRestoreStandard = () => {
+    if (!isDockedAtBase) return;
     if (currentAttackerEval?.spec?.weapons) {
       setEquippedWeapons([...currentAttackerEval.spec.weapons]);
       setSelectedWeaponIdx(0);
@@ -242,27 +311,32 @@ export function StrikeTaskingModal({
   };
 
   const handleLaunch = () => {
-    if (!currentAttackerEval || !currentAttackerEval.isEligible) return;
+    if (!currentAttackerEval || !currentAttackerEval.isEligible || totalCommittedRounds <= 0) return;
 
-    // Ensure the active weapon is present in equippedWeapons
     let finalWeapons = [...equippedWeapons];
-    let realWeaponIdx = finalWeapons.findIndex((w) => w.name === activeWeapon?.name);
-    if (realWeaponIdx < 0 && activeWeapon) {
-      finalWeapons = [activeWeapon, ...finalWeapons];
-      realWeaponIdx = 0;
-    }
-
-    onLaunchStrike({
+    const strikeParams = {
       attackerEntityId: selectedAttackerId,
       targetEntityId: target.targetId,
       targetLngLat: target.lngLat,
-      weaponIndex: Math.max(0, realWeaponIdx),
-      salvoCount: effectiveSalvoCount,
+      weaponIndex: configuredWeaponsToFire[0]?.weaponIndex || 0,
+      salvoCount: totalCommittedRounds,
       postStrikeAction,
       sortieCount: isDockedAtBase ? effectiveAirframeSortieCount : undefined,
       customWeapons: isDockedAtBase ? finalWeapons : undefined,
-    });
+      weaponsToFire: configuredWeaponsToFire,
+    };
+
+    if (ingressRouteType === 'waypoints' && onStartStrikeRoutePlanning) {
+      onStartStrikeRoutePlanning(strikeParams);
+      onClose();
+      return;
+    }
+
+    onLaunchStrike(strikeParams);
   };
+
+  const attackerDomain = currentAttackerEval?.spec ? domainOf(currentAttackerEval.spec) : 'air';
+  const platformTerms = getPlatformTerminology(currentAttackerEval?.entity.typeId, attackerDomain);
 
   const domainLabel =
     target.domain === 'air'
@@ -388,6 +462,7 @@ export function StrikeTaskingModal({
           </div>
 
           {/* Step 1: Attacking Unit Selection */}
+          {/* Step 1: Attacking Unit Selection */}
           <div>
             <label
               style={{
@@ -399,17 +474,20 @@ export function StrikeTaskingModal({
                 marginBottom: '8px',
               }}
             >
-              1. Assign Attacking Squadron / Battery
+              1. Assign Attacking Squadron / Battery / Warship
             </label>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
               {evaluatedAttackers.length === 0 ? (
                 <div style={{ padding: '12px', fontSize: '11px', color: 'var(--paper-dim)', textAlign: 'center' }}>
                   No friendly units deployed in theater.
                 </div>
               ) : (
-                evaluatedAttackers.map(({ entity, distToTarget, effectiveRadiusKm, isOutOfRange, engagementCheck, isEligible }) => {
+                evaluatedAttackers.map(({ entity, isDeployed, distToTarget, effectiveRadiusKm, isOutOfRange, engagementCheck, isEligible }, idx) => {
                   const isSelected = entity.id === selectedAttackerId;
+                  const prevAttacker = evaluatedAttackers[idx - 1];
+                  const showSectionHeader = idx === 0 || prevAttacker?.isDeployed !== isDeployed;
+
                   const statusLabel =
                     entity.status === 'on_station'
                       ? 'ON PATROL'
@@ -418,137 +496,226 @@ export function StrikeTaskingModal({
                         : entity.status.replace('_', ' ').toUpperCase();
 
                   return (
-                    <div
-                      key={entity.id}
-                      onClick={() => {
-                        if (isEligible) {
-                          setSelectedAttackerId(entity.id);
-                          setSelectedWeaponIdx(0);
-                        }
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        border: `1px solid ${isSelected ? '#4FC3F7' : isEligible ? 'var(--border)' : 'rgba(255, 255, 255, 0.05)'}`,
-                        background: isSelected
-                          ? 'rgba(79, 195, 247, 0.12)'
-                          : isEligible
-                            ? '#0E1724'
-                            : 'rgba(255, 255, 255, 0.02)',
-                        opacity: isEligible ? 1 : 0.55,
-                        cursor: isEligible ? 'pointer' : 'not-allowed',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <strong style={{ fontSize: '12px', color: isEligible ? '#FFFFFF' : 'var(--paper-dim)' }}>
-                            {entity.name}
-                          </strong>
-                          <span style={{ fontSize: '10px', color: '#4FC3F7', background: 'rgba(79, 195, 247, 0.15)', padding: '1px 5px', borderRadius: '3px' }}>
-                            {statusLabel}
+                    <React.Fragment key={entity.id}>
+                      {showSectionHeader && (
+                        <div
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            letterSpacing: '0.6px',
+                            textTransform: 'uppercase',
+                            color: isDeployed ? '#4FC3F7' : '#FFB020',
+                            background: isDeployed ? 'rgba(79, 195, 247, 0.08)' : 'rgba(255, 176, 32, 0.08)',
+                            border: `1px solid ${isDeployed ? 'rgba(79, 195, 247, 0.2)' : 'rgba(255, 176, 32, 0.2)'}`,
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            marginTop: idx > 0 ? '6px' : '0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span>{isDeployed ? '📍 Deployed in Field / Airborne / At Sea (Immediate Response)' : '🏠 Stationed at Base (Scramble Required)'}</span>
+                          <span style={{ fontSize: '9px', opacity: 0.8 }}>
+                            {isDeployed ? 'HIGH SELECTION' : 'BASE RESERVE'}
                           </span>
                         </div>
+                      )}
 
-                        {!isEligible && (
-                          <span style={{ fontSize: '10px', color: '#FF5252', fontWeight: 600 }}>
-                            {engagementCheck.reason || (isOutOfRange ? `⚠️ Out of combat reach (${distToTarget.toFixed(0)} km > ${effectiveRadiusKm.toFixed(0)} km)` : '⚠️ Unit unavailable')}
+                      <div
+                        onClick={() => {
+                          if (isEligible) {
+                            setSelectedAttackerId(entity.id);
+                            setSelectedWeaponIdx(0);
+                          }
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: `1px solid ${isSelected ? '#4FC3F7' : isEligible ? 'var(--border)' : 'rgba(255, 255, 255, 0.05)'}`,
+                          background: isSelected
+                            ? 'rgba(79, 195, 247, 0.14)'
+                            : isEligible
+                              ? '#0E1724'
+                              : 'rgba(255, 255, 255, 0.02)',
+                          opacity: isEligible ? 1 : 0.55,
+                          cursor: isEligible ? 'pointer' : 'not-allowed',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input
+                              type="radio"
+                              name="selectedAttacker"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isEligible) {
+                                  setSelectedAttackerId(entity.id);
+                                  setSelectedWeaponIdx(0);
+                                }
+                              }}
+                              disabled={!isEligible}
+                              style={{ cursor: isEligible ? 'pointer' : 'not-allowed', accentColor: '#4FC3F7' }}
+                            />
+                            <strong style={{ fontSize: '12px', color: isSelected ? '#4FC3F7' : isEligible ? '#FFFFFF' : 'var(--paper-dim)' }}>
+                              {entity.name}
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: '9.5px',
+                                color: isDeployed ? '#4FC3F7' : 'var(--paper-dim)',
+                                background: isDeployed ? 'rgba(79, 195, 247, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                              }}
+                            >
+                              {statusLabel}
+                            </span>
+                          </div>
+
+                          {!isEligible && (
+                            <span style={{ fontSize: '10px', color: '#FF5252', fontWeight: 600, marginLeft: '22px' }}>
+                              {engagementCheck.reason || (isOutOfRange ? `⚠️ Out of combat reach (${distToTarget.toFixed(0)} km > ${effectiveRadiusKm.toFixed(0)} km)` : '⚠️ Unit unavailable')}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', fontSize: '11px' }}>
+                          <span style={{ color: 'var(--paper-dim)' }}>
+                            Distance: <strong style={{ color: isOutOfRange ? '#FF5252' : '#FFFFFF' }}>{distToTarget.toFixed(0)} km</strong>
                           </span>
-                        )}
+                          <span style={{ color: 'var(--paper-dim)' }}>
+                            Fuel: <strong style={{ color: entity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>{entity.currentFuelPct.toFixed(0)}%</strong>
+                          </span>
+                        </div>
                       </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', fontSize: '11px' }}>
-                        <span style={{ color: 'var(--paper-dim)' }}>
-                          Distance: <strong style={{ color: isOutOfRange ? '#FF5252' : '#FFFFFF' }}>{distToTarget.toFixed(0)} km</strong>
-                        </span>
-                        <span style={{ color: 'var(--paper-dim)' }}>
-                          Fuel: <strong style={{ color: entity.currentFuelPct < 25 ? '#D9534F' : '#4FA85F' }}>{entity.currentFuelPct.toFixed(0)}%</strong>
-                        </span>
-                      </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })
               )}
             </div>
           </div>
 
-          {/* Step 1.1: Scramble Sortie Aircraft Count (Base Stationed Squadrons) */}
-          {isDockedAtBase && currentAttackerEval && currentAttackerEval.entity.count > 1 && (
+          {!currentAttackerEval ? (
             <div
               style={{
-                background: 'rgba(79, 195, 247, 0.08)',
-                border: '1px solid rgba(79, 195, 247, 0.25)',
-                borderRadius: '6px',
-                padding: '10px 14px',
+                padding: '28px 20px',
+                background: '#070C14',
+                border: '1px dashed var(--border)',
+                borderRadius: '8px',
+                textAlign: 'center',
+                color: 'var(--paper-dim)',
+                fontSize: '12px',
                 display: 'flex',
-                justifyContent: 'space-between',
+                flexDirection: 'column',
                 alignItems: 'center',
+                gap: '8px',
               }}
             >
-              <div>
-                <label
+              <span style={{ fontSize: '28px' }}>🎯</span>
+              <strong style={{ color: '#FFFFFF', fontSize: '13px' }}>Select an Attacking System Above</strong>
+              <span style={{ maxWidth: '420px', lineHeight: 1.4 }}>
+                Choose an available deployed platform on the map or a squadron at base in Step 1 to configure weapons, salvo size, and flight route.
+              </span>
+            </div>
+          ) : (
+            <>
+              {/* Step 1.1: Scramble Sortie Aircraft Count (Base Stationed Squadrons) */}
+              {isDockedAtBase && currentAttackerEval && currentAttackerEval.entity.count > 1 && (
+                <div
                   style={{
-                    fontSize: '11px',
-                    textTransform: 'uppercase',
-                    color: '#4FC3F7',
-                    fontWeight: 700,
-                    display: 'block',
-                    margin: 0,
+                    background: 'rgba(79, 195, 247, 0.08)',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                   }}
                 >
-                  Sortie Scramble Strength (From Base Squadron)
-                </label>
-                <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
-                  Scrambling <strong>{effectiveAirframeSortieCount}</strong> of <strong>{currentAttackerEval.entity.count}</strong> stationed airframes ({currentAttackerEval.entity.count - effectiveAirframeSortieCount} remain at base).
-                </span>
-              </div>
+                  <div>
+                    <label
+                      style={{
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        color: '#4FC3F7',
+                        fontWeight: 700,
+                        display: 'block',
+                        margin: 0,
+                      }}
+                    >
+                      {platformTerms.strengthLabel}
+                    </label>
+                    <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                      Tasking <strong>{effectiveAirframeSortieCount}</strong> of <strong>{currentAttackerEval.entity.count}</strong> stationed {platformTerms.plural} ({currentAttackerEval.entity.count - effectiveAirframeSortieCount} remain at base).
+                    </span>
+                  </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ padding: '3px 8px', fontSize: '12px' }}
-                  onClick={() => setScrambleCount((prev) => Math.max(1, prev - 1))}
-                  disabled={effectiveAirframeSortieCount <= 1}
-                >
-                  −
-                </button>
-                <strong style={{ fontSize: '13px', color: '#4FC3F7', minWidth: '28px', textAlign: 'center' }}>
-                  {effectiveAirframeSortieCount} ×
-                </strong>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ padding: '3px 8px', fontSize: '12px' }}
-                  onClick={() => setScrambleCount((prev) => Math.min(currentAttackerEval.entity.count, prev + 1))}
-                  disabled={effectiveAirframeSortieCount >= currentAttackerEval.entity.count}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="wg-btn"
+                      style={{ padding: '3px 8px', fontSize: '12px' }}
+                      onClick={() => setScrambleCount((prev) => Math.max(1, prev - 1))}
+                      disabled={effectiveAirframeSortieCount <= 1}
+                    >
+                      −
+                    </button>
+                    <strong style={{ fontSize: '13px', color: '#4FC3F7', minWidth: '28px', textAlign: 'center' }}>
+                      {effectiveAirframeSortieCount} ×
+                    </strong>
+                    <button
+                      type="button"
+                      className="wg-btn"
+                      style={{ padding: '3px 8px', fontSize: '12px' }}
+                      onClick={() => setScrambleCount((prev) => Math.min(currentAttackerEval.entity.count, prev + 1))}
+                      disabled={effectiveAirframeSortieCount >= currentAttackerEval.entity.count}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
 
-          {/* Step 2: Weapon Selection & Base Loadout Configurator */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label
-                style={{
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  color: 'var(--paper-dim)',
-                  fontWeight: 700,
-                  display: 'block',
-                  margin: 0,
-                }}
-              >
-                2. Select Weapon System for Release
-              </label>
+              {/* Step 2: Weapon Selection & Base Loadout Configurator */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label
+                      style={{
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        color: 'var(--paper-dim)',
+                        fontWeight: 700,
+                        display: 'block',
+                        margin: 0,
+                      }}
+                    >
+                      {isDockedAtBase ? '2. Configure Weapons & Select Munitions for Release' : '2. Select Weapon from Deployed Loadout'}
+                    </label>
+                    {!isDockedAtBase && (
+                      <span
+                        style={{
+                          fontSize: '9.5px',
+                          color: '#4FC3F7',
+                          background: 'rgba(79, 195, 247, 0.12)',
+                          border: '1px solid rgba(79, 195, 247, 0.3)',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontWeight: 600,
+                        }}
+                        title="Weapon loadout cannot be changed while deployed on the map. Return to base to rearm."
+                      >
+                        🔒 Deployed Loadout (Fixed in Flight)
+                      </span>
+                    )}
+                  </div>
 
-              {/* Stationed Loadout Presets Toolbar */}
+              {/* Stationed Loadout Presets Toolbar (Base only) */}
               {isDockedAtBase && (
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                   <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', marginRight: '2px' }}>Base Re-Arm:</span>
@@ -628,52 +795,122 @@ export function StrikeTaskingModal({
                   borderRadius: '6px',
                   fontSize: '11px',
                   color: '#FF5252',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
                 }}
               >
-                ⚠️ Selected attacking unit has no weapons capable of engaging {target.domain.toUpperCase()} targets.
+                <strong>⚠️ Selected Unit Cannot Engage {target.domain.toUpperCase()} Targets</strong>
+                <span>
+                  {isDockedAtBase
+                    ? `Stationed unit has no compatible weapons configured. Use the Base Re-Arm presets above or choose a munition from the base armory.`
+                    : `This deployed unit is currently carrying: ${equippedWeapons.map((w) => w.name).join(', ') || 'no weapons'}. None of these weapons can engage ${target.domain.toUpperCase()} targets. (Deployed units cannot change weapon loadout; only systems at base can be re-armed before launch).`}
+                </span>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {activeCompatibleWeapons.map((weapon: WeaponFacet, idx: number) => {
-                  const isSelected = idx === selectedWeaponIdx;
+                  const currentSalvo = getSalvoForWeapon(idx, weapon);
+                  const isIncluded = currentSalvo > 0;
                   const distToTarget = currentAttackerEval?.distToTarget || 0;
                   const canReleaseImmediately = distToTarget <= weapon.rangeKm;
+                  const roundsPerUnit = weapon.magazine ?? 2;
+                  const maxAvail = effectiveAirframeSortieCount * roundsPerUnit;
 
                   return (
-                    <button
+                    <div
                       key={idx}
-                      type="button"
-                      onClick={() => setSelectedWeaponIdx(idx)}
                       style={{
-                        padding: '10px 12px',
+                        padding: '10px 14px',
                         borderRadius: '6px',
-                        border: `1px solid ${isSelected ? '#FF9800' : 'var(--border)'}`,
-                        background: isSelected ? 'rgba(255, 152, 0, 0.14)' : '#0E1724',
-                        color: isSelected ? '#FF9800' : 'var(--paper)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
+                        border: `1px solid ${isIncluded ? '#FF9800' : 'rgba(255, 255, 255, 0.12)'}`,
+                        background: isIncluded ? 'rgba(255, 152, 0, 0.08)' : '#0E1724',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '4px',
+                        gap: '6px',
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <strong style={{ fontSize: '11.5px', color: isSelected ? '#FF9800' : '#FFFFFF' }}>
-                          🚀 {weapon.magazine ? `${weapon.magazine} × ` : ''}{weapon.name}
-                        </strong>
-                        <strong style={{ fontSize: '11px', color: '#FF9800' }}>
-                          {weapon.rangeKm} km
-                        </strong>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={isIncluded}
+                            onChange={(e) => {
+                              setSalvoForWeapon(idx, weapon, e.target.checked ? Math.min(1, maxAvail) : 0);
+                            }}
+                            style={{ cursor: 'pointer', accentColor: '#FF9800' }}
+                          />
+                          <strong style={{ fontSize: '12px', color: isIncluded ? '#FF9800' : '#FFFFFF' }}>
+                            🚀 {weapon.name}
+                          </strong>
+                          <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                            ({maxAvail} available • {effectiveAirframeSortieCount} {platformTerms.plural} × {roundsPerUnit} per {platformTerms.singular})
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <strong style={{ fontSize: '11px', color: '#FF9800' }}>
+                            {weapon.rangeKm} km
+                          </strong>
+                          <span style={{ fontSize: '9.5px', color: canReleaseImmediately ? '#4FA85F' : '#4FC3F7', fontWeight: 600 }}>
+                            {canReleaseImmediately ? '✓ IN ENGAGEMENT RANGE' : `INGRESS (${Math.max(0, distToTarget - weapon.rangeKm).toFixed(0)} km to launch)`}
+                          </span>
+                        </div>
                       </div>
 
-                      <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <span>Speed: {weapon.speedMach ? `Mach ${weapon.speedMach}` : 'Supersonic'}</span>
-                        <span style={{ color: canReleaseImmediately ? '#4FA85F' : '#4FC3F7', fontWeight: 600 }}>
-                          {canReleaseImmediately ? '✓ IN ENGAGEMENT RANGE' : `INGRESS (${Math.max(0, distToTarget - weapon.rangeKm).toFixed(0)} km to launch)`}
-                        </span>
+                      {/* Salvo Stepper and Quick Buttons for this weapon */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)', marginRight: '2px' }}>Salvo:</span>
+                          {[1, 2, 4, maxAvail]
+                            .filter((v, i, a) => v <= maxAvail && a.indexOf(v) === i)
+                            .map((num) => (
+                              <button
+                                key={num}
+                                type="button"
+                                onClick={() => setSalvoForWeapon(idx, weapon, num)}
+                                style={{
+                                  padding: '2px 7px',
+                                  fontSize: '9.5px',
+                                  borderRadius: '3px',
+                                  border: `1px solid ${currentSalvo === num ? '#FF9800' : 'rgba(255, 255, 255, 0.1)'}`,
+                                  background: currentSalvo === num ? 'rgba(255, 152, 0, 0.25)' : 'rgba(255, 255, 255, 0.03)',
+                                  color: currentSalvo === num ? '#FF9800' : 'var(--paper-dim)',
+                                  cursor: 'pointer',
+                                  fontWeight: currentSalvo === num ? 700 : 400,
+                                }}
+                              >
+                                {num === maxAvail ? `Max (${num})` : `${num}x`}
+                              </button>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            className="wg-btn"
+                            style={{ padding: '2px 8px', fontSize: '11px', fontWeight: 'bold' }}
+                            onClick={() => setSalvoForWeapon(idx, weapon, currentSalvo - 1)}
+                            disabled={currentSalvo <= 0}
+                          >
+                            −
+                          </button>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: currentSalvo > 0 ? '#FF9800' : 'var(--paper-dim)', minWidth: '32px', textAlign: 'center', fontFamily: 'monospace' }}>
+                            {currentSalvo} ×
+                          </span>
+                          <button
+                            type="button"
+                            className="wg-btn"
+                            style={{ padding: '2px 8px', fontSize: '11px', fontWeight: 'bold' }}
+                            onClick={() => setSalvoForWeapon(idx, weapon, currentSalvo + 1)}
+                            disabled={currentSalvo >= maxAvail}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -717,108 +954,43 @@ export function StrikeTaskingModal({
             )}
           </div>
 
-          {/* Step 2.1: Salvo Size / Ordnance Count Selection */}
-          {activeCompatibleWeapons.length > 0 && (
+          {/* Step 2.1: Coordinated Strike Package Summary */}
+          {configuredWeaponsToFire.length > 0 && (
             <div
               style={{
                 background: '#070C14',
                 border: '1px solid rgba(255, 152, 0, 0.35)',
                 borderRadius: '6px',
-                padding: '12px 14px',
+                padding: '10px 14px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
+                gap: '6px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      color: '#FF9800',
-                      fontWeight: 700,
-                      display: 'block',
-                      margin: 0,
-                    }}
-                  >
-                    Salvo Size / Weapons to Release
-                  </label>
-                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
-                    Formation has <strong>{totalFormationRounds} {activeWeapon?.name || 'rounds'}</strong> available ({effectiveAirframeSortieCount} aircraft × {roundsPerUnit} per airframe)
-                  </span>
-                </div>
-
-                {/* Salvo Stepper Controls */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
-                    className="wg-btn"
-                    style={{ padding: '4px 10px', fontSize: '13px', fontWeight: 'bold' }}
-                    onClick={() => setUserSalvoCount((prev) => Math.max(1, prev - 1))}
-                    disabled={effectiveSalvoCount <= 1}
-                  >
-                    −
-                  </button>
-
-                  <span
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#FF9800',
-                      minWidth: '42px',
-                      textAlign: 'center',
-                      fontFamily: 'monospace',
-                    }}
-                  >
-                    {effectiveSalvoCount} ×
-                  </span>
-
-                  <button
-                    type="button"
-                    className="wg-btn"
-                    style={{ padding: '4px 10px', fontSize: '13px', fontWeight: 'bold' }}
-                    onClick={() => setUserSalvoCount((prev) => Math.min(totalFormationRounds, prev + 1))}
-                    disabled={effectiveSalvoCount >= totalFormationRounds}
-                  >
-                    +
-                  </button>
-                </div>
+                <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#FF9800', fontWeight: 700 }}>
+                  🎯 Coordinated Strike Package Summary
+                </span>
+                <strong style={{ fontSize: '12px', color: '#4FA85F' }}>
+                  {totalCommittedRounds} Total Round{totalCommittedRounds > 1 ? 's' : ''} Committed
+                </strong>
               </div>
 
-              {/* Quick Select Buttons */}
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                <span style={{ fontSize: '10px', color: 'var(--paper-dim)', marginRight: '4px' }}>Quick Salvo:</span>
-                {[1, 2, 4, totalFormationRounds]
-                  .filter((v, i, a) => v <= totalFormationRounds && a.indexOf(v) === i)
-                  .map((num) => (
-                    <button
-                      key={num}
-                      type="button"
-                      onClick={() => setUserSalvoCount(num)}
-                      style={{
-                        padding: '3px 8px',
-                        fontSize: '10px',
-                        borderRadius: '4px',
-                        border: `1px solid ${effectiveSalvoCount === num ? '#FF9800' : 'var(--border)'}`,
-                        background: effectiveSalvoCount === num ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                        color: effectiveSalvoCount === num ? '#FF9800' : 'var(--paper)',
-                        cursor: 'pointer',
-                        fontWeight: effectiveSalvoCount === num ? 700 : 400,
-                      }}
-                    >
-                      {num === totalFormationRounds ? `Full Salvo (${num}x)` : `${num} Round${num > 1 ? 's' : ''}`}
-                    </button>
-                  ))}
+              <div style={{ fontSize: '10.5px', color: 'var(--paper)' }}>
+                {configuredWeaponsToFire.map((w, i) => (
+                  <span key={i} style={{ display: 'inline-block', marginRight: '8px' }}>
+                    <strong>{w.salvoCount}× {w.weaponName}</strong> ({w.weaponRangeKm} km){i < configuredWeaponsToFire.length - 1 ? ' +' : ''}
+                  </span>
+                ))}
               </div>
 
-              <div style={{ fontSize: '10px', color: '#4FA85F', marginTop: '2px' }}>
-                ✓ Committing <strong>{effectiveSalvoCount} of {totalFormationRounds} rounds</strong> across {effectiveAirframeSortieCount} aircraft. Post-strike remaining magazine: <strong>{totalFormationRounds - effectiveSalvoCount} rounds</strong>.
+              <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                ✓ All selected munitions will be released sequentially across {effectiveAirframeSortieCount} {platformTerms.plural} upon reaching stand-off engagement range.
               </div>
             </div>
           )}
 
-          {/* Step 3: Post-Strike Egress & Recovery Protocol */}
+          {/* Step 3: Ingress Flight Corridor Selection */}
           <div>
             <label
               style={{
@@ -830,7 +1002,71 @@ export function StrikeTaskingModal({
                 marginBottom: '8px',
               }}
             >
-              3. Post-Strike Action (What unit does after releasing weapon)
+              3. Ingress Flight Corridor (Attack Route Vector)
+            </label>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {/* Option A: Direct Ingress */}
+              <button
+                type="button"
+                onClick={() => setIngressRouteType('direct')}
+                style={{
+                  padding: '9px 12px',
+                  borderRadius: '6px',
+                  border: `1px solid ${ingressRouteType === 'direct' ? '#FF9800' : 'var(--border)'}`,
+                  background: ingressRouteType === 'direct' ? 'rgba(255, 152, 0, 0.14)' : '#0E1724',
+                  color: ingressRouteType === 'direct' ? '#FF9800' : 'var(--paper)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                }}
+              >
+                <strong style={{ fontSize: '11.5px' }}>⚡ Direct Ingress</strong>
+                <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                  Fly straight to stand-off release envelope and release weapons immediately.
+                </span>
+              </button>
+
+              {/* Option B: Custom Waypoints */}
+              <button
+                type="button"
+                onClick={() => setIngressRouteType('waypoints')}
+                style={{
+                  padding: '9px 12px',
+                  borderRadius: '6px',
+                  border: `1px solid ${ingressRouteType === 'waypoints' ? '#FF9800' : 'var(--border)'}`,
+                  background: ingressRouteType === 'waypoints' ? 'rgba(255, 152, 0, 0.14)' : '#0E1724',
+                  color: ingressRouteType === 'waypoints' ? '#FF9800' : 'var(--paper)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                }}
+              >
+                <strong style={{ fontSize: '11.5px' }}>🗺️ Custom Ingress Waypoints</strong>
+                <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                  Pause clock & plot waypoints (WP 1 → WP 2 → Final Release) on map to evade SAMs/radar.
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Step 4: Post-Strike Egress & Recovery Protocol */}
+          <div>
+            <label
+              style={{
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                color: 'var(--paper-dim)',
+                fontWeight: 700,
+                display: 'block',
+                marginBottom: '8px',
+              }}
+            >
+              4. Post-Strike Action (What unit does after releasing weapon)
             </label>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -927,6 +1163,8 @@ export function StrikeTaskingModal({
               </button>
             </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -947,18 +1185,24 @@ export function StrikeTaskingModal({
           <button
             className="wg-btn accent"
             style={{
-              background: currentAttackerEval?.isEligible ? '#FF5252' : '#333333',
-              color: currentAttackerEval?.isEligible ? '#FFFFFF' : '#888888',
-              borderColor: currentAttackerEval?.isEligible ? '#FF5252' : '#333333',
+              background: currentAttackerEval?.isEligible && totalCommittedRounds > 0 ? (ingressRouteType === 'waypoints' ? '#FF9800' : '#FF5252') : '#333333',
+              color: currentAttackerEval?.isEligible && totalCommittedRounds > 0 ? '#FFFFFF' : '#888888',
+              borderColor: currentAttackerEval?.isEligible && totalCommittedRounds > 0 ? (ingressRouteType === 'waypoints' ? '#FF9800' : '#FF5252') : '#333333',
               fontWeight: 700,
               fontSize: '12px',
               padding: '8px 24px',
-              cursor: currentAttackerEval?.isEligible ? 'pointer' : 'not-allowed',
+              cursor: currentAttackerEval?.isEligible && totalCommittedRounds > 0 ? 'pointer' : 'not-allowed',
             }}
-            disabled={!currentAttackerEval?.isEligible}
+            disabled={!currentAttackerEval?.isEligible || totalCommittedRounds <= 0}
             onClick={handleLaunch}
           >
-            🚀 Launch Strike Mission ({activeWeapon?.name || 'Selected Munition'})
+            {!currentAttackerEval
+              ? '⚠️ Select an attacking system in Step 1'
+              : totalCommittedRounds > 0
+                ? ingressRouteType === 'waypoints'
+                  ? `🗺️ Plot Ingress Route on Map (${totalCommittedRounds} Rounds Configured)`
+                  : `🚀 Launch Direct Strike (${configuredWeaponsToFire.map((w) => `${w.salvoCount}× ${w.weaponName}`).join(' + ')})`
+                : '⚠️ Select at least 1 weapon round to launch'}
           </button>
         </div>
       </div>

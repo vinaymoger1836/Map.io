@@ -13,7 +13,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { type SimEntity, type SimBase, type WarSimSession } from '@/lib/warSimTypes';
-import { type SystemSpec, type WeaponFacet, describeTargets } from '@/lib/specs';
+import { type SystemSpec, type WeaponFacet, describeTargets, domainOf, getSystemRcs } from '@/lib/specs';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { buildMunitions, compatibleMunitions, type Munition } from '@/lib/munitions';
@@ -32,6 +32,7 @@ export interface SortieTaskingModalProps {
     altitudeM: number;
     emcon: 'active' | 'passive';
     routeType: 'orbit' | 'waypoints';
+    rcs?: number;
   }) => void;
 }
 
@@ -51,6 +52,16 @@ export function SortieTaskingModal({
 
   const isGround = isGroundCombatUnit(entity.typeId);
   const isStaticAD = isStaticAirDefense(entity.typeId);
+  const isDeployed = entity.status !== 'docked';
+
+  const platformDomain = useMemo(() => {
+    if (spec) return domainOf(spec);
+    if (isGround || isStaticAD) return 'ground';
+    const tid = (entity.typeId || '').toLowerCase();
+    if (['destroyer', 'frigate', 'corvette', 'cruiser', 'carrier-ship', 'carrier', 'warship'].includes(tid)) return 'sea';
+    if (['submarine', 'ssbn', 'ssn'].includes(tid)) return 'sub';
+    return 'air';
+  }, [spec, isGround, isStaticAD, entity.typeId]);
 
   // 1. Quantity allocation
   const [count, setCount] = useState<number>(() => {
@@ -76,11 +87,24 @@ export function SortieTaskingModal({
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 3. Operational Flight Profile
+  // 3. Operational Patrol Profile
   const [patrolMode, setPatrolMode] = useState<'orbit' | 'waypoints'>('orbit');
-  const [altitudeM, setAltitudeM] = useState<number>(isGround || isStaticAD ? 0 : 7000);
-  const [patrolRadiusKm, setPatrolRadiusKm] = useState<number>(isGround || isStaticAD ? 0 : 15);
+  const [altitudeM, setAltitudeM] = useState<number>(() => {
+    if (platformDomain === 'air') return 7000;
+    if (platformDomain === 'sub') return -100;
+    return 0; // 0m for surface ships and ground units
+  });
+  const [patrolRadiusKm, setPatrolRadiusKm] = useState<number>(() => {
+    if (platformDomain === 'ground' || isStaticAD) return 0;
+    return 15;
+  });
   const [emcon, setEmcon] = useState<'active' | 'passive'>('active');
+
+  const defaultRcs = useMemo(() => {
+    return entity.rcs ?? (spec ? getSystemRcs(spec, platformDomain) : 5.0);
+  }, [entity.rcs, spec, platformDomain]);
+
+  const [rcsM2, setRcsM2] = useState<number>(defaultRcs);
 
   const cleanName = entity.name.replace(/^\d+\s*[×x]\s*/i, '');
   const combatRadiusKm = spec?.platform?.combatRadiusKm ?? (entity.typeId === 'fighter' ? 900 : 1500);
@@ -184,6 +208,7 @@ export function SortieTaskingModal({
       altitudeM: isGround || isStaticAD ? 0 : altitudeM,
       emcon,
       routeType: patrolMode,
+      rcs: rcsM2 > 0 ? rcsM2 : undefined,
     });
   };
 
@@ -265,12 +290,15 @@ export function SortieTaskingModal({
 
         {/* Modal Body */}
         <div
+          className="wg-custom-scroll"
           style={{
             padding: '18px 20px',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2)',
           }}
         >
           {/* Base Origin & Ready Inventory Info */}
@@ -393,40 +421,125 @@ export function SortieTaskingModal({
                 2. Armament & Weapon Loadout ({equippedWeapons.length} Systems · {totalRoundsCount} Rounds)
               </label>
 
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                  onClick={handleRestoreStandard}
+              {isDeployed ? (
+                <span
+                  style={{
+                    fontSize: '9.5px',
+                    color: '#4FC3F7',
+                    background: 'rgba(79, 195, 247, 0.1)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    fontWeight: 600,
+                  }}
                 >
-                  Standard Fit
-                </button>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                  onClick={() => applyPreset('cap')}
-                >
-                  CAP / Air
-                </button>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                  onClick={() => applyPreset('strike')}
-                >
-                  Strike / Land
-                </button>
-                <button
-                  type="button"
-                  className="wg-btn"
-                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
-                  onClick={() => applyPreset('antiship')}
-                >
-                  Anti-Ship
-                </button>
-              </div>
+                  🔒 Deployed (Fixed Loadout)
+                </span>
+              ) : (
+                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                    onClick={handleRestoreStandard}
+                  >
+                    Standard Fit
+                  </button>
+                  {platformDomain === 'sea' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('cap')}
+                      >
+                        Air Defense
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('antiship')}
+                      >
+                        Anti-Ship
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Land Attack
+                      </button>
+                    </>
+                  ) : platformDomain === 'sub' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('antiship')}
+                      >
+                        Anti-Ship / ASW
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Land Attack
+                      </button>
+                    </>
+                  ) : platformDomain === 'ground' || isGround || isStaticAD ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('cap')}
+                      >
+                        Air Defense
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Ground Strike
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('cap')}
+                      >
+                        CAP / Air
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('strike')}
+                      >
+                        Strike / Land
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                        onClick={() => applyPreset('antiship')}
+                      >
+                        Anti-Ship
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Currently Equipped Weapons on Platform */}
@@ -439,7 +552,7 @@ export function SortieTaskingModal({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
-                marginBottom: '10px',
+                marginBottom: isDeployed ? '0' : '10px',
               }}
             >
               {equippedWeapons.length === 0 ? (
@@ -473,145 +586,181 @@ export function SortieTaskingModal({
                       </div>
                     </div>
 
-                    {/* Stepper Count & Remove */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div
+                    {isDeployed ? (
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          background: '#09101B',
-                          border: '1px solid var(--border)',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#4FC3F7',
+                          background: 'rgba(79, 195, 247, 0.08)',
+                          padding: '3px 9px',
                           borderRadius: '4px',
-                          padding: '1px 4px',
+                          border: '1px solid rgba(79, 195, 247, 0.2)',
                         }}
                       >
+                        {weapon.magazine ?? 2} Ready Rounds
+                      </span>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: '#09101B',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px',
+                            padding: '1px 4px',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#4FC3F7',
+                              cursor: 'pointer',
+                              padding: '1px 6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                            }}
+                            onClick={() => handleAdjustMagazine(idx, -1)}
+                          >
+                            −
+                          </button>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              minWidth: '22px',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {weapon.magazine ?? 2}
+                          </span>
+                          <button
+                            type="button"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#4FC3F7',
+                              cursor: 'pointer',
+                              padding: '1px 6px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                            }}
+                            onClick={() => handleAdjustMagazine(idx, 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+
                         <button
                           type="button"
                           style={{
                             background: 'none',
                             border: 'none',
-                            color: '#4FC3F7',
+                            color: '#D9534F',
                             cursor: 'pointer',
-                            padding: '1px 6px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            padding: '2px 6px',
                           }}
-                          onClick={() => handleAdjustMagazine(idx, -1)}
+                          onClick={() => handleRemoveWeapon(idx)}
+                          title="Remove munition"
                         >
-                          −
-                        </button>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            color: '#FFFFFF',
-                            minWidth: '22px',
-                            textAlign: 'center',
-                          }}
-                        >
-                          {weapon.magazine ?? 2}
-                        </span>
-                        <button
-                          type="button"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#4FC3F7',
-                            cursor: 'pointer',
-                            padding: '1px 6px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                          }}
-                          onClick={() => handleAdjustMagazine(idx, 1)}
-                        >
-                          +
+                          ✕
                         </button>
                       </div>
-
-                      <button
-                        type="button"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#D9534F',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          padding: '2px 6px',
-                        }}
-                        onClick={() => handleRemoveWeapon(idx)}
-                        title="Remove munition"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
 
-            {/* Search and Equip from Compatible Munitions */}
-            <div>
-              <input
-                type="search"
-                className="wg-input"
-                style={{
-                  width: '100%',
-                  fontSize: '11px',
-                  padding: '6px 10px',
-                  marginBottom: '8px',
-                  background: '#070C14',
-                  border: '1px solid var(--border)',
-                  borderRadius: '4px',
-                  color: '#FFFFFF',
-                }}
-                placeholder={`Search ${compatible.length} compatible munitions…`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-
+            {isDeployed ? (
               <div
                 style={{
-                  maxHeight: '140px',
-                  overflowY: 'auto',
-                  background: '#070C14',
-                  border: '1px solid var(--border)',
+                  fontSize: '11px',
+                  color: 'var(--paper-dim)',
+                  background: 'rgba(79, 195, 247, 0.04)',
+                  border: '1px dashed rgba(79, 195, 247, 0.25)',
                   borderRadius: '6px',
-                  padding: '6px',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                  gap: '5px',
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '6px',
                 }}
               >
-                {filteredCompatible.length === 0 ? (
-                  <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', padding: '10px', gridColumn: '1 / -1', textAlign: 'center' }}>
-                    No matching compatible munitions found.
-                  </div>
-                ) : (
-                  filteredCompatible.map((m) => {
-                    const equipped = isEquipped(m.name);
-                    const standard = isStandard(m.name);
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => handleToggleMunition(m)}
-                        style={{
-                          background: equipped ? 'rgba(79, 168, 95, 0.16)' : 'rgba(255, 255, 255, 0.03)',
-                          border: `1px solid ${equipped ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)'}`,
-                          borderRadius: '4px',
-                          padding: '6px 8px',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '2px',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: equipped ? '#FFFFFF' : 'var(--paper-dim)' }}>
-                            {m.name}
+                <span>🔒</span>
+                <span>Weapon loadout is locked while deployed in the field. To reload or change weapon configuration, order RTB to base.</span>
+              </div>
+            ) : (
+              <div>
+                <input
+                  type="search"
+                  className="wg-input"
+                  style={{
+                    width: '100%',
+                    fontSize: '11px',
+                    padding: '6px 10px',
+                    marginBottom: '8px',
+                    background: '#070C14',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    color: '#FFFFFF',
+                  }}
+                  placeholder={`Search ${compatible.length} compatible munitions…`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+
+                <div
+                  className="wg-custom-scroll"
+                  style={{
+                    maxHeight: '140px',
+                    overflowY: 'auto',
+                    background: '#070C14',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gap: '5px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2)',
+                  }}
+                >
+                  {filteredCompatible.length === 0 ? (
+                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', padding: '10px', gridColumn: '1 / -1', textAlign: 'center' }}>
+                      No matching compatible munitions found.
+                    </div>
+                  ) : (
+                    filteredCompatible.map((m) => {
+                      const equipped = isEquipped(m.name);
+                      const standard = isStandard(m.name);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => handleToggleMunition(m)}
+                          style={{
+                            background: equipped ? 'rgba(79, 168, 95, 0.16)' : 'rgba(255, 255, 255, 0.03)',
+                            border: `1px solid ${equipped ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)'}`,
+                            borderRadius: '4px',
+                            padding: '6px 8px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '2px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: equipped ? '#FFFFFF' : 'var(--paper-dim)' }}>
+                              {m.name}
                           </span>
                           {standard && (
                             <span
@@ -641,82 +790,139 @@ export function SortieTaskingModal({
                 )}
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* 3. Flight Profile & Radar EMCON (For Air & Naval) */}
-          {!isGround && !isStaticAD && (
-            <div>
-              <label
-                style={{
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  color: 'var(--paper-dim)',
-                  fontWeight: 700,
-                  display: 'block',
-                  marginBottom: '6px',
-                }}
-              >
-                3. Flight & Sensor Profile
-              </label>
+          {/* 3. Domain-Specific Patrol & Sensor Profile */}
+          <div>
+            <label
+              style={{
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                color: 'var(--paper-dim)',
+                fontWeight: 700,
+                display: 'block',
+                marginBottom: '6px',
+              }}
+            >
+              {platformDomain === 'sea'
+                ? '3. Naval Surface Patrol & Radar Profile'
+                : platformDomain === 'sub'
+                  ? '3. Subsurface Patrol & Acoustic Profile'
+                  : platformDomain === 'ground' || isGround || isStaticAD
+                    ? '3. Ground Deployment & Radar Profile'
+                    : '3. Flight & Sensor Profile'}
+            </label>
 
-              {/* Patrol Pattern Selector */}
-              <div style={{ marginBottom: '10px' }}>
-                <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
-                  Patrol Route Pattern:
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <button
-                    type="button"
-                    style={{
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: `1px solid ${patrolMode === 'orbit' ? '#4FC3F7' : 'var(--border)'}`,
-                      background: patrolMode === 'orbit' ? 'rgba(79, 195, 247, 0.15)' : '#070C14',
-                      color: patrolMode === 'orbit' ? '#4FC3F7' : 'var(--paper)',
-                      cursor: 'pointer',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      justifyContent: 'center',
-                    }}
-                    onClick={() => setPatrolMode('orbit')}
-                  >
-                    <span>🔄</span>
-                    <span>Circular Holding Orbit</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    style={{
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: `1px solid ${patrolMode === 'waypoints' ? '#4FC3F7' : 'var(--border)'}`,
-                      background: patrolMode === 'waypoints' ? 'rgba(79, 195, 247, 0.15)' : '#070C14',
-                      color: patrolMode === 'waypoints' ? '#4FC3F7' : 'var(--paper)',
-                      cursor: 'pointer',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      justifyContent: 'center',
-                    }}
-                    onClick={() => setPatrolMode('waypoints')}
-                  >
-                    <span>🗺️</span>
-                    <span>Custom Multi-Waypoint Route</span>
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: patrolMode === 'orbit' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
-                {/* Altitude */}
-                <div>
-                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
-                    Cruise Altitude:
+            {/* Patrol Pattern Selector */}
+            <div style={{ marginBottom: '10px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                {platformDomain === 'sea'
+                  ? 'Naval Patrol Pattern:'
+                  : platformDomain === 'sub'
+                    ? 'Subsurface Patrol Pattern:'
+                    : platformDomain === 'ground' || isGround || isStaticAD
+                      ? 'Deployment Area Pattern:'
+                      : 'Patrol Route Pattern:'}
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '5px',
+                    border: `1px solid ${patrolMode === 'orbit' ? '#4FC3F7' : 'var(--border)'}`,
+                    background: patrolMode === 'orbit' ? 'rgba(79, 195, 247, 0.15)' : '#070C14',
+                    color: patrolMode === 'orbit' ? '#4FC3F7' : 'var(--paper)',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    justifyContent: 'center',
+                  }}
+                  onClick={() => setPatrolMode('orbit')}
+                >
+                  <span>🔄</span>
+                  <span>
+                    {platformDomain === 'sea'
+                      ? 'Station Keeping / Patrol Orbit'
+                      : platformDomain === 'sub'
+                        ? 'Submerged Patrol Orbit'
+                        : platformDomain === 'ground' || isGround || isStaticAD
+                          ? 'Area Deployment Sector'
+                          : 'Circular Holding Orbit'}
                   </span>
+                </button>
+
+                <button
+                  type="button"
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '5px',
+                    border: `1px solid ${patrolMode === 'waypoints' ? '#4FC3F7' : 'var(--border)'}`,
+                    background: patrolMode === 'waypoints' ? 'rgba(79, 195, 247, 0.15)' : '#070C14',
+                    color: patrolMode === 'waypoints' ? '#4FC3F7' : 'var(--paper)',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    justifyContent: 'center',
+                  }}
+                  onClick={() => setPatrolMode('waypoints')}
+                >
+                  <span>🗺️</span>
+                  <span>Custom Multi-Waypoint Route</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: patrolMode === 'orbit' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
+              {/* Domain Altitude / Depth / Elevation */}
+              <div>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                  {platformDomain === 'sea'
+                    ? 'Surface Operating State:'
+                    : platformDomain === 'sub'
+                      ? 'Submerged Depth:'
+                      : platformDomain === 'ground' || isGround || isStaticAD
+                        ? 'Terrain Elevation:'
+                        : 'Cruise Altitude:'}
+                </span>
+
+                {platformDomain === 'sea' ? (
+                  <select
+                    className="wg-select"
+                    style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+                    value={altitudeM}
+                    onChange={(e) => setAltitudeM(Number(e.target.value))}
+                  >
+                    <option value={0}>Surface / Sea Level (0 m)</option>
+                  </select>
+                ) : platformDomain === 'sub' ? (
+                  <select
+                    className="wg-select"
+                    style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+                    value={altitudeM}
+                    onChange={(e) => setAltitudeM(Number(e.target.value))}
+                  >
+                    <option value={-10}>Periscope Depth (-10 m)</option>
+                    <option value={-100}>Cruising Patrol Depth (-100 m)</option>
+                    <option value={-250}>Deep Silent Running (-250 m)</option>
+                  </select>
+                ) : platformDomain === 'ground' || isGround || isStaticAD ? (
+                  <select
+                    className="wg-select"
+                    style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+                    value={altitudeM}
+                    onChange={(e) => setAltitudeM(Number(e.target.value))}
+                  >
+                    <option value={0}>Ground Surface (0 m)</option>
+                  </select>
+                ) : (
                   <select
                     className="wg-select"
                     style={{ width: '100%', fontSize: '11px', padding: '6px' }}
@@ -728,64 +934,239 @@ export function SortieTaskingModal({
                     <option value={7000}>High / Transit (7,000 m)</option>
                     <option value={10000}>Very High (10,000 m)</option>
                   </select>
-                </div>
-
-                {/* Patrol Radius (Only for circular orbit) */}
-                {patrolMode === 'orbit' && (
-                  <div>
-                    <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
-                      Patrol Orbit Radius:
-                    </span>
-                    <select
-                      className="wg-select"
-                      style={{ width: '100%', fontSize: '11px', padding: '6px' }}
-                      value={patrolRadiusKm}
-                      onChange={(e) => setPatrolRadiusKm(Number(e.target.value))}
-                    >
-                      <option value={0}>Stationary Loiter (0 km)</option>
-                      <option value={15}>Tight Holding Pattern (15 km)</option>
-                      <option value={30}>Tactical Orbit (30 km)</option>
-                      <option value={60}>Wide Area Sweep (60 km)</option>
-                    </select>
-                  </div>
                 )}
+              </div>
 
-                {/* EMCON */}
+              {/* Patrol Radius (Only for circular orbit) */}
+              {patrolMode === 'orbit' && (
                 <div>
                   <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
-                    Radar EMCON:
+                    {platformDomain === 'sea'
+                      ? 'Patrol Sweep Radius:'
+                      : platformDomain === 'sub'
+                        ? 'Acoustic Patrol Radius:'
+                        : platformDomain === 'ground' || isGround || isStaticAD
+                          ? 'Deployment Radius:'
+                          : 'Patrol Orbit Radius:'}
                   </span>
                   <select
                     className="wg-select"
                     style={{ width: '100%', fontSize: '11px', padding: '6px' }}
-                    value={emcon}
-                    onChange={(e) => setEmcon(e.target.value as 'active' | 'passive')}
+                    value={patrolRadiusKm}
+                    onChange={(e) => setPatrolRadiusKm(Number(e.target.value))}
                   >
-                    <option value="active">Active Radar 📡</option>
-                    <option value="passive">Passive / Silent 🔕</option>
+                    {platformDomain === 'sea' ? (
+                      <>
+                        <option value={0}>Stationary Picket (0 km)</option>
+                        <option value={15}>Sector Patrol (15 km)</option>
+                        <option value={30}>Task Group Sweep (30 km)</option>
+                        <option value={60}>Wide Maritime Patrol (60 km)</option>
+                      </>
+                    ) : platformDomain === 'sub' ? (
+                      <>
+                        <option value={0}>Stationary Ambush (0 km)</option>
+                        <option value={15}>ASW Box Patrol (15 km)</option>
+                        <option value={30}>Acoustic Search Barrier (30 km)</option>
+                      </>
+                    ) : platformDomain === 'ground' || isGround || isStaticAD ? (
+                      <>
+                        <option value={0}>Stationary Emplacement (0 km)</option>
+                        <option value={5}>Tactical Dispersal (5 km)</option>
+                        <option value={15}>Sector Screening (15 km)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value={0}>Stationary Loiter (0 km)</option>
+                        <option value={15}>Tight Holding Pattern (15 km)</option>
+                        <option value={30}>Tactical Orbit (30 km)</option>
+                        <option value={60}>Wide Area Sweep (60 km)</option>
+                      </>
+                    )}
                   </select>
+                </div>
+              )}
+
+              {/* EMCON */}
+              <div>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                  {platformDomain === 'sub'
+                    ? 'Acoustic Sonar EMCON:'
+                    : platformDomain === 'sea'
+                      ? 'Sensors & Radar EMCON:'
+                      : 'Radar EMCON:'}
+                </span>
+                <select
+                  className="wg-select"
+                  style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+                  value={emcon}
+                  onChange={(e) => setEmcon(e.target.value as 'active' | 'passive')}
+                >
+                  {platformDomain === 'sub' ? (
+                    <>
+                      <option value="passive">Passive Sonar (Silent Running 🤫)</option>
+                      <option value="active">Active Sonar Ping (Sonar Search 🔊)</option>
+                    </>
+                  ) : platformDomain === 'sea' ? (
+                    <>
+                      <option value="active">Active Radar & Sonar 📡</option>
+                      <option value="passive">EMCON Alpha (Radar Silence 🤫)</option>
+                    </>
+                  ) : platformDomain === 'ground' || isGround || isStaticAD ? (
+                    <>
+                      <option value="active">Active Search Radar 📡</option>
+                      <option value="passive">Passive Optical / Camouflage 🌲</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="active">Active Radar 📡</option>
+                      <option value="passive">Passive / Silent 🔕</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* Radar Cross-Section (RCS) Configuration */}
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '10px 12px',
+                background: 'rgba(15, 23, 42, 0.65)',
+                border: '1px solid rgba(79, 195, 247, 0.25)',
+                borderRadius: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10.5px', textTransform: 'uppercase', color: '#4FC3F7', fontWeight: 700, letterSpacing: '0.4px' }}>
+                  🎯 Physical Radar Cross-Section (RCS)
+                </span>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                  Default Baseline: <strong style={{ color: '#E0E6ED' }}>{defaultRcs >= 1 ? `${defaultRcs.toFixed(1)} m²` : `${defaultRcs} m²`}</strong>
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.00001"
+                    className="wg-input"
+                    style={{ width: '90px', fontSize: '12px', padding: '5px 8px', fontWeight: 700, color: '#4FC3F7' }}
+                    value={rcsM2}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val > 0) setRcsM2(val);
+                    }}
+                  />
+                  <span style={{ fontSize: '11.5px', color: '#90A4AE', fontWeight: 600 }}>m²</span>
+                </div>
+
+                {/* Quick Presets based on domain */}
+                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', flex: 1 }}>
+                  {platformDomain === 'air' && (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 0.001 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(0.001)}
+                        title="VLO Stealth Clean (e.g. F-35/F-22 internal weapons bay)"
+                      >
+                        Clean (0.001 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 0.2 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(0.2)}
+                        title="Stealth with External Wing Pylons / Missiles"
+                      >
+                        Pylons (0.2 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 5.0 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(5.0)}
+                        title="Standard 4th-Gen Fighter (e.g. Su-35, F-16)"
+                      >
+                        Standard (5.0 m²)
+                      </button>
+                    </>
+                  )}
+                  {platformDomain === 'sea' && (
+                    <>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 0.01 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(0.01)}
+                      >
+                        Stealth (0.01 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 100.0 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(100.0)}
+                      >
+                        Frigate (100 m²)
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 7px', background: rcsM2 === 1000.0 ? 'rgba(79, 195, 247, 0.25)' : undefined }}
+                        onClick={() => setRcsM2(1000.0)}
+                      >
+                        Destroyer (1,000 m²)
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ fontSize: '9.5px', padding: '3px 7px' }}
+                    onClick={() => setRcsM2(defaultRcs)}
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
 
-              {/* Waypoint Guidance notice */}
-              {patrolMode === 'waypoints' && (
-                <div
-                  style={{
-                    marginTop: '8px',
-                    padding: '8px 10px',
-                    background: 'rgba(79, 195, 247, 0.08)',
-                    borderRadius: '5px',
-                    border: '1px solid rgba(79, 195, 247, 0.25)',
-                    fontSize: '10.5px',
-                    color: '#4FC3F7',
-                    lineHeight: '1.4',
-                  }}
-                >
-                  📍 <strong>Interactive Route Planning</strong>: After clicking below, click sequentially on the map to define waypoints (WP-1, WP-2, WP-3...). The aircraft will patrol this corridor back and forth.
-                </div>
-              )}
+              <span style={{ fontSize: '10px', color: 'var(--paper-dim)', lineHeight: 1.35 }}>
+                💡 <em>External weapon pylons, drop tanks, and ECM pods increase aircraft radar reflectivity footprint.</em>
+              </span>
             </div>
-          )}
+
+            {/* Waypoint Guidance notice */}
+            {patrolMode === 'waypoints' && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '8px 10px',
+                  background: 'rgba(79, 195, 247, 0.08)',
+                  borderRadius: '5px',
+                  border: '1px solid rgba(79, 195, 247, 0.25)',
+                  fontSize: '10.5px',
+                  color: '#4FC3F7',
+                  lineHeight: '1.4',
+                }}
+              >
+                📍 <strong>Interactive Route Planning</strong>:{' '}
+                {platformDomain === 'sea'
+                  ? 'After clicking below, click sequentially on the map to define maritime waypoints (WP-1, WP-2...). The warship will cruise along this route.'
+                  : platformDomain === 'sub'
+                    ? 'After clicking below, click sequentially on the map to define submerged waypoints. The submarine will patrol this track.'
+                    : platformDomain === 'ground' || isGround || isStaticAD
+                      ? 'After clicking below, click sequentially on the map to define ground march waypoints. The unit will advance along this route.'
+                      : 'After clicking below, click sequentially on the map to define flight waypoints (WP-1, WP-2, WP-3...). The aircraft will patrol this corridor back and forth.'}
+              </div>
+            )}
+          </div>
 
           {/* Operational Range Summary */}
           <div
@@ -800,14 +1181,29 @@ export function SortieTaskingModal({
             }}
           >
             <span>
-              Effective {isStaticAD ? 'Deployment Reach' : isGround ? 'Road Range' : 'Combat Radius'}:{' '}
+              {platformDomain === 'sea'
+                ? 'Naval Operating Range: '
+                : platformDomain === 'sub'
+                  ? 'Submerged Operating Range: '
+                  : isStaticAD
+                    ? 'Deployment Reach: '
+                    : isGround
+                      ? 'Road Range: '
+                      : 'Effective Combat Radius: '}
               <strong style={{ color: '#4FC3F7' }}>{effectiveRadiusKm.toFixed(0)} km</strong>
-              {hasTanker && !isGround && !isStaticAD ? ' (w/ Tanker +75%)' : ''}
+              {hasTanker && platformDomain === 'air' ? ' (w/ Tanker +75%)' : ''}
             </span>
             <span>
               {isStaticAD ? (
                 <>
                   Site Posture: <strong style={{ color: '#4FA85F' }}>Entrenched Battery</strong>
+                </>
+              ) : platformDomain === 'sea' || platformDomain === 'sub' ? (
+                <>
+                  Cruise Speed:{' '}
+                  <strong>
+                    {entity.speedKmh} km/h ({(entity.speedKmh * 0.539957).toFixed(0)} kts)
+                  </strong>
                 </>
               ) : (
                 <>

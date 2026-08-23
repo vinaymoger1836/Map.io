@@ -5,6 +5,7 @@
    ------------------------------------------------------------------ */
 
 :root {
+  color-scheme: dark;
   --ink: #0c141d;
   --ink-panel: #111c27;
   --ink-raised: #182634;
@@ -21,8 +22,35 @@
   --panel-w: 365px;
 }
 
+/* ------------------------------------------------------------------ */
+/* Global Sleek, Subtle & Modern Dark Scrollbars                      */
+/* ------------------------------------------------------------------ */
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 html,
@@ -3601,6 +3629,32 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 195, 247, 0.25) rgba(0, 0, 0, 0.2);
+  padding-right: 4px;
+}
+
+.nations-list::-webkit-scrollbar,
+.wg-custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nations-list::-webkit-scrollbar-track,
+.wg-custom-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.nations-list::-webkit-scrollbar-thumb,
+.wg-custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(79, 195, 247, 0.22);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.nations-list::-webkit-scrollbar-thumb:hover,
+.wg-custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 195, 247, 0.55);
 }
 
 .nation-btn {

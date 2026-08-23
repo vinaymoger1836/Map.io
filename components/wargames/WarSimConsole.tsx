@@ -10,7 +10,7 @@
  * 4. Bases list with live capacity gauges, status indicators, and one-click map focusing.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   type WarSimSession,
   type SimEntity,
@@ -18,17 +18,21 @@ import {
   type DetectedContact,
   type BaseType,
   type QuotaAllocation,
+  type CombatReport,
+  type WarReportCategory,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, domainOf } from '@/lib/specs';
+import { type SystemSpec, domainOf, radarHorizonKm, getSystemRcs } from '@/lib/specs';
 import { formatSimTime } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
+import { CombatReportDetailModal } from './CombatReportDetailModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
+import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -55,8 +59,10 @@ export interface WarSimConsoleProps {
       altitudeM?: number;
       emcon?: 'active' | 'passive';
       routeType?: 'orbit' | 'waypoints';
+      rcs?: number;
     }
   ) => void;
+  onUpdateEntityRcs?: (entityId: string, rcs: number) => void;
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
@@ -65,7 +71,7 @@ export interface WarSimConsoleProps {
   showAllEnvelopes?: boolean;
   onToggleShowAllEnvelopes?: () => void;
   targetPicking: {
-    mode: 'sortie' | 'place_autonomous' | 'place_base';
+    mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
     label?: string;
     routeType?: 'orbit' | 'waypoints';
     pickedWaypoints?: [number, number][];
@@ -85,6 +91,20 @@ export interface WarSimConsoleProps {
     customPostLngLat?: [number, number];
     sortieCount?: number;
     customWeapons?: import('@/lib/specs').WeaponFacet[];
+    weaponsToFire?: import('@/lib/warSimTypes').WeaponSalvoItem[];
+    attackWaypoints?: [number, number][];
+  }) => void;
+  onStartStrikeRoutePlanning?: (params: {
+    attackerEntityId: string;
+    targetEntityId: string;
+    targetLngLat: [number, number];
+    weaponIndex: number;
+    salvoCount: number;
+    postStrikeAction: import('@/lib/warSimTypes').PostStrikeAction;
+    customPostLngLat?: [number, number];
+    sortieCount?: number;
+    customWeapons?: import('@/lib/specs').WeaponFacet[];
+    weaponsToFire?: import('@/lib/warSimTypes').WeaponSalvoItem[];
   }) => void;
   onOpenAar: () => void;
   onExitSim: () => void;
@@ -110,9 +130,11 @@ export function WarSimConsole({
   selectedContact,
   onSelectContact,
   onOrderStrike,
+  onStartStrikeRoutePlanning,
   onDeployUnitToBase,
   onDeployAutonomous,
   onStartSortie,
+  onUpdateEntityRcs,
   onOrderRtb,
   onStartBasePlacement,
   onRenameBase,
@@ -127,7 +149,7 @@ export function WarSimConsole({
   onOpenAar,
   onExitSim,
   systemsLibrary,
-  countries,
+  countries = [],
   onFlyToBase,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -138,6 +160,10 @@ export function WarSimConsole({
   const [customBaseName, setCustomBaseName] = useState<string>('');
   const [hudTaskingEntity, setHudTaskingEntity] = useState<SimEntity | null>(null);
   const [strikeModalTarget, setStrikeModalTarget] = useState<StrikeTargetInfo | null>(null);
+  const [selectedReport, setSelectedReport] = useState<CombatReport | null>(null);
+  const [reportCategoryFilter, setReportCategoryFilter] = useState<'all' | WarReportCategory>('all');
+  const [editingRcs, setEditingRcs] = useState<boolean>(false);
+  const [rcsInputDraft, setRcsInputDraft] = useState<string>('');
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -150,6 +176,19 @@ export function WarSimConsole({
   const otherColor = isPlayer ? session.enemyColor : session.playerColor;
 
   const quotaLedger = session.quotas[activeFaction] || {};
+
+  const activeFactionReports = useMemo(() => {
+    const list = session.reports || [];
+    return list.filter((r) => r.faction === activeFaction || r.countryIso === activeCountryIso);
+  }, [session.reports, activeFaction, activeCountryIso]);
+
+  const filteredReports = useMemo(() => {
+    const factionFiltered = activeFactionReports.filter((r) => {
+      if (reportCategoryFilter !== 'all' && r.category !== reportCategoryFilter) return false;
+      return true;
+    });
+    return factionFiltered.slice().reverse();
+  }, [activeFactionReports, reportCategoryFilter]);
 
   return (
     <>
@@ -340,12 +379,11 @@ export function WarSimConsole({
         <div
           style={{
             position: 'absolute',
-            top: '56px',
+            top: '80px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(9, 16, 27, 0.96)',
-            backdropFilter: 'blur(12px)',
-            border: `1px solid ${targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(232, 131, 58, 0.8)'}`,
+            background: 'rgba(7, 12, 20, 0.95)',
+            border: `1px solid ${targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
             borderRadius: '10px',
             padding: '8px 16px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
@@ -359,13 +397,15 @@ export function WarSimConsole({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '16px' }}>
-              {targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
+              {targetPicking.mode === 'strike_route' ? '🎯' : targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
             </span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
-                {targetPicking.routeType === 'waypoints'
-                  ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
-                  : 'Target Designation Active'}
+              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
+                {targetPicking.mode === 'strike_route'
+                  ? `Attack Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Ingress Waypoints Plotted`
+                  : targetPicking.routeType === 'waypoints'
+                    ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
+                    : 'Target Designation Active'}
               </span>
               <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                 {targetPicking.label}
@@ -374,15 +414,15 @@ export function WarSimConsole({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {targetPicking.routeType === 'waypoints' && (
+            {(targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route') && (
               <>
                 <button
                   type="button"
                   className="wg-btn accent"
                   style={{
-                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#4FA85F' : 'rgba(255, 255, 255, 0.08)',
+                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'rgba(255, 255, 255, 0.08)',
                     color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
-                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#4FA85F' : 'transparent',
+                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'transparent',
                     fontWeight: 700,
                     fontSize: '11px',
                     padding: '4px 10px',
@@ -391,7 +431,9 @@ export function WarSimConsole({
                   disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
                   onClick={onConfirmCustomRoute}
                 >
-                  ✓ Launch Route ({(targetPicking.pickedWaypoints?.length || 0)} WPs)
+                  {targetPicking.mode === 'strike_route'
+                    ? `✓ Launch Attack Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`
+                    : `✓ Launch Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`}
                 </button>
 
                 <button
@@ -461,31 +503,45 @@ export function WarSimConsole({
           }}
         >
           {sidebarOpen ? (
-            <div style={{ display: 'flex', gap: '4px', flex: 1, overflowX: 'auto' }}>
+            <div style={{ display: 'flex', gap: '3px', flex: 1, overflowX: 'auto' }}>
               <button
                 className={`wg-btn ${activeTab === 'systems' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('systems')}
               >
                 🎯 Systems
               </button>
               <button
                 className={`wg-btn ${activeTab === 'bases' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('bases')}
               >
                 🏰 Bases ({friendlyBases.length})
               </button>
               <button
                 className={`wg-btn ${activeTab === 'intel' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('intel')}
               >
                 🛰️ Intel ({visibleContacts.length})
               </button>
               <button
+                className={`wg-btn ${activeTab === 'reports' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'reports' ? undefined : (session.reports && session.reports.length > 0 ? 'rgba(79, 195, 247, 0.08)' : undefined),
+                  borderColor: activeTab === 'reports' ? undefined : (session.reports && session.reports.length > 0 ? 'rgba(79, 195, 247, 0.3)' : undefined),
+                  color: activeTab === 'reports' ? undefined : (session.reports && session.reports.length > 0 ? '#4FC3F7' : undefined),
+                }}
+                onClick={() => setActiveTab('reports')}
+              >
+                📊 Reports ({activeFactionReports.length})
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'log' ? 'accent' : ''}`}
-                style={{ fontSize: '10.5px', padding: '4px 8px', flex: 1 }}
+                style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('log')}
               >
                 📜 Log
@@ -496,6 +552,7 @@ export function WarSimConsole({
               <button onClick={() => { setSidebarOpen(true); setActiveTab('systems'); }} title="Systems" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🎯</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('bases'); }} title="Bases" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🏰</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('intel'); }} title="Intel" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🛰️</button>
+              <button onClick={() => { setSidebarOpen(true); setActiveTab('reports'); }} title="Reports" style={{ background: 'none', border: 'none', color: '#4FC3F7', cursor: 'pointer', fontSize: '16px' }}>📊</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('log'); }} title="Log" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>📜</button>
             </div>
           )}
@@ -849,7 +906,212 @@ export function WarSimConsole({
             )}
 
             {/* ========================================================= */}
-            {/* TAB 4: BATTLE LOG TICKER                                  */}
+            {/* TAB 4: COMBAT & INTELLIGENCE REPORTS                      */}
+            {/* ========================================================= */}
+            {activeTab === 'reports' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    {activeCountryName} After-Action Reports ({filteredReports.length})
+                  </span>
+                  <span style={{ fontSize: '9.5px', color: '#4FC3F7' }}>
+                    Click report for analysis
+                  </span>
+                </div>
+
+                {/* Report Category Filters */}
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('all')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'all' ? '#4FC3F7' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'all' ? 'rgba(79, 195, 247, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'all' ? '#4FC3F7' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    All ({activeFactionReports.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('under_attack')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'under_attack' ? '#FF5252' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'under_attack' ? 'rgba(255, 82, 82, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'under_attack' ? '#FF5252' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    🛡️ Under Attack ({activeFactionReports.filter((r) => r.category === 'under_attack').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('offensive_strike')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'offensive_strike' ? '#FF9800' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'offensive_strike' ? 'rgba(255, 152, 0, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'offensive_strike' ? '#FF9800' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    🚀 Strikes ({activeFactionReports.filter((r) => r.category === 'offensive_strike').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportCategoryFilter('recon_intel')}
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: '9.5px',
+                      borderRadius: '4px',
+                      border: `1px solid ${reportCategoryFilter === 'recon_intel' ? '#4FC3F7' : 'var(--border)'}`,
+                      background: reportCategoryFilter === 'recon_intel' ? 'rgba(79, 195, 247, 0.18)' : '#070C14',
+                      color: reportCategoryFilter === 'recon_intel' ? '#4FC3F7' : 'var(--paper-dim)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    📡 Intel / PID ({activeFactionReports.filter((r) => r.category === 'recon_intel').length})
+                  </button>
+                </div>
+
+                {filteredReports.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '24px 12px',
+                      textAlign: 'center',
+                      color: 'var(--paper-dim)',
+                      fontSize: '11px',
+                      background: '#070C14',
+                      borderRadius: '6px',
+                      border: '1px dashed var(--border)',
+                    }}
+                  >
+                    <span>📊 No tactical reports logged under this filter.</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {filteredReports.map((rep) => {
+                      const isDef = rep.category === 'under_attack';
+                      const isOff = rep.category === 'offensive_strike';
+                      const repColor = isDef ? '#FF5252' : isOff ? '#FF9800' : '#4FC3F7';
+
+                      return (
+                        <div
+                          key={rep.id}
+                          onClick={() => setSelectedReport(rep)}
+                          style={{
+                            padding: '8px 10px',
+                            background: '#09101B',
+                            border: '1px solid var(--border)',
+                            borderLeft: `3px solid ${repColor}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = repColor;
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border)';
+                            e.currentTarget.style.borderLeftColor = repColor;
+                            e.currentTarget.style.background = '#09101B';
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                fontWeight: 800,
+                                color: repColor,
+                                background: `${repColor}18`,
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {isDef ? '🛡️ Under Attack' : isOff ? '🚀 Strike' : '📡 Intel PID'}
+                            </span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                              {rep.timeFormatted}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                            <strong style={{ fontSize: '11.5px', color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {rep.title}
+                            </strong>
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                              {rep.primaryEntity?.rcsM2 !== undefined && (
+                                <span
+                                  style={{
+                                    fontSize: '8.5px',
+                                    color: '#4FC3F7',
+                                    background: 'rgba(79, 195, 247, 0.15)',
+                                    padding: '1px 4px',
+                                    borderRadius: '2px',
+                                    fontWeight: 700,
+                                  }}
+                                  title={`Primary System RCS: ${rep.primaryEntity.rcsM2} m²`}
+                                >
+                                  RCS: {rep.primaryEntity.rcsM2 >= 1 ? rep.primaryEntity.rcsM2.toFixed(1) : rep.primaryEntity.rcsM2}m²
+                                </span>
+                              )}
+                              {rep.opposingEntity && (
+                                <span
+                                  style={{
+                                    fontSize: '8.5px',
+                                    color: rep.opposingEntity.isPID ? '#4FA85F' : '#FF9800',
+                                    background: rep.opposingEntity.isPID ? 'rgba(79, 168, 95, 0.15)' : 'rgba(255, 152, 0, 0.15)',
+                                    padding: '1px 4px',
+                                    borderRadius: '2px',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {rep.opposingEntity.isPID ? 'PID ✓' : 'UNPID ⚠️'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <p style={{ margin: 0, fontSize: '10.5px', color: 'var(--paper-dim)', lineHeight: 1.35 }}>
+                            {rep.summary}
+                          </p>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px', fontSize: '9.5px', color: '#4FC3F7' }}>
+                            <span>Details & Interception Analysis ➔</span>
+                            {rep.damageAssessment && (
+                              <span style={{ color: rep.damageAssessment.damageInflicted === 'destroyed' ? '#FF5252' : rep.damageAssessment.damageInflicted === 'heavy' ? '#FF9800' : '#4FA85F', fontWeight: 600 }}>
+                                {rep.damageAssessment.targetResultState.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB 5: BATTLE LOG TICKER                                  */}
             {/* ========================================================= */}
             {activeTab === 'log' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -922,16 +1184,20 @@ export function WarSimConsole({
         const isStaticAD = isStaticAirDefense(selectedEntity.typeId);
         const isGround = isGroundCombatUnit(selectedEntity.typeId);
         const spec = systemsLibrary.find((s) => s.id === selectedEntity.systemId);
-        const detectionKm = spec?.sensor?.detectionKm ?? (
-          isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
-        );
+        const isNaval = (isNavalCombatant(selectedEntity.typeId) || (spec ? domainOf(spec) === 'sea' : false)) && selectedEntity.typeId !== 'submarine';
+        const detectionKm = (selectedEntity.typeId === 'uav' || selectedEntity.typeId === 'recon')
+          ? Math.max(spec?.sensor?.detectionKm ?? 40, 180)
+          : (spec?.sensor?.detectionKm ?? (
+              isGround ? 8 : selectedEntity.typeId === 'awacs' ? 450 : selectedEntity.typeId === 'radar' ? 400 : 250
+            ));
+        const surfaceHorizonKm = isNaval ? Math.round(radarHorizonKm(spec?.sensor?.antennaM ?? 25, 25)) : 0;
         const statusLabel =
           isStaticAD
             ? 'AIR DEFENSE (ON WATCH)'
             : selectedEntity.status === 'on_station'
-              ? (isGround ? 'ENTRENCHED' : 'PATROL')
+              ? (isGround ? 'ENTRENCHED' : isNaval ? 'MARITIME PATROL' : 'AIR PATROL')
               : selectedEntity.status === 'takeoff_ingress'
-                ? (isGround ? 'ROAD MARCH' : 'TAKEOFF INGRESS')
+                ? (isGround ? 'ROAD MARCH' : isNaval ? 'TRANSIT INGRESS' : 'TAKEOFF INGRESS')
                 : selectedEntity.status.replace('_', ' ').toUpperCase();
 
         return (
@@ -1005,42 +1271,175 @@ export function WarSimConsole({
                 )}
               </div>
 
-              {!isStaticAD ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                  <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
-                  <span>Altitude: <strong>{isGround ? '0 m (Ground)' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
-                  <span>Heading: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+              {(() => {
+                const entityDomain = spec ? domainOf(spec) : isGround ? 'ground' : isNaval ? 'sea' : 'air';
+                const rcsVal = selectedEntity.rcs ?? (spec ? getSystemRcs(spec, entityDomain) : 5.0);
+                const rcsText = rcsVal >= 1 ? `${rcsVal.toFixed(1)} m²` : `${rcsVal} m²`;
+
+                return (
+                  <>
+                    {!isStaticAD ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
+                        <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
+                        <span>Alt: <strong>{isGround ? '0 m' : `${(selectedEntity.altitudeM / 1000).toFixed(1)} km`}</strong></span>
+                        <span>Hdg: <strong>{selectedEntity.headingDeg.toFixed(0)}°</strong></span>
+                        <span
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                          title="Click to customize platform RCS footprint (e.g. for external weapons/pylons)"
+                          onClick={() => {
+                            setRcsInputDraft(rcsVal.toString());
+                            setEditingRcs((prev) => !prev);
+                          }}
+                        >
+                          RCS: <strong style={{ color: '#4FC3F7', textDecoration: 'underline dotted' }}>{rcsText}</strong> ✏️
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Site: <strong>Fixed Position</strong></span>
+                        <span>Altitude: <strong>0 m</strong></span>
+                        <span
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                          title="Click to customize platform RCS footprint"
+                          onClick={() => {
+                            setRcsInputDraft(rcsVal.toString());
+                            setEditingRcs((prev) => !prev);
+                          }}
+                        >
+                          RCS: <strong style={{ color: '#4FC3F7', textDecoration: 'underline dotted' }}>{rcsText}</strong> ✏️
+                        </span>
+                        <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
+                      </div>
+                    )}
+
+                    {editingRcs && (
+                      <div
+                        style={{
+                          marginTop: '4px',
+                          padding: '6px 8px',
+                          background: 'rgba(7, 12, 20, 0.95)',
+                          border: '1px solid rgba(79, 195, 247, 0.4)',
+                          borderRadius: '5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '10.5px',
+                        }}
+                      >
+                        <span style={{ color: 'var(--paper-dim)' }}>Set RCS:</span>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.00001"
+                          style={{
+                            width: '70px',
+                            fontSize: '11px',
+                            padding: '2px 4px',
+                            background: '#0E1724',
+                            color: '#4FC3F7',
+                            border: '1px solid var(--border)',
+                            borderRadius: '3px',
+                            fontWeight: 700,
+                          }}
+                          value={rcsInputDraft}
+                          onChange={(e) => setRcsInputDraft(e.target.value)}
+                          autoFocus
+                        />
+                        <span style={{ color: '#90A4AE' }}>m²</span>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{ fontSize: '9.5px', padding: '2px 6px', background: 'rgba(79, 195, 247, 0.25)', color: '#4FC3F7' }}
+                          onClick={() => {
+                            const val = parseFloat(rcsInputDraft);
+                            if (!isNaN(val) && val > 0) {
+                              onUpdateEntityRcs?.(selectedEntity.id, val);
+                            }
+                            setEditingRcs(false);
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{ fontSize: '9.5px', padding: '2px 6px' }}
+                          onClick={() => setEditingRcs(false)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Sensor / Sight Horizon Envelopes */}
+              {isNaval ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                  {/* Air Search Radar Envelope */}
+                  <div
+                    style={{
+                      padding: '5px 9px',
+                      background: 'rgba(79, 195, 247, 0.08)',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(79, 195, 247, 0.25)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>📡</span>
+                      <span>Air Search Radar (Full 3D):</span>
+                    </span>
+                    <strong style={{ color: '#4FC3F7' }}>{detectionKm} km</strong>
+                  </div>
+
+                  {/* Surface Search / Clipped Horizon Envelope */}
+                  <div
+                    style={{
+                      padding: '5px 9px',
+                      background: 'rgba(0, 229, 255, 0.08)',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(0, 229, 255, 0.25)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <span style={{ color: '#00E5FF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🌊</span>
+                      <span>Surface Search (Clipped Horizon):</span>
+                    </span>
+                    <strong style={{ color: '#00E5FF' }}>{surfaceHorizonKm} km</strong>
+                  </div>
                 </div>
               ) : (
-                <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Site: <strong>Fixed Firing Position</strong></span>
-                  <span>Altitude: <strong>0 m (Ground Level)</strong></span>
-                  <span>Posture: <strong style={{ color: '#4FA85F' }}>Active Watch</strong></span>
+                <div
+                  style={{
+                    marginTop: '2px',
+                    padding: '6px 10px',
+                    background: 'rgba(79, 195, 247, 0.08)',
+                    borderRadius: '5px',
+                    border: '1px solid rgba(79, 195, 247, 0.25)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '11px',
+                  }}
+                >
+                  <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>{isGround ? '🔭' : '📡'}</span>
+                    <span>{isGround ? 'Thermal & Optical Sight Horizon:' : 'Radar / Sensor Horizon:'}</span>
+                  </span>
+                  <strong style={{ color: '#4FC3F7' }}>
+                    {detectionKm} km
+                  </strong>
                 </div>
               )}
-
-              {/* Sensor / Sight Horizon */}
-              <div
-                style={{
-                  marginTop: '2px',
-                  padding: '6px 10px',
-                  background: 'rgba(79, 195, 247, 0.08)',
-                  borderRadius: '5px',
-                  border: '1px solid rgba(79, 195, 247, 0.25)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '11px',
-                }}
-              >
-                <span style={{ color: '#4FC3F7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>{isGround ? '🔭' : '📡'}</span>
-                  <span>{isGround ? 'Thermal & Optical Sight Horizon:' : 'Radar / Sensor Horizon:'}</span>
-                </span>
-                <strong style={{ color: '#4FC3F7' }}>
-                  {detectionKm} km
-                </strong>
-              </div>
 
               {/* Equipped Weapons Arsenal & Interactive Range Toggles */}
               {(() => {
@@ -1051,9 +1450,14 @@ export function WarSimConsole({
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                    <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
-                      Equipped Weapons (Click to toggle range envelope):
-                    </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--paper-dim)', fontWeight: 600, letterSpacing: '0.4px' }}>
+                        Equipped Weapons (Click to toggle reach):
+                      </span>
+                      <span style={{ fontSize: '9px', color: '#4FC3F7', background: 'rgba(79, 195, 247, 0.1)', padding: '1px 5px', borderRadius: '3px', border: '1px solid rgba(79, 195, 247, 0.25)' }}>
+                        🔒 Deployed (Fixed)
+                      </span>
+                    </div>
 
                     {weapons.map((w, idx) => {
                       const isActive = activeWeaponIndex === idx;
@@ -1313,6 +1717,23 @@ export function WarSimConsole({
             onSelectEntity(null);
             onOrderStrike?.(params);
           }}
+          onStartStrikeRoutePlanning={(params) => {
+            setStrikeModalTarget(null);
+            onSelectContact?.(null);
+            onSelectEntity(null);
+            onStartStrikeRoutePlanning?.(params);
+          }}
+        />
+      )}
+
+      {/* 7. Combat After-Action Report (AAR) & Tactical Analysis Modal */}
+      {selectedReport && (
+        <CombatReportDetailModal
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+          onFlyToLocation={onFlyToBase}
+          playerCountryName={playerCountryName}
+          enemyCountryName={enemyCountryName}
         />
       )}
     </>

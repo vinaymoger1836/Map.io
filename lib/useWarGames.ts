@@ -93,10 +93,13 @@ import {
   keyOf,
   remaining,
   reviveForces,
+  mergeForces,
+  buildArsenalPackage,
   tally,
   type Forces,
   type Holding,
   type Tally,
+  type ArsenalPackage,
 } from './forces';
 import {
   EMPTY_SCENARIOS,
@@ -202,6 +205,9 @@ export interface WarGames {
   munitions: MunitionCatalogue;
   saveSystem: (spec: SystemSpec) => void;
   importSystems: (specs: unknown[]) => { count: number; ids: string[]; error?: string };
+  importForces: (incoming: unknown, mode?: 'merge' | 'replace') => { count: number; nationsCount: number; error?: string };
+  exportArsenalPackage: (options?: { customOnly?: boolean; iso?: string; description?: string }) => ArsenalPackage;
+  importArsenalPackage: (packageData: unknown) => { systemsCount: number; holdingsCount: number; nationsCount: number; error?: string };
   clearCustomSystems: () => void;
   deleteSystem: (id: string) => void;
   /** Where configuration is being kept, so the interface can say so. */
@@ -742,6 +748,100 @@ export function useWarGames({
       return next;
     });
   }, []);
+
+  const importForces = useCallback((incoming: unknown, mode: 'merge' | 'replace' = 'merge'): { count: number; nationsCount: number; error?: string } => {
+    const revived = reviveForces(incoming);
+    const nations = Object.keys(revived);
+    if (!nations.length) {
+      return { count: 0, nationsCount: 0, error: 'No valid national arsenal holdings found in data.' };
+    }
+
+    let totalHoldings = 0;
+    Object.values(revived).forEach((list) => {
+      totalHoldings += list.length;
+    });
+
+    setForces((prev) => {
+      let next: Forces;
+      if (mode === 'replace') {
+        next = revived;
+      } else {
+        const res = mergeForces(prev, revived);
+        next = res.merged;
+      }
+      void writeDoc(FORCES_DOC, next);
+      return next;
+    });
+
+    return { count: totalHoldings, nationsCount: nations.length };
+  }, []);
+
+  const exportArsenalPackage = useCallback((options?: { customOnly?: boolean; iso?: string; description?: string }): ArsenalPackage => {
+    return buildArsenalPackage(systemsRef.current, forces, options);
+  }, [forces]);
+
+  const importArsenalPackage = useCallback((packageData: unknown): { systemsCount: number; holdingsCount: number; nationsCount: number; error?: string } => {
+    if (!packageData || typeof packageData !== 'object') {
+      return { systemsCount: 0, holdingsCount: 0, nationsCount: 0, error: 'Invalid arsenal package JSON data.' };
+    }
+
+    const obj = packageData as Record<string, unknown>;
+    let systemsItems: unknown[] = [];
+    if (Array.isArray(obj.systems)) {
+      systemsItems = obj.systems;
+    } else if (Array.isArray(obj.specs)) {
+      systemsItems = obj.specs;
+    } else if (Array.isArray(obj.catalogue)) {
+      systemsItems = obj.catalogue;
+    } else if (Array.isArray(packageData)) {
+      systemsItems = packageData;
+    }
+
+    let forcesData: unknown = null;
+    if (obj.forces && typeof obj.forces === 'object') {
+      forcesData = obj.forces;
+    } else if (obj.arsenals && typeof obj.arsenals === 'object') {
+      forcesData = obj.arsenals;
+    } else if (obj.nationalHoldings && typeof obj.nationalHoldings === 'object') {
+      forcesData = obj.nationalHoldings;
+    } else if (obj.orbat && typeof obj.orbat === 'object') {
+      forcesData = obj.orbat;
+    }
+
+    // If packageData itself looks like a Forces dict (e.g. { "US": [ { typeId: ... } ] })
+    if (!forcesData && !systemsItems.length && !Array.isArray(packageData)) {
+      const keys = Object.keys(obj);
+      const isLikelyForces = keys.some((k) => k.length <= 4 && Array.isArray(obj[k]));
+      if (isLikelyForces) {
+        forcesData = obj;
+      }
+    }
+
+    let systemsCount = 0;
+    if (systemsItems.length > 0) {
+      const sysRes = importSystems(systemsItems);
+      systemsCount = sysRes.count;
+    }
+
+    let holdingsCount = 0;
+    let nationsCount = 0;
+    if (forcesData) {
+      const forceRes = importForces(forcesData, 'merge');
+      holdingsCount = forceRes.count;
+      nationsCount = forceRes.nationsCount;
+    }
+
+    if (systemsCount === 0 && holdingsCount === 0) {
+      return {
+        systemsCount: 0,
+        holdingsCount: 0,
+        nationsCount: 0,
+        error: 'No valid weapon systems specifications or national arsenal quotas found in JSON.',
+      };
+    }
+
+    return { systemsCount, holdingsCount, nationsCount };
+  }, [importSystems, importForces]);
 
   /* ---------------- world roster ---------------- */
 
@@ -1985,6 +2085,9 @@ export function useWarGames({
     munitions,
     saveSystem,
     importSystems,
+    importForces,
+    exportArsenalPackage,
+    importArsenalPackage,
     clearCustomSystems,
     deleteSystem,
     storageKind,
