@@ -1,13 +1,14 @@
-# Geopolitical situation map
+# Geopolitical situation map & War Simulation Engine
 
 An interactive MapLibre GL map of Europe, Russia and the Arctic, built on Next.js 15
 (App Router, TypeScript). Borders are coloured by *kind*, alliance blocs can be
 overlaid, energy and military layers sit on top, and the Russia–Ukraine line of
 contact is drawn from an editable snapshot.
 
-It has two modes. The **situation map** is the published assessment described
-above. **War Games** is a sandbox on the same globe: the whole world named, every
-country paintable, and military units you place yourself.
+It has three modes:
+1. **Situation Map**: The published geopolitical and conflict intelligence assessment.
+2. **War Games Sandbox**: A strategic sandbox on the globe for painting countries, custom formations, and manual force deployment.
+3. **War Simulation (WarSim)**: A real-time kinematic combat simulation engine with physics-based radar detection (RCS), fog-of-war, multi-waypoint sorties, standoff strike missions, multi-layered air defense, speed-dependent CIWS, and comprehensive After-Action Reports (AAR).
 
 ```bash
 npm install
@@ -553,128 +554,93 @@ dots and bars for ground echelons, a short word for naval and air groupings.
 ### Where the pieces live
 
 ```
-lib/warGames.ts    unit and formation catalogues, echelons, nation colours,
-                   board state and how it is revived
-lib/specs.ts       system specifications, facets, envelopes, provenance
-lib/geo.ts         geodesic circles, great-circle paths, distance — no dependency
-lib/store.ts       the document store — the only thing that knows about storage
-lib/munitions.ts   the munitions catalogue, derived from the systems
-lib/forces.ts      national holdings, and what the board has committed
-lib/scenarios.ts   saved boards, and the bundle a board travels in
-lib/engagement.ts  what a defence does to a raid, and what it will not claim
-lib/unitIcons.ts   the canvas icon factory
-lib/warLayers.ts   MapLibre sources and layers for the board
-lib/useWarGames.ts board state and the map wiring
+lib/warSimEngine.ts    real-time war simulation engine (ticks, kinematics, detection, weapons, SAM, CIWS, BDA)
+lib/warSimTypes.ts     data structures for entities, missiles, salvos, reports, bases, radar tracks
+lib/warSimRules.ts     domain combat rules, weapon compatibility, engagement matrix
+lib/warGames.ts        unit and formation catalogues, echelons, nation colours, board state
+lib/specs.ts           system specifications, RCS physics, radar horizon formulas, provenance
+lib/geo.ts             geodesic circles, great-circle paths, distance calculations
+lib/store.ts           document store for scenarios, forces, systems, and boards
+lib/munitions.ts       munitions catalogue derived from weapon systems
+lib/forces.ts          national holdings, quotas, and committed forces
+lib/scenarios.ts       saved boards and import/export bundle handlers
+lib/engagement.ts      static raid engagement model
+lib/unitIcons.ts       canvas-drawn APP-6 military symbology
+lib/warLayers.ts       MapLibre sources, layers, and rendering for war simulation
+lib/useWarGames.ts     board state and map wiring
 app/api/store/[doc]/route.ts   reads and writes data/*.json
-components/WarGamesPanel.tsx   the console: section nav, composition only
-components/wargames/           MapSection      tool, selection, palette,
-                                               coverage, then paint at the foot
-                               ArmamentsSection the systems catalogue + editor
-                               ForcesSection    per-nation strength
-                               EngagementSection a raid, and what stops it
-                               ScenariosSection saved boards, export, import
-                               and the parts they use: NationBlock, Palette,
-                               SelectedUnit, LoadoutEditor, CompositionEditor,
-                               SpecSheet, Coverage, OrderOfBattle, EnvelopeTip,
-                               SectionNav, Modal
+components/WarGamesPanel.tsx   War Games sandbox console
+components/wargames/WarSimConsole.tsx             WarSim tactical console (HUD, log, combat reports, forces)
+components/wargames/CombatReportDetailModal.tsx   After-Action Report (AAR) modal with physics breakdown
+components/wargames/StrikeTaskingModal.tsx        strike mission planning and weapon salvo selector
+components/wargames/DeploySystemModal.tsx         unit deployment modal with RCS preset controls
+components/wargames/SortieModal.tsx               air/naval sortie and route planning dialog
+components/wargames/BaseInspectorModal.tsx        airbase & naval station status and re-arming manager
 ```
 
-### The console's five sections
+---
 
-One long scroll put the colour picker above whatever you were actually doing and
-buried the systems catalogue under the deploy controls. They are five different
-jobs, so they are five places:
+## Real-Time War Simulation (WarSim)
 
-| Section | For |
-| --- | --- |
-| **Map** | Arranging the board. Tool, the selected unit and its editors, the deploy palette, what coverage draws — and painting at the foot, because you choose a nation's colour once and then deploy under it for an hour. |
-| **Armaments** | What every system *is*. Search and filter the catalogue, read a spec sheet with its sources, duplicate a library entry to disagree with it, or author a new one in a dialog with the whole schema. |
-| **Forces** | What each nation has, and what it owns. Strength by nation, a per-nation inventory that deploying draws down, and the order of battle. |
-| **Raid** | Fly something at something and see what the defence does to it — the layers it crosses, what each one fires, and how much arrives. |
-| **Boards** | Whole boards. Save the working board as a scenario, load one back, and export or import a board as a file. Last, because it is the section you visit at the start and end of a session rather than throughout it. |
+Reachable by switching to **WAR SIM** mode in the upper header. Unlike the static War Games sandbox, the **War Simulation Engine** (`lib/warSimEngine.ts`) executes dynamic, real-time tactical military engagements over time with kinematic entity movement, physics-driven sensor sweeps, electronic warfare, missile flyouts, air defense shootdowns, point-defense CIWS, and after-action combat reporting.
 
-The system form is a dialog rather than a column, because thirty-odd fields in a
-384 px panel is a scroll inside a scroll. It is portalled to `<body>`: the console
-carries a `backdrop-filter`, and **any filtered ancestor becomes the containing
-block for `position: fixed` descendants**, so an overlay declared inside it is
-silently clipped to the panel's width.
+### 1. Simulation Engine & Time Dynamics
+- **Time Controls**: Play, pause, and time acceleration speeds (**1×, 2×, 5×, 10×, 30×**).
+- **Kinematics & Waypoint Routing**:
+  - Airframes, naval surface combatants, and submarines move along geodesic paths according to their physical speed specs (`km/h`).
+  - Support for multi-waypoint patrol routes (`PATROL`), direct transit (`TRANSIT`), Return to Base (`RTB`), and strike ingress (`STRIKE`).
+- **Base Infrastructure & Stationing**:
+  - Sovereign air and naval bases serve as operational hubs.
+  - Aircraft and warships docked at bases enter turnaround, re-arming, refueling, or repair cycles before subsequent tasking.
 
-### National inventory
+### 2. Physics-Based Radar Cross Section (RCS) & Sensor Detection
+The simulation implements continuous, physics-based radar and optical reconnaissance:
 
-What a country owns, against what it has put on the board. This is
-configuration rather than board state — it lives beside the systems library, so
-switching boards does not make a country forget its army.
+- **Metric Radar Cross Section ($\text{m}^2$)**:
+  - Replaces qualitative signatures with continuous physical RCS values across all assets (e.g. `0.0001 m²` for 5th-gen stealth fighters like F-22/F-35, `5.0 m²` for standard fighters, `100 m²` for frigates, `1,000–5,000 m²` for destroyers and supercarriers).
+- **Physical Radar Range Equation**:
+  - Detection ranges dynamically scale with target RCS using the 4th-root radar range equation:
+    $$R_{\text{detect}} = R_{\text{nominal}} \times \left(\frac{\sigma_{\text{target}}}{\sigma_{\text{ref}}}\right)^{1/4}$$
+- **Earth Curvature & Geometric Radar Horizon**:
+  - Line-of-sight is physically capped by the Earth's curvature based on radar antenna height and target altitude:
+    $$D_{\text{horizon}} = 3.57 \times (\sqrt{h_{\text{radar}}} + \sqrt{h_{\text{target}}})$$
+- **Fog of War & Two-Tier Contact Classification**:
+  - **Tier 1 (Raw Radar / Kinematic Track)**: Contacts detected beyond $90\text{ km}$ standoff appear as unverified contacts (displaying domain and kinematic vector, but unknown specific platform identity).
+  - **Tier 2 (Positive Identification / PID)**: Requires closing within high-resolution ISAR radar range ($\le 90\text{ km}$) or optical EO/IR range ($\le 45\text{ km}$) to positively identify the vessel or aircraft model.
+- **RCS Customization**:
+  - Users can adjust platform RCS during deployment (e.g., clean stealth configuration vs external pylon weapon loadouts).
+  - Live inline RCS editing directly from the Tactical HUD.
 
-**Opt-in by nation.** A country with no holdings recorded deploys without limit,
-exactly as every board did before this existed. Writing an inventory down is a
-decision, not a chore imposed on every nation you paint. Once one exists,
-everything already on the board counts against it immediately — otherwise the
-numbers would be wrong the moment you started.
+### 3. Strike Mission Tasking & Salvo Fire
+- **Mission Planning**:
+  - Sortie tasking with custom weapon loadout selection, salvo sizing (e.g. 1 to 16+ missiles per salvo), and post-strike protocols (`RTB`, `PATROL`, `HOLD_POSITION`).
+  - Standoff weapon release logic: aircraft and ships maneuver until reaching weapon release range before unleashing munitions.
+  - Sequential ripple launch timings with realistic missile flyout tracks.
+- **Munition Profiles**:
+  - Supports subsonic cruise missiles (Tomahawk, Kalibr), supersonic anti-ship missiles (P-800 Oniks, BrahMos), hypersonic weapons (3M22 Zircon, Kinzhal), ballistic missiles, and torpedoes.
 
-**Stock blocks at zero.** The palette shows `1 LEFT` beside the count, greys out
-the quick counts that no longer fit, caps the stepper at what remains, and
-refuses the deployment outright at zero. A special unit is checked as a basket:
-every component must fit, because deploying half a carrier group is not a thing
-the board can represent.
+### 4. Integrated Air Defense & Speed-Dependent CIWS Point Defense
+- **Multi-Layered Air Defense (SAMs)**:
+  - Defending batteries and naval escorts detect incoming threats within their radar envelope, apply reaction delay (5–8s), and launch area interceptor salvos (e.g. *Aster 30*, *SM-6*, *S-400*, *Patriot PAC-3*).
+  - Collision calculations evaluate intercept geometry and compound single-shot kill probability ($P_k$).
+- **Close-In Weapon System (CIWS) Point Defense**:
+  - Terminal point defense (e.g. *76mm Oto Melara Super Rapid*, *20mm Phalanx*, *30mm AK-630*, *Pantsir-S1*) engages surviving missiles inside the terminal $15\text{ km}$ perimeter.
+  - **Speed-Dependent CIWS Interception Rates**:
+    - **Hypersonic ($\ge \text{Mach } 5.0$)**: $0\%$ ($P_k = 0.0$, mechanically bypasses close-in point defense).
+    - **High Supersonic ($\text{Mach } 3.0\text{--}5.0$)**: $20\%$ ($P_k = 0.20$).
+    - **Supersonic ($\text{Mach } 1.0\text{--}3.0$)**: $45\%$ ($P_k = 0.45$).
+    - **Subsonic ($<\text{Mach } 1.0$)**: $65\%$ ($P_k = 0.65$).
+    - **Undefined / Empty Speed**: $45\%$ ($P_k = 0.45$).
 
-**A generic holding and a specific one are different stock.** Twelve unspecified
-fighters do not come out of the forty Su-30MKI; a deployment draws from whichever
-it was made with. Holdings are keyed the same way a deployment records itself —
-by system where there is one, by unit type otherwise.
-
-**More deployed than held is shown, never hidden.** Write an inventory after the
-fact and the shortfall appears in red rather than being quietly absorbed; nothing
-is removed from the board on your behalf. Before a nation is tracked at all,
-though, its deployments are *not* drawn as shortfalls — red means a real
-discrepancy, not "we have not started counting".
-
-Deliberate limit: this is national bookkeeping, not logistics. Nothing models
-basing, readiness or transit.
-
-### Changing what a deployed unit carries
-
-Select a unit, open **Edit**, and its armament is a list you can add to, take
-from, and **set a count on**. The change is local to that deployment: re-arming
-one flight of Su-30s changes that flight's rings and nothing else — not the
-system, not the library, not the other Su-30s on the board. Two F-35As on
-opposite sides of the map can carry entirely different stores.
-`lib/munitions.ts` resolves the loadout against the catalogue and hands
-everything downstream an *effective* spec, so rings, tooltips and the spec sheet
-all redraw without any of them knowing that loadouts exist.
-
-**How many is a count on the loadout, not a new concept.** It overrides the
-weapon's `magazine` — the field that already meant "ready rounds: VLS cells,
-launcher rails, hardpoints" — so the engagement model reads it from where it
-always read it. A blank count means *not recorded*, which is the honest default:
-most weapons in the library publish no magazine at all, and defaulting them to 1
-would assert a figure nobody wrote down.
-
-**Capacity is enforced only where it is published.** Vertical launch cells are
-the one real capacity figure in the library, so a ship shows `90 of 96 launch
-cells` and turns red past its limit. Aircraft hardpoints are recorded nowhere, so
-aircraft are uncapped and the panel says so instead of inventing a number. Even
-the cell count is described as a floor rather than a hard limit, because some
-missiles quad-pack — an ESSM takes a quarter of a cell.
-
-**The catalogue is derived, never authored.** Every weapon on every system is a
-row in it, keyed by the munition's own id — which is why the research prompt
-insists the same round gets the same id everywhere. What a system may carry is
-answered in two steps: if it declares `compatible`, that list is exact; otherwise
-it is inferred from what other systems in the same domain carry. The inferred
-answer is right at the domain level and costs nothing — it will not put a
-Tomahawk on a MiG or a Meteor in a VLS cell — but it will offer a Rafale an
-R-37M it cannot carry. Declaring `compatible` on that airframe is the fix, and
-the interface says which of the two you are looking at.
-
-Adding a unit type is one line in `UNIT_TYPES` plus a glyph in `GLYPHS`; adding a
-built-in special unit is one entry in `FORMATIONS`. The panel and the map both
-render from those catalogues.
-
-A deployed thing is a discriminated union — `kind: 'unit'` carries a type and an
-echelon, `kind: 'formation'` carries a composition — rather than one shape with
-optional fields, so nothing can quietly treat a strike group as if it had an
-echelon. Boards saved before special units existed are migrated on load: the old
-`carrier`, `amphibious` and `sam` types are read as the formations they became.
+### 5. Unified After-Action Reports (AAR) & Combat Analytics
+- **Single Consolidated Report per Strike**:
+  - Eliminates fragmented report spam; emits **strictly 1 comprehensive After-Action Report** upon strike conclusion.
+- **Integrated Interception Breakdown**:
+  - Details each defending platform's contribution (e.g. *`FREMM-class2: Intercepted 4 × P-800 Oniks using Aster 30`*, *`FREMM-class3: Intercepted 1 × P-800 Oniks using 76mm CIWS`*).
+- **Battle Damage Assessment (BDA)**:
+  - Records final target hull status (`INTACT`, `DAMAGED`, `DESTROYED`), personnel casualties, and leaker penetration rates.
+- **Physics Telemetry Callouts**:
+  - Detailed modal callout explaining radar horizon line-of-sight and $4\text{th}\text{-root}$ RCS scaling metrics for every engagement.
 
 ---
 
@@ -695,12 +661,15 @@ the switch and the legend key are the same row.
 ```
 app/            layout, page, globals.css (all design tokens)
 components/     EurasiaMap (map + mode state), ControlPanel, DetailPanel,
-                ReadoutRail, WarGamesPanel
+                ReadoutRail, WarGamesPanel, wargames/ (WarSim console & modals)
 lib/theme.ts    colour and zoom tiers — the single source of truth
 lib/layerSpec.ts  the layer registry that drives the panel
 lib/mapLayers.ts  MapLibre sources, layers, expressions
+lib/warSimEngine.ts real-time simulation engine (ticks, kinematics, detection, BDA)
+lib/warSimTypes.ts  data models for WarSim entities, missiles, reports, tracks
+lib/warSimRules.ts  domain classification, weapon engagement rules
 lib/warGames.ts   War Games catalogue and board state
-lib/warLayers.ts  War Games map layers
+lib/warLayers.ts  War Games map layers & missile rendering
 lib/unitIcons.ts  canvas-drawn unit symbols
 lib/useWarGames.ts  War Games state and map wiring
 lib/blocs.ts    alliance membership by ISO numeric code
