@@ -639,8 +639,23 @@ The simulation implements continuous, physics-based radar and optical reconnaiss
   - Details each defending platform's contribution (e.g. *`FREMM-class2: Intercepted 4 × P-800 Oniks using Aster 30`*, *`FREMM-class3: Intercepted 1 × P-800 Oniks using 76mm CIWS`*).
 - **Battle Damage Assessment (BDA)**:
   - Records final target hull status (`INTACT`, `DAMAGED`, `DESTROYED`), personnel casualties, and leaker penetration rates.
-- **Physics Telemetry Callouts**:
-  - Detailed modal callout explaining radar horizon line-of-sight and $4\text{th}\text{-root}$ RCS scaling metrics for every engagement.
+### 6. Unified Battlefield Network (CEC) & Multi-Layer Cooperative Defense
+- **Tactical Datalink & Shared Sensor Fusion Grid**:
+  - Linked naval combatants, aircraft, UAVs, and air defense batteries form a shared tactical network (`BattlefieldNetwork`).
+  - Forward scouts (e.g. MQ-9, AWACS) feed radar tracks to the network, enabling Over-the-Horizon (OTH) standoff strikes from combatants.
+- **Layered Deconfliction & Area SAM Defense (Tier 1 & Tier 2)**:
+  - Outer Area SAM layer (Tier 1, $>50\text{ km}$) fires first from networked escorts with the best firing solutions (e.g. Aster-30 / SM-6).
+  - Medium Area SAM layer (Tier 2, $15\text{--}50\text{ km}$) engages leakers that penetrate outer defense (e.g. Aster-15 / ESSM).
+  - **Radar Tracking Channel Saturation**: platforms possess finite fire-control channels (4–12); simultaneous threats exceeding channel capacity incur a saturation penalty ($-20\%\text{ }P_k$ degraded guidance).
+- **Individual Point Defense (Tier 3 CIWS) & Turret Cycle Limits**:
+  - Point defense CIWS is strictly individual to the targeted unit (outer escorts $>15\text{ km}$ away cannot engage).
+  - **Turret Cycle & Slew Saturation Limits**: naval CIWS mounts can engage a maximum of 2 leakers in the tight terminal arrival window; excess leakers penetrate through tracking cycle saturation.
+- **Subsystem Degradation & Realistic BDA**:
+  - Direct missile hits damage specific subsystems:
+    - **Superstructure / Radar Hit**: Destroys radar array and fire-control directors ($-40\%\text{ to }-100\%$ sensor reach, SAM guidance lost, CIWS fallback to optical, offensive weapons offline).
+    - **Waterline / Hull Hit**: Breaches lower hull, causing critical flooding, $50\%$ speed penalty, and progressive sinking.
+- **`🌐 Battlefield Network` Sidebar Console**:
+  - Interactive sidebar tab to manage datalinks, select cooperative doctrines (`Layered Optimal`, `Max Volley`, `Conserve Ammo`), toggle OTH sensor fusion, monitor active tracking channels and subsystem health, and task network strikes.
 
 ---
 

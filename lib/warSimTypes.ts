@@ -142,6 +142,35 @@ export interface StrikePlan {
   currentWaypointIdx?: number;
 }
 
+export interface SubsystemStatus {
+  radar: 'operational' | 'degraded' | 'destroyed';
+  weapons: 'operational' | 'jammed' | 'offline';
+  propulsion: 'operational' | 'degraded' | 'disabled';
+  hullIntegrityPct: number; // 0 - 100%
+  flooding: 'none' | 'controlled' | 'critical_sinking';
+}
+
+export type NetworkDoctrine = 'layered_optimal' | 'conserve_ammo' | 'saturation_fire' | 'independent';
+
+export interface BattlefieldNetworkNode {
+  entityId: string;
+  role: 'sensor' | 'shooter' | 'relay' | 'coordinator';
+  datalinkStatus: 'active' | 'degraded' | 'offline';
+  channelCapacity: number; // Max simultaneous target tracks / guidance channels (e.g. 4 or 8)
+  activeChannelsUsed: number;
+}
+
+export interface BattlefieldNetwork {
+  id: string;
+  name: string; // e.g. "TF-70 Tactical Datalink Grid", "Integrated Air Defense Net"
+  faction: 'player' | 'enemy';
+  iso: string;
+  doctrine: NetworkDoctrine;
+  nodes: BattlefieldNetworkNode[];
+  sharedContactIds: string[]; // List of contact IDs fused and shared across the network
+  othTargetingEnabled: boolean; // Over-the-horizon shooter targeting from scout tracks
+}
+
 export interface SimEntity {
   id: string;
   iso: string;
@@ -170,6 +199,10 @@ export interface SimEntity {
   magazines: Record<number, number>;
   /** Custom equipped weapon facets configured during pre-mission sortie tasking */
   customWeapons?: import('./specs').WeaponFacet[];
+  /** Datalink network ID this entity is assigned to */
+  networkId?: string;
+  /** Detailed component & structural subsystem health profile */
+  subsystems?: SubsystemStatus;
 }
 
 /* ------------------------------------------------------------------ */
@@ -242,6 +275,10 @@ export interface StrikeSalvoTracker {
   targetLngLat: [number, number];
   attackerLngLat: [number, number];
   isConcluded: boolean;
+  saturationPenaltyApplied?: boolean;
+  guidanceChannelsActive?: number;
+  networkCoordinationUsed?: boolean;
+  subsystemDamageSummary?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -334,6 +371,7 @@ export interface CombatReport {
     successRatePct: number;
     responseDetail: string;
     breakdown?: InterceptionBreakdownEntry[];
+    saturationPenaltyApplied?: boolean;
   };
 
   // Damage / BDA Assessment
@@ -344,6 +382,16 @@ export interface CombatReport {
     personnelLosses?: number;
     platformsDestroyed?: number;
     bdaSummary: string;
+    subsystemsDamaged?: string[];
+  };
+
+  // Network coordination details
+  networkDetails?: {
+    networkName: string;
+    doctrine: string;
+    othTargeting: boolean;
+    nodesCoordinated: number;
+    saturationWarning?: string;
   };
 
   // Intel Gathering details (if recon report)
@@ -401,6 +449,7 @@ export interface WarSimSession {
   eventLog: SimBattleEvent[];
   reports?: CombatReport[];
   salvoTrackers?: StrikeSalvoTracker[];
+  networks?: BattlefieldNetwork[];
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';

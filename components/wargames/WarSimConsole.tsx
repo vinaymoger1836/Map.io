@@ -32,7 +32,7 @@ import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -66,6 +66,11 @@ export interface WarSimConsoleProps {
   onOrderRtb: (entityId: string) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
+  onCreateNetwork?: (name: string, doctrine: import('@/lib/warSimTypes').NetworkDoctrine) => void;
+  onAssignEntityToNetwork?: (entityId: string, networkId: string) => void;
+  onRemoveEntityFromNetwork?: (entityId: string) => void;
+  onSetNetworkDoctrine?: (networkId: string, doctrine: import('@/lib/warSimTypes').NetworkDoctrine) => void;
+  onToggleNetworkOth?: (networkId: string) => void;
   activeWeaponIndex?: number | null;
   onToggleWeapon?: (idx: number) => void;
   showAllEnvelopes?: boolean;
@@ -138,6 +143,11 @@ export function WarSimConsole({
   onOrderRtb,
   onStartBasePlacement,
   onRenameBase,
+  onCreateNetwork,
+  onAssignEntityToNetwork,
+  onRemoveEntityFromNetwork,
+  onSetNetworkDoctrine,
+  onToggleNetworkOth,
   activeWeaponIndex,
   onToggleWeapon,
   showAllEnvelopes = false,
@@ -164,6 +174,9 @@ export function WarSimConsole({
   const [reportCategoryFilter, setReportCategoryFilter] = useState<'all' | WarReportCategory>('all');
   const [editingRcs, setEditingRcs] = useState<boolean>(false);
   const [rcsInputDraft, setRcsInputDraft] = useState<string>('');
+  const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
+  const [newNetworkName, setNewNetworkName] = useState<string>('');
+  const [showCreateNetwork, setShowCreateNetwork] = useState<boolean>(false);
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -174,6 +187,14 @@ export function WarSimConsole({
   const otherCountryIso = isPlayer ? session.enemyIso : session.playerIso;
   const activeColor = isPlayer ? session.playerColor : session.enemyColor;
   const otherColor = isPlayer ? session.enemyColor : session.playerColor;
+
+  const factionNetworks = useMemo(() => {
+    return (session.networks || []).filter((n) => n.faction === activeFaction || n.iso === activeCountryIso);
+  }, [session.networks, activeFaction, activeCountryIso]);
+
+  const currentNetwork = useMemo(() => {
+    return factionNetworks.find((n) => n.id === selectedNetworkId) || factionNetworks[0] || null;
+  }, [factionNetworks, selectedNetworkId]);
 
   const quotaLedger = session.quotas[activeFaction] || {};
 
@@ -526,6 +547,20 @@ export function WarSimConsole({
                 🛰️ Intel ({visibleContacts.length})
               </button>
               <button
+                className={`wg-btn ${activeTab === 'network' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'network' ? undefined : 'rgba(0, 230, 118, 0.08)',
+                  borderColor: activeTab === 'network' ? undefined : 'rgba(0, 230, 118, 0.3)',
+                  color: activeTab === 'network' ? undefined : '#00E676',
+                }}
+                onClick={() => setActiveTab('network')}
+              >
+                🌐 Network
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'reports' ? 'accent' : ''}`}
                 style={{
                   fontSize: '10px',
@@ -552,6 +587,7 @@ export function WarSimConsole({
               <button onClick={() => { setSidebarOpen(true); setActiveTab('systems'); }} title="Systems" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🎯</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('bases'); }} title="Bases" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🏰</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('intel'); }} title="Intel" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🛰️</button>
+              <button onClick={() => { setSidebarOpen(true); setActiveTab('network'); }} title="Battlefield Network" style={{ background: 'none', border: 'none', color: '#00E676', cursor: 'pointer', fontSize: '16px' }}>🌐</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('reports'); }} title="Reports" style={{ background: 'none', border: 'none', color: '#4FC3F7', cursor: 'pointer', fontSize: '16px' }}>📊</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('log'); }} title="Log" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>📜</button>
             </div>
@@ -902,6 +938,468 @@ export function WarSimConsole({
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB: BATTLEFIELD NETWORK & COOPERATIVE ENGAGEMENT (CEC)   */}
+            {/* ========================================================= */}
+            {activeTab === 'network' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Header & Network Selector */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '14px' }}>🌐</span>
+                    <span style={{ fontSize: '11px', color: '#00E676', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Battlefield Datalink Network
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{ fontSize: '9.5px', padding: '2px 6px', color: '#00E676', borderColor: '#00E676' }}
+                    onClick={() => setShowCreateNetwork(!showCreateNetwork)}
+                  >
+                    {showCreateNetwork ? '✕ Cancel' : '+ New Network'}
+                  </button>
+                </div>
+
+                {/* Create Network Panel */}
+                {showCreateNetwork && (
+                  <div
+                    style={{
+                      background: 'rgba(0, 230, 118, 0.05)',
+                      border: '1px solid rgba(0, 230, 118, 0.3)',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="e.g. Strike Group Datalink Alpha"
+                      value={newNetworkName}
+                      onChange={(e) => setNewNetworkName(e.target.value)}
+                      style={{
+                        background: '#070C14',
+                        border: '1px solid var(--border)',
+                        color: 'var(--paper)',
+                        fontSize: '11px',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="wg-btn accent"
+                      style={{ fontSize: '10px', padding: '4px', background: '#00E676', color: '#070C14', fontWeight: 700 }}
+                      onClick={() => {
+                        if (newNetworkName.trim() && onCreateNetwork) {
+                          onCreateNetwork(newNetworkName.trim(), 'layered_optimal');
+                          setNewNetworkName('');
+                          setShowCreateNetwork(false);
+                        }
+                      }}
+                    >
+                      ✓ Create Tactical Network
+                    </button>
+                  </div>
+                )}
+
+                {/* Network Switcher & Active Status */}
+                {factionNetworks.length > 0 ? (
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(0, 230, 118, 0.25)',
+                      borderRadius: '6px',
+                      padding: '10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <select
+                        value={currentNetwork?.id || ''}
+                        onChange={(e) => setSelectedNetworkId(e.target.value)}
+                        style={{
+                          background: '#070C14',
+                          border: '1px solid rgba(0, 230, 118, 0.4)',
+                          color: '#00E676',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '4px 6px',
+                          borderRadius: '4px',
+                          flex: 1,
+                          marginRight: '6px',
+                        }}
+                      >
+                        {factionNetworks.map((net) => (
+                          <option key={net.id} value={net.id}>
+                            {net.name} ({net.nodes.length} nodes)
+                          </option>
+                        ))}
+                      </select>
+                      <span
+                        style={{
+                          fontSize: '9.5px',
+                          color: '#00E676',
+                          background: 'rgba(0, 230, 118, 0.15)',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontWeight: 700,
+                        }}
+                      >
+                        🟢 ONLINE
+                      </span>
+                    </div>
+
+                    {currentNetwork && (
+                      <>
+                        {/* Cooperative Doctrine Selector */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 600 }}>
+                            Cooperative Defense Doctrine:
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              type="button"
+                              onClick={() => onSetNetworkDoctrine?.(currentNetwork.id, 'layered_optimal')}
+                              style={{
+                                flex: 1,
+                                padding: '4px 2px',
+                                fontSize: '9px',
+                                borderRadius: '4px',
+                                border: `1px solid ${currentNetwork.doctrine === 'layered_optimal' ? '#00E676' : 'var(--border)'}`,
+                                background: currentNetwork.doctrine === 'layered_optimal' ? 'rgba(0, 230, 118, 0.2)' : '#070C14',
+                                color: currentNetwork.doctrine === 'layered_optimal' ? '#00E676' : 'var(--paper-dim)',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                              }}
+                            >
+                              🛡️ Layered Optimal
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onSetNetworkDoctrine?.(currentNetwork.id, 'saturation_fire')}
+                              style={{
+                                flex: 1,
+                                padding: '4px 2px',
+                                fontSize: '9px',
+                                borderRadius: '4px',
+                                border: `1px solid ${currentNetwork.doctrine === 'saturation_fire' ? '#FF9800' : 'var(--border)'}`,
+                                background: currentNetwork.doctrine === 'saturation_fire' ? 'rgba(255, 152, 0, 0.2)' : '#070C14',
+                                color: currentNetwork.doctrine === 'saturation_fire' ? '#FF9800' : 'var(--paper-dim)',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                              }}
+                            >
+                              🚀 Max Volley
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onSetNetworkDoctrine?.(currentNetwork.id, 'conserve_ammo')}
+                              style={{
+                                flex: 1,
+                                padding: '4px 2px',
+                                fontSize: '9px',
+                                borderRadius: '4px',
+                                border: `1px solid ${currentNetwork.doctrine === 'conserve_ammo' ? '#4FC3F7' : 'var(--border)'}`,
+                                background: currentNetwork.doctrine === 'conserve_ammo' ? 'rgba(79, 195, 247, 0.2)' : '#070C14',
+                                color: currentNetwork.doctrine === 'conserve_ammo' ? '#4FC3F7' : 'var(--paper-dim)',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                              }}
+                            >
+                              ⚡ Conserve
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* OTH Sensor Fusion Toggle */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>
+                            Over-the-Horizon (OTH) Targeting:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onToggleNetworkOth?.(currentNetwork.id)}
+                            style={{
+                              padding: '2px 6px',
+                              fontSize: '9.5px',
+                              borderRadius: '3px',
+                              border: 'none',
+                              background: currentNetwork.othTargetingEnabled ? '#00E676' : '#555',
+                              color: currentNetwork.othTargetingEnabled ? '#070C14' : '#CCC',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {currentNetwork.othTargetingEnabled ? '✓ ENABLED' : 'OFF'}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '11px', color: 'var(--paper-dim)', textAlign: 'center', padding: '12px' }}>
+                    No tactical networks initialized. Click '+ New Network' to initialize a Datalink Grid.
+                  </div>
+                )}
+
+                {/* Theater Air Defense Tiers & Capacity Diagnostic */}
+                {currentNetwork && (
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--paper-dim)', textTransform: 'uppercase' }}>
+                      Layered Defense Grid Coverage:
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#4FA85F' }}>🚀 Tier 1 (Outer SAM, 60–120 km):</span>
+                        <span style={{ fontWeight: 600 }}>Active (Aster-30 / Long-Range)</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#E8833A' }}>🚀 Tier 2 (Medium SAM, 20–45 km):</span>
+                        <span style={{ fontWeight: 600 }}>Active (Aster-15 / Point SAM)</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#D9534F' }}>💥 Tier 3 (Point CIWS, &lt;15 km):</span>
+                        <span style={{ fontWeight: 600 }}>Max 2 Leakers / Salvo Cycle</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Linked Member Nodes Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Linked Combat Platforms ({friendlyEntities.filter((e) => e.networkId === currentNetwork?.id).length})
+                    </span>
+                  </div>
+
+                  {friendlyEntities
+                    .filter((e) => e.networkId === currentNetwork?.id && e.status !== 'destroyed')
+                    .map((entity) => {
+                      const spec = systemsLibrary.find((s) => s.id === entity.systemId);
+                      const isScout = entity.typeId === 'uav' || entity.typeId === 'awacs' || entity.typeId === 'recon';
+                      const isAD = entity.typeId === 'sam-launcher' || entity.typeId === 'destroyer' || entity.typeId === 'frigate';
+                      const roleLabel = isScout ? '📡 Sensor Scout' : isAD ? '🛡️ Area Air Defense' : '⚔️ Shooter';
+
+                      const radarStatus = entity.subsystems?.radar ?? 'operational';
+                      const weaponsStatus = entity.subsystems?.weapons ?? 'operational';
+                      const floodingStatus = entity.subsystems?.flooding ?? 'none';
+
+                      return (
+                        <div
+                          key={entity.id}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: `1px solid ${selectedEntity?.id === entity.id ? '#00E676' : 'var(--border)'}`,
+                            borderRadius: '6px',
+                            padding: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '5px',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => onSelectEntity(entity.id)}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{getSimUnitIcon(entity.typeId)}</span>
+                              <strong style={{ fontSize: '11.5px', color: activeColor }}>{entity.name}</strong>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                color: 'var(--paper-dim)',
+                              }}
+                            >
+                              {roleLabel}
+                            </span>
+                          </div>
+
+                          {/* Subsystem Health Profile */}
+                          <div style={{ display: 'flex', gap: '4px', fontSize: '9.5px', flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                padding: '1px 4px',
+                                borderRadius: '2px',
+                                background: radarStatus === 'destroyed' ? 'rgba(255, 82, 82, 0.2)' : radarStatus === 'degraded' ? 'rgba(255, 176, 32, 0.2)' : 'rgba(0, 230, 118, 0.15)',
+                                color: radarStatus === 'destroyed' ? '#FF5252' : radarStatus === 'degraded' ? '#FFB020' : '#00E676',
+                                fontWeight: 600,
+                              }}
+                            >
+                              Radar: {radarStatus.toUpperCase()}
+                            </span>
+                            <span
+                              style={{
+                                padding: '1px 4px',
+                                borderRadius: '2px',
+                                background: weaponsStatus === 'offline' ? 'rgba(255, 82, 82, 0.2)' : 'rgba(0, 230, 118, 0.15)',
+                                color: weaponsStatus === 'offline' ? '#FF5252' : '#00E676',
+                                fontWeight: 600,
+                              }}
+                            >
+                              Weapons: {weaponsStatus.toUpperCase()}
+                            </span>
+                            {floodingStatus !== 'none' && (
+                              <span
+                                style={{
+                                  padding: '1px 4px',
+                                  borderRadius: '2px',
+                                  background: 'rgba(255, 82, 82, 0.25)',
+                                  color: '#FF5252',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                ⚠️ SINKING / FLOODING
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                            <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                              Channels: <strong>4/4 Active</strong> · Speed: <strong>{entity.speedKmh} km/h</strong>
+                            </span>
+                            <button
+                              type="button"
+                              className="wg-btn"
+                              style={{ fontSize: '9px', padding: '2px 5px', color: '#D9534F', borderColor: '#D9534F' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRemoveEntityFromNetwork?.(entity.id);
+                              }}
+                            >
+                              Unlink
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                  {/* Unassigned Units to Link */}
+                  {friendlyEntities.some((e) => e.networkId !== currentNetwork?.id && e.status !== 'destroyed') && (
+                    <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 600 }}>
+                        + Add Available Units to Datalink:
+                      </span>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {friendlyEntities
+                          .filter((e) => e.networkId !== currentNetwork?.id && e.status !== 'destroyed')
+                          .map((e) => (
+                            <button
+                              key={e.id}
+                              type="button"
+                              className="wg-btn"
+                              style={{ fontSize: '9.5px', padding: '3px 6px', borderColor: 'var(--border)' }}
+                              onClick={() => {
+                                if (currentNetwork) onAssignEntityToNetwork?.(e.id, currentNetwork.id);
+                              }}
+                            >
+                              + {e.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Shared Sensor Fusion Feed */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#4FC3F7', textTransform: 'uppercase', fontWeight: 700 }}>
+                    📡 Shared Sensor Fusion Picture ({visibleContacts.length} tracks)
+                  </span>
+                  {visibleContacts.length === 0 ? (
+                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', fontStyle: 'italic', padding: '6px 0' }}>
+                      No hostile contacts actively tracked. Deploy UAV or AWACS forward pickets to scan theater.
+                    </div>
+                  ) : (
+                    visibleContacts.map((c) => (
+                      <div
+                        key={c.contactId}
+                        style={{
+                          background: 'rgba(79, 195, 247, 0.05)',
+                          border: '1px solid rgba(79, 195, 247, 0.25)',
+                          borderRadius: '5px',
+                          padding: '6px 8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <strong style={{ fontSize: '11px', color: '#4FC3F7' }}>
+                            {c.knownName || `Hostile ${c.domain.toUpperCase()} Track`}
+                          </strong>
+                          <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                            Speed: {c.speedKmh} km/h · Heading: {c.headingDeg.toFixed(0)}° · Tier {c.intelTier}
+                          </span>
+                        </div>
+
+                        {onOrderStrike && friendlyEntities.some((e) => e.networkId === currentNetwork?.id && (isNavalCombatant(e.typeId) || e.typeId === 'fighter' || e.typeId === 'strike' || e.typeId === 'bomber' || e.typeId === 'sam-launcher')) && (
+                          <button
+                            type="button"
+                            className="wg-btn accent"
+                            style={{
+                              fontSize: '9.5px',
+                              padding: '3px 8px',
+                              background: '#4FC3F7',
+                              color: '#070C14',
+                              fontWeight: 700,
+                            }}
+                            onClick={() => {
+                              const shooter = friendlyEntities.find(
+                                (e) => e.networkId === currentNetwork?.id && (isNavalCombatant(e.typeId) || e.typeId === 'fighter' || e.typeId === 'strike' || e.typeId === 'bomber' || e.typeId === 'sam-launcher')
+                              );
+                              if (shooter) {
+                                setStrikeModalTarget({
+                                  targetId: c.targetEntityId,
+                                  name: c.knownName || `Hostile ${c.domain.toUpperCase()} Track`,
+                                  count: c.knownCount || 1,
+                                  domain: c.domain,
+                                  iso: c.targetIso,
+                                  lngLat: c.lastKnownLngLat,
+                                  intelTier: c.intelTier,
+                                  damage: c.knownDamage,
+                                  speedKmh: c.speedKmh,
+                                });
+                              }
+                            }}
+                          >
+                            🎯 Strike via Net
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
 

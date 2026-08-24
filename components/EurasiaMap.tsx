@@ -765,6 +765,11 @@ export default function EurasiaMap() {
             onOrderRtb={warSim.orderRtb}
             onStartBasePlacement={warSim.startBasePlacement}
             onRenameBase={warSim.renameBase}
+            onCreateNetwork={warSim.createNetwork}
+            onAssignEntityToNetwork={warSim.assignEntityToNetwork}
+            onRemoveEntityFromNetwork={warSim.removeEntityFromNetwork}
+            onSetNetworkDoctrine={warSim.setNetworkDoctrine}
+            onToggleNetworkOth={warSim.toggleNetworkOth}
             targetPicking={warSim.targetPicking}
             onCancelTargetPicking={warSim.cancelTargetPicking}
             onConfirmCustomRoute={warSim.confirmCustomRoute}

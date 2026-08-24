@@ -27,6 +27,10 @@ import {
   type PatrolOrder,
   type PostStrikeAction,
   type StrikePlan,
+  type BattlefieldNetwork,
+  type BattlefieldNetworkNode,
+  type NetworkDoctrine,
+  type SubsystemStatus,
 } from './warSimTypes';
 import {
   canStationAtBase,
@@ -60,6 +64,96 @@ export function formatSimTime(totalSec: number): string {
   const mins = Math.floor((totalSec % 3600) / 60);
   const secs = Math.floor(totalSec % 60);
   return `T+${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwork[] {
+  const networks: BattlefieldNetwork[] = session.networks ? [...session.networks] : [];
+
+  if (!networks.some((n) => n.faction === 'player')) {
+    networks.push({
+      id: `net-player-${Date.now().toString(36)}`,
+      name: `${session.playerIso} Theater Datalink Grid (CEC)`,
+      faction: 'player',
+      iso: session.playerIso,
+      doctrine: 'layered_optimal',
+      nodes: [],
+      sharedContactIds: [],
+      othTargetingEnabled: true,
+    });
+  }
+
+  if (!networks.some((n) => n.faction === 'enemy')) {
+    networks.push({
+      id: `net-enemy-${Date.now().toString(36)}`,
+      name: `${session.enemyIso} Integrated Air Defense Net`,
+      faction: 'enemy',
+      iso: session.enemyIso,
+      doctrine: 'layered_optimal',
+      nodes: [],
+      sharedContactIds: [],
+      othTargetingEnabled: true,
+    });
+  }
+
+  return networks;
+}
+
+export function syncEntitiesWithNetworks(
+  entities: SimEntity[],
+  networks: BattlefieldNetwork[],
+  playerIso: string,
+  enemyIso: string,
+  systemsLibrary: SystemSpec[] = []
+): { updatedEntities: SimEntity[]; updatedNetworks: BattlefieldNetwork[] } {
+  const playerNet = networks.find((n) => n.faction === 'player');
+  const enemyNet = networks.find((n) => n.faction === 'enemy');
+
+  const updatedEntities = entities.map((e) => {
+    let netId = e.networkId;
+    if (!netId) {
+      netId = e.iso === playerIso ? playerNet?.id : enemyNet?.id;
+    }
+    const defaultSubsystems: SubsystemStatus = {
+      radar: 'operational',
+      weapons: 'operational',
+      propulsion: 'operational',
+      hullIntegrityPct: e.damage === 'destroyed' ? 0 : e.damage === 'damaged' ? 50 : 100,
+      flooding: 'none',
+    };
+    const subsystems: SubsystemStatus = e.subsystems ? { ...defaultSubsystems, ...e.subsystems } : defaultSubsystems;
+
+    return {
+      ...e,
+      networkId: netId,
+      subsystems,
+    };
+  });
+
+  const updatedNetworks = networks.map((net) => {
+    const netEntities = updatedEntities.filter((e) => e.networkId === net.id && e.status !== 'destroyed');
+    const nodes: BattlefieldNetworkNode[] = netEntities.map((e) => {
+      const spec = systemsLibrary.find((s) => s.id === e.systemId);
+      const isScout = e.typeId === 'uav' || e.typeId === 'awacs' || e.typeId === 'recon' || e.typeId === 'drone';
+      const isAreaAD = e.typeId === 'sam-launcher' || e.typeId === 'destroyer' || e.typeId === 'frigate';
+      const role: BattlefieldNetworkNode['role'] = isScout ? 'sensor' : isAreaAD ? 'coordinator' : 'shooter';
+      const channelCapacity = spec?.sensor?.tracks ? Math.min(12, Math.max(4, Math.floor(spec.sensor.tracks / 10))) : 4;
+
+      return {
+        entityId: e.id,
+        role,
+        datalinkStatus: e.subsystems?.radar === 'destroyed' ? 'degraded' : 'active',
+        channelCapacity,
+        activeChannelsUsed: 0,
+      };
+    });
+
+    return {
+      ...net,
+      nodes,
+    };
+  });
+
+  return { updatedEntities, updatedNetworks };
 }
 
 export function getContactPID(
@@ -915,122 +1009,157 @@ export function tickWarSim(
     }
   }
 
-  // Pass 3: Radar Threat Tracking & Interceptor Launches (for incoming offensive threats)
+  // Pass 3: Cooperative Datalink Area SAM Engagement & Channel Saturation
+  // Group active incoming threats by salvo/target to coordinate network fire
+  const threatGroups = new Map<string, MissileFlyoutTrack[]>();
   for (const m of session.activeMissiles) {
     if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress >= 1.0) continue;
     if (session.simTimeSec < m.startSimTimeSec) continue;
+    const groupKey = m.salvoId || m.targetEntityId;
+    const list = threatGroups.get(groupKey) || [];
+    list.push(m);
+    threatGroups.set(groupKey, list);
+  }
 
-    const alreadyEngaged = m.engagedByDefenderIds ?? [];
-    const defendingIso = m.targetIso;
+  for (const [groupKey, threatsInGroup] of threatGroups.entries()) {
+    if (threatsInGroup.length === 0) continue;
+    const firstThreat = threatsInGroup[0];
+    const defendingIso = firstThreat.targetIso;
+    const targetEntity = updatedEntities.find((e) => e.id === firstThreat.targetEntityId);
 
-    // Find all live friendly defenders (active deployed units, not docked in base)
+    // Find all live defenders of the defending nation/network whose radars are operational
     const potentialDefenders = updatedEntities.filter(
       (e) =>
         e.iso === defendingIso &&
         e.status !== 'destroyed' &&
         e.status !== 'docked' &&
         e.status !== 'in_repair' &&
-        e.status !== 'turnaround'
+        e.status !== 'turnaround' &&
+        e.subsystems?.radar !== 'destroyed'
     );
 
-    for (const def of potentialDefenders) {
-      const defSpec = systemsLibrary.find((s) => s.id === def.systemId);
-      const distToMissile = distanceKm(def.lngLat, m.currentLngLat);
+    if (potentialDefenders.length === 0) continue;
 
-      // Sensor Horizon Detection Check
-      const sensorReach = defSpec?.sensor?.detectionKm ?? (isGroundCombatUnit(def.typeId) ? 25 : 240);
-      if (distToMissile > sensorReach) continue;
+    // Guidance Channel Saturation Calculation:
+    // Total simultaneous tracking/guidance channels across all operational radar defenders
+    const totalChannels = potentialDefenders.reduce((sum, def) => {
+      const spec = systemsLibrary.find((s) => s.id === def.systemId);
+      const cap = spec?.sensor?.tracks ? Math.min(12, Math.max(4, Math.floor(spec.sensor.tracks / 10))) : 4;
+      return sum + cap;
+    }, 0);
 
-      // 1. Threat Detection Record
-      const detectionTimes = m.defenderDetectionTimes || {};
-      if (!detectionTimes[def.id]) {
-        detectionTimes[def.id] = session.simTimeSec;
-        m.defenderDetectionTimes = detectionTimes;
-      }
+    const isSaturated = threatsInGroup.length > totalChannels;
+    const saturationPenalty = isSaturated
+      ? Math.max(0.60, 1.0 - ((threatsInGroup.length - totalChannels) / threatsInGroup.length) * 0.40)
+      : 1.0;
 
-      // 2. Air Defense Reaction Time Delay
-      const reactionTimeSec = (defSpec?.sensor?.tracks && defSpec.sensor.tracks > 50) ? 5 : 8;
-      const isReactionReady = session.simTimeSec >= (detectionTimes[def.id] + reactionTimeSec);
+    const tracker = session.salvoTrackers?.find((t) => t.salvoId === firstThreat.salvoId);
+    if (isSaturated && tracker && !tracker.saturationPenaltyApplied) {
+      tracker.saturationPenaltyApplied = true;
+      logEvent(
+        defendingIso === session.playerIso ? 'player' : 'enemy',
+        'alert',
+        `⚠️ Radar Guidance Channels Saturated`,
+        `Salvo of ${threatsInGroup.length} simultaneous threats exceeded theater tracking capacity (${totalChannels} guidance channels). Radar guidance degraded by ${Math.round((1 - saturationPenalty) * 100)}%!`,
+        targetEntity?.lngLat || firstThreat.currentLngLat
+      );
+    }
 
-      if (!isReactionReady || alreadyEngaged.includes(def.id)) {
-        continue;
-      }
+    // Process threats in this salvo with cooperative tiered assignment
+    for (const m of threatsInGroup) {
+      const alreadyEngaged = m.engagedByDefenderIds ?? [];
 
-      // 3. Find Best Air Defense Interceptor Weapon
-      const weapons = (def.customWeapons && def.customWeapons.length > 0)
-        ? def.customWeapons
-        : (defSpec?.weapons || []);
+      for (const def of potentialDefenders) {
+        const defSpec = systemsLibrary.find((s) => s.id === def.systemId);
+        const distToMissile = distanceKm(def.lngLat, m.currentLngLat);
 
-      let bestWeaponIdx = -1;
-      let bestWeapon: WeaponFacet | null = null;
+        // Sensor reach (with subsystem degradation if degraded)
+        let sensorReach = defSpec?.sensor?.detectionKm ?? (isGroundCombatUnit(def.typeId) ? 25 : 240);
+        if (def.subsystems?.radar === 'degraded') sensorReach *= 0.60;
+        if (distToMissile > sensorReach) continue;
 
-      for (let wIdx = 0; wIdx < weapons.length; wIdx++) {
-        const w = weapons[wIdx];
-        const hasAmmo = (w.magazine !== undefined ? w.magazine : (def.magazines?.[wIdx] ?? 2)) > 0;
-        if (!hasAmmo) continue;
-        if (w.rangeKm < distToMissile) continue;
+        // Threat Detection Record
+        const detectionTimes = m.defenderDetectionTimes || {};
+        if (!detectionTimes[def.id]) {
+          detectionTimes[def.id] = session.simTimeSec;
+          m.defenderDetectionTimes = detectionTimes;
+        }
 
-        const isAirWeapon = canWeaponEngageTarget(w, 'air') || w.engages?.includes('air') || w.engages?.includes('ballistic-short') || w.engages?.includes('ballistic-medium');
-        if (isAirWeapon) {
-          if (!bestWeapon || w.rangeKm > bestWeapon.rangeKm) {
-            bestWeapon = w;
-            bestWeaponIdx = wIdx;
+        const reactionTimeSec = (defSpec?.sensor?.tracks && defSpec.sensor.tracks > 50) ? 5 : 8;
+        const isReactionReady = session.simTimeSec >= (detectionTimes[def.id] + reactionTimeSec);
+        if (!isReactionReady || alreadyEngaged.includes(def.id)) continue;
+
+        // Find best Air Defense Interceptor Weapon
+        const weapons = (def.customWeapons && def.customWeapons.length > 0)
+          ? def.customWeapons
+          : (defSpec?.weapons || []);
+
+        let bestWeaponIdx = -1;
+        let bestWeapon: WeaponFacet | null = null;
+
+        for (let wIdx = 0; wIdx < weapons.length; wIdx++) {
+          const w = weapons[wIdx];
+          const hasAmmo = (w.magazine !== undefined ? w.magazine : (def.magazines?.[wIdx] ?? 2)) > 0;
+          if (!hasAmmo) continue;
+          if (w.rangeKm < distToMissile) continue;
+
+          const isAirWeapon = canWeaponEngageTarget(w, 'air') || w.engages?.includes('air') || w.engages?.includes('ballistic-short') || w.engages?.includes('ballistic-medium');
+          if (isAirWeapon) {
+            if (!bestWeapon || w.rangeKm > bestWeapon.rangeKm) {
+              bestWeapon = w;
+              bestWeaponIdx = wIdx;
+            }
           }
         }
-      }
 
-      if (bestWeapon && bestWeaponIdx >= 0) {
-        m.engagedByDefenderIds = [...alreadyEngaged, def.id];
+        if (bestWeapon && bestWeaponIdx >= 0) {
+          m.engagedByDefenderIds = [...alreadyEngaged, def.id];
 
-        const curMag = bestWeapon.magazine !== undefined ? bestWeapon.magazine : (def.magazines?.[bestWeaponIdx] ?? 2);
-        const salvoCommit = Math.min(curMag, bestWeapon.salvo ?? 2, 2);
+          const curMag = bestWeapon.magazine !== undefined ? bestWeapon.magazine : (def.magazines?.[bestWeaponIdx] ?? 2);
+          const salvoCommit = Math.min(curMag, bestWeapon.salvo ?? 2, 2);
 
-        // Deduct from defender's magazine in real-time
-        if (def.customWeapons && def.customWeapons[bestWeaponIdx]) {
-          def.customWeapons[bestWeaponIdx] = {
-            ...def.customWeapons[bestWeaponIdx],
-            magazine: Math.max(0, curMag - salvoCommit),
+          // Deduct from defender's magazine in real-time
+          if (def.customWeapons && def.customWeapons[bestWeaponIdx]) {
+            def.customWeapons[bestWeaponIdx] = {
+              ...def.customWeapons[bestWeaponIdx],
+              magazine: Math.max(0, curMag - salvoCommit),
+            };
+          }
+          if (def.magazines) {
+            def.magazines[bestWeaponIdx] = Math.max(0, curMag - salvoCommit);
+          }
+
+          const interceptorSpeed = Math.max(3600, (bestWeapon.speedMach ?? 4.0) * 1225);
+          const tFlySec = (distToMissile / interceptorSpeed) * 3600;
+
+          const baseSingleShotPk = bestWeapon.pk ?? 0.82;
+          const singleShotPk = Math.max(0.15, Math.min(0.95, baseSingleShotPk * saturationPenalty));
+          const compoundPk = 1 - Math.pow(1 - singleShotPk, salvoCommit);
+
+          // Spawn interceptor directly tracking target threat
+          const interceptorTrack: MissileFlyoutTrack = {
+            id: `msl-int-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+            originLngLat: def.lngLat,
+            targetLngLat: m.currentLngLat,
+            currentLngLat: def.lngLat,
+            attackerEntityId: def.id,
+            targetEntityId: def.id,
+            attackerIso: def.iso,
+            targetIso: m.attackerIso,
+            weaponName: bestWeapon.name || 'Defensive SAM',
+            weaponCategory: 'sam',
+            speedKmh: interceptorSpeed,
+            startSimTimeSec: session.simTimeSec,
+            etaSimTimeSec: session.simTimeSec + Math.max(2, Math.round(tFlySec)),
+            isIntercepted: false,
+            progress: 0.0,
+            targetMissileId: m.id,
+            interceptorPk: compoundPk,
+            salvoId: m.salvoId,
           };
-        }
-        if (def.magazines) {
-          def.magazines[bestWeaponIdx] = Math.max(0, curMag - salvoCommit);
-        }
+          newDefensiveInterceptors.push(interceptorTrack);
 
-        const interceptorSpeed = Math.max(3600, (bestWeapon.speedMach ?? 4.0) * 1225);
-        const tFlySec = (distToMissile / interceptorSpeed) * 3600;
-
-        const baseSingleShotPk = bestWeapon.pk ?? 0.82;
-        const speedPkMultiplier = 1.0; 
-        const singleShotPk = Math.max(0.15, Math.min(0.95, baseSingleShotPk * speedPkMultiplier));
-        const compoundPk = 1 - Math.pow(1 - singleShotPk, salvoCommit);
-
-        // Spawn interceptor directly tracking target threat
-        const interceptorTrack: MissileFlyoutTrack = {
-          id: `msl-int-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-          originLngLat: def.lngLat,
-          targetLngLat: m.currentLngLat,
-          currentLngLat: def.lngLat,
-          attackerEntityId: def.id,
-          targetEntityId: def.id,
-          attackerIso: def.iso,
-          targetIso: m.attackerIso,
-          weaponName: bestWeapon.name || 'Defensive SAM',
-          weaponCategory: 'sam',
-          speedKmh: interceptorSpeed,
-          startSimTimeSec: session.simTimeSec,
-          etaSimTimeSec: session.simTimeSec + Math.max(2, Math.round(tFlySec)),
-          isIntercepted: false,
-          progress: 0.0,
-          targetMissileId: m.id,
-          interceptorPk: compoundPk,
-          salvoId: m.salvoId,
-        };
-        newDefensiveInterceptors.push(interceptorTrack);
-
-        // Record interceptor launch in salvoTracker breakdown
-        if (m.salvoId) {
-          const tracker = session.salvoTrackers?.find((t) => t.salvoId === m.salvoId);
-          if (tracker) {
+          if (m.salvoId && tracker) {
             tracker.interceptionBreakdowns = tracker.interceptionBreakdowns || [];
             let entry = tracker.interceptionBreakdowns.find(
               (b) => b.defenderName === def.name && b.interceptorWeapon === (bestWeapon.name || 'Defensive SAM')
@@ -1049,31 +1178,27 @@ export function tickWarSim(
             }
             entry.roundsFired += salvoCommit;
           }
+
+          const remainingMag = def.customWeapons?.[bestWeaponIdx]?.magazine ?? 0;
+          const tierLabel = bestWeapon.rangeKm >= 50 ? 'Tier 1 Long-Range Area SAM' : 'Tier 2 Medium-Range Area SAM';
+
+          logEvent(
+            def.iso === session.playerIso ? 'player' : 'enemy',
+            'intercept',
+            `🚀 ${tierLabel} Intercept: ${def.name}`,
+            `${def.name} engaged incoming ${m.weaponName} at ${distToMissile.toFixed(0)} km range via Tactical Datalink. Fired ${salvoCommit} × ${bestWeapon.name} (${remainingMag} ready rounds remaining).`,
+            def.lngLat
+          );
+          break; // One defender assigned per threat per tick
         }
-
-        const remainingMag = def.customWeapons?.[bestWeaponIdx]?.magazine ?? 0;
-        const isDefPlayer = def.iso === session.playerIso;
-        const defFaction: 'player' | 'enemy' = isDefPlayer ? 'player' : 'enemy';
-        const threatAttacker = updatedEntities.find((e) => e.id === m.attackerEntityId);
-        const attackerPID = getContactPID(m.attackerEntityId, defFaction, session.fogOfWarContacts);
-        const attackerDisplayName = attackerPID.isPID
-          ? (threatAttacker?.name ?? 'Hostile Battery/Wing')
-          : 'Hostile Platform (Unverified PID)';
-
-
-
-        logEvent(
-          def.iso === session.playerIso ? 'player' : 'enemy',
-          'intercept',
-          `🚀 Interceptor Salvo Launched: ${def.name}`,
-          `${def.name} acquired incoming ${m.weaponName} at ${distToMissile.toFixed(0)} km range (Reaction: ${reactionTimeSec}s). Launched ${salvoCommit} × ${bestWeapon.name} on collision intercept vector (${remainingMag} ready rounds remaining).`,
-          def.lngLat
-        );
       }
     }
   }
 
-  // Pass 4: Terminal Point Defense (CIWS) at Target Location
+  // Pass 4: Individual Terminal Point Defense (CIWS) at Target Location (<15km / progress >= 0.95)
+  // Track CIWS engagements per target per salvo to enforce turret cycle & volume limit
+  const ciwsEngagementsPerSalvo = new Map<string, number>();
+
   for (const m of session.activeMissiles) {
     if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress < 0.95 || m.progress >= 1.0) continue;
 
@@ -1085,6 +1210,11 @@ export function tickWarSim(
       targetEntity.status !== 'in_repair' &&
       targetEntity.status !== 'turnaround'
     ) {
+      // If target's radar is destroyed, CIWS cannot track effectively
+      const radarOffline = targetEntity.subsystems?.radar === 'destroyed';
+      const weaponsOffline = targetEntity.subsystems?.weapons === 'offline';
+      if (weaponsOffline) continue;
+
       const targetSpec = systemsLibrary.find((s) => s.id === targetEntity.systemId);
       const tWeapons = (targetEntity.customWeapons && targetEntity.customWeapons.length > 0)
         ? targetEntity.customWeapons
@@ -1099,6 +1229,23 @@ export function tickWarSim(
       );
 
       if (ciwsIdx >= 0 || hasInherentNavalCiws) {
+        const salvoKey = m.salvoId || targetEntity.id;
+        const currentEngagements = ciwsEngagementsPerSalvo.get(salvoKey) || 0;
+
+        // Turret cycle limit: Standard CIWS mount can track and engage at most 2 leakers per salvo window
+        if (currentEngagements >= 2) {
+          logEvent(
+            targetEntity.iso === session.playerIso ? 'player' : 'enemy',
+            'alert',
+            `⚠️ CIWS Tracking Cycle Overwhelmed: ${targetEntity.name}`,
+            `${m.weaponName} penetrated inner defense! High threat volume exceeded ${targetEntity.name} CIWS turret tracking cycle limits.`,
+            targetEntity.lngLat
+          );
+          continue;
+        }
+
+        ciwsEngagementsPerSalvo.set(salvoKey, currentEngagements + 1);
+
         const ciwsWeaponName: string = ciwsIdx >= 0
           ? (tWeapons[ciwsIdx].name || 'CIWS Point Defense')
           : (targetEntity.typeId === 'destroyer' || targetEntity.typeId === 'frigate' ? '76mm / 30mm CIWS Point Defense' : 'Point Defense Countermeasures');
@@ -1111,19 +1258,14 @@ export function tickWarSim(
           };
         }
 
-        // Compute speed-dependent CIWS Kill Probability (Pk):
-        // 1. If missile speed is undefined/empty/0 -> default Pk = 0.45
-        // 2. Hypersonic (Mach 5+) -> Pk = 0.0 (cannot intercept)
-        // 3. High Supersonic (Mach 3 - 5) -> Pk = 0.20
-        // 4. Supersonic (Mach 1 - 3) -> Pk = 0.45
-        // 5. Subsonic (Mach < 1) -> Pk = 0.65
+        // Speed-dependent Pk
         let ciwsPk = 0.45;
         const threatSpeedKmh = m.speedKmh ?? 0;
         const threatMach = threatSpeedKmh > 0 ? threatSpeedKmh / 1225 : 0;
 
         if (threatSpeedKmh > 0) {
           if (threatMach >= 5.0) {
-            ciwsPk = 0.0; // Hypersonic weapons bypass terminal point defense
+            ciwsPk = 0.0; // Hypersonic bypass
           } else if (threatMach >= 3.0) {
             ciwsPk = 0.20;
           } else if (threatMach >= 1.0) {
@@ -1133,10 +1275,14 @@ export function tickWarSim(
           }
         }
 
+        // Penalty if radar degraded or offline
+        if (radarOffline) {
+          ciwsPk *= 0.30; // Optical fallback tracking only
+        }
+
         if (ciwsPk > 0 && Math.random() < ciwsPk) {
           m.isIntercepted = true;
 
-          // Track CIWS kill in salvoTracker if present
           if (m.salvoId) {
             const tracker = session.salvoTrackers?.find((t) => t.salvoId === m.salvoId);
             if (tracker) {
@@ -1168,7 +1314,7 @@ export function tickWarSim(
           logEvent(
             targetEntity.iso === session.playerIso ? 'player' : 'enemy',
             'intercept',
-            `💥 CIWS Point Defense: ${targetEntity.name}`,
+            `💥 CIWS Point Defense Kill: ${targetEntity.name}`,
             `${targetEntity.name} terminal close-in weapon system (${ciwsWeaponName}) destroyed incoming ${m.weaponName} at point-blank range!`,
             targetEntity.lngLat
           );
@@ -1185,7 +1331,7 @@ export function tickWarSim(
     }
   }
 
-  // Pass 5: Missile Impact Resolution at Target Coordinates (progress >= 1.0)
+  // Pass 5: Missile Impact Resolution at Target Coordinates & Realistic Subsystem Degradation BDA
   for (const m of session.activeMissiles) {
     if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress < 1.0) continue;
 
@@ -1196,31 +1342,51 @@ export function tickWarSim(
       const isNaval = isNavalCombatant(targetEntity.typeId);
       const isAir = targetEntity.typeId === 'fighter' || targetEntity.typeId === 'strike' || targetEntity.typeId === 'bomber' || targetEntity.typeId === 'awacs' || targetEntity.typeId === 'tanker';
 
+      // Ensure subsystem record exists
+      targetEntity.subsystems = targetEntity.subsystems || {
+        radar: 'operational',
+        weapons: 'operational',
+        propulsion: 'operational',
+        hullIntegrityPct: 100,
+        flooding: 'none',
+      };
+
       if (isNaval) {
         if (targetEntity.damage === 'intact') {
+          // Impact 1: Superstructure & Radar Array destruction
           targetEntity.damage = 'damaged';
           targetEntity.status = 'damaged_rtb';
+          targetEntity.subsystems.radar = 'destroyed';
+          targetEntity.subsystems.weapons = 'offline';
+          targetEntity.subsystems.hullIntegrityPct = 50;
+
           logEvent(
             m.attackerIso === session.playerIso ? 'player' : 'enemy',
             'impact',
-            `💥 Warship Struck: ${targetEntity.name}`,
-            `${m.weaponName} scored direct anti-ship impact on ${targetEntity.name}. Superstructure damaged; vessel executing emergency RTB.`,
+            `💥 Superstructure Hit: ${targetEntity.name}`,
+            `${m.weaponName} exploded against the superstructure of ${targetEntity.name}. Radar arrays and fire-control sensors destroyed (-40% sensor range, radar SAM guidance offline). Vessel executing emergency RTB.`,
             targetEntity.lngLat
           );
         } else {
+          // Impact 2+: Waterline breach & catastrophic sinking
           targetEntity.status = 'destroyed';
           targetEntity.damage = 'destroyed';
+          targetEntity.subsystems.flooding = 'critical_sinking';
+          targetEntity.subsystems.propulsion = 'disabled';
+          targetEntity.subsystems.hullIntegrityPct = 0;
+
           logEvent(
             m.attackerIso === session.playerIso ? 'player' : 'enemy',
             'impact',
-            `💥 Warship Sunk: ${targetEntity.name}`,
-            `${m.weaponName} scored fatal strike on damaged ${targetEntity.name}. Hull compromised; vessel sinking.`,
+            `💥 Fatal Waterline Breach: ${targetEntity.name}`,
+            `${m.weaponName} scored second direct anti-ship strike on ${targetEntity.name}. Lower hull breached at waterline; critical flooding underway. Vessel sinking.`,
             targetEntity.lngLat
           );
         }
       } else if (isAir) {
         targetEntity.status = 'destroyed';
         targetEntity.damage = 'destroyed';
+        targetEntity.subsystems.hullIntegrityPct = 0;
         logEvent(
           m.attackerIso === session.playerIso ? 'player' : 'enemy',
           'impact',
@@ -1229,32 +1395,33 @@ export function tickWarSim(
           targetEntity.lngLat
         );
       } else {
-        // Ground Battalion / SAM Battery / Armor Column
-        const catastrophic = Math.random() < 0.60;
-        if (catastrophic) {
-          targetEntity.status = 'destroyed';
-          targetEntity.damage = 'destroyed';
+        // Ground Battalion / SAM Battery
+        if (targetEntity.damage === 'intact') {
+          targetEntity.damage = 'damaged';
+          targetEntity.status = 'damaged_rtb';
+          targetEntity.subsystems.radar = 'destroyed';
+          targetEntity.subsystems.hullIntegrityPct = 40;
           logEvent(
             m.attackerIso === session.playerIso ? 'player' : 'enemy',
             'impact',
-            `💥 Target Destroyed: ${targetEntity.name}`,
-            `${m.weaponName} scored direct impact. ${targetEntity.name} neutralized.`,
+            `⚠️ Radar Battery Struck: ${targetEntity.name}`,
+            `${m.weaponName} direct hit on ${targetEntity.name}. Radar antenna knocked out; battery withdrawing for repairs.`,
             targetEntity.lngLat
           );
         } else {
-          targetEntity.damage = 'damaged';
-          targetEntity.status = 'damaged_rtb';
+          targetEntity.status = 'destroyed';
+          targetEntity.damage = 'destroyed';
+          targetEntity.subsystems.hullIntegrityPct = 0;
           logEvent(
             m.attackerIso === session.playerIso ? 'player' : 'enemy',
             'impact',
-            `⚠️ Target Damaged: ${targetEntity.name}`,
-            `${m.weaponName} caused heavy battle damage to ${targetEntity.name}. Unit withdrawing for repairs.`,
+            `💥 Battery Destroyed: ${targetEntity.name}`,
+            `${m.weaponName} obliterated ${targetEntity.name}. Position neutralized.`,
             targetEntity.lngLat
           );
         }
       }
 
-      // Track direct hit in salvoTracker
       if (m.salvoId) {
         const tracker = session.salvoTrackers?.find((t) => t.salvoId === m.salvoId);
         if (tracker) {
@@ -1280,7 +1447,6 @@ export function tickWarSim(
       }
     }
 
-    // Impacted missile is consumed
     m.isIntercepted = true;
   }
 

@@ -616,6 +616,106 @@ export function useWarSim({
     []
   );
 
+  const createNetwork = useCallback((name: string, doctrine: import('./warSimTypes').NetworkDoctrine = 'layered_optimal') => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const faction = prev.activeFaction;
+      const iso = faction === 'player' ? prev.playerIso : prev.enemyIso;
+      const newNet: import('./warSimTypes').BattlefieldNetwork = {
+        id: `net-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+        name: name.trim() || `${iso} Tactical Datalink Grid`,
+        faction,
+        iso,
+        doctrine,
+        nodes: [],
+        sharedContactIds: [],
+        othTargetingEnabled: true,
+      };
+      return {
+        ...prev,
+        networks: [...(prev.networks || []), newNet],
+      };
+    });
+  }, []);
+
+  const assignEntityToNetwork = useCallback((entityId: string, networkId: string) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const updatedEntities = prev.entities.map((e) => (e.id === entityId ? { ...e, networkId } : e));
+      const targetNet = prev.networks?.find((n) => n.id === networkId);
+      const updatedNetworks = (prev.networks || []).map((net) => {
+        if (net.id === networkId) {
+          if (!net.nodes.some((n) => n.entityId === entityId)) {
+            return {
+              ...net,
+              nodes: [
+                ...net.nodes,
+                {
+                  entityId,
+                  role: 'shooter' as const,
+                  datalinkStatus: 'active' as const,
+                  channelCapacity: 4,
+                  activeChannelsUsed: 0,
+                },
+              ],
+            };
+          }
+        } else {
+          return {
+            ...net,
+            nodes: net.nodes.filter((n) => n.entityId !== entityId),
+          };
+        }
+        return net;
+      });
+      return {
+        ...prev,
+        entities: updatedEntities,
+        networks: updatedNetworks,
+      };
+    });
+  }, []);
+
+  const removeEntityFromNetwork = useCallback((entityId: string) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const updatedEntities = prev.entities.map((e) => (e.id === entityId ? { ...e, networkId: undefined } : e));
+      const updatedNetworks = (prev.networks || []).map((net) => ({
+        ...net,
+        nodes: net.nodes.filter((n) => n.entityId !== entityId),
+      }));
+      return {
+        ...prev,
+        entities: updatedEntities,
+        networks: updatedNetworks,
+      };
+    });
+  }, []);
+
+  const setNetworkDoctrine = useCallback((networkId: string, doctrine: import('./warSimTypes').NetworkDoctrine) => {
+    setSession((prev) => {
+      if (!prev || !prev.networks) return prev;
+      const updatedNetworks = prev.networks.map((n) => (n.id === networkId ? { ...n, doctrine } : n));
+      return {
+        ...prev,
+        networks: updatedNetworks,
+      };
+    });
+  }, []);
+
+  const toggleNetworkOth = useCallback((networkId: string) => {
+    setSession((prev) => {
+      if (!prev || !prev.networks) return prev;
+      const updatedNetworks = prev.networks.map((n) =>
+        n.id === networkId ? { ...n, othTargetingEnabled: !n.othTargetingEnabled } : n
+      );
+      return {
+        ...prev,
+        networks: updatedNetworks,
+      };
+    });
+  }, []);
+
   return {
     session,
     setSession,
@@ -635,6 +735,11 @@ export function useWarSim({
     orderStrike,
     createBaseAtLocation,
     renameBase,
+    createNetwork,
+    assignEntityToNetwork,
+    removeEntityFromNetwork,
+    setNetworkDoctrine,
+    toggleNetworkOth,
     friendlyEntities,
     friendlyBases,
     visibleContacts,
