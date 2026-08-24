@@ -125,18 +125,38 @@ export function useWarSim({
     return () => clearInterval(interval);
   }, [session?.status, systemsLibrary]);
 
-  // Auto-Save to Store every 10 seconds
+  // Auto-Save to Store every 4 seconds
   useEffect(() => {
     if (!session || session.status === 'setup') return;
 
+    // Immediately save on state transition
+    if (sessionRef.current) {
+      writeDoc('warsim-session', sessionRef.current);
+    }
+
     const saveInterval = setInterval(() => {
-      if (sessionRef.current) {
+      if (sessionRef.current && sessionRef.current.status !== 'setup') {
         writeDoc('warsim-session', sessionRef.current);
       }
-    }, 10000);
+    }, 4000);
 
     return () => clearInterval(saveInterval);
-  }, [session?.id]);
+  }, [session?.id, session?.status]);
+
+  // Persist paused state immediately before page unload / browser restart
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (sessionRef.current && sessionRef.current.status !== 'setup') {
+        writeDoc('warsim-session', {
+          ...sessionRef.current,
+          status: 'paused',
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // -------------------------------------------------------------
   // User Commands & Actions

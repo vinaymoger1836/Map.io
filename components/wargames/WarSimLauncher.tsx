@@ -25,6 +25,7 @@ import {
   type FactionQuotaLedger,
 } from '@/lib/warSimTypes';
 import { getPreAssignedQuotasForCountry, keyOf } from '@/lib/forces';
+import { readDoc, writeDoc } from '@/lib/store';
 import { PreFlightValidationModal } from './PreFlightValidationModal';
 
 export interface WarSimLauncherProps {
@@ -51,6 +52,9 @@ export function WarSimLauncher({
   onLaunchSimulation,
   onOpenConfiguration,
 }: WarSimLauncherProps) {
+  // Saved In-Progress Session
+  const [savedSession, setSavedSession] = useState<WarSimSession | null>(null);
+
   // Session Configuration State
   const [sessionName, setSessionName] = useState('Operation Strategic Vigilance');
   const [playerIso, setPlayerIso] = useState<string>('US');
@@ -76,6 +80,21 @@ export function WarSimLauncher({
   // Validation Modal State
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [saveNotification, setSaveNotification] = useState<string | null>(null);
+
+  // Check for saved in-progress session when launcher opens
+  useEffect(() => {
+    if (isOpen) {
+      readDoc<WarSimSession>('warsim-session').then((saved) => {
+        if (saved && saved.id && saved.status !== 'concluded' && saved.status !== 'setup') {
+          setSavedSession(saved);
+        } else {
+          setSavedSession(null);
+        }
+      }).catch(() => {
+        setSavedSession(null);
+      });
+    }
+  }, [isOpen]);
 
   // Available Nations list from world countries
   const availableNations = useMemo(() => {
@@ -365,6 +384,77 @@ export function WarSimLauncher({
           </button>
         </div>
       </header>
+
+      {/* In-Progress Session Resume Banner */}
+      {savedSession && (
+        <div
+          style={{
+            background: 'linear-gradient(90deg, rgba(79, 195, 247, 0.15), rgba(79, 195, 247, 0.05))',
+            borderBottom: '1px solid rgba(79, 195, 247, 0.3)',
+            padding: '12px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '20px' }}>💾</span>
+            <div>
+              <div style={{ color: '#4FC3F7', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>In-Progress Simulation Found: <strong>{savedSession.name}</strong></span>
+                <span style={{ fontSize: '10.5px', color: '#90A4AE', background: 'rgba(0,0,0,0.5)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  Clock: {Math.floor(savedSession.simTimeSec / 60)}m {savedSession.simTimeSec % 60}s
+                </span>
+              </div>
+              <div style={{ color: '#B0BEC5', fontSize: '11px', marginTop: '2px' }}>
+                {savedSession.entities.length} deployed units • {savedSession.eventLog.length} battle events • {savedSession.reports?.length ?? 0} combat reports
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => {
+                onLaunchSimulation({
+                  ...savedSession,
+                  status: 'paused',
+                });
+              }}
+              style={{
+                background: '#4FC3F7',
+                color: '#070C14',
+                border: 'none',
+                padding: '7px 18px',
+                borderRadius: '5px',
+                fontWeight: 800,
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(79, 195, 247, 0.4)',
+              }}
+            >
+              ▶ Resume Saved Session
+            </button>
+            <button
+              onClick={async () => {
+                await writeDoc('warsim-session', null);
+                setSavedSession(null);
+              }}
+              style={{
+                background: 'rgba(255, 82, 82, 0.15)',
+                color: '#FF8A80',
+                border: '1px solid rgba(255, 82, 82, 0.3)',
+                padding: '6px 12px',
+                borderRadius: '5px',
+                fontWeight: 600,
+                fontSize: '11.5px',
+                cursor: 'pointer',
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Sub-Navigation */}
       <nav

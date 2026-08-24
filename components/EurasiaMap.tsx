@@ -27,6 +27,7 @@ import { WarSimAarModal } from './wargames/WarSimAarModal';
 import { useWarSim } from '@/lib/useWarSim';
 import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
+import { readDoc, writeDoc } from '@/lib/store';
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -103,11 +104,42 @@ export default function EurasiaMap() {
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
-  const [mode, setMode] = useState<Mode>('situation');
+  const [mode, setModeState] = useState<Mode>('situation');
   const [configOpen, setConfigOpen] = useState(false);
   const [warSimLauncherOpen, setWarSimLauncherOpen] = useState(false);
   const [activeWarSimSession, setActiveWarSimSession] = useState<WarSimSession | null>(null);
   const [warSimAarOpen, setWarSimAarOpen] = useState(false);
+
+  const setMode = useCallback((newMode: Mode) => {
+    setModeState(newMode);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('mapio.lastMode', newMode);
+    }
+  }, []);
+
+  // Restore previous mode and active WarSim session on reload / mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = window.localStorage.getItem('mapio.lastMode');
+      if (savedMode === 'wargames' || savedMode === 'situation') {
+        setModeState(savedMode as Mode);
+      }
+    }
+
+    readDoc<WarSimSession>('warsim-session')
+      .then((saved) => {
+        if (saved && saved.id && saved.status !== 'concluded' && saved.status !== 'setup') {
+          console.info(`[EurasiaMap] Restoring in-progress WarSim session: "${saved.name}" (T+${saved.simTimeSec}s)`);
+          setActiveWarSimSession({
+            ...saved,
+            status: 'paused',
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('[EurasiaMap] Could not restore warsim session:', err);
+      });
+  }, []);
 
   const modeRef = useRef(mode);
   const warHydrateRef = useRef<((map: MLMap) => void) | null>(null);
@@ -128,7 +160,10 @@ export default function EurasiaMap() {
     initialSession: activeWarSimSession,
     systemsLibrary: war.systems,
     mapRef,
-    onClose: () => setActiveWarSimSession(null),
+    onClose: () => {
+      writeDoc('warsim-session', null);
+      setActiveWarSimSession(null);
+    },
   });
 
   // Sync War Sim state to MapLibre layers
@@ -737,6 +772,7 @@ export default function EurasiaMap() {
             onOpenAar={() => setWarSimAarOpen(true)}
             onExitSim={() => {
               if (mapRef.current) removeWarSimLayers(mapRef.current);
+              writeDoc('warsim-session', null);
               setActiveWarSimSession(null);
             }}
             systemsLibrary={war.systems}
