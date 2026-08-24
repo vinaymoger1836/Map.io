@@ -588,6 +588,27 @@ export function renderWarSimStateToMap(
 ) {
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
+  } else {
+    // Ensure all simulation symbol and marker layers remain visible
+    const simLayers = [
+      LYR_BASES_CIRCLE,
+      LYR_BASES_LABEL,
+      LYR_ENTITIES_MARKER,
+      LYR_ENTITIES_SYMBOL,
+      LYR_CONTACTS_CIRCLE,
+      LYR_CONTACTS_LABEL,
+      LYR_CONTACTS_SYMBOL,
+      LYR_MISSILES_LINE,
+      LYR_MISSILES_HEAD,
+      LYR_MISSILES_SYMBOL,
+      LYR_MISSILES_LABEL,
+      LYR_PATROLS_LINE,
+    ];
+    for (const id of simLayers) {
+      if (map.getLayer(id) && map.getLayoutProperty(id, 'visibility') === 'none') {
+        map.setLayoutProperty(id, 'visibility', 'visible');
+      }
+    }
   }
 
   const isPlayer = activeFaction === 'player';

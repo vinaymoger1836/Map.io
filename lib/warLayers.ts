@@ -760,7 +760,7 @@ export function setWarVisible(map: MLMap, on: boolean) {
 }
 
 /** Layers this app installs itself, which the basemap sweep below must skip. */
-const OURS = /^(wg-|al-|ar-|bd-|ctl-|en-|mi-|pl-|wt-)/;
+const OURS = /^(wg-|warsim-|al-|ar-|bd-|ctl-|en-|mi-|pl-|wt-)/;
 
 /**
  * Basemap symbols we silenced, so exit puts back exactly those.
