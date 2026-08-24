@@ -98,6 +98,16 @@ export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwor
   return networks;
 }
 
+/**
+ * An entity is considered deployed in the operational theater only if it is
+ * active in the field (airborne, on patrol station, engaging, or in transit/RTB).
+ * Units docked inside bases (hangars, drydocks, repair bays, turnaround) are NOT deployed
+ * and cannot join active battlefield networks until scrambled/deployed.
+ */
+export function isEntityDeployed(e: SimEntity): boolean {
+  return e.status !== 'docked' && e.status !== 'turnaround' && e.status !== 'in_repair' && e.status !== 'destroyed';
+}
+
 export function syncEntitiesWithNetworks(
   entities: SimEntity[],
   networks: BattlefieldNetwork[],
@@ -110,8 +120,11 @@ export function syncEntitiesWithNetworks(
 
   const updatedEntities = entities.map((e) => {
     let netId = e.networkId;
-    if (!netId) {
+    const isDeployed = isEntityDeployed(e);
+    if (!netId && isDeployed) {
       netId = e.iso === playerIso ? playerNet?.id : enemyNet?.id;
+    } else if (!isDeployed) {
+      netId = undefined; // Stationed inside base: not part of active theater network
     }
     const defaultSubsystems: SubsystemStatus = {
       radar: 'operational',
@@ -130,7 +143,8 @@ export function syncEntitiesWithNetworks(
   });
 
   const updatedNetworks = networks.map((net) => {
-    const netEntities = updatedEntities.filter((e) => e.networkId === net.id && e.status !== 'destroyed');
+    // ONLY deployed units in theater form active nodes in the network
+    const netEntities = updatedEntities.filter((e) => e.networkId === net.id && isEntityDeployed(e));
     const nodes: BattlefieldNetworkNode[] = netEntities.map((e) => {
       const spec = systemsLibrary.find((s) => s.id === e.systemId);
       const isScout = e.typeId === 'uav' || e.typeId === 'awacs' || e.typeId === 'recon' || e.typeId === 'drone';
@@ -1677,14 +1691,14 @@ export function tickWarSim(
   ): DetectedContact[] => {
     const contacts: DetectedContact[] = [];
     const scanners = updatedEntities.filter(
-      (e) => e.iso === scanningIso && e.status !== 'destroyed' && e.status !== 'docked'
+      (e) => e.iso === scanningIso && isEntityDeployed(e)
     );
     const friendlyBases = updatedBases.filter(
       (b) => b.iso === scanningIso && b.runwayStatus !== 'destroyed'
     );
 
     const opposingEntities = updatedEntities.filter(
-      (e) => e.iso === targetIso && e.status !== 'destroyed' && e.status !== 'docked'
+      (e) => e.iso === targetIso && isEntityDeployed(e)
     );
 
     for (const target of opposingEntities) {

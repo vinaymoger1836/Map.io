@@ -641,6 +641,10 @@ export function useWarSim({
   const assignEntityToNetwork = useCallback((entityId: string, networkId: string) => {
     setSession((prev) => {
       if (!prev) return null;
+      const targetEntity = prev.entities.find((e) => e.id === entityId);
+      if (!targetEntity || targetEntity.status === 'docked' || targetEntity.status === 'turnaround' || targetEntity.status === 'in_repair' || targetEntity.status === 'destroyed') {
+        return prev;
+      }
       const updatedEntities = prev.entities.map((e) => (e.id === entityId ? { ...e, networkId } : e));
       const targetNet = prev.networks?.find((n) => n.id === networkId);
       const updatedNetworks = (prev.networks || []).map((net) => {

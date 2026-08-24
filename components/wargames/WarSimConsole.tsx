@@ -22,7 +22,7 @@ import {
   type WarReportCategory,
 } from '@/lib/warSimTypes';
 import { type SystemSpec, domainOf, radarHorizonKm, getSystemRcs } from '@/lib/specs';
-import { formatSimTime } from '@/lib/warSimEngine';
+import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
@@ -1196,123 +1196,129 @@ export function WarSimConsole({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', color: 'var(--paper-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
-                      Linked Combat Platforms ({friendlyEntities.filter((e) => e.networkId === currentNetwork?.id).length})
+                      Active Deployed Platforms ({friendlyEntities.filter((e) => e.networkId === currentNetwork?.id && isEntityDeployed(e)).length})
                     </span>
                   </div>
 
-                  {friendlyEntities
-                    .filter((e) => e.networkId === currentNetwork?.id && e.status !== 'destroyed')
-                    .map((entity) => {
-                      const spec = systemsLibrary.find((s) => s.id === entity.systemId);
-                      const isScout = entity.typeId === 'uav' || entity.typeId === 'awacs' || entity.typeId === 'recon';
-                      const isAD = entity.typeId === 'sam-launcher' || entity.typeId === 'destroyer' || entity.typeId === 'frigate';
-                      const roleLabel = isScout ? '📡 Sensor Scout' : isAD ? '🛡️ Area Air Defense' : '⚔️ Shooter';
+                  {friendlyEntities.filter((e) => e.networkId === currentNetwork?.id && isEntityDeployed(e)).length === 0 ? (
+                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', fontStyle: 'italic', padding: '8px 10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px', border: '1px dashed var(--border)' }}>
+                      No deployed units active in this datalink grid. Scramble aircraft or deploy naval/ground combatants into the theater to link them into the tactical network.
+                    </div>
+                  ) : (
+                    friendlyEntities
+                      .filter((e) => e.networkId === currentNetwork?.id && isEntityDeployed(e))
+                      .map((entity) => {
+                        const spec = systemsLibrary.find((s) => s.id === entity.systemId);
+                        const isScout = entity.typeId === 'uav' || entity.typeId === 'awacs' || entity.typeId === 'recon';
+                        const isAD = entity.typeId === 'sam-launcher' || entity.typeId === 'destroyer' || entity.typeId === 'frigate';
+                        const roleLabel = isScout ? '📡 Sensor Scout' : isAD ? '🛡️ Area Air Defense' : '⚔️ Shooter';
 
-                      const radarStatus = entity.subsystems?.radar ?? 'operational';
-                      const weaponsStatus = entity.subsystems?.weapons ?? 'operational';
-                      const floodingStatus = entity.subsystems?.flooding ?? 'none';
+                        const radarStatus = entity.subsystems?.radar ?? 'operational';
+                        const weaponsStatus = entity.subsystems?.weapons ?? 'operational';
+                        const floodingStatus = entity.subsystems?.flooding ?? 'none';
 
-                      return (
-                        <div
-                          key={entity.id}
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: `1px solid ${selectedEntity?.id === entity.id ? '#00E676' : 'var(--border)'}`,
-                            borderRadius: '6px',
-                            padding: '8px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '5px',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() => onSelectEntity(entity.id)}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>{getSimUnitIcon(entity.typeId)}</span>
-                              <strong style={{ fontSize: '11.5px', color: activeColor }}>{entity.name}</strong>
+                        return (
+                          <div
+                            key={entity.id}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.03)',
+                              border: `1px solid ${selectedEntity?.id === entity.id ? '#00E676' : 'var(--border)'}`,
+                              borderRadius: '6px',
+                              padding: '8px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '5px',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => onSelectEntity(entity.id)}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{getSimUnitIcon(entity.typeId)}</span>
+                                <strong style={{ fontSize: '11.5px', color: activeColor }}>{entity.name}</strong>
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: '9px',
+                                  padding: '1px 5px',
+                                  borderRadius: '3px',
+                                  background: 'rgba(255, 255, 255, 0.08)',
+                                  color: 'var(--paper-dim)',
+                                }}
+                              >
+                                {roleLabel}
+                              </span>
                             </div>
-                            <span
-                              style={{
-                                fontSize: '9px',
-                                padding: '1px 5px',
-                                borderRadius: '3px',
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                color: 'var(--paper-dim)',
-                              }}
-                            >
-                              {roleLabel}
-                            </span>
-                          </div>
 
-                          {/* Subsystem Health Profile */}
-                          <div style={{ display: 'flex', gap: '4px', fontSize: '9.5px', flexWrap: 'wrap' }}>
-                            <span
-                              style={{
-                                padding: '1px 4px',
-                                borderRadius: '2px',
-                                background: radarStatus === 'destroyed' ? 'rgba(255, 82, 82, 0.2)' : radarStatus === 'degraded' ? 'rgba(255, 176, 32, 0.2)' : 'rgba(0, 230, 118, 0.15)',
-                                color: radarStatus === 'destroyed' ? '#FF5252' : radarStatus === 'degraded' ? '#FFB020' : '#00E676',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Radar: {radarStatus.toUpperCase()}
-                            </span>
-                            <span
-                              style={{
-                                padding: '1px 4px',
-                                borderRadius: '2px',
-                                background: weaponsStatus === 'offline' ? 'rgba(255, 82, 82, 0.2)' : 'rgba(0, 230, 118, 0.15)',
-                                color: weaponsStatus === 'offline' ? '#FF5252' : '#00E676',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Weapons: {weaponsStatus.toUpperCase()}
-                            </span>
-                            {floodingStatus !== 'none' && (
+                            {/* Subsystem Health Profile */}
+                            <div style={{ display: 'flex', gap: '4px', fontSize: '9.5px', flexWrap: 'wrap' }}>
                               <span
                                 style={{
                                   padding: '1px 4px',
                                   borderRadius: '2px',
-                                  background: 'rgba(255, 82, 82, 0.25)',
-                                  color: '#FF5252',
-                                  fontWeight: 700,
+                                  background: radarStatus === 'destroyed' ? 'rgba(255, 82, 82, 0.2)' : radarStatus === 'degraded' ? 'rgba(255, 176, 32, 0.2)' : 'rgba(0, 230, 118, 0.15)',
+                                  color: radarStatus === 'destroyed' ? '#FF5252' : radarStatus === 'degraded' ? '#FFB020' : '#00E676',
+                                  fontWeight: 600,
                                 }}
                               >
-                                ⚠️ SINKING / FLOODING
+                                Radar: {radarStatus.toUpperCase()}
                               </span>
-                            )}
-                          </div>
+                              <span
+                                style={{
+                                  padding: '1px 4px',
+                                  borderRadius: '2px',
+                                  background: weaponsStatus === 'offline' ? 'rgba(255, 82, 82, 0.2)' : 'rgba(0, 230, 118, 0.15)',
+                                  color: weaponsStatus === 'offline' ? '#FF5252' : '#00E676',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Weapons: {weaponsStatus.toUpperCase()}
+                              </span>
+                              {floodingStatus !== 'none' && (
+                                <span
+                                  style={{
+                                    padding: '1px 4px',
+                                    borderRadius: '2px',
+                                    background: 'rgba(255, 82, 82, 0.25)',
+                                    color: '#FF5252',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  ⚠️ SINKING / FLOODING
+                                </span>
+                              )}
+                            </div>
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
-                            <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
-                              Channels: <strong>4/4 Active</strong> · Speed: <strong>{entity.speedKmh} km/h</strong>
-                            </span>
-                            <button
-                              type="button"
-                              className="wg-btn"
-                              style={{ fontSize: '9px', padding: '2px 5px', color: '#D9534F', borderColor: '#D9534F' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRemoveEntityFromNetwork?.(entity.id);
-                              }}
-                            >
-                              Unlink
-                            </button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                              <span style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                                Channels: <strong>4/4 Active</strong> · Speed: <strong>{entity.speedKmh} km/h</strong>
+                              </span>
+                              <button
+                                type="button"
+                                className="wg-btn"
+                                style={{ fontSize: '9px', padding: '2px 5px', color: '#D9534F', borderColor: '#D9534F' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRemoveEntityFromNetwork?.(entity.id);
+                                }}
+                              >
+                                Unlink
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                  )}
 
-                  {/* Unassigned Units to Link */}
-                  {friendlyEntities.some((e) => e.networkId !== currentNetwork?.id && e.status !== 'destroyed') && (
+                  {/* Unassigned Deployed Units to Link */}
+                  {friendlyEntities.some((e) => e.networkId !== currentNetwork?.id && isEntityDeployed(e)) && (
                     <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 600 }}>
-                        + Add Available Units to Datalink:
+                        + Add Available Deployed Units to Datalink:
                       </span>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {friendlyEntities
-                          .filter((e) => e.networkId !== currentNetwork?.id && e.status !== 'destroyed')
+                          .filter((e) => e.networkId !== currentNetwork?.id && isEntityDeployed(e))
                           .map((e) => (
                             <button
                               key={e.id}
@@ -1329,6 +1335,10 @@ export function WarSimConsole({
                       </div>
                     </div>
                   )}
+
+                  <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)', fontStyle: 'italic', marginTop: '2px' }}>
+                    ℹ️ Units stationed inside bases (docked / turnaround / in repair) do not join the datalink until scrambled/deployed on a mission.
+                  </div>
                 </div>
 
                 {/* Shared Sensor Fusion Feed */}
