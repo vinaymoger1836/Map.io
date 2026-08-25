@@ -169,7 +169,11 @@ export default function EurasiaMap() {
   // Sync War Sim state to MapLibre layers
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+    if (!map || !ready || mode !== 'wargames') return;
+    if (!warSim.session) {
+      removeWarSimLayers(map);
+      return;
+    }
     renderWarSimStateToMap(
       map,
       warSim.session,
@@ -775,11 +779,7 @@ export default function EurasiaMap() {
             onConfirmCustomRoute={warSim.confirmCustomRoute}
             onUndoLastWaypoint={warSim.undoLastWaypoint}
             onOpenAar={() => setWarSimAarOpen(true)}
-            onExitSim={() => {
-              if (mapRef.current) removeWarSimLayers(mapRef.current);
-              writeDoc('warsim-session', null);
-              setActiveWarSimSession(null);
-            }}
+            onExitSim={warSim.exitSim}
             systemsLibrary={war.systems}
             countries={war.countries}
             onFlyToBase={(lngLat) => {

@@ -32,6 +32,7 @@ import {
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
+import { removeWarSimLayers } from './warSimLayers';
 
 export interface TargetPickingState {
   mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
@@ -94,10 +95,16 @@ export function useWarSim({
   const sessionRef = useRef<WarSimSession | null>(session);
   sessionRef.current = session;
 
-  // Initialize from initialSession prop
+  // Sync internal session state from initialSession prop
   useEffect(() => {
-    if (initialSession) {
-      setSession(initialSession);
+    setSession(initialSession);
+    if (!initialSession) {
+      setSelectedEntityId(null);
+      setSelectedContactId(null);
+      setSelectedBaseId(null);
+      setTargetPicking(null);
+      setActiveWeaponIndex(null);
+      setShowAllEnvelopes(false);
     }
   }, [initialSession]);
 
@@ -720,6 +727,32 @@ export function useWarSim({
     });
   }, []);
 
+  const exitSim = useCallback(() => {
+    // 1. Immediately reset internal session and all sub-selections
+    setSession(null);
+    setSelectedEntityId(null);
+    setSelectedContactId(null);
+    setSelectedBaseId(null);
+    setTargetPicking(null);
+    setActiveWeaponIndex(null);
+    setShowAllEnvelopes(false);
+
+    // 2. Erase persisted session doc so subsequent sessions start completely fresh
+    writeDoc('warsim-session', null);
+
+    // 3. Cleanly remove all live WarSim MapLibre layers and sources
+    if (mapRef.current) {
+      try {
+        removeWarSimLayers(mapRef.current);
+      } catch (err) {
+        console.warn('[useWarSim] Error removing map layers on exit:', err);
+      }
+    }
+
+    // 4. Notify parent callback
+    onClose?.();
+  }, [mapRef, onClose]);
+
   return {
     session,
     setSession,
@@ -769,5 +802,6 @@ export function useWarSim({
     confirmTargetPick,
     confirmCustomRoute,
     undoLastWaypoint,
+    exitSim,
   };
 }
