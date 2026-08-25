@@ -66,6 +66,175 @@ export function formatSimTime(totalSec: number): string {
   return `T+${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+/* ------------------------------------------------------------------ */
+/* Dynamic P_k Modifier Pipeline & Missile Interception Math          */
+/* ------------------------------------------------------------------ */
+
+export interface PkModifierFactors {
+  basePk: number;
+  threatSpeedMach: number;
+  threatRcsM2: number;
+  threatAltitudeM: number;
+  saturationPenalty?: number;
+  seekerDegraded?: boolean;
+}
+
+export function resolveMunitionPhysicalProfile(
+  weaponName: string,
+  weaponCategory?: string,
+  speedKmh?: number
+): {
+  speedMach: number;
+  rcsM2: number;
+  altitudeM: number;
+} {
+  const nameLower = weaponName.toLowerCase();
+  const speed = speedKmh && speedKmh > 0 ? speedKmh : 900;
+  const speedMach = speed / 1225;
+
+  // Altitude Profile (Sea-skimming vs Standard)
+  let altitudeM = 2000;
+  const isSeaSkimmer =
+    nameLower.includes('anti-ship') ||
+    nameLower.includes('asm') ||
+    nameLower.includes('ashm') ||
+    nameLower.includes('harpoon') ||
+    nameLower.includes('exocet') ||
+    nameLower.includes('oniks') ||
+    nameLower.includes('brahmos') ||
+    nameLower.includes('nsm') ||
+    nameLower.includes('lrasm') ||
+    nameLower.includes('kalibr') ||
+    nameLower.includes('tomahawk') ||
+    nameLower.includes('c-802') ||
+    nameLower.includes('yj-') ||
+    nameLower.includes('zircon') ||
+    nameLower.includes('neptune') ||
+    weaponCategory === 'cruise';
+
+  if (isSeaSkimmer) {
+    altitudeM = 25; // Sea-skimming altitude (< 50m)
+  }
+
+  // RCS Profile (Very Low, Low, Standard)
+  let rcsM2 = 1.0;
+  const isVeryLowRcs =
+    nameLower.includes('lrasm') ||
+    nameLower.includes('jassm') ||
+    nameLower.includes('storm shadow') ||
+    nameLower.includes('scalp') ||
+    nameLower.includes('nsm') ||
+    nameLower.includes('som') ||
+    nameLower.includes('stealth');
+
+  const isLowRcs =
+    nameLower.includes('harpoon') ||
+    nameLower.includes('exocet') ||
+    nameLower.includes('kalibr') ||
+    nameLower.includes('tomahawk') ||
+    nameLower.includes('shahed') ||
+    nameLower.includes('uav') ||
+    nameLower.includes('drone');
+
+  if (isVeryLowRcs) {
+    rcsM2 = 0.03; // Very Low RCS (< 0.05 m²)
+  } else if (isLowRcs) {
+    rcsM2 = 0.30; // Low RCS (0.05 - 1.0 m²)
+  } else {
+    rcsM2 = 1.5; // Standard Target (>= 1.0 m²)
+  }
+
+  return {
+    speedMach,
+    rcsM2,
+    altitudeM,
+  };
+}
+
+/**
+ * Evaluates the Dynamic P_k Modifier Pipeline:
+ * Formula: P_k_modified = P_k_base * SpeedMod * RCSMod * AltMod * SaturationPenalty
+ */
+export function calculateDynamicPk(factors: PkModifierFactors): {
+  modifiedPk: number;
+  speedMod: number;
+  rcsMod: number;
+  altMod: number;
+  breakdown: string;
+} {
+  const {
+    basePk,
+    threatSpeedMach,
+    threatRcsM2,
+    threatAltitudeM,
+    saturationPenalty = 1.0,
+    seekerDegraded = false,
+  } = factors;
+
+  // 1. SpeedMod
+  // - Subsonic (Mach < 0.9): 1.1x
+  // - Supersonic (Mach 1.0 - 3.0): 1.0x
+  // - High Supersonic (Mach 3.0 - 5.0): 0.7x
+  // - Hypersonic (Mach 5.0+): 0.4x
+  let speedMod = 1.0;
+  if (threatSpeedMach < 0.9) {
+    speedMod = 1.1;
+  } else if (threatSpeedMach <= 3.0) {
+    speedMod = 1.0;
+  } else if (threatSpeedMach < 5.0) {
+    speedMod = 0.7;
+  } else {
+    speedMod = 0.4;
+  }
+
+  // 2. RCSMod
+  // - Very Low RCS Target (< 0.05 m², 6th Gen Jet / stealth missile): 0.50x
+  // - Low RCS Target (0.05 - 1.0 m², Visby, Stealth UAV): 0.75x
+  // - Standard Target (>= 1.0 m²): 1.0x
+  let rcsMod = 1.0;
+  if (threatRcsM2 < 0.05) {
+    rcsMod = 0.50;
+  } else if (threatRcsM2 < 1.0) {
+    rcsMod = 0.75;
+  } else {
+    rcsMod = 1.0;
+  }
+
+  // 3. AltMod
+  // - Sea-skimming Altitude (< 50m): 0.80x
+  // - Standard Altitude (>= 50m): 1.0x
+  let altMod = 1.0;
+  if (threatAltitudeM > 0 && threatAltitudeM < 50) {
+    altMod = 0.80;
+  }
+
+  let modifiedPk = basePk * speedMod * rcsMod * altMod * saturationPenalty;
+  if (seekerDegraded) {
+    modifiedPk *= 0.60;
+  }
+
+  modifiedPk = Math.max(0.05, Math.min(0.98, modifiedPk));
+
+  const breakdown = `PkBase ${basePk.toFixed(2)} × Spd(${speedMod}x) × RCS(${rcsMod}x) × Alt(${altMod}x)${saturationPenalty < 1.0 ? ` × Sat(${saturationPenalty.toFixed(2)}x)` : ''} = ${modifiedPk.toFixed(2)}`;
+
+  return {
+    modifiedPk,
+    speedMod,
+    rcsMod,
+    altMod,
+    breakdown,
+  };
+}
+
+/**
+ * Evaluates Compound Probability Math:
+ * Compound P_k = 1 - (1 - P_k_modified)^N
+ */
+export function calculateCompoundSalvoPk(modifiedSingleShotPk: number, salvoCommit: number): number {
+  const count = Math.max(1, salvoCommit);
+  return 1 - Math.pow(1 - modifiedSingleShotPk, count);
+}
+
 export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwork[] {
   const networks: BattlefieldNetwork[] = session.networks ? [...session.networks] : [];
 
@@ -764,6 +933,7 @@ export function tickWarSim(
             const launchStaggerSec = globalSalvoOffset * 1.2;
             globalSalvoOffset++;
 
+            const munitionProfile = resolveMunitionPhysicalProfile(wName, missileCategory, missileSpeed);
             const newMissile: MissileFlyoutTrack = {
               id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
               originLngLat: entity.lngLat,
@@ -781,6 +951,9 @@ export function tickWarSim(
               isIntercepted: false,
               progress: 0,
               salvoId,
+              threatAltitudeM: munitionProfile.altitudeM,
+              threatRcsM2: munitionProfile.rcsM2,
+              threatSpeedMach: munitionProfile.speedMach,
             };
             session.activeMissiles.push(newMissile);
           }
@@ -944,7 +1117,7 @@ export function tickWarSim(
     m.currentLngLat = nextLngLat;
   }
 
-  // Pass 2: Mid-Air Kinetic Interceptor & Threat Collisions
+  // Pass 2: Mid-Air Kinetic Interceptor & Threat Collisions (with CPA Inflection Point Detection)
   for (const sam of session.activeMissiles) {
     if (sam.isIntercepted || sam.weaponCategory !== 'sam' || !sam.targetMissileId) continue;
     if (session.simTimeSec < sam.startSimTimeSec) continue;
@@ -954,15 +1127,20 @@ export function tickWarSim(
       const distToThreat = distanceKm(sam.currentLngLat, threat.currentLngLat);
       const combinedStepDist = ((sam.speedKmh + threat.speedKmh) / 3600) * dtSimSec;
 
-      // Direct physical collision criteria (within combined step travel or terminal arrival)
-      if (distToThreat <= Math.max(4.0, combinedStepDist * 1.3) || sam.progress >= 0.92) {
+      // Section 4: Closest Point of Approach (CPA) Inflection Point Detection
+      // The exact frame distance stops shrinking and begins to grow indicates the closest point of approach.
+      const isInflection = sam.lastDistanceToTargetKm !== undefined && distToThreat > sam.lastDistanceToTargetKm;
+      const isProximityIntercept = distToThreat <= Math.max(3.5, combinedStepDist * 1.3);
+
+      // Direct physical collision criteria (Proximity lethal radius, CPA inflection, or terminal progress)
+      if (isProximityIntercept || (isInflection && distToThreat <= 8.0) || sam.progress >= 0.92) {
         // Snap both missiles to the exact intersection collision coordinates
         const collisionLngLat = interpolate(sam.currentLngLat, threat.currentLngLat, 0.5);
         sam.currentLngLat = collisionLngLat;
         threat.currentLngLat = collisionLngLat;
 
-        const singleShotPk = sam.interceptorPk ?? 0.82;
-        if (Math.random() < singleShotPk) {
+        const effectivePk = sam.interceptorPk ?? 0.82;
+        if (Math.random() < effectivePk) {
           // Both missiles collide and are neutralized simultaneously
           threat.isIntercepted = true;
           sam.isIntercepted = true;
@@ -1000,7 +1178,7 @@ export function tickWarSim(
             sam.attackerIso === session.playerIso ? 'player' : 'enemy',
             'intercept',
             `💥 Mid-Air Kinetic Interception: ${sam.weaponName}`,
-            `${sam.weaponName} scored direct collision hit on incoming ${threat.weaponName} at ${distanceKm(sam.originLngLat, collisionLngLat).toFixed(0)} km stand-off range!`,
+            `${sam.weaponName} scored direct collision kill at CPA (${distToThreat.toFixed(1)} km) against incoming ${threat.weaponName} (Compound Pk: ${Math.round(effectivePk * 100)}%)!`,
             collisionLngLat
           );
         } else {
@@ -1010,11 +1188,13 @@ export function tickWarSim(
             sam.attackerIso === session.playerIso ? 'player' : 'enemy',
             'alert',
             `⚠️ Interceptor Missed: ${threat.weaponName}`,
-            `${threat.weaponName} evaded ${sam.weaponName} intercept envelope and continues terminal ingress!`,
+            `${threat.weaponName} evaded ${sam.weaponName} intercept envelope at CPA (${distToThreat.toFixed(1)} km) and continues terminal ingress!`,
             collisionLngLat
           );
         }
       }
+
+      sam.lastDistanceToTargetKm = distToThreat;
     } else {
       // Threat already destroyed by another interceptor
       if (sam.progress >= 0.95) {
@@ -1146,9 +1326,21 @@ export function tickWarSim(
           const interceptorSpeed = Math.max(3600, (bestWeapon.speedMach ?? 4.0) * 1225);
           const tFlySec = (distToMissile / interceptorSpeed) * 3600;
 
+          // Section 2: Dynamic P_k Modifier Pipeline
+          // P_k_modified = P_k_base * SpeedMod * RCSMod * AltMod
+          const threatProfile = resolveMunitionPhysicalProfile(m.weaponName, m.weaponCategory, m.speedKmh);
           const baseSingleShotPk = bestWeapon.pk ?? 0.82;
-          const singleShotPk = Math.max(0.15, Math.min(0.95, baseSingleShotPk * saturationPenalty));
-          const compoundPk = 1 - Math.pow(1 - singleShotPk, salvoCommit);
+          const { modifiedPk, speedMod, rcsMod, altMod, breakdown: pkBreakdown } = calculateDynamicPk({
+            basePk: baseSingleShotPk,
+            threatSpeedMach: m.threatSpeedMach ?? threatProfile.speedMach,
+            threatRcsM2: m.threatRcsM2 ?? threatProfile.rcsM2,
+            threatAltitudeM: m.threatAltitudeM ?? threatProfile.altitudeM,
+            saturationPenalty,
+            seekerDegraded: def.subsystems?.radar === 'degraded',
+          });
+
+          // Section 3: Compound Probability Math: Compound P_k = 1 - (1 - P_k_modified)^N
+          const compoundPk = calculateCompoundSalvoPk(modifiedPk, salvoCommit);
 
           // Spawn interceptor directly tracking target threat
           const interceptorTrack: MissileFlyoutTrack = {
@@ -1170,6 +1362,10 @@ export function tickWarSim(
             targetMissileId: m.id,
             interceptorPk: compoundPk,
             salvoId: m.salvoId,
+            lastDistanceToTargetKm: distToMissile,
+            threatAltitudeM: m.threatAltitudeM ?? threatProfile.altitudeM,
+            threatRcsM2: m.threatRcsM2 ?? threatProfile.rcsM2,
+            threatSpeedMach: m.threatSpeedMach ?? threatProfile.speedMach,
           };
           newDefensiveInterceptors.push(interceptorTrack);
 
@@ -1200,7 +1396,7 @@ export function tickWarSim(
             def.iso === session.playerIso ? 'player' : 'enemy',
             'intercept',
             `🚀 ${tierLabel} Intercept: ${def.name}`,
-            `${def.name} engaged incoming ${m.weaponName} at ${distToMissile.toFixed(0)} km range via Tactical Datalink. Fired ${salvoCommit} × ${bestWeapon.name} (${remainingMag} ready rounds remaining).`,
+            `${def.name} engaged incoming ${m.weaponName} at ${distToMissile.toFixed(0)} km range (${pkBreakdown}, Compound Pk: ${Math.round(compoundPk * 100)}%). Fired ${salvoCommit} × ${bestWeapon.name} (${remainingMag} ready rounds remaining).`,
             def.lngLat
           );
           break; // One defender assigned per threat per tick

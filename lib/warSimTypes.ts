@@ -235,6 +235,12 @@ export interface MissileFlyoutTrack {
   defenderDetectionTimes?: Record<string, number>;
   /** Salvo tracking ID for grouped strike mission reports */
   salvoId?: string;
+  /** Closest Point of Approach (CPA) tracking: distance to target at previous frame (km) */
+  lastDistanceToTargetKm?: number;
+  /** Physical target characteristics for dynamic Pk resolution */
+  threatAltitudeM?: number;
+  threatRcsM2?: number;
+  threatSpeedMach?: number;
 }
 
 export interface InterceptionBreakdownEntry {
