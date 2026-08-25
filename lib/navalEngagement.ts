@@ -24,6 +24,7 @@ import { specOf, type BoardContext, type UnitPersistentState } from './theaterEn
 import { unitLabel, type DeployedUnit, type Formation } from './warGames';
 import type { SystemSpec, WeaponFacet } from './specs';
 import { maxMunitionCapacity, defaultSonarFor } from './specs';
+import { calculateDynamicPk, calculateCompoundSalvoPk } from './warSimEngine';
 
 /* ------------------------------------------------------------------ */
 /* Types & Interfaces                                                  */
@@ -348,10 +349,18 @@ export function assessNavalFleetDefense(
     if (roundsToFire <= 0) continue;
 
     const actualTargetsEngaged = Math.min(targetsToEngage, Math.max(1, Math.floor(roundsToFire / roundsPerTarget)));
-    const effPk = cand.pk * (missileSpeedMach > 2.0 ? 0.75 : 0.90);
-    const perTargetKillProb = 1 - Math.pow(1 - effPk, Math.max(1, Math.round(roundsToFire / actualTargetsEngaged)));
+    const { modifiedPk } = calculateDynamicPk({
+      basePk: cand.pk,
+      threatSpeedMach: missileSpeedMach,
+      threatRcsM2: 0.30,
+      threatAltitudeM: isSeaSkimmer ? 25 : 500,
+    });
+    const perTargetKillProb = calculateCompoundSalvoPk(
+      modifiedPk,
+      Math.max(1, Math.round(roundsToFire / actualTargetsEngaged))
+    );
     let kills = Math.min(facingBefore, Math.round(actualTargetsEngaged * perTargetKillProb));
-    if (kills === 0 && roundsToFire >= 2 && effPk >= 0.7) {
+    if (kills === 0 && roundsToFire >= 2 && modifiedPk >= 0.7) {
       kills = Math.min(facingBefore, 1);
     }
 

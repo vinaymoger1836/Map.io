@@ -468,8 +468,13 @@ export function CombatReportDetailModal({
                       borderRadius: '6px',
                     }}
                   >
-                    <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, color: '#4FC3F7', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, color: '#4FC3F7', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span>🛡️ Integrated Interception Breakdown by Defending Unit</span>
+                      {report.networkDetails && (
+                        <span style={{ fontSize: '9px', color: '#00E676', background: 'rgba(0, 230, 118, 0.15)', padding: '1px 5px', borderRadius: '3px' }}>
+                          🌐 {report.networkDetails.networkName}
+                        </span>
+                      )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {interception.breakdown.map((item, idx) => (
@@ -593,6 +598,31 @@ export function CombatReportDetailModal({
                 <div style={{ fontSize: '11.5px', color: '#CFD8DC', lineHeight: 1.4 }}>
                   {bda.bdaSummary}
                 </div>
+
+                {bda.subsystemsDamaged && bda.subsystemsDamaged.length > 0 && (
+                  <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 700 }}>
+                      Subsystem Degradation Report:
+                    </span>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {bda.subsystemsDamaged.map((sub, sIdx) => (
+                        <span
+                          key={sIdx}
+                          style={{
+                            fontSize: '9.5px',
+                            background: 'rgba(255, 82, 82, 0.15)',
+                            border: '1px solid rgba(255, 82, 82, 0.3)',
+                            color: '#FF8A80',
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                          }}
+                        >
+                          ⚠️ {sub}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

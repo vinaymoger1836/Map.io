@@ -25,6 +25,7 @@ import { ensureIcons, ensurePlaybackIcons, unitIconId, type IconSpec } from './u
 import { UNIT_BY_ID, type EchelonMark } from './warGames';
 import { isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
 import { isNavalCombatant } from './navalEngagement';
+import { detectFont } from './mapLayers';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -46,6 +47,7 @@ const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
 const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
 const LYR_ENTITIES_HALO = 'warsim-entities-halo';
+const LYR_ENTITIES_MARKER = 'warsim-entities-marker';
 const LYR_ENTITIES_SYMBOL = 'warsim-entities-symbol';
 const LYR_CONTACTS_HALO = 'warsim-contacts-halo';
 const LYR_CONTACTS_CIRCLE = 'warsim-contacts-circle';
@@ -201,6 +203,9 @@ export function simEntityIconSpec(e: SimEntity, color: string): IconSpec {
 export function installWarSimLayers(map: MLMap) {
   if (map.getSource(SRC_BASES)) return;
 
+  const font = detectFont(map);
+  ensurePlaybackIcons(map);
+
   // 0. Reach Ring (Combat Radius Target Designation)
   map.addSource(SRC_REACH_RING, {
     type: 'geojson',
@@ -325,7 +330,7 @@ export function installWarSimLayers(map: MLMap) {
       'text-size': 11,
       'text-offset': [0, 1.4],
       'text-anchor': 'top',
-      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-font': font,
     },
     paint: {
       'text-color': '#FFFFFF',
@@ -373,6 +378,20 @@ export function installWarSimLayers(map: MLMap) {
     },
   });
 
+  // Dedicated Tactical Position Dot Marker
+  map.addLayer({
+    id: LYR_ENTITIES_MARKER,
+    type: 'circle',
+    source: SRC_ENTITIES,
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 4.5, 6, 6.5, 10, 8.5],
+      'circle-color': ['get', 'color'],
+      'circle-stroke-color': '#FFFFFF',
+      'circle-stroke-width': 1.5,
+      'circle-opacity': 0.9,
+    },
+  });
+
   map.addLayer({
     id: LYR_ENTITIES_SYMBOL,
     type: 'symbol',
@@ -384,7 +403,7 @@ export function installWarSimLayers(map: MLMap) {
       'icon-ignore-placement': true,
       'icon-anchor': 'center',
       'text-field': ['get', 'label'],
-      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-font': font,
       'text-size': 10.5,
       'text-offset': [0, 1.5],
       'text-anchor': 'top',
@@ -446,7 +465,7 @@ export function installWarSimLayers(map: MLMap) {
       'text-size': 10,
       'text-offset': [0, 1.3],
       'text-anchor': 'top',
-      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-font': font,
     },
     paint: {
       'text-color': '#FFB020',
@@ -468,7 +487,7 @@ export function installWarSimLayers(map: MLMap) {
       'icon-ignore-placement': true,
       'icon-anchor': 'center',
       'text-field': ['get', 'label'],
-      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-font': font,
       'text-size': 10.5,
       'text-offset': [0, 1.5],
       'text-anchor': 'top',
@@ -538,7 +557,7 @@ export function installWarSimLayers(map: MLMap) {
       'text-size': 9.5,
       'text-offset': [0, 1.4],
       'text-anchor': 'top',
-      'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+      'text-font': font,
       'text-allow-overlap': false,
     },
     paint: {
@@ -569,6 +588,27 @@ export function renderWarSimStateToMap(
 ) {
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
+  } else {
+    // Ensure all simulation symbol and marker layers remain visible
+    const simLayers = [
+      LYR_BASES_CIRCLE,
+      LYR_BASES_LABEL,
+      LYR_ENTITIES_MARKER,
+      LYR_ENTITIES_SYMBOL,
+      LYR_CONTACTS_CIRCLE,
+      LYR_CONTACTS_LABEL,
+      LYR_CONTACTS_SYMBOL,
+      LYR_MISSILES_LINE,
+      LYR_MISSILES_HEAD,
+      LYR_MISSILES_SYMBOL,
+      LYR_MISSILES_LABEL,
+      LYR_PATROLS_LINE,
+    ];
+    for (const id of simLayers) {
+      if (map.getLayer(id) && map.getLayoutProperty(id, 'visibility') === 'none') {
+        map.setLayoutProperty(id, 'visibility', 'visible');
+      }
+    }
   }
 
   const isPlayer = activeFaction === 'player';
@@ -1124,6 +1164,7 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_CONTACTS_CIRCLE,
     LYR_CONTACTS_HALO,
     LYR_ENTITIES_SYMBOL,
+    LYR_ENTITIES_MARKER,
     LYR_ENTITIES_HALO,
     LYR_PATROLS_LINE,
     LYR_BASES_LABEL,
