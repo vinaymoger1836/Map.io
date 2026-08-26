@@ -2439,6 +2439,217 @@ export function generateConsolidatedBattleOpsReport(
   };
 }
 
+/**
+ * Direct Standoff Salvo Launcher for Battle Ops and Wargames execution.
+ * Allows independent salvos to be launched directly by any deployed or stationed unit,
+ * deducting ammunition, spawning distinct MissileFlyoutTracks, registering unique SalvoTrackers,
+ * and preventing task overwriting when multiple tasks are scheduled simultaneously for the same entity.
+ */
+export function launchSimStrikeSalvoDirectly(
+  session: WarSimSession,
+  attackerEntityId: string,
+  targetEntityId: string,
+  targetLngLat: [number, number],
+  weaponIndex: number,
+  salvoCount: number = 1,
+  postStrikeAction: PostStrikeAction = 'rtb',
+  systemsLibrary: SystemSpec[] = [],
+  attackWaypoints?: [number, number][]
+): {
+  session: WarSimSession;
+  salvoId?: string;
+  launchedCount: number;
+  status: 'executing' | 'failed';
+  summary: string;
+} {
+  const attacker = session.entities.find((e) => e.id === attackerEntityId);
+  if (!attacker || attacker.status === 'destroyed' || attacker.status === 'in_repair') {
+    return {
+      session,
+      launchedCount: 0,
+      status: 'failed',
+      summary: 'Attacker unit unavailable or destroyed',
+    };
+  }
+
+  const spec = systemsLibrary.find((s) => s.id === attacker.systemId);
+  const effectiveWeapons =
+    attacker.customWeapons && attacker.customWeapons.length > 0
+      ? attacker.customWeapons
+      : spec?.weapons || [];
+
+  if (effectiveWeapons.length === 0) {
+    return {
+      session,
+      launchedCount: 0,
+      status: 'failed',
+      summary: 'No weapon systems equipped on platform',
+    };
+  }
+
+  const wIdx = Math.max(0, Math.min(weaponIndex, effectiveWeapons.length - 1));
+  const weapon = effectiveWeapons[wIdx];
+  const weaponName = weapon?.name || 'Standoff Missile';
+  const weaponRangeKm = weapon?.rangeKm || 100;
+  const curMag = weapon?.magazine ?? 1;
+
+  if (curMag <= 0) {
+    return {
+      session,
+      launchedCount: 0,
+      status: 'failed',
+      summary: `Ammunition exhausted for ${weaponName} (0 remaining)`,
+    };
+  }
+
+  const totalAvailableRounds = attacker.count * curMag;
+  const requestedSalvo = Math.max(1, salvoCount);
+  const actualSalvoToFire = Math.min(requestedSalvo, totalAvailableRounds);
+
+  // Deduct ammunition accurately
+  const totalRoundsAfter = Math.max(0, totalAvailableRounds - actualSalvoToFire);
+  const newMagPerUnit = Math.floor(totalRoundsAfter / attacker.count);
+
+  const updatedCustomWeapons = effectiveWeapons.map((cw, idx) =>
+    idx === wIdx ? { ...cw, magazine: newMagPerUnit } : cw
+  );
+
+  const targetEntity = session.entities.find((e) => e.id === targetEntityId);
+  const targetBase = session.bases.find((b) => b.id === targetEntityId);
+  const targetPos: [number, number] =
+    targetEntity && targetEntity.status !== 'destroyed'
+      ? targetEntity.lngLat
+      : targetBase
+        ? targetBase.lngLat
+        : targetLngLat;
+
+  const distToTarget = distanceKm(attacker.lngLat, targetPos);
+  const missileSpeed = weapon?.speedMach
+    ? weapon.speedMach * 1225
+    : weaponRangeKm > 100
+      ? 3200
+      : 1800;
+  const missileCategory: any = weapon?.engages?.includes('air')
+    ? 'air_to_air'
+    : weapon?.engages?.includes('subsurface')
+      ? 'torpedo'
+      : 'cruise';
+
+  const salvoId = `salvo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const isAttackerPlayer = attacker.iso === session.playerIso;
+  const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
+  const targetPID = getContactPID(targetEntityId, attackerFaction, session.fogOfWarContacts);
+  const targetDisplayName = targetPID.isPID
+    ? (targetEntity?.name ?? targetBase?.name ?? 'Hostile Entity')
+    : `Hostile Track (Stand-off Target)`;
+
+  const newMissiles: MissileFlyoutTrack[] = [];
+  for (let s = 0; s < actualSalvoToFire; s++) {
+    const launchStaggerSec = s * 1.2;
+    const munitionProfile = resolveMunitionPhysicalProfile(weaponName, missileCategory, missileSpeed);
+    const msl: MissileFlyoutTrack = {
+      id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+      originLngLat: attacker.lngLat,
+      targetLngLat: targetPos,
+      currentLngLat: attacker.lngLat,
+      attackerEntityId: attacker.id,
+      targetEntityId,
+      attackerIso: attacker.iso,
+      targetIso:
+        targetEntity?.iso ??
+        targetBase?.iso ??
+        (isAttackerPlayer ? session.enemyIso : session.playerIso),
+      weaponName,
+      weaponCategory: missileCategory,
+      speedKmh: missileSpeed,
+      startSimTimeSec: session.simTimeSec + launchStaggerSec,
+      etaSimTimeSec:
+        session.simTimeSec +
+        Math.max(8, Math.round((distToTarget / missileSpeed) * 3600)) +
+        launchStaggerSec,
+      isIntercepted: false,
+      progress: 0,
+      salvoId,
+      threatAltitudeM: munitionProfile.altitudeM,
+      threatRcsM2: munitionProfile.rcsM2,
+      threatSpeedMach: munitionProfile.speedMach,
+      lastDistanceToTargetKm: distToTarget,
+    };
+    newMissiles.push(msl);
+  }
+
+  // Register Salvo Tracker
+  const newSalvoTracker: StrikeSalvoTracker = {
+    salvoId,
+    attackerEntityId: attacker.id,
+    attackerName: attacker.name,
+    attackerIso: attacker.iso,
+    targetEntityId,
+    targetName: targetDisplayName,
+    targetIso:
+      targetEntity?.iso ??
+      targetBase?.iso ??
+      (isAttackerPlayer ? session.enemyIso : session.playerIso),
+    weaponNames: [`${actualSalvoToFire} × ${weaponName}`],
+    totalLaunched: actualSalvoToFire,
+    interceptedBySam: 0,
+    interceptedByCiws: 0,
+    directHits: 0,
+    defendingSamSystems: [],
+    defendingCiwsSystems: [],
+    startSimTimeSec: session.simTimeSec,
+    targetInitialDamage: targetEntity?.damage || 'intact',
+    standoffDistanceKm: distToTarget,
+    weaponSpeedMach: weapon?.speedMach || 2.5,
+    weaponRangeKm,
+    targetLngLat: targetPos,
+    attackerLngLat: attacker.lngLat,
+    isConcluded: false,
+  };
+
+  const isAirUnit = !isGroundCombatUnit(attacker.typeId) && !isNavalCombatant(attacker.typeId);
+  const updatedEntities = session.entities.map((e) => {
+    if (e.id !== attacker.id) return e;
+    return {
+      ...e,
+      customWeapons: updatedCustomWeapons,
+      status:
+        isAirUnit && postStrikeAction === 'rtb'
+          ? ('bingo_rtb' as const)
+          : isAirUnit && postStrikeAction === 'return_to_patrol' && e.patrolOrder
+            ? ('takeoff_ingress' as const)
+            : e.status,
+    };
+  });
+
+  const newEvent: SimBattleEvent = {
+    id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    simTimeSec: session.simTimeSec,
+    timeFormatted: formatSimTime(session.simTimeSec),
+    faction: attackerFaction,
+    type: 'launch',
+    title: `Missile Salvo Launched: ${attacker.name}`,
+    detail: `${attacker.name} launched ${actualSalvoToFire} × ${weaponName} against ${targetDisplayName} (${distToTarget.toFixed(0)} km standoff).`,
+    lngLat: attacker.lngLat,
+  };
+
+  const updatedSession: WarSimSession = {
+    ...session,
+    entities: updatedEntities,
+    activeMissiles: [...session.activeMissiles, ...newMissiles],
+    salvoTrackers: [...(session.salvoTrackers || []), newSalvoTracker],
+    eventLog: [...session.eventLog, newEvent].slice(-200),
+  };
+
+  return {
+    session: updatedSession,
+    salvoId,
+    launchedCount: actualSalvoToFire,
+    status: 'executing',
+    summary: `Salvo launched: ${actualSalvoToFire} × ${weaponName} in flight to ${targetDisplayName}`,
+  };
+}
+
 export function processBattleOpsPlanTick(
   session: WarSimSession,
   systemsLibrary: SystemSpec[] = []
@@ -2503,10 +2714,9 @@ export function processBattleOpsPlanTick(
           const weaponIdx = task.weaponIndex ?? 0;
           const salvoCount = task.salvoCount ?? 1;
           const postAction = task.postStrikeAction ?? 'rtb';
-          const sortieCount = task.sortieCount;
 
-          const preSalvoCount = currentSession.salvoTrackers?.length || 0;
-          currentSession = orderStrikeMission(
+          // Launch strike directly so multiple tasks in the same phase execute independently
+          const strikeResult = launchSimStrikeSalvoDirectly(
             currentSession,
             task.attackerEntityId,
             targetEntityId,
@@ -2514,25 +2724,20 @@ export function processBattleOpsPlanTick(
             weaponIdx,
             salvoCount,
             postAction,
-            undefined,
             systemsLibrary,
-            sortieCount,
-            undefined,
-            undefined,
             task.attackWaypoints
           );
 
-          const postSalvos = currentSession.salvoTrackers || [];
-          const spawnedSalvoId = postSalvos.length > preSalvoCount ? postSalvos[postSalvos.length - 1].salvoId : undefined;
-
+          currentSession = strikeResult.session;
           phaseUpdated = true;
           planUpdated = true;
+
           return {
             ...task,
-            status: 'executing' as const,
+            status: strikeResult.status,
             executedAtSimTimeSec: currentSession.simTimeSec,
-            salvoId: spawnedSalvoId,
-            resultSummary: `Salvo in flight (${salvoCount} rounds). Ingress to target.`,
+            salvoId: strikeResult.salvoId,
+            resultSummary: strikeResult.summary,
           };
         } else if (task.type === 'patrol') {
           const patrolCenter = task.patrolCenterLngLat || attacker.lngLat;
@@ -2573,19 +2778,7 @@ export function processBattleOpsPlanTick(
               ...task,
               status: 'completed' as const,
               completedAtSimTimeSec: currentSession.simTimeSec,
-              resultSummary: `Hits: ${tracker.directHits} | Intercepted: ${tracker.interceptedBySam + tracker.interceptedByCiws} | BDA: ${tracker.targetFinalDamage || 'Assessed'}`,
-            };
-          }
-        } else {
-          const attacker = currentSession.entities.find((e) => e.id === task.attackerEntityId);
-          if (attacker && attacker.status !== 'engaging') {
-            phaseUpdated = true;
-            planUpdated = true;
-            return {
-              ...task,
-              status: 'completed' as const,
-              completedAtSimTimeSec: currentSession.simTimeSec,
-              resultSummary: 'Strike engagement complete',
+              resultSummary: `Direct Hits: ${tracker.directHits} | Intercepted: ${tracker.interceptedBySam + tracker.interceptedByCiws} | BDA: ${tracker.targetFinalDamage || 'Assessed'}`,
             };
           }
         }

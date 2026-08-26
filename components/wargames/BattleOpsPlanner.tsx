@@ -78,7 +78,7 @@ export function BattleOpsPlanner({
     ? Math.max(0, session.simTimeSec - startedAt)
     : 0;
   const elapsedMinutes = Math.floor(elapsedSec / 60);
-  const elapsedSeconds = elapsedSec % 60;
+  const elapsedSeconds = Math.floor(elapsedSec % 60);
   const elapsedFormatted = `T+${String(elapsedMinutes).padStart(2, '0')}:${String(elapsedSeconds).padStart(2, '0')}`;
 
   // Task Creation Drawer State
