@@ -30,22 +30,28 @@ export function CombatReportDetailModal({
   const isOffensive = report.category === 'offensive_strike';
   const isDefensive = report.category === 'under_attack';
   const isRecon = report.category === 'recon_intel';
+  const isBattleOps = report.category === 'battle_ops' || Boolean(report.isConsolidatedBattleOps);
 
-  const categoryColor = isDefensive ? '#FF5252' : isOffensive ? '#FF9800' : '#4FC3F7';
-  const categoryLabel = isDefensive
-    ? '🛡️ DEFENSIVE ENGAGEMENT / UNDER ATTACK'
-    : isOffensive
-      ? '🚀 OFFENSIVE STRIKE MISSION'
-      : '📡 RECONNAISSANCE & POSITIVE IDENTIFICATION (PID)';
+  const categoryColor = isBattleOps ? '#00E676' : isDefensive ? '#FF5252' : isOffensive ? '#FF9800' : '#4FC3F7';
+  const categoryLabel = isBattleOps
+    ? '🏆 THEATER BATTLE OPERATIONS (BATTLE OPS) CONSOLIDATED REPORT'
+    : isDefensive
+      ? '🛡️ DEFENSIVE ENGAGEMENT / UNDER ATTACK'
+      : isOffensive
+        ? '🚀 OFFENSIVE STRIKE MISSION'
+        : '📡 RECONNAISSANCE & POSITIVE IDENTIFICATION (PID)';
   const primary = report.primaryEntity;
   const opposing = report.opposingEntity;
   const munitions = report.munitionsDetails;
   const interception = report.interceptionTelemetry;
   const bda = report.damageAssessment;
   const intel = report.intelDetails;
+  const battleOps = report.battleOpsDetails;
 
   const getHeaderBadge = () => {
     switch (report.category) {
+      case 'battle_ops':
+        return { text: 'JOINT THEATER BATTLE OPS AFTER-ACTION REPORT', color: '#00E676', bg: 'rgba(0, 230, 118, 0.15)' };
       case 'under_attack':
         return { text: 'DEFENSIVE ENGAGEMENT & THREAT REPORT', color: '#FF5252', bg: 'rgba(255, 82, 82, 0.15)' };
       case 'offensive_strike':
@@ -618,6 +624,132 @@ export function CombatReportDetailModal({
                           }}
                         >
                           ⚠️ {sub}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Section 4b: Battle Ops Consolidated Multi-Phase Theater Assessment */}
+          {battleOps && (
+            <div>
+              <label
+                style={{
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: '#00E676',
+                  display: 'block',
+                  marginBottom: '8px',
+                }}
+              >
+                🏆 Multi-Phase Battle Ops Theater Execution Summary
+              </label>
+
+              <div
+                style={{
+                  background: '#070C14',
+                  border: '1px solid rgba(0, 230, 118, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                {/* Strategic Outcome Banner */}
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    background: 'rgba(0, 230, 118, 0.1)',
+                    border: '1px solid rgba(0, 230, 118, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#00E676',
+                    fontWeight: 700,
+                  }}
+                >
+                  🎖️ {battleOps.strategicOutcome}
+                </div>
+
+                {/* Key Telemetry Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Total Phases:</span>
+                    <strong style={{ color: '#E0E6ED' }}>{battleOps.totalPhases} Scheduled Phases</strong>
+                  </div>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Munitions Fired:</span>
+                    <strong style={{ color: '#FFB020' }}>{battleOps.totalSalvoLaunched} Missiles / Bombs</strong>
+                  </div>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Interceptions:</span>
+                    <strong style={{ color: '#FF5252' }}>{battleOps.totalIntercepted} Intercepted</strong>
+                  </div>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Direct Hits:</span>
+                    <strong style={{ color: '#00E676' }}>{battleOps.directHits} Hits Scored</strong>
+                  </div>
+                </div>
+
+                {/* Phase Breakdown List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)', fontWeight: 700 }}>
+                    Chronological Phase Execution Timeline:
+                  </span>
+                  {battleOps.phasesSummary.map((p, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#0B131E',
+                        border: '1px solid var(--border)',
+                        padding: '6px 10px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '1px 5px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 700 }}>
+                          {p.triggerTimeFormatted}
+                        </span>
+                        <strong>{p.name}</strong>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: 'var(--paper-dim)', fontSize: '10px' }}>{p.taskCount} tasks</span>
+                        <span style={{ color: '#00E676', fontWeight: 600, fontSize: '10px' }}>{p.outcome}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Target Casualties */}
+                {battleOps.targetCasualties && battleOps.targetCasualties.length > 0 && (
+                  <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#FF5252', fontWeight: 700 }}>
+                      Confirmed Target Casualties & Neutralizations:
+                    </span>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {battleOps.targetCasualties.map((cas, cIdx) => (
+                        <span
+                          key={cIdx}
+                          style={{
+                            fontSize: '10px',
+                            background: 'rgba(255, 82, 82, 0.15)',
+                            border: '1px solid rgba(255, 82, 82, 0.3)',
+                            color: '#FF8A80',
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          💥 {cas}
                         </span>
                       ))}
                     </div>

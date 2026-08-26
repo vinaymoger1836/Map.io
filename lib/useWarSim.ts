@@ -17,6 +17,9 @@ import {
   type BaseType,
   type DetectedContact,
   type PostStrikeAction,
+  type BattleOpsPlan,
+  type BattleOpsPhase,
+  type BattleOpsTask,
 } from './warSimTypes';
 import {
   tickWarSim,
@@ -28,6 +31,7 @@ import {
   addSimBase,
   renameSimBase,
   updateEntityRcs,
+  createDefaultBattleOpsPlan,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
@@ -727,6 +731,155 @@ export function useWarSim({
     });
   }, []);
 
+  // -------------------------------------------------------------
+  // Battle Ops Multi-Phase Operational Management
+  // -------------------------------------------------------------
+
+  const updateBattleOpsPlan = useCallback((updates: Partial<BattleOpsPlan>) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...currentPlan,
+          ...updates,
+        },
+      };
+    });
+  }, []);
+
+  const addBattleOpsPhase = useCallback((name?: string, triggerDelaySec?: number) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      const nextNum = currentPlan.phases.length + 1;
+      const lastDelay = currentPlan.phases.length > 0
+        ? currentPlan.phases[currentPlan.phases.length - 1].triggerDelaySec
+        : 0;
+      const newPhase: BattleOpsPhase = {
+        id: `phase-${Date.now()}-${nextNum}`,
+        phaseNumber: nextNum,
+        name: name || `Phase ${nextNum}: Strategic Strike Package`,
+        triggerDelaySec: triggerDelaySec !== undefined ? triggerDelaySec : lastDelay + 900,
+        status: 'pending',
+        tasks: [],
+      };
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...currentPlan,
+          phases: [...currentPlan.phases, newPhase],
+        },
+      };
+    });
+  }, []);
+
+  const removeBattleOpsPhase = useCallback((phaseId: string) => {
+    setSession((prev) => {
+      if (!prev || !prev.battleOpsPlan) return prev;
+      const filtered = prev.battleOpsPlan.phases.filter((p) => p.id !== phaseId);
+      const renumbered = filtered.map((p, idx) => ({ ...p, phaseNumber: idx + 1 }));
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...prev.battleOpsPlan,
+          phases: renumbered,
+        },
+      };
+    });
+  }, []);
+
+  const updateBattleOpsPhase = useCallback((phaseId: string, updates: Partial<BattleOpsPhase>) => {
+    setSession((prev) => {
+      if (!prev || !prev.battleOpsPlan) return prev;
+      const updatedPhases = prev.battleOpsPlan.phases.map((p) => (p.id === phaseId ? { ...p, ...updates } : p));
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...prev.battleOpsPlan,
+          phases: updatedPhases,
+        },
+      };
+    });
+  }, []);
+
+  const addBattleOpsTask = useCallback((phaseId: string, taskData: Omit<BattleOpsTask, 'id' | 'status'>) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      const newTask: BattleOpsTask = {
+        ...taskData,
+        id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        status: 'pending',
+      };
+      const updatedPhases = currentPlan.phases.map((p) =>
+        p.id === phaseId ? { ...p, tasks: [...p.tasks, newTask] } : p
+      );
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...currentPlan,
+          phases: updatedPhases,
+        },
+      };
+    });
+  }, []);
+
+  const removeBattleOpsTask = useCallback((phaseId: string, taskId: string) => {
+    setSession((prev) => {
+      if (!prev || !prev.battleOpsPlan) return prev;
+      const updatedPhases = prev.battleOpsPlan.phases.map((p) =>
+        p.id === phaseId ? { ...p, tasks: p.tasks.filter((t) => t.id !== taskId) } : p
+      );
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...prev.battleOpsPlan,
+          phases: updatedPhases,
+        },
+      };
+    });
+  }, []);
+
+  const startBattleOpsExecution = useCallback(() => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      const resetPhases: BattleOpsPhase[] = currentPlan.phases.map((p) => ({
+        ...p,
+        status: 'pending',
+        tasks: p.tasks.map((t) => ({ ...t, status: 'pending', resultSummary: undefined, salvoId: undefined })),
+      }));
+
+      const plan: BattleOpsPlan = {
+        ...currentPlan,
+        status: 'executing',
+        startedAtSimTimeSec: prev.simTimeSec,
+        completedAtSimTimeSec: undefined,
+        finalReportGenerated: false,
+        phases: resetPhases,
+      };
+
+      return {
+        ...prev,
+        status: 'running', // Automatically unpause the simulation
+        battleOpsPlan: plan,
+      };
+    });
+  }, []);
+
+  const resetBattleOpsPlan = useCallback(() => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const newPlan = createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      return {
+        ...prev,
+        battleOpsPlan: newPlan,
+      };
+    });
+  }, []);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
@@ -777,6 +930,15 @@ export function useWarSim({
     removeEntityFromNetwork,
     setNetworkDoctrine,
     toggleNetworkOth,
+    battleOpsPlan: session?.battleOpsPlan,
+    updateBattleOpsPlan,
+    addBattleOpsPhase,
+    removeBattleOpsPhase,
+    updateBattleOpsPhase,
+    addBattleOpsTask,
+    removeBattleOpsTask,
+    startBattleOpsExecution,
+    resetBattleOpsPlan,
     friendlyEntities,
     friendlyBases,
     visibleContacts,

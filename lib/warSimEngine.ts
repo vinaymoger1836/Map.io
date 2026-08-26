@@ -31,6 +31,9 @@ import {
   type BattlefieldNetworkNode,
   type NetworkDoctrine,
   type SubsystemStatus,
+  type BattleOpsPlan,
+  type BattleOpsPhase,
+  type BattleOpsTask,
 } from './warSimTypes';
 import {
   canStationAtBase,
@@ -2251,7 +2254,7 @@ export function tickWarSim(
   const updatedPlayerContacts = performSensorSweeps('player', session.playerIso, session.enemyIso);
   const updatedEnemyContacts = performSensorSweeps('enemy', session.enemyIso, session.playerIso);
 
-  return {
+  const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
     bases: updatedBases,
@@ -2264,6 +2267,402 @@ export function tickWarSim(
     eventLog: newEvents.slice(-200), // Keep recent 200 events
     reports: newReports.slice(-150), // Keep recent 150 operational reports
   };
+
+  // 6. Process Battle Ops Multi-Phase Automation
+  return processBattleOpsPlanTick(nextSessionState, systemsLibrary);
+}
+
+/* ------------------------------------------------------------------ */
+/* Battle Ops Multi-Phase Operational Engine & Report Generator       */
+/* ------------------------------------------------------------------ */
+
+export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string): BattleOpsPlan {
+  return {
+    id: `bop-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    title: `Operation ${playerIso} Thunder: Multi-Phase Theater Strike`,
+    description: `Synchronized multi-axis theater strike and ISR offensive against ${enemyIso} military complexes.`,
+    status: 'draft',
+    activePhaseIndex: 0,
+    phases: [
+      {
+        id: `phase-1-${Date.now()}`,
+        phaseNumber: 1,
+        name: 'Phase 1: SEAD & Air Defense Suppression',
+        triggerDelaySec: 0, // T+00:00
+        status: 'pending',
+        tasks: [],
+      },
+      {
+        id: `phase-2-${Date.now() + 1}`,
+        phaseNumber: 2,
+        name: 'Phase 2: Deep ISR Ingress & Escort Sorties',
+        triggerDelaySec: 900, // T+00:15 (15 mins)
+        status: 'pending',
+        tasks: [],
+      },
+      {
+        id: `phase-3-${Date.now() + 2}`,
+        phaseNumber: 3,
+        name: 'Phase 3: Main Strategic Strike Package',
+        triggerDelaySec: 1800, // T+00:30 (30 mins)
+        status: 'pending',
+        tasks: [],
+      },
+    ],
+  };
+}
+
+export function generateConsolidatedBattleOpsReport(
+  session: WarSimSession,
+  plan: BattleOpsPlan
+): CombatReport {
+  const isPlayer = session.activeFaction === 'player';
+  const factionIso = isPlayer ? session.playerIso : session.enemyIso;
+  const opposingIso = isPlayer ? session.enemyIso : session.playerIso;
+
+  let totalLaunched = 0;
+  let totalSamIntercepted = 0;
+  let totalCiwsIntercepted = 0;
+  let totalHits = 0;
+  const targetCasualties: string[] = [];
+
+  const phasesSummary = plan.phases.map((p) => {
+    const strikeTasks = p.tasks.filter((t) => t.type === 'strike' || t.type === 'sead');
+    const patrolTasks = p.tasks.filter((t) => t.type === 'patrol');
+
+    strikeTasks.forEach((t) => {
+      if (t.salvoId) {
+        const trk = session.salvoTrackers?.find((st) => st.salvoId === t.salvoId);
+        if (trk) {
+          totalLaunched += trk.totalLaunched;
+          totalSamIntercepted += trk.interceptedBySam;
+          totalCiwsIntercepted += trk.interceptedByCiws;
+          totalHits += trk.directHits;
+          if (trk.targetFinalDamage === 'destroyed') {
+            const desc = `${trk.targetName} (DESTROYED)`;
+            if (!targetCasualties.includes(desc)) targetCasualties.push(desc);
+          } else if (trk.targetFinalDamage === 'damaged') {
+            const desc = `${trk.targetName} (DAMAGED)`;
+            if (!targetCasualties.includes(desc)) targetCasualties.push(desc);
+          }
+        } else {
+          totalLaunched += t.salvoCount || 1;
+        }
+      } else {
+        totalLaunched += t.salvoCount || 1;
+      }
+    });
+
+    const strikeDesc = strikeTasks.length > 0 ? `${strikeTasks.length} Strikes` : '';
+    const patrolDesc = patrolTasks.length > 0 ? `${patrolTasks.length} Sorties` : '';
+    const outcome = p.status === 'completed'
+      ? `Completed (${[strikeDesc, patrolDesc].filter(Boolean).join(', ') || 'Finished'})`
+      : `${p.status.toUpperCase()}`;
+
+    return {
+      phaseNumber: p.phaseNumber,
+      name: p.name,
+      triggerTimeFormatted: `T+${Math.floor(p.triggerDelaySec / 60)}m`,
+      taskCount: p.tasks.length,
+      outcome,
+    };
+  });
+
+  const totalIntercepted = totalSamIntercepted + totalCiwsIntercepted;
+  const hitRate = totalLaunched > 0 ? Math.round((totalHits / totalLaunched) * 100) : 0;
+  const strategicOutcome =
+    totalHits >= 4 || targetCasualties.some((c) => c.includes('DESTROYED'))
+      ? 'Decisive Mission Success: Critical Hostile Defenses Neutralized'
+      : totalHits > 0
+        ? 'Tactical Success: Defense Complexes Degraded'
+        : 'Inconclusive / Heavy Defense Interception';
+
+  return {
+    id: `rpt-bop-${plan.id}-${Date.now().toString(36)}`,
+    simTimeSec: session.simTimeSec,
+    timeFormatted: formatSimTime(session.simTimeSec),
+    category: 'battle_ops',
+    title: `🏆 Consolidated Theater Battle Ops Report: ${plan.title}`,
+    summary: `Operational Assessment for ${plan.title}. Executed across ${plan.phases.length} synchronized phases with ${plan.phases.reduce((sum, p) => sum + p.tasks.length, 0)} total assigned tasks. ${totalLaunched} munitions launched, ${totalIntercepted} intercepted (${totalSamIntercepted} Area SAM / ${totalCiwsIntercepted} CIWS), and ${totalHits} direct hits scored (${hitRate}% penetration efficiency). ${strategicOutcome}.`,
+    countryIso: factionIso,
+    faction: session.activeFaction,
+    primaryEntity: {
+      id: `hq-${factionIso}`,
+      name: `${factionIso} Theater Command HQ`,
+      typeId: 'command',
+      domain: 'ground',
+      iso: factionIso,
+      isFriendly: true,
+      isPID: true,
+    },
+    opposingEntity: {
+      id: `hostile-theater-${opposingIso}`,
+      name: `${opposingIso} Integrated Theater Defenses`,
+      typeId: 'defense_complex',
+      domain: 'theater',
+      iso: opposingIso,
+      isFriendly: false,
+      isPID: true,
+    },
+    munitionsDetails: {
+      weaponName: `Multi-Phase Strike Package (${totalLaunched} total ordnance)`,
+      salvoCount: totalLaunched,
+      launchedBy: `${plan.title} Joint Coalition`,
+    },
+    interceptionTelemetry: {
+      defenseSystemName: `${opposingIso} Integrated Air & Missile Defense Network`,
+      interceptorsLaunched: totalSamIntercepted * 2 + totalCiwsIntercepted,
+      missilesIntercepted: totalIntercepted,
+      missilesPenetrated: totalHits,
+      successRatePct: totalLaunched > 0 ? Math.round((totalIntercepted / totalLaunched) * 100) : 0,
+      responseDetail: `Defense network splashed ${totalSamIntercepted} munitions via Area SAM and ${totalCiwsIntercepted} via point-defense CIWS.`,
+    },
+    damageAssessment: {
+      targetResultState: targetCasualties.length > 0 ? 'heavily_degraded' : 'operational',
+      damageInflicted: totalHits >= 4 ? 'heavy' : totalHits > 0 ? 'moderate' : 'light',
+      bdaSummary: targetCasualties.length > 0
+        ? `Confirmed BDA: ${targetCasualties.join(', ')}. Strategic objectives achieved.`
+        : `Hostile defense network sustained minor blast fragmentation; primary sites remain combat-effective.`,
+    },
+    isConsolidatedBattleOps: true,
+    battleOpsDetails: {
+      planId: plan.id,
+      planTitle: plan.title,
+      totalPhases: plan.phases.length,
+      phasesSummary,
+      totalSalvoLaunched: totalLaunched,
+      totalIntercepted,
+      directHits: totalHits,
+      targetCasualties,
+      strategicOutcome,
+    },
+  };
+}
+
+export function processBattleOpsPlanTick(
+  session: WarSimSession,
+  systemsLibrary: SystemSpec[] = []
+): WarSimSession {
+  if (!session.battleOpsPlan || session.battleOpsPlan.status !== 'executing') {
+    return session;
+  }
+
+  let plan = { ...session.battleOpsPlan };
+  const startedAt = plan.startedAtSimTimeSec ?? session.simTimeSec;
+  if (!plan.startedAtSimTimeSec) {
+    plan.startedAtSimTimeSec = startedAt;
+  }
+
+  const elapsedOpSec = session.simTimeSec - startedAt;
+  let currentSession: WarSimSession = { ...session, battleOpsPlan: plan };
+  let planUpdated = false;
+
+  const updatedPhases: BattleOpsPhase[] = plan.phases.map((phase) => {
+    let phaseUpdated = false;
+    let phaseStatus = phase.status;
+
+    // Trigger pending phase if trigger delay threshold reached
+    if (phaseStatus === 'pending' && elapsedOpSec >= phase.triggerDelaySec) {
+      phaseStatus = 'in_progress';
+      phaseUpdated = true;
+      planUpdated = true;
+
+      currentSession.eventLog = [
+        ...currentSession.eventLog,
+        {
+          id: `evt-${Date.now()}-bop-${phase.phaseNumber}`,
+          simTimeSec: currentSession.simTimeSec,
+          timeFormatted: formatSimTime(currentSession.simTimeSec),
+          faction: currentSession.activeFaction,
+          type: 'strike' as const,
+          title: `⚡ Battle Ops Phase ${phase.phaseNumber} Commenced: ${phase.name}`,
+          detail: `Operation "${plan.title}" triggered Phase ${phase.phaseNumber} (${phase.tasks.length} tasks scheduled). Coordinated strikes and sorties executing.`,
+        },
+      ];
+    }
+
+    if (phaseStatus !== 'in_progress') {
+      return phase;
+    }
+
+    const updatedTasks: BattleOpsTask[] = phase.tasks.map((task) => {
+      // 1. Task is pending -> Execute!
+      if (task.status === 'pending') {
+        const attacker = currentSession.entities.find((e) => e.id === task.attackerEntityId);
+        if (!attacker || attacker.status === 'destroyed') {
+          return {
+            ...task,
+            status: 'failed' as const,
+            resultSummary: 'Attacker destroyed or unavailable',
+          };
+        }
+
+        if (task.type === 'strike' || task.type === 'sead') {
+          const targetPos = task.targetLngLat || [0, 0];
+          const targetEntityId = task.targetEntityId || '';
+          const weaponIdx = task.weaponIndex ?? 0;
+          const salvoCount = task.salvoCount ?? 1;
+          const postAction = task.postStrikeAction ?? 'rtb';
+          const sortieCount = task.sortieCount;
+
+          const preSalvoCount = currentSession.salvoTrackers?.length || 0;
+          currentSession = orderStrikeMission(
+            currentSession,
+            task.attackerEntityId,
+            targetEntityId,
+            targetPos,
+            weaponIdx,
+            salvoCount,
+            postAction,
+            undefined,
+            systemsLibrary,
+            sortieCount,
+            undefined,
+            undefined,
+            task.attackWaypoints
+          );
+
+          const postSalvos = currentSession.salvoTrackers || [];
+          const spawnedSalvoId = postSalvos.length > preSalvoCount ? postSalvos[postSalvos.length - 1].salvoId : undefined;
+
+          phaseUpdated = true;
+          planUpdated = true;
+          return {
+            ...task,
+            status: 'executing' as const,
+            executedAtSimTimeSec: currentSession.simTimeSec,
+            salvoId: spawnedSalvoId,
+            resultSummary: `Salvo in flight (${salvoCount} rounds). Ingress to target.`,
+          };
+        } else if (task.type === 'patrol') {
+          const patrolCenter = task.patrolCenterLngLat || attacker.lngLat;
+          currentSession = orderPatrol(
+            currentSession,
+            task.attackerEntityId,
+            patrolCenter,
+            task.patrolRadiusKm ?? 80,
+            task.patrolAltitudeM ?? (isGroundCombatUnit(attacker.typeId) ? 0 : 7000),
+            task.emcon ?? 'active',
+            task.sortieCount,
+            undefined,
+            systemsLibrary,
+            task.patrolRouteType ?? 'orbit',
+            task.patrolWaypoints,
+            undefined
+          );
+
+          phaseUpdated = true;
+          planUpdated = true;
+          return {
+            ...task,
+            status: 'completed' as const,
+            executedAtSimTimeSec: currentSession.simTimeSec,
+            completedAtSimTimeSec: currentSession.simTimeSec,
+            resultSummary: 'Patrol sortie established on station',
+          };
+        }
+      }
+
+      // 2. Task is executing -> Check completion
+      if (task.status === 'executing') {
+        if (task.salvoId) {
+          const tracker = currentSession.salvoTrackers?.find((t) => t.salvoId === task.salvoId);
+          if (tracker && tracker.isConcluded) {
+            phaseUpdated = true;
+            planUpdated = true;
+            return {
+              ...task,
+              status: 'completed' as const,
+              completedAtSimTimeSec: currentSession.simTimeSec,
+              resultSummary: `Hits: ${tracker.directHits} | Intercepted: ${tracker.interceptedBySam + tracker.interceptedByCiws} | BDA: ${tracker.targetFinalDamage || 'Assessed'}`,
+            };
+          }
+        } else {
+          const attacker = currentSession.entities.find((e) => e.id === task.attackerEntityId);
+          if (attacker && attacker.status !== 'engaging') {
+            phaseUpdated = true;
+            planUpdated = true;
+            return {
+              ...task,
+              status: 'completed' as const,
+              completedAtSimTimeSec: currentSession.simTimeSec,
+              resultSummary: 'Strike engagement complete',
+            };
+          }
+        }
+      }
+
+      return task;
+    });
+
+    const allFinished = updatedTasks.length === 0 || updatedTasks.every((t) => t.status === 'completed' || t.status === 'failed');
+    if (allFinished && phaseStatus === 'in_progress') {
+      phaseStatus = 'completed';
+      phaseUpdated = true;
+      planUpdated = true;
+
+      currentSession.eventLog = [
+        ...currentSession.eventLog,
+        {
+          id: `evt-${Date.now()}-bop-done-${phase.phaseNumber}`,
+          simTimeSec: currentSession.simTimeSec,
+          timeFormatted: formatSimTime(currentSession.simTimeSec),
+          faction: currentSession.activeFaction,
+          type: 'impact' as const,
+          title: `✅ Battle Ops Phase ${phase.phaseNumber} Concluded: ${phase.name}`,
+          detail: `All scheduled tasks for Phase ${phase.phaseNumber} have completed execution.`,
+        },
+      ];
+    }
+
+    return {
+      ...phase,
+      status: phaseStatus,
+      tasks: updatedTasks,
+    };
+  });
+
+  const allPhasesFinished = updatedPhases.every((p) => p.status === 'completed');
+  let finalReportGenerated = plan.finalReportGenerated;
+
+  if (allPhasesFinished && plan.status === 'executing') {
+    plan.status = 'completed';
+    plan.completedAtSimTimeSec = currentSession.simTimeSec;
+    planUpdated = true;
+
+    // Generate Master Consolidated Battle Ops Assessment Report
+    if (!finalReportGenerated) {
+      finalReportGenerated = true;
+      const consolidatedReport = generateConsolidatedBattleOpsReport(currentSession, {
+        ...plan,
+        phases: updatedPhases,
+      });
+
+      plan.consolidatedReportId = consolidatedReport.id;
+      currentSession.reports = [consolidatedReport, ...(currentSession.reports || [])];
+
+      currentSession.eventLog = [
+        ...currentSession.eventLog,
+        {
+          id: `evt-${Date.now()}-bop-final`,
+          simTimeSec: currentSession.simTimeSec,
+          timeFormatted: formatSimTime(currentSession.simTimeSec),
+          faction: currentSession.activeFaction,
+          type: 'impact' as const,
+          title: `🏆 Battle Ops Final Report: ${plan.title}`,
+          detail: `Operation concluded with ${updatedPhases.length} phases executed. Consolidated theater battle damage assessment report is available in the Reports tab.`,
+        },
+      ];
+    }
+  }
+
+  currentSession.battleOpsPlan = {
+    ...plan,
+    phases: updatedPhases,
+    finalReportGenerated,
+  };
+
+  return currentSession;
 }
 
 /* ------------------------------------------------------------------ */

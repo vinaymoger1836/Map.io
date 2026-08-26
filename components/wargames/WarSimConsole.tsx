@@ -28,11 +28,12 @@ import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
 import { CombatReportDetailModal } from './CombatReportDetailModal';
+import { BattleOpsPlanner } from './BattleOpsPlanner';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'battle_ops' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -71,6 +72,15 @@ export interface WarSimConsoleProps {
   onRemoveEntityFromNetwork?: (entityId: string) => void;
   onSetNetworkDoctrine?: (networkId: string, doctrine: import('@/lib/warSimTypes').NetworkDoctrine) => void;
   onToggleNetworkOth?: (networkId: string) => void;
+  battleOpsPlan?: import('@/lib/warSimTypes').BattleOpsPlan;
+  onUpdateBattleOpsPlan?: (updates: Partial<import('@/lib/warSimTypes').BattleOpsPlan>) => void;
+  onAddBattleOpsPhase?: (name?: string, triggerDelaySec?: number) => void;
+  onRemoveBattleOpsPhase?: (phaseId: string) => void;
+  onUpdateBattleOpsPhase?: (phaseId: string, updates: Partial<import('@/lib/warSimTypes').BattleOpsPhase>) => void;
+  onAddBattleOpsTask?: (phaseId: string, task: Omit<import('@/lib/warSimTypes').BattleOpsTask, 'id' | 'status'>) => void;
+  onRemoveBattleOpsTask?: (phaseId: string, taskId: string) => void;
+  onStartBattleOpsExecution?: () => void;
+  onResetBattleOpsPlan?: () => void;
   activeWeaponIndex?: number | null;
   onToggleWeapon?: (idx: number) => void;
   showAllEnvelopes?: boolean;
@@ -148,6 +158,15 @@ export function WarSimConsole({
   onRemoveEntityFromNetwork,
   onSetNetworkDoctrine,
   onToggleNetworkOth,
+  battleOpsPlan,
+  onUpdateBattleOpsPlan,
+  onAddBattleOpsPhase,
+  onRemoveBattleOpsPhase,
+  onUpdateBattleOpsPhase,
+  onAddBattleOpsTask,
+  onRemoveBattleOpsTask,
+  onStartBattleOpsExecution,
+  onResetBattleOpsPlan,
   activeWeaponIndex,
   onToggleWeapon,
   showAllEnvelopes = false,
@@ -561,6 +580,21 @@ export function WarSimConsole({
                 🌐 Network
               </button>
               <button
+                className={`wg-btn ${activeTab === 'battle_ops' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'battle_ops' ? undefined : (session.battleOpsPlan?.status === 'executing' ? 'rgba(255, 176, 32, 0.15)' : 'rgba(255, 152, 0, 0.08)'),
+                  borderColor: activeTab === 'battle_ops' ? undefined : (session.battleOpsPlan?.status === 'executing' ? '#FFB020' : 'rgba(255, 152, 0, 0.3)'),
+                  color: activeTab === 'battle_ops' ? undefined : (session.battleOpsPlan?.status === 'executing' ? '#FFB020' : '#FF9800'),
+                  fontWeight: session.battleOpsPlan?.status === 'executing' ? 700 : undefined,
+                }}
+                onClick={() => setActiveTab('battle_ops')}
+              >
+                ⚡ Ops {session.battleOpsPlan?.status === 'executing' ? '🔥' : ''}
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'reports' ? 'accent' : ''}`}
                 style={{
                   fontSize: '10px',
@@ -588,6 +622,7 @@ export function WarSimConsole({
               <button onClick={() => { setSidebarOpen(true); setActiveTab('bases'); }} title="Bases" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🏰</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('intel'); }} title="Intel" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🛰️</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('network'); }} title="Battlefield Network" style={{ background: 'none', border: 'none', color: '#00E676', cursor: 'pointer', fontSize: '16px' }}>🌐</button>
+              <button onClick={() => { setSidebarOpen(true); setActiveTab('battle_ops'); }} title="Battle Ops Planner" style={{ background: 'none', border: 'none', color: '#FF9800', cursor: 'pointer', fontSize: '16px' }}>⚡</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('reports'); }} title="Reports" style={{ background: 'none', border: 'none', color: '#4FC3F7', cursor: 'pointer', fontSize: '16px' }}>📊</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('log'); }} title="Log" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>📜</button>
             </div>
@@ -1411,6 +1446,70 @@ export function WarSimConsole({
                   )}
                 </div>
               </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB: THEATER BATTLE OPERATIONS (BATTLE OPS PLANNER)        */}
+            {/* ========================================================= */}
+            {activeTab === 'battle_ops' && (
+              <BattleOpsPlanner
+                session={session}
+                plan={battleOpsPlan || session.battleOpsPlan || {
+                  id: `bop-${Date.now().toString(36)}`,
+                  title: `Operation ${activeCountryIso} Thunder: Multi-Phase Theater Strike`,
+                  status: 'draft',
+                  activePhaseIndex: 0,
+                  phases: [
+                    {
+                      id: `phase-1-${Date.now()}`,
+                      phaseNumber: 1,
+                      name: 'Phase 1: SEAD & Air Defense Suppression',
+                      triggerDelaySec: 0,
+                      status: 'pending',
+                      tasks: [],
+                    },
+                    {
+                      id: `phase-2-${Date.now() + 1}`,
+                      phaseNumber: 2,
+                      name: 'Phase 2: Deep ISR Ingress & Escort Sorties',
+                      triggerDelaySec: 900,
+                      status: 'pending',
+                      tasks: [],
+                    },
+                    {
+                      id: `phase-3-${Date.now() + 2}`,
+                      phaseNumber: 3,
+                      name: 'Phase 3: Main Strategic Strike Package',
+                      triggerDelaySec: 1800,
+                      status: 'pending',
+                      tasks: [],
+                    },
+                  ],
+                }}
+                onUpdatePlan={(updates) => onUpdateBattleOpsPlan?.(updates)}
+                onAddPhase={(name, delay) => onAddBattleOpsPhase?.(name, delay)}
+                onRemovePhase={(phaseId) => onRemoveBattleOpsPhase?.(phaseId)}
+                onUpdatePhase={(phaseId, updates) => onUpdateBattleOpsPhase?.(phaseId, updates)}
+                onAddTask={(phaseId, task) => onAddBattleOpsTask?.(phaseId, task)}
+                onRemoveTask={(phaseId, taskId) => onRemoveBattleOpsTask?.(phaseId, taskId)}
+                onStartExecution={() => onStartBattleOpsExecution?.()}
+                onResetPlan={() => onResetBattleOpsPlan?.()}
+                friendlyEntities={friendlyEntities}
+                friendlyBases={friendlyBases}
+                visibleContacts={visibleContacts}
+                systemsLibrary={systemsLibrary}
+                onOpenReport={(reportId) => {
+                  if (reportId) {
+                    const rpt = session.reports?.find((r) => r.id === reportId);
+                    if (rpt) {
+                      setSelectedReport(rpt);
+                      return;
+                    }
+                  }
+                  setActiveTab('reports');
+                }}
+                onSelectEntity={(id) => onSelectEntity(id)}
+              />
             )}
 
             {/* ========================================================= */}
