@@ -34,6 +34,7 @@ import {
   type BattleOpsPlan,
   type BattleOpsPhase,
   type BattleOpsTask,
+  type StrikeSalvoTracker,
 } from './warSimTypes';
 import {
   canStationAtBase,
