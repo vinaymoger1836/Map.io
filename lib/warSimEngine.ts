@@ -2545,7 +2545,6 @@ export function processBattleOpsPlanTick(
             task.emcon ?? 'active',
             task.sortieCount,
             undefined,
-            systemsLibrary,
             task.patrolRouteType ?? 'orbit',
             task.patrolWaypoints,
             undefined
