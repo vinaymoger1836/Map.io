@@ -482,6 +482,26 @@ export interface CombatReport {
     detectionBottleneck?: string;
     physicsExplanation?: string;
   };
+
+  // Battle Ops Consolidated Theater Assessment
+  isConsolidatedBattleOps?: boolean;
+  battleOpsDetails?: {
+    planId: string;
+    planTitle: string;
+    totalPhases: number;
+    phasesSummary: {
+      phaseNumber: number;
+      name: string;
+      triggerTimeFormatted: string;
+      taskCount: number;
+      outcome: string;
+    }[];
+    totalSalvoLaunched: number;
+    totalIntercepted: number;
+    directHits: number;
+    targetCasualties: string[];
+    strategicOutcome: string;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -520,6 +540,7 @@ export interface WarSimSession {
   reports?: CombatReport[];
   salvoTrackers?: StrikeSalvoTracker[];
   networks?: BattlefieldNetwork[];
+  battleOpsPlan?: BattleOpsPlan;
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';
