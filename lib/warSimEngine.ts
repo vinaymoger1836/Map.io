@@ -1932,6 +1932,7 @@ export function tickWarSim(
       let bestScanner: SimEntity | null = null;
       let bestBase: SimBase | null = null;
       let bestDetectionResult: DetectionRangeResult | null = null;
+      let bestTerrainLosResult: TerrainLOSResult | null = null;
       let bestScannerDistKm: number = 0;
       let bestRatedEnvelopeKm: number = 0;
       let bestScannerHeightM: number = 0;
@@ -1942,6 +1943,7 @@ export function tickWarSim(
         : (targetDomain === 'sea' ? (targetSpec?.sensor?.antennaM ?? (target.typeId === 'destroyer' ? 38 : 25)) : 3);
 
       const targetRcsM2 = target.rcs ?? getSystemRcs(targetSpec, targetDomain);
+      const targetPlatformEquip = defaultTerrainPlatformFor(targetSpec, target.typeId);
 
       // 1. Check all active friendly deployed platforms (aircraft, ships, drones, air defense, armor)
       for (const scanner of scanners) {
@@ -2004,7 +2006,24 @@ export function tickWarSim(
           horizonLimited,
         });
 
-        const maxDetectionKm = detectionResult.detectionRangeKm;
+        // Topographic Line-of-Sight & Mountain Masking check
+        const scanSensorEquip = defaultTerrainSensorFor(scanSpec, scanner.typeId);
+        const terrainLos = calculateTerrainLineOfSight({
+          scannerLngLat: scanner.lngLat,
+          scannerAltitudeM: scannerHeightM,
+          targetLngLat: target.lngLat,
+          targetAltitudeM: targetHeightM,
+          sensorEquipment: scanSensorEquip,
+          platformEquipment: targetPlatformEquip,
+          isGroundTarget: targetDomain === 'ground',
+        });
+
+        // If target is completely masked by mountain crest, radar cannot acquire
+        if (terrainLos.isMasked) {
+          continue;
+        }
+
+        const maxDetectionKm = detectionResult.detectionRangeKm * terrainLos.rangeModifier;
 
         if (dist <= maxDetectionKm) {
           // PID (Tier 2 Positive Identification) conditions:
@@ -2024,6 +2043,7 @@ export function tickWarSim(
             bestScanner = scanner;
             bestBase = null;
             bestDetectionResult = detectionResult;
+            bestTerrainLosResult = terrainLos;
             bestScannerDistKm = dist;
             bestRatedEnvelopeKm = ratedEnvelopeKm;
             bestScannerHeightM = scannerHeightM;
@@ -2036,6 +2056,7 @@ export function tickWarSim(
         const distToBase = distanceKm(base.lngLat, target.lngLat);
         const baseAntennaM = base.type === 'airbase' ? 45 : base.type === 'silo_complex' ? 35 : 30;
         const baseEnvelopeKm = base.type === 'silo_complex' ? 300 : base.type === 'airbase' ? 220 : base.type === 'naval_base' ? 140 : 60;
+        const baseSensorEquip = { lookDownShootDown: false, clutterRejectionDb: 35 };
 
         if (targetDomain === 'air') {
           const baseAirDetection = calculateDetectionRange({
@@ -2046,12 +2067,24 @@ export function tickWarSim(
             targetDomain: 'air',
             horizonLimited: false,
           });
-          if (distToBase <= baseAirDetection.detectionRangeKm) {
+
+          const baseTerrainLos = calculateTerrainLineOfSight({
+            scannerLngLat: base.lngLat,
+            scannerAltitudeM: baseAntennaM,
+            targetLngLat: target.lngLat,
+            targetAltitudeM: targetHeightM,
+            sensorEquipment: baseSensorEquip,
+            platformEquipment: targetPlatformEquip,
+            isGroundTarget: false,
+          });
+
+          if (!baseTerrainLos.isMasked && distToBase <= (baseAirDetection.detectionRangeKm * baseTerrainLos.rangeModifier)) {
             if (bestTier === 0) {
               bestTier = 1;
               bestBase = base;
               bestScanner = null;
               bestDetectionResult = baseAirDetection;
+              bestTerrainLosResult = baseTerrainLos;
               bestScannerDistKm = distToBase;
               bestRatedEnvelopeKm = baseEnvelopeKm;
               bestScannerHeightM = baseAntennaM;
@@ -2066,12 +2099,24 @@ export function tickWarSim(
             targetDomain: 'sea',
             horizonLimited: true,
           });
-          if (distToBase <= baseSeaDetection.detectionRangeKm) {
+
+          const baseTerrainLos = calculateTerrainLineOfSight({
+            scannerLngLat: base.lngLat,
+            scannerAltitudeM: baseAntennaM,
+            targetLngLat: target.lngLat,
+            targetAltitudeM: targetHeightM,
+            sensorEquipment: baseSensorEquip,
+            platformEquipment: targetPlatformEquip,
+            isGroundTarget: false,
+          });
+
+          if (!baseTerrainLos.isMasked && distToBase <= (baseSeaDetection.detectionRangeKm * baseTerrainLos.rangeModifier)) {
             if (bestTier === 0) {
               bestTier = 1;
               bestBase = base;
               bestScanner = null;
               bestDetectionResult = baseSeaDetection;
+              bestTerrainLosResult = baseTerrainLos;
               bestScannerDistKm = distToBase;
               bestRatedEnvelopeKm = baseEnvelopeKm;
               bestScannerHeightM = baseAntennaM;
@@ -2160,6 +2205,15 @@ export function tickWarSim(
               rcsMultiplier,
               detectionBottleneck: 'Standoff range beyond optical / ISAR resolution limit (>90 km). Target identity unconfirmed.',
             },
+            terrainDetails: bestTerrainLosResult ? {
+              terrainMasked: bestTerrainLosResult.isMasked,
+              isObstructedByTerrain: bestTerrainLosResult.isObstructedByTerrain,
+              terrainElevationM: getTerrainElevationM(target.lngLat),
+              blockingMountainName: bestTerrainLosResult.blockingMountainName,
+              terrainClutterPenalty: bestTerrainLosResult.terrainClutterPenalty,
+              specializedEquipmentUsed: bestTerrainLosResult.specializedEquipmentUsed,
+              terrainExplanation: bestTerrainLosResult.maskingExplanation,
+            } : undefined,
           });
         }
 
@@ -2239,6 +2293,15 @@ export function tickWarSim(
               detectionBottleneck: `${effectiveRangeKm >= radarHorizonKmVal ? 'Radar line-of-sight horizon limited' : 'Radar power-aperture RCS limited'} (${effectiveRangeKm.toFixed(0)} km reach)`,
               physicsExplanation,
             },
+            terrainDetails: bestTerrainLosResult ? {
+              terrainMasked: bestTerrainLosResult.isMasked,
+              isObstructedByTerrain: bestTerrainLosResult.isObstructedByTerrain,
+              terrainElevationM: getTerrainElevationM(target.lngLat),
+              blockingMountainName: bestTerrainLosResult.blockingMountainName,
+              terrainClutterPenalty: bestTerrainLosResult.terrainClutterPenalty,
+              specializedEquipmentUsed: bestTerrainLosResult.specializedEquipmentUsed,
+              terrainExplanation: bestTerrainLosResult.maskingExplanation,
+            } : undefined,
           });
         }
 
@@ -2259,6 +2322,9 @@ export function tickWarSim(
           knownCount: tier === 2 ? target.count : undefined,
           knownPersonnel: tier === 2 ? target.personnel : undefined,
           knownDamage: tier === 2 ? target.damage : undefined,
+          terrainMasked: Boolean(bestTerrainLosResult?.isMasked),
+          terrainElevationM: getTerrainElevationM(target.lngLat),
+          blockingMountainRange: bestTerrainLosResult?.blockingMountainName,
         });
       } else if (prevContact && prevContact.decayTimerSec > 0) {
         // Platform is currently outside live sensor sweep, but holds in tactical memory as Last Known Position (LKP)
