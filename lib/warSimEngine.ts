@@ -53,11 +53,18 @@ import {
   domainOf,
   radarHorizonKm,
   defaultSonarFor,
+  defaultTerrainSensorFor,
+  defaultTerrainPlatformFor,
   signatureRangeMultiplier,
   calculateDetectionRange,
   getSystemRcs,
   RCS_BASELINE_M2,
 } from './specs';
+import {
+  getTerrainElevationM,
+  calculateTerrainLineOfSight,
+  type TerrainLOSResult,
+} from './terrainLOS';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
@@ -1275,6 +1282,22 @@ export function tickWarSim(
         let sensorReach = defSpec?.sensor?.detectionKm ?? (isGroundCombatUnit(def.typeId) ? 25 : 240);
         if (def.subsystems?.radar === 'degraded') sensorReach *= 0.60;
         if (distToMissile > sensorReach) continue;
+
+        // Topographic Terrain Line-of-Sight & Mountain Masking check
+        const defSensorEquip = defaultTerrainSensorFor(defSpec, def.typeId);
+        const mslPlatformEquip = { tercomGuidance: m.threatAltitudeM !== undefined && m.threatAltitudeM <= 60 };
+        const samTerrainLos = calculateTerrainLineOfSight({
+          scannerLngLat: def.lngLat,
+          scannerAltitudeM: def.altitudeM || (defSpec?.sensor?.antennaM ?? (isNavalCombatant(def.typeId) ? 35 : 15)),
+          targetLngLat: m.currentLngLat,
+          targetAltitudeM: m.threatAltitudeM ?? 30,
+          sensorEquipment: defSensorEquip,
+          platformEquipment: mslPlatformEquip,
+        });
+
+        if (samTerrainLos.isMasked) {
+          continue; // Target cruise missile is masked behind mountain ridge! Radar guidance blocked.
+        }
 
         // Threat Detection Record
         const detectionTimes = m.defenderDetectionTimes || {};
