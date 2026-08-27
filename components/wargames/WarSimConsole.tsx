@@ -743,6 +743,56 @@ export function WarSimConsole({
                         </span>
                       </div>
 
+                      {/* Specialized Terrain & Sensor Avionics Badges */}
+                      {spec && (() => {
+                        const sensorEquip = defaultTerrainSensorFor(spec, spec.typeId);
+                        const platformEquip = defaultTerrainPlatformFor(spec, spec.typeId);
+                        const badges: { label: string; color: string; bg: string }[] = [];
+
+                        if (sensorEquip.lookDownShootDown) {
+                          badges.push({ label: '📡 LD/SD AESA', color: '#00E676', bg: 'rgba(0, 230, 118, 0.1)' });
+                        }
+                        if (sensorEquip.eoirTracking) {
+                          badges.push({ label: `🔥 IRST ${sensorEquip.irstRangeKm}km`, color: '#FF7043', bg: 'rgba(255, 112, 67, 0.1)' });
+                        }
+                        if (sensorEquip.sarGmtiCapable) {
+                          badges.push({ label: '🛰️ SAR/GMTI', color: '#4FC3F7', bg: 'rgba(79, 195, 247, 0.1)' });
+                        }
+                        if (sensorEquip.mastMountedSensor) {
+                          badges.push({ label: '🚁 Mast Radar', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.1)' });
+                        }
+                        if (platformEquip.tercomGuidance) {
+                          badges.push({ label: '🏔️ TERCOM 30m', color: '#FFD54F', bg: 'rgba(255, 213, 79, 0.1)' });
+                        } else if (platformEquip.terrainFollowing) {
+                          badges.push({ label: '🏔️ TFR 60m', color: '#81C784', bg: 'rgba(129, 199, 132, 0.1)' });
+                        } else if (platformEquip.noeCapable) {
+                          badges.push({ label: '🚁 NOE Masking', color: '#4DB6AC', bg: 'rgba(77, 182, 172, 0.1)' });
+                        }
+
+                        if (badges.length === 0) return null;
+
+                        return (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', margin: '2px 0' }}>
+                            {badges.map((b, i) => (
+                              <span
+                                key={i}
+                                style={{
+                                  fontSize: '9px',
+                                  padding: '1px 5px',
+                                  borderRadius: '3px',
+                                  color: b.color,
+                                  background: b.bg,
+                                  border: `1px solid ${b.color}33`,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {b.label}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
+
                       {/* Action Buttons */}
                       <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                         <button
