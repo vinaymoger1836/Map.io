@@ -486,6 +486,17 @@ export interface CombatReport {
     physicsExplanation?: string;
   };
 
+  // Topographic Terrain & Mountain Line-of-Sight details
+  terrainDetails?: {
+    terrainMasked: boolean;
+    isObstructedByTerrain: boolean;
+    terrainElevationM?: number;
+    blockingMountainName?: string;
+    terrainClutterPenalty?: number;
+    specializedEquipmentUsed?: string[];
+    terrainExplanation?: string;
+  };
+
   // Battle Ops Consolidated Theater Assessment
   isConsolidatedBattleOps?: boolean;
   battleOpsDetails?: {
