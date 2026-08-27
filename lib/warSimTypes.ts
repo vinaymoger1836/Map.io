@@ -83,6 +83,9 @@ export interface DetectedContact {
   knownCount?: number;
   knownPersonnel?: number;
   knownDamage?: 'intact' | 'damaged' | 'suppressed' | 'destroyed';
+  terrainMasked?: boolean;
+  terrainElevationM?: number;
+  blockingMountainRange?: string;
 }
 
 /* ------------------------------------------------------------------ */
