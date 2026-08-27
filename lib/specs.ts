@@ -263,7 +263,7 @@ export function defaultSonarFor(spec: SystemSpec | undefined, typeId: string): S
  * based on system classification, avionics generation, and platform type.
  */
 export function defaultTerrainSensorFor(spec: SystemSpec | undefined, typeId: string): Partial<SensorFacet> {
-  const sensor = spec?.sensor || {};
+  const sensor: Partial<SensorFacet> = spec?.sensor || {};
   const tid = typeId.toLowerCase();
   const name = (spec?.name ?? '').toLowerCase();
 
@@ -323,7 +323,7 @@ export function defaultTerrainSensorFor(spec: SystemSpec | undefined, typeId: st
  * Inferred military platform low-altitude terrain navigation & masking capabilities (TFR, TERCOM, NOE).
  */
 export function defaultTerrainPlatformFor(spec: SystemSpec | undefined, typeId: string): Partial<PlatformFacet> {
-  const platform = spec?.platform || {};
+  const platform: Partial<PlatformFacet> = spec?.platform || {};
   const tid = typeId.toLowerCase();
   const name = (spec?.name ?? '').toLowerCase();
 
