@@ -1020,9 +1020,22 @@ export function WarSimConsole({
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                      Speed: <strong>{c.speedKmh} km/h</strong> · Heading: <strong>{c.headingDeg.toFixed(0)}°</strong>
+                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>
+                        Speed: <strong>{c.speedKmh} km/h</strong> · Heading: <strong>{c.headingDeg.toFixed(0)}°</strong>
+                      </span>
+                      {c.terrainElevationM !== undefined && c.terrainElevationM > 100 && (
+                        <span style={{ fontSize: '9.5px', color: '#81C784', background: 'rgba(129, 199, 132, 0.1)', padding: '1px 4px', borderRadius: '3px' }}>
+                          ⛰️ {c.terrainElevationM}m ASL
+                        </span>
+                      )}
                     </div>
+
+                    {c.blockingMountainRange && (
+                      <div style={{ fontSize: '9.5px', color: '#FFB020', background: 'rgba(255, 176, 32, 0.1)', padding: '2px 5px', borderRadius: '3px', border: '1px solid rgba(255, 176, 32, 0.3)' }}>
+                        ⛰️ Masked behind {c.blockingMountainRange}
+                      </div>
+                    )}
 
                     {c.knownCount && (
                       <div style={{ fontSize: '10.5px', color: '#4FC3F7' }}>
