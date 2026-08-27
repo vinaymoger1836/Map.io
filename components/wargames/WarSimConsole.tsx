@@ -21,7 +21,14 @@ import {
   type CombatReport,
   type WarReportCategory,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, domainOf, radarHorizonKm, getSystemRcs } from '@/lib/specs';
+import {
+  type SystemSpec,
+  domainOf,
+  radarHorizonKm,
+  getSystemRcs,
+  defaultTerrainSensorFor,
+  defaultTerrainPlatformFor,
+} from '@/lib/specs';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
