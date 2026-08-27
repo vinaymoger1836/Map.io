@@ -877,6 +877,121 @@ export function CombatReportDetailModal({
               )}
             </div>
           )}
+
+          {/* SECTION 4c: TOPOGRAPHIC TERRAIN & LINE-OF-SIGHT (LOS) ANALYSIS */}
+          {report.terrainDetails && (
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '12px', color: '#81C784', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ⛰️ Topographic Terrain & Mountain LOS Analysis
+                </strong>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    background: report.terrainDetails.terrainMasked ? 'rgba(217, 83, 79, 0.2)' : 'rgba(79, 168, 95, 0.2)',
+                    color: report.terrainDetails.terrainMasked ? '#E57373' : '#81C784',
+                    border: `1px solid ${report.terrainDetails.terrainMasked ? '#D9534F' : '#4FA85F'}44`,
+                  }}
+                >
+                  {report.terrainDetails.terrainMasked ? '⛰️ TERRAIN MASKED' : '📡 UNMASKED LINE-OF-SIGHT'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                  gap: '10px',
+                  background: '#09101B',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border)',
+                  fontSize: '11px',
+                }}
+              >
+                {report.terrainDetails.terrainElevationM !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Target Ground Elevation:</span>
+                    <strong style={{ color: '#E0E6ED' }}>{report.terrainDetails.terrainElevationM} m ASL</strong>
+                  </div>
+                )}
+
+                {report.terrainDetails.blockingMountainName && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Intervening Mountain Crest:</span>
+                    <strong style={{ color: '#FFB020' }}>{report.terrainDetails.blockingMountainName}</strong>
+                  </div>
+                )}
+
+                {report.terrainDetails.terrainClutterPenalty !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Ground Clutter Loss:</span>
+                    <strong style={{ color: report.terrainDetails.terrainClutterPenalty > 0.3 ? '#E57373' : '#81C784' }}>
+                      {(report.terrainDetails.terrainClutterPenalty * 100).toFixed(0)}%
+                    </strong>
+                  </div>
+                )}
+              </div>
+
+              {report.terrainDetails.specializedEquipmentUsed && report.terrainDetails.specializedEquipmentUsed.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                    Specialized Avionics & Equipment Deployed:
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    {report.terrainDetails.specializedEquipmentUsed.map((eq, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          fontSize: '10px',
+                          padding: '3px 7px',
+                          borderRadius: '4px',
+                          background: 'rgba(0, 230, 118, 0.1)',
+                          border: '1px solid rgba(0, 230, 118, 0.3)',
+                          color: '#00E676',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {eq}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {report.terrainDetails.terrainExplanation && (
+                <div
+                  style={{
+                    padding: '8px 10px',
+                    background: 'rgba(129, 199, 132, 0.08)',
+                    border: '1px solid rgba(129, 199, 132, 0.25)',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    color: '#C8E6C9',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  <strong style={{ color: '#81C784', display: 'block', marginBottom: '2px' }}>
+                    Tactical Topographic Telemetry:
+                  </strong>
+                  {report.terrainDetails.terrainExplanation}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
