@@ -274,6 +274,26 @@ export interface PlatformFacet {
   aircraft?: number;
   vls?: number;
   enduranceDays?: number;
+  /**
+   * Terrain-Following Radar (TFR / TERPROM) avionics suite.
+   * Enables automated high-speed low-altitude penetration (30–60m AGL) hugging mountain contours.
+   */
+  terrainFollowing?: boolean;
+  /**
+   * Terrain Contour Matching (TERCOM / DSMAC) precision digital terrain guidance.
+   * Enables cruise missiles to navigate mountain valleys and break radar line-of-sight.
+   */
+  tercomGuidance?: boolean;
+  /**
+   * Minimum operational ingress altitude (meters Above Ground Level / Sea Level).
+   * e.g. 15m for sea-skimming missiles, 30m for cruise missiles, 60m for strike aircraft.
+   */
+  minIngressAltitudeM?: number;
+  /**
+   * Nap-of-the-Earth (NOE) tactical flight capability for attack helicopters.
+   * Allows hovering in mountain valleys and popping up above tree/ridge lines.
+   */
+  noeCapable?: boolean;
 }
 
 export interface SystemSpec {
