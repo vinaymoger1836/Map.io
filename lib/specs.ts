@@ -122,6 +122,30 @@ export interface SensorFacet {
   antennaM?: number;
   /** Dedicated subsurface sonar suite */
   sonar?: SonarFacet;
+  /**
+   * Look-Down / Shoot-Down (LD/SD) AESA or Pulse-Doppler radar capability.
+   * Filters out ground/sea clutter reflections, enabling reliable tracking of low-flying targets over mountains.
+   */
+  lookDownShootDown?: boolean;
+  /**
+   * Synthetic Aperture Radar (SAR) & Ground Moving Target Indication (GMTI) capability.
+   * High-resolution ground contour imaging capable of acquiring vehicles and surface units in mountain valleys.
+   */
+  sarGmtiCapable?: boolean;
+  /**
+   * Electro-Optical / Infrared Search & Track (EO/IR / IRST) suite.
+   * Passive thermal/optical tracking immune to electromagnetic radar terrain clutter.
+   */
+  eoirTracking?: boolean;
+  /** Optical/thermal IRST effective range (km). */
+  irstRangeKm?: number;
+  /**
+   * Mast-mounted radar sensor (e.g. AN/APG-78 Longbow on AH-64D, Arbalet on Ka-52).
+   * Allows unmasking above mountain ridge lines while fuselage remains hidden in valley cover.
+   */
+  mastMountedSensor?: boolean;
+  /** Clutter attenuation/rejection rating in decibels (dB). Default 30–60 dB. */
+  clutterRejectionDb?: number;
 }
 
 /** Anything that shoots. A destroyer has several; a fighter carries a loadout. */
