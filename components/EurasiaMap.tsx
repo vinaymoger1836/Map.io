@@ -201,8 +201,8 @@ export default function EurasiaMap() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
-    updateWarSimPatrolPreview(map, warSim.targetPicking, cursor);
-  }, [cursor, warSim.targetPicking, ready, mode, warSim.session]);
+    updateWarSimPatrolPreview(map, warSim.targetPicking, cursor, warSim.session, war.systems);
+  }, [cursor, warSim.targetPicking, ready, mode, warSim.session, war.systems]);
 
   // War Sim Map Click & Interaction
   useEffect(() => {
