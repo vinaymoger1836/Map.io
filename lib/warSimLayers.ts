@@ -274,10 +274,30 @@ export function installWarSimLayers(map: MLMap) {
     source: SRC_PATROL_PREVIEW,
     filter: ['==', ['geometry-type'], 'Point'],
     paint: {
-      'circle-radius': 4.5,
+      'circle-radius': 5,
       'circle-color': '#FFFFFF',
       'circle-stroke-color': ['get', 'color'],
-      'circle-stroke-width': 2,
+      'circle-stroke-width': 2.5,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_PATROL_PREVIEW_LABEL,
+    type: 'symbol',
+    source: SRC_PATROL_PREVIEW,
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 11,
+      'text-offset': [0, 1.2],
+      'text-anchor': 'top',
+      'text-font': font,
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': ['coalesce', ['get', 'color'], '#FFFFFF'],
+      'text-halo-color': '#000000',
+      'text-halo-width': 2,
     },
   });
 
@@ -1178,6 +1198,7 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_REACH_RING_LINE,
     LYR_REACH_RING_FILL,
     LYR_PATROL_PREVIEW_CENTER,
+    LYR_PATROL_PREVIEW_LABEL,
     LYR_PATROL_PREVIEW_LINE,
     LYR_PATROL_PREVIEW_FILL,
     LYR_ENVELOPES_LINE,
