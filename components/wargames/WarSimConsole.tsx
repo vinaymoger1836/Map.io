@@ -30,6 +30,7 @@ import {
   defaultTerrainPlatformFor,
 } from '@/lib/specs';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
+import { getKnownHostileThreatZones, evaluateFlightCorridor } from '@/lib/threatAvoidance';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
