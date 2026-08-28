@@ -437,100 +437,159 @@ export function WarSimConsole({
       </header>
 
       {/* 2. TARGET PICKING FLOATING BANNER (When designating patrol, base, or multi-waypoint route) */}
-      {targetPicking && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '80px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(7, 12, 20, 0.95)',
-            border: `1px solid ${targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
-            borderRadius: '10px',
-            padding: '8px 16px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
-            zIndex: 650,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            color: 'var(--paper)',
-            fontFamily: 'var(--font-sans, system-ui, sans-serif)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>
-              {targetPicking.mode === 'strike_route' ? '🎯' : targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
-                {targetPicking.mode === 'strike_route'
-                  ? `Attack Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Ingress Waypoints Plotted`
-                  : targetPicking.routeType === 'waypoints'
-                    ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
-                    : 'Target Designation Active'}
+      {targetPicking && (() => {
+        const isRouteMode = targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route';
+        const threatZones = session ? getKnownHostileThreatZones(session, systemsLibrary) : [];
+        const fullCorridorPath: [number, number][] = [];
+        if (targetPicking.originLngLat) fullCorridorPath.push(targetPicking.originLngLat);
+        if (targetPicking.pickedWaypoints) fullCorridorPath.push(...targetPicking.pickedWaypoints);
+        if (targetPicking.strikeParams?.targetLngLat && (!targetPicking.pickedWaypoints || targetPicking.pickedWaypoints.length === 0)) {
+          fullCorridorPath.push(targetPicking.strikeParams.targetLngLat);
+        }
+
+        const corridorEval = isRouteMode && fullCorridorPath.length >= 2
+          ? evaluateFlightCorridor(fullCorridorPath, threatZones, 900)
+          : null;
+
+        return (
+          <div
+            style={{
+              position: 'absolute',
+              top: '80px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(7, 12, 20, 0.96)',
+              border: `1px solid ${corridorEval?.threatLevel === 'danger' ? '#FF5252' : targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
+              borderRadius: '10px',
+              padding: '10px 18px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.85)',
+              zIndex: 650,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              color: 'var(--paper)',
+              fontFamily: 'var(--font-sans, system-ui, sans-serif)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '18px' }}>
+                {targetPicking.mode === 'strike_route' ? '🎯' : targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
               </span>
-              <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                {targetPicking.label}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 700, color: targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
+                    {targetPicking.mode === 'strike_route'
+                      ? `Attack Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Ingress Waypoints`
+                      : targetPicking.routeType === 'waypoints'
+                        ? `Flight Corridor Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints`
+                        : 'Target Designation Active'}
+                  </span>
+
+                  {corridorEval && (
+                    <span
+                      style={{
+                        fontSize: '9.5px',
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                        fontWeight: 700,
+                        background: corridorEval.threatLevel === 'danger' ? 'rgba(255, 82, 82, 0.2)' : corridorEval.threatLevel === 'caution' ? 'rgba(255, 213, 79, 0.2)' : 'rgba(0, 230, 118, 0.2)',
+                        color: corridorEval.threatLevel === 'danger' ? '#FF5252' : corridorEval.threatLevel === 'caution' ? '#FFD54F' : '#00E676',
+                        border: `1px solid ${corridorEval.threatLevel === 'danger' ? '#FF5252' : corridorEval.threatLevel === 'caution' ? '#FFD54F' : '#00E676'}55`,
+                      }}
+                    >
+                      {corridorEval.threatLevel === 'danger' ? `🔴 SAM KILL-ZONE (${corridorEval.interceptRiskPct}% Risk)` : corridorEval.threatLevel === 'caution' ? '🟡 RADAR DETECTED' : '🟢 SAFE AIRSPACE'}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                  <span>{targetPicking.label}</span>
+                  {corridorEval && corridorEval.totalDistanceKm > 0 && (
+                    <span style={{ color: '#B0BEC5', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
+                      Dist: <strong style={{ color: '#FFFFFF' }}>{corridorEval.totalDistanceKm.toFixed(0)} km</strong> · ETE: <strong style={{ color: '#4FC3F7' }}>{Math.round(corridorEval.estimatedFlightSec / 60)} min</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {(targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route') && (
-              <>
-                <button
-                  type="button"
-                  className="wg-btn accent"
-                  style={{
-                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'rgba(255, 255, 255, 0.08)',
-                    color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
-                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'transparent',
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
-                  }}
-                  disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
-                  onClick={onConfirmCustomRoute}
-                >
-                  {targetPicking.mode === 'strike_route'
-                    ? `✓ Launch Attack Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`
-                    : `✓ Launch Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`}
-                </button>
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {isRouteMode && onAutoAvoidThreats && (
                 <button
                   type="button"
                   className="wg-btn"
                   style={{
                     fontSize: '11px',
-                    padding: '4px 8px',
-                    cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                    padding: '4px 10px',
+                    background: 'rgba(255, 176, 32, 0.15)',
+                    color: '#FFB020',
+                    borderColor: '#FFB020',
+                    fontWeight: 700,
                   }}
-                  disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
-                  onClick={onUndoLastWaypoint}
+                  onClick={onAutoAvoidThreats}
+                  title="Automatically generate dogleg waypoints to skirt around hostile SAM engagement bubbles"
                 >
-                  ↩ Undo WP
+                  ⚡ Auto-Avoid SAMs
                 </button>
-              </>
-            )}
+              )}
 
-            <button
-              type="button"
-              className="wg-btn"
-              style={{
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderColor: '#D9534F',
-                color: '#D9534F',
-                background: 'transparent',
-              }}
-              onClick={onCancelTargetPicking}
-            >
-              ✕ Cancel
-            </button>
+              {(targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route') && (
+                <>
+                  <button
+                    type="button"
+                    className="wg-btn accent"
+                    style={{
+                      background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'rgba(255, 255, 255, 0.08)',
+                      color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
+                      borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'transparent',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      padding: '4px 12px',
+                      cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                    }}
+                    disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
+                    onClick={onConfirmCustomRoute}
+                  >
+                    {targetPicking.mode === 'strike_route'
+                      ? `✓ Launch Attack Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`
+                      : `✓ Launch Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                    }}
+                    disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
+                    onClick={onUndoLastWaypoint}
+                  >
+                    ↩ Undo WP
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                className="wg-btn"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderColor: '#D9534F',
+                  color: '#D9534F',
+                  background: 'transparent',
+                }}
+                onClick={onCancelTargetPicking}
+              >
+                ✕ Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 3. LEFT COLLAPSIBLE TACTICAL SIDEBAR */}
       <aside
@@ -1595,6 +1654,7 @@ export function WarSimConsole({
                   setActiveTab('reports');
                 }}
                 onSelectEntity={(id) => onSelectEntity(id)}
+                onStartCorridorPicking={onStartCorridorPicking}
               />
             )}
 

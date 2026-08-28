@@ -787,6 +787,8 @@ export default function EurasiaMap() {
             onCancelTargetPicking={warSim.cancelTargetPicking}
             onConfirmCustomRoute={warSim.confirmCustomRoute}
             onUndoLastWaypoint={warSim.undoLastWaypoint}
+            onAutoAvoidThreats={warSim.autoAvoidThreats}
+            onStartCorridorPicking={warSim.startCorridorPicking}
             onOpenAar={() => setWarSimAarOpen(true)}
             onExitSim={warSim.exitSim}
             systemsLibrary={war.systems}
