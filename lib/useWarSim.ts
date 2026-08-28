@@ -461,10 +461,38 @@ export function useWarSim({
         originLngLat: attacker?.lngLat,
         pickedWaypoints: [],
         strikeParams: params,
-        label: `Planning Attack Route for ${attacker?.name || 'Unit'}. Click map to place Attack Waypoint #1.`,
+        label: `Planning Attack Route for ${attacker?.name || 'Unit'}. Click map to place Attack Waypoint #1, or click 'Auto-Avoid SAMs'.`,
       });
     },
     [session?.entities]
+  );
+
+  const startCorridorPicking = useCallback(
+    (params: {
+      originLngLat?: [number, number];
+      targetLngLat?: [number, number];
+      initialWaypoints?: [number, number][];
+      label?: string;
+      onConfirm: (waypoints: [number, number][]) => void;
+    }) => {
+      setSession((prev) => (prev ? { ...prev, status: 'paused' } : null));
+      setTargetPicking({
+        mode: 'strike_route',
+        originLngLat: params.originLngLat,
+        pickedWaypoints: params.initialWaypoints || [],
+        onCorridorConfirmed: params.onConfirm,
+        strikeParams: params.targetLngLat ? {
+          attackerEntityId: 'custom',
+          targetEntityId: 'target',
+          targetLngLat: params.targetLngLat,
+          weaponIndex: 0,
+          salvoCount: 1,
+          postStrikeAction: 'rtb',
+        } : undefined,
+        label: params.label || `Designate flight corridor waypoints on map, or click 'Auto-Avoid Hostile SAMs'.`,
+      });
+    },
+    []
   );
 
   const startBasePlacement = useCallback(
@@ -544,6 +572,14 @@ export function useWarSim({
   const confirmCustomRoute = useCallback(() => {
     if (!targetPicking) return;
 
+    if (targetPicking.onCorridorConfirmed) {
+      const waypoints = targetPicking.pickedWaypoints ?? [];
+      targetPicking.onCorridorConfirmed(waypoints);
+      setSession((prev) => (prev && prev.status === 'paused' ? { ...prev, status: 'running' } : prev));
+      setTargetPicking(null);
+      return;
+    }
+
     if (targetPicking.mode === 'strike_route' && targetPicking.strikeParams) {
       const waypoints = targetPicking.pickedWaypoints ?? [];
       const p = targetPicking.strikeParams;
@@ -610,6 +646,40 @@ export function useWarSim({
     });
     setTargetPicking(null);
   }, [targetPicking, orderSortieToPoint, systemsLibrary]);
+
+  const autoAvoidThreats = useCallback(() => {
+    if (!targetPicking || !session) return;
+    const origin = targetPicking.originLngLat;
+    if (!origin) return;
+
+    let target = targetPicking.strikeParams?.targetLngLat;
+    if (!target && targetPicking.pickedWaypoints && targetPicking.pickedWaypoints.length > 0) {
+      target = targetPicking.pickedWaypoints[targetPicking.pickedWaypoints.length - 1];
+    }
+    if (!target) return;
+
+    const threatZones = getKnownHostileThreatZones(session, systemsLibrary);
+    const autoRoute = generateOptimalThreatAvoidanceRoute(origin, target, threatZones, 900);
+
+    // If strike route, waypoints are intermediate doglegs before terminal release point
+    if (targetPicking.mode === 'strike_route') {
+      const doglegs = autoRoute.slice(1, autoRoute.length - 1);
+      setTargetPicking({
+        ...targetPicking,
+        pickedWaypoints: doglegs,
+        label: doglegs.length > 0
+          ? `⚡ Auto-routed around hostile SAMs (${doglegs.length} dogleg waypoints generated). Click 'Launch Attack Route'.`
+          : `Direct path is already clear of hostile SAM threats.`,
+      });
+    } else {
+      const fullWps = autoRoute.slice(1);
+      setTargetPicking({
+        ...targetPicking,
+        pickedWaypoints: fullWps,
+        label: `⚡ Auto-routed around hostile SAMs (${fullWps.length} waypoints generated). Click 'Confirm Route'.`,
+      });
+    }
+  }, [targetPicking, session, systemsLibrary]);
 
   const undoLastWaypoint = useCallback(() => {
     if (!targetPicking || !targetPicking.pickedWaypoints || targetPicking.pickedWaypoints.length === 0) return;
