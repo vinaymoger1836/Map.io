@@ -1034,12 +1034,14 @@ export function useWarSim({
     targetPicking,
     startSortiePicking,
     startStrikeRoutePicking,
+    startCorridorPicking,
     startAutonomousPicking,
     startBasePlacement,
     cancelTargetPicking,
     confirmTargetPick,
     confirmCustomRoute,
     undoLastWaypoint,
+    autoAvoidThreats,
     exitSim,
   };
 }
