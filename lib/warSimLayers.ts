@@ -1065,8 +1065,8 @@ export function renderWarSimStateToMap(
 }
 
 /**
- * Updates the live cursor loiter / patrol orbit circle preview on the map
- * in real-time as the user moves their mouse before placing a waypoint.
+ * Updates the live interactive flight corridor, hostile SAM threat bubbles,
+ * and waypoint doglegs on the map in real-time as the user plans a mission.
  */
 export function updateWarSimPatrolPreview(
   map: MLMap,
@@ -1078,7 +1078,9 @@ export function updateWarSimPatrolPreview(
     routeType?: 'orbit' | 'waypoints';
     pickedWaypoints?: [number, number][];
   } | null,
-  cursor?: [number, number] | null
+  cursor?: [number, number] | null,
+  session?: WarSimSession | null,
+  systemsLibrary: SystemSpec[] = []
 ) {
   const source = map.getSource(SRC_PATROL_PREVIEW) as GeoJSONSource | undefined;
   if (!source) return;
@@ -1094,42 +1096,167 @@ export function updateWarSimPatrolPreview(
   const themeColor = isStrikeRoute ? '#FF9800' : '#4FC3F7';
   const features: GeoJSON.Feature[] = [];
 
-  if (isCustomRoute) {
-    // 1. Placed Waypoints
-    picked.forEach((wp, idx) => {
+  // 1. Gather and render all Known Hostile SAM & Radar Threat Envelopes
+  const threatZones = session ? getKnownHostileThreatZones(session, systemsLibrary) : [];
+  threatZones.forEach((zone) => {
+    // 1a. Lethal SAM Engagement Ring (Red / Orange)
+    if (zone.samRangeKm > 0) {
+      const ringCoords = geodesicRing(zone.lngLat, zone.samRangeKm, 48);
       features.push({
         type: 'Feature',
-        geometry: { type: 'Point', coordinates: wp },
-        properties: { color: themeColor, label: `${isStrikeRoute ? 'ATK-WP' : 'WP'}-${idx + 1}` },
+        geometry: { type: 'Polygon', coordinates: [ringCoords] },
+        properties: {
+          color: zone.color,
+          fillOpacity: 0.14,
+          lineWidth: 1.8,
+        },
       });
-    });
 
-    // 2. Line connecting placed waypoints
-    if (picked.length >= 2) {
+      // Label at top edge of SAM envelope
       features.push({
         type: 'Feature',
-        geometry: { type: 'LineString', coordinates: picked },
-        properties: { color: themeColor, lineWidth: 2.5 },
+        geometry: { type: 'Point', coordinates: [zone.lngLat[0], zone.lngLat[1] + (zone.samRangeKm / 111.0)] },
+        properties: {
+          color: zone.color,
+          label: `⚠️ ${zone.name} [SAM ${zone.samRangeKm}km]`,
+        },
       });
     }
 
-    // 3. Dynamic line from last placed waypoint (or origin) to cursor
-    if (cursor) {
+    // 1b. Early Warning Radar Search Envelope (Translucent Yellow)
+    if (zone.radarRangeKm > (zone.samRangeKm + 30) && zone.radarRangeKm > 75) {
+      const radarCoords = geodesicRing(zone.lngLat, zone.radarRangeKm, 48);
       features.push({
         type: 'Feature',
-        geometry: { type: 'Point', coordinates: cursor },
-        properties: { color: themeColor, label: `${isStrikeRoute ? 'ATK-WP' : 'WP'}-${picked.length + 1}` },
+        geometry: { type: 'Polygon', coordinates: [radarCoords] },
+        properties: {
+          color: '#FFD54F',
+          fillOpacity: 0.04,
+          lineWidth: 1.0,
+        },
+      });
+    }
+  });
+
+  if (isCustomRoute) {
+    // Assemble full flight corridor path
+    const origin = targetPicking.originLngLat;
+    const fullPath: [number, number][] = [];
+    if (origin) fullPath.push(origin);
+    fullPath.push(...picked);
+
+    // Evaluate threats along the corridor
+    const corridorEval = evaluateFlightCorridor(fullPath, threatZones, 900);
+
+    // 2. Render Placed Waypoint Markers & Leg Lines
+    let cumulativeDistKm = 0;
+    for (let i = 0; i < fullPath.length; i++) {
+      const pt = fullPath[i];
+      const isOrigin = i === 0 && origin !== undefined;
+      const wpIdx = isOrigin ? 0 : (origin ? i : i + 1);
+
+      if (i > 0) {
+        const legDist = distanceKm(fullPath[i - 1], pt);
+        cumulativeDistKm += legDist;
+      }
+
+      const cumFlightMin = Math.round((cumulativeDistKm / 900) * 60);
+
+      // Waypoint Point Marker
+      let markerLabel = '';
+      if (isOrigin) {
+        markerLabel = '🛫 INGRESS START';
+      } else if (isStrikeRoute && i === fullPath.length - 1 && picked.length > 0) {
+        markerLabel = `🎯 WP-${wpIdx} (${cumulativeDistKm.toFixed(0)}km · ${cumFlightMin}m)`;
+      } else {
+        markerLabel = `WP-${wpIdx} (${cumulativeDistKm.toFixed(0)}km · ${cumFlightMin}m)`;
+      }
+
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: pt },
+        properties: {
+          color: isOrigin ? '#00E676' : themeColor,
+          label: markerLabel,
+        },
+      });
+    }
+
+    // 3. Render Flight Path Leg Lines Color-Coded by Threat
+    corridorEval.legs.forEach((leg) => {
+      const legColor =
+        leg.threatLevel === 'danger'
+          ? '#FF5252'
+          : leg.threatLevel === 'caution'
+            ? '#FFD54F'
+            : isStrikeRoute ? '#FF9800' : '#00E676';
+
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [leg.from, leg.to],
+        },
+        properties: {
+          color: legColor,
+          lineWidth: 3.0,
+        },
       });
 
-      const startPoint = picked.length >= 1 ? picked[picked.length - 1] : targetPicking.originLngLat;
-      if (startPoint) {
+      // Threat annotation at leg midpoint if penetrated
+      if (leg.threatLevel === 'danger' && leg.penetratingThreats.length > 0) {
+        const midPoint: [number, number] = [
+          (leg.from[0] + leg.to[0]) / 2,
+          (leg.from[1] + leg.to[1]) / 2,
+        ];
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: midPoint },
+          properties: {
+            color: '#FF5252',
+            label: `⚠️ LETHAL SAM ZONE (${leg.distanceKm.toFixed(0)}km)`,
+          },
+        });
+      }
+    });
+
+    // 4. Dynamic Cursor Ingress Line
+    if (cursor) {
+      const lastPoint = fullPath.length > 0 ? fullPath[fullPath.length - 1] : origin;
+      if (lastPoint) {
+        const cursorLegDist = distanceKm(lastPoint, cursor);
+        const cursorFlightMin = Math.round((cursorLegDist / 900) * 60);
+
+        // Check if cursor leg penetrates hostile SAM
+        const cursorEval = evaluateFlightCorridor([lastPoint, cursor], threatZones, 900);
+        const cursorColor =
+          cursorEval.threatLevel === 'danger'
+            ? '#FF5252'
+            : cursorEval.threatLevel === 'caution'
+              ? '#FFD54F'
+              : '#00E676';
+
+        // Prospective Waypoint Marker at Cursor
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: cursor },
+          properties: {
+            color: cursorColor,
+            label: `+${cursorLegDist.toFixed(0)}km (${cursorFlightMin}m) ${cursorEval.threatLevel === 'danger' ? '⚠️ DANGER' : ''}`,
+          },
+        });
+
+        // Dynamic connecting line
         features.push({
           type: 'Feature',
           geometry: {
             type: 'LineString',
-            coordinates: [startPoint, cursor],
+            coordinates: [lastPoint, cursor],
           },
-          properties: { color: themeColor, lineWidth: 1.8 },
+          properties: {
+            color: cursorColor,
+            lineWidth: 2.0,
+          },
         });
       }
     }
@@ -1140,7 +1267,7 @@ export function updateWarSimPatrolPreview(
 
   // Circular Orbit Mode
   if (!cursor) {
-    source.setData({ type: 'FeatureCollection', features: [] });
+    source.setData({ type: 'FeatureCollection', features });
     return;
   }
 
@@ -1156,7 +1283,7 @@ export function updateWarSimPatrolPreview(
   features.push({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: cursor },
-    properties: { color },
+    properties: { color, label: `ORBIT CENTER (${patrolRadiusKm}km)` },
   });
 
   // 2. Loiter / Holding Orbit Preview Ring
