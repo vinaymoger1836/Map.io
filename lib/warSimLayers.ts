@@ -26,6 +26,11 @@ import { UNIT_BY_ID, type EchelonMark } from './warGames';
 import { isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
 import { isNavalCombatant } from './navalEngagement';
 import { detectFont } from './mapLayers';
+import {
+  getKnownHostileThreatZones,
+  evaluateFlightCorridor,
+  type SAMThreatZone,
+} from './threatAvoidance';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -41,6 +46,7 @@ const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
 const LYR_PATROL_PREVIEW_FILL = 'warsim-patrol-preview-fill';
 const LYR_PATROL_PREVIEW_LINE = 'warsim-patrol-preview-line';
 const LYR_PATROL_PREVIEW_CENTER = 'warsim-patrol-preview-center';
+const LYR_PATROL_PREVIEW_LABEL = 'warsim-patrol-preview-label';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
 
