@@ -46,6 +46,13 @@ export interface BattleOpsPlannerProps {
   systemsLibrary: SystemSpec[];
   onOpenReport?: (reportId?: string) => void;
   onSelectEntity?: (entityId: string | null) => void;
+  onStartCorridorPicking?: (params: {
+    originLngLat?: [number, number];
+    targetLngLat?: [number, number];
+    initialWaypoints?: [number, number][];
+    label?: string;
+    onConfirm: (waypoints: [number, number][]) => void;
+  }) => void;
 }
 
 export function BattleOpsPlanner({
@@ -65,6 +72,7 @@ export function BattleOpsPlanner({
   systemsLibrary,
   onOpenReport,
   onSelectEntity,
+  onStartCorridorPicking,
 }: BattleOpsPlannerProps) {
   const isPlayer = session.activeFaction === 'player';
   const factionColor = isPlayer ? session.playerColor : session.enemyColor;
