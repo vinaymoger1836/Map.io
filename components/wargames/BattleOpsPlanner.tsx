@@ -738,6 +738,67 @@ export function BattleOpsPlanner({
                   </select>
                 </div>
               </div>
+
+              {/* Interactive Visual Flight Corridor Row */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '6px 8px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '10.5px', color: '#4FC3F7', fontWeight: 600 }}>
+                    🗺️ Flight Corridor & Threat Avoidance
+                  </span>
+                  <span style={{ fontSize: '9.5px', color: customWaypoints.length > 0 ? '#00E676' : 'var(--paper-dim)' }}>
+                    {customWaypoints.length > 0
+                      ? `✓ ${customWaypoints.length} Dogleg Waypoint${customWaypoints.length > 1 ? 's' : ''} Plotted`
+                      : 'Direct Ingress Line (No Doglegs)'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {onStartCorridorPicking && (
+                    <button
+                      type="button"
+                      className="wg-btn"
+                      style={{ fontSize: '10px', padding: '3px 8px', borderColor: '#4FC3F7', color: '#4FC3F7' }}
+                      onClick={() => {
+                        const targetContact = visibleContacts.find((c) => c.targetEntityId === selectedTargetId);
+                        const targetBase = session.bases.find((b) => b.id === selectedTargetId);
+                        const targetEntity = session.entities.find((e) => e.id === selectedTargetId);
+                        const targetPos = targetContact?.lastKnownLngLat || targetBase?.lngLat || targetEntity?.lngLat;
+
+                        onStartCorridorPicking({
+                          originLngLat: selectedAttacker?.lngLat,
+                          targetLngLat: targetPos,
+                          initialWaypoints: customWaypoints,
+                          label: `Plotting flight corridor for ${selectedAttacker?.name || 'Unit'}. Click map to place dogleg waypoints around hostile SAM bubbles.`,
+                          onConfirm: (wps) => setCustomWaypoints(wps),
+                        });
+                      }}
+                    >
+                      🗺️ Plot on Map
+                    </button>
+                  )}
+
+                  {customWaypoints.length > 0 && (
+                    <button
+                      type="button"
+                      className="wg-btn"
+                      style={{ fontSize: '10px', padding: '3px 6px', color: '#D9534F', borderColor: '#D9534F' }}
+                      onClick={() => setCustomWaypoints([])}
+                    >
+                      ✕ Clear
+                    </button>
+                  )}
+                </div>
+              </div>
             </>
           )}
 
