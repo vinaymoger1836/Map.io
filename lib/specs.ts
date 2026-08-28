@@ -122,6 +122,30 @@ export interface SensorFacet {
   antennaM?: number;
   /** Dedicated subsurface sonar suite */
   sonar?: SonarFacet;
+  /**
+   * Look-Down / Shoot-Down (LD/SD) AESA or Pulse-Doppler radar capability.
+   * Filters out ground/sea clutter reflections, enabling reliable tracking of low-flying targets over mountains.
+   */
+  lookDownShootDown?: boolean;
+  /**
+   * Synthetic Aperture Radar (SAR) & Ground Moving Target Indication (GMTI) capability.
+   * High-resolution ground contour imaging capable of acquiring vehicles and surface units in mountain valleys.
+   */
+  sarGmtiCapable?: boolean;
+  /**
+   * Electro-Optical / Infrared Search & Track (EO/IR / IRST) suite.
+   * Passive thermal/optical tracking immune to electromagnetic radar terrain clutter.
+   */
+  eoirTracking?: boolean;
+  /** Optical/thermal IRST effective range (km). */
+  irstRangeKm?: number;
+  /**
+   * Mast-mounted radar sensor (e.g. AN/APG-78 Longbow on AH-64D, Arbalet on Ka-52).
+   * Allows unmasking above mountain ridge lines while fuselage remains hidden in valley cover.
+   */
+  mastMountedSensor?: boolean;
+  /** Clutter attenuation/rejection rating in decibels (dB). Default 30–60 dB. */
+  clutterRejectionDb?: number;
 }
 
 /** Anything that shoots. A destroyer has several; a fighter carries a loadout. */
@@ -234,6 +258,110 @@ export function defaultSonarFor(spec: SystemSpec | undefined, typeId: string): S
   };
 }
 
+/**
+ * Inferred military sensor terrain/clutter capabilities (Look-Down/Shoot-Down, SAR/GMTI, IRST, Mast Radar)
+ * based on system classification, avionics generation, and platform type.
+ */
+export function defaultTerrainSensorFor(spec: SystemSpec | undefined, typeId: string): Partial<SensorFacet> {
+  const sensor: Partial<SensorFacet> = spec?.sensor || {};
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+
+  // 1. Check if explicitly defined in spec
+  const lookDown = sensor.lookDownShootDown !== undefined
+    ? sensor.lookDownShootDown
+    : (
+        // 4.5/5th Gen AESA / Pulse-Doppler Fighters & Modern Interceptors
+        tid === 'fighter' || tid === 'strike' || tid === 'bomber' ||
+        name.includes('f-35') || name.includes('f-22') || name.includes('su-35') || name.includes('su-57') ||
+        name.includes('rafale') || name.includes('typhoon') || name.includes('j-20') || name.includes('j-16') ||
+        name.includes('f-15') || name.includes('f-16') || name.includes('f/a-18') || name.includes('gripen') ||
+        // Modern AEW&C / AWACS
+        tid === 'awacs' ||
+        // Advanced Long-Range SAM Batteries (Aegis, S-400, Patriot PAC-3, Aster-30)
+        name.includes('s-400') || name.includes('s-500') || name.includes('patriot') || name.includes('aegis') ||
+        name.includes('aster') || name.includes('s-350') || name.includes('iron dome') || name.includes('david')
+      );
+
+  const sarGmti = sensor.sarGmtiCapable !== undefined
+    ? sensor.sarGmtiCapable
+    : (
+        tid === 'uav' || tid === 'recon' || tid === 'awacs' ||
+        name.includes('global hawk') || name.includes('reaper') || name.includes('mq-9') || name.includes('jstars') ||
+        name.includes('heron') || name.includes('bayraktar') || name.includes('su-34')
+      );
+
+  const eoir = sensor.eoirTracking !== undefined
+    ? sensor.eoirTracking
+    : (
+        tid === 'recon' || tid === 'uav' || tid === 'attack-heli' ||
+        name.includes('irst') || name.includes('pirate') || name.includes('ols-35') || name.includes('f-35') ||
+        name.includes('su-35') || name.includes('su-57') || name.includes('rafale') || name.includes('typhoon') ||
+        name.includes('gripen') || name.includes('sniper') || name.includes('litening')
+      );
+
+  const irstRange = sensor.irstRangeKm ?? (eoir ? (tid === 'fighter' ? 50 : 35) : 0);
+
+  const mastMounted = sensor.mastMountedSensor !== undefined
+    ? sensor.mastMountedSensor
+    : (
+        (tid === 'helicopter' || tid === 'attack-heli') &&
+        (name.includes('longbow') || name.includes('ah-64') || name.includes('ka-52') || name.includes('tiger') || name.includes('arbalet'))
+      );
+
+  return {
+    lookDownShootDown: lookDown,
+    sarGmtiCapable: sarGmti,
+    eoirTracking: eoir,
+    irstRangeKm: irstRange,
+    mastMountedSensor: mastMounted,
+    clutterRejectionDb: sensor.clutterRejectionDb ?? (lookDown ? 50 : 25),
+  };
+}
+
+/**
+ * Inferred military platform low-altitude terrain navigation & masking capabilities (TFR, TERCOM, NOE).
+ */
+export function defaultTerrainPlatformFor(spec: SystemSpec | undefined, typeId: string): Partial<PlatformFacet> {
+  const platform: Partial<PlatformFacet> = spec?.platform || {};
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+
+  const isTfr = platform.terrainFollowing !== undefined
+    ? platform.terrainFollowing
+    : (
+        name.includes('su-24') || name.includes('su-34') || name.includes('tornado') || name.includes('f-15e') ||
+        name.includes('b-1b') || name.includes('f-111') || name.includes('rafale') || name.includes('gripen')
+      );
+
+  const isTercom = platform.tercomGuidance !== undefined
+    ? platform.tercomGuidance
+    : (
+        name.includes('tomahawk') || name.includes('kalibr') || name.includes('storm shadow') ||
+        name.includes('scalp') || name.includes('taurus') || name.includes('kh-101') || name.includes('jassm') ||
+        name.includes('brahmos') || name.includes('cruise')
+      );
+
+  const isNoe = platform.noeCapable !== undefined
+    ? platform.noeCapable
+    : (tid === 'helicopter' || tid === 'attack-heli' || tid === 'transport-heli');
+
+  const minAlt = platform.minIngressAltitudeM ?? (
+    isTercom ? 30 :
+    isTfr ? 60 :
+    isNoe ? 15 :
+    (tid === 'missile' || name.includes('sea skim') || name.includes('harpoon') || name.includes('exocet') || name.includes('neptune')) ? 15 :
+    150
+  );
+
+  return {
+    terrainFollowing: isTfr,
+    tercomGuidance: isTercom,
+    noeCapable: isNoe,
+    minIngressAltitudeM: minAlt,
+  };
+}
+
 /** The thing that carries the sensors and weapons around. */
 export interface PlatformFacet {
   /** Out and back with a useful load, unrefuelled. */
@@ -250,6 +378,26 @@ export interface PlatformFacet {
   aircraft?: number;
   vls?: number;
   enduranceDays?: number;
+  /**
+   * Terrain-Following Radar (TFR / TERPROM) avionics suite.
+   * Enables automated high-speed low-altitude penetration (30–60m AGL) hugging mountain contours.
+   */
+  terrainFollowing?: boolean;
+  /**
+   * Terrain Contour Matching (TERCOM / DSMAC) precision digital terrain guidance.
+   * Enables cruise missiles to navigate mountain valleys and break radar line-of-sight.
+   */
+  tercomGuidance?: boolean;
+  /**
+   * Minimum operational ingress altitude (meters Above Ground Level / Sea Level).
+   * e.g. 15m for sea-skimming missiles, 30m for cruise missiles, 60m for strike aircraft.
+   */
+  minIngressAltitudeM?: number;
+  /**
+   * Nap-of-the-Earth (NOE) tactical flight capability for attack helicopters.
+   * Allows hovering in mountain valleys and popping up above tree/ridge lines.
+   */
+  noeCapable?: boolean;
 }
 
 export interface SystemSpec {

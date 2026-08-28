@@ -30,22 +30,28 @@ export function CombatReportDetailModal({
   const isOffensive = report.category === 'offensive_strike';
   const isDefensive = report.category === 'under_attack';
   const isRecon = report.category === 'recon_intel';
+  const isBattleOps = report.category === 'battle_ops' || Boolean(report.isConsolidatedBattleOps);
 
-  const categoryColor = isDefensive ? '#FF5252' : isOffensive ? '#FF9800' : '#4FC3F7';
-  const categoryLabel = isDefensive
-    ? '🛡️ DEFENSIVE ENGAGEMENT / UNDER ATTACK'
-    : isOffensive
-      ? '🚀 OFFENSIVE STRIKE MISSION'
-      : '📡 RECONNAISSANCE & POSITIVE IDENTIFICATION (PID)';
+  const categoryColor = isBattleOps ? '#00E676' : isDefensive ? '#FF5252' : isOffensive ? '#FF9800' : '#4FC3F7';
+  const categoryLabel = isBattleOps
+    ? '🏆 THEATER BATTLE OPERATIONS (BATTLE OPS) CONSOLIDATED REPORT'
+    : isDefensive
+      ? '🛡️ DEFENSIVE ENGAGEMENT / UNDER ATTACK'
+      : isOffensive
+        ? '🚀 OFFENSIVE STRIKE MISSION'
+        : '📡 RECONNAISSANCE & POSITIVE IDENTIFICATION (PID)';
   const primary = report.primaryEntity;
   const opposing = report.opposingEntity;
   const munitions = report.munitionsDetails;
   const interception = report.interceptionTelemetry;
   const bda = report.damageAssessment;
   const intel = report.intelDetails;
+  const battleOps = report.battleOpsDetails;
 
   const getHeaderBadge = () => {
     switch (report.category) {
+      case 'battle_ops':
+        return { text: 'JOINT THEATER BATTLE OPS AFTER-ACTION REPORT', color: '#00E676', bg: 'rgba(0, 230, 118, 0.15)' };
       case 'under_attack':
         return { text: 'DEFENSIVE ENGAGEMENT & THREAT REPORT', color: '#FF5252', bg: 'rgba(255, 82, 82, 0.15)' };
       case 'offensive_strike':
@@ -627,6 +633,132 @@ export function CombatReportDetailModal({
             </div>
           )}
 
+          {/* Section 4b: Battle Ops Consolidated Multi-Phase Theater Assessment */}
+          {battleOps && (
+            <div>
+              <label
+                style={{
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  letterSpacing: '0.6px',
+                  color: '#00E676',
+                  display: 'block',
+                  marginBottom: '8px',
+                }}
+              >
+                🏆 Multi-Phase Battle Ops Theater Execution Summary
+              </label>
+
+              <div
+                style={{
+                  background: '#070C14',
+                  border: '1px solid rgba(0, 230, 118, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                {/* Strategic Outcome Banner */}
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    background: 'rgba(0, 230, 118, 0.1)',
+                    border: '1px solid rgba(0, 230, 118, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#00E676',
+                    fontWeight: 700,
+                  }}
+                >
+                  🎖️ {battleOps.strategicOutcome}
+                </div>
+
+                {/* Key Telemetry Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Total Phases:</span>
+                    <strong style={{ color: '#E0E6ED' }}>{battleOps.totalPhases} Scheduled Phases</strong>
+                  </div>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Munitions Fired:</span>
+                    <strong style={{ color: '#FFB020' }}>{battleOps.totalSalvoLaunched} Missiles / Bombs</strong>
+                  </div>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Interceptions:</span>
+                    <strong style={{ color: '#FF5252' }}>{battleOps.totalIntercepted} Intercepted</strong>
+                  </div>
+                  <div style={{ background: '#0B131E', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--paper-dim)', fontSize: '10px', display: 'block' }}>Direct Hits:</span>
+                    <strong style={{ color: '#00E676' }}>{battleOps.directHits} Hits Scored</strong>
+                  </div>
+                </div>
+
+                {/* Phase Breakdown List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)', fontWeight: 700 }}>
+                    Chronological Phase Execution Timeline:
+                  </span>
+                  {battleOps.phasesSummary.map((p, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#0B131E',
+                        border: '1px solid var(--border)',
+                        padding: '6px 10px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '1px 5px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 700 }}>
+                          {p.triggerTimeFormatted}
+                        </span>
+                        <strong>{p.name}</strong>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: 'var(--paper-dim)', fontSize: '10px' }}>{p.taskCount} tasks</span>
+                        <span style={{ color: '#00E676', fontWeight: 600, fontSize: '10px' }}>{p.outcome}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Target Casualties */}
+                {battleOps.targetCasualties && battleOps.targetCasualties.length > 0 && (
+                  <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#FF5252', fontWeight: 700 }}>
+                      Confirmed Target Casualties & Neutralizations:
+                    </span>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {battleOps.targetCasualties.map((cas, cIdx) => (
+                        <span
+                          key={cIdx}
+                          style={{
+                            fontSize: '10px',
+                            background: 'rgba(255, 82, 82, 0.15)',
+                            border: '1px solid rgba(255, 82, 82, 0.3)',
+                            color: '#FF8A80',
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          💥 {cas}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Section 5: Reconnaissance & Sensor Intel (if Recon report) */}
           {intel && (
             <div>
@@ -741,6 +873,121 @@ export function CombatReportDetailModal({
                     🔬 Sensor Horizon & RCS Physics Analysis:
                   </strong>
                   <span style={{ color: '#E0E6ED' }}>{intel.physicsExplanation}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SECTION 4c: TOPOGRAPHIC TERRAIN & LINE-OF-SIGHT (LOS) ANALYSIS */}
+          {report.terrainDetails && (
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '12px', color: '#81C784', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ⛰️ Topographic Terrain & Mountain LOS Analysis
+                </strong>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    background: report.terrainDetails.terrainMasked ? 'rgba(217, 83, 79, 0.2)' : 'rgba(79, 168, 95, 0.2)',
+                    color: report.terrainDetails.terrainMasked ? '#E57373' : '#81C784',
+                    border: `1px solid ${report.terrainDetails.terrainMasked ? '#D9534F' : '#4FA85F'}44`,
+                  }}
+                >
+                  {report.terrainDetails.terrainMasked ? '⛰️ TERRAIN MASKED' : '📡 UNMASKED LINE-OF-SIGHT'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                  gap: '10px',
+                  background: '#09101B',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border)',
+                  fontSize: '11px',
+                }}
+              >
+                {report.terrainDetails.terrainElevationM !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Target Ground Elevation:</span>
+                    <strong style={{ color: '#E0E6ED' }}>{report.terrainDetails.terrainElevationM} m ASL</strong>
+                  </div>
+                )}
+
+                {report.terrainDetails.blockingMountainName && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Intervening Mountain Crest:</span>
+                    <strong style={{ color: '#FFB020' }}>{report.terrainDetails.blockingMountainName}</strong>
+                  </div>
+                )}
+
+                {report.terrainDetails.terrainClutterPenalty !== undefined && (
+                  <div>
+                    <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Ground Clutter Loss:</span>
+                    <strong style={{ color: report.terrainDetails.terrainClutterPenalty > 0.3 ? '#E57373' : '#81C784' }}>
+                      {(report.terrainDetails.terrainClutterPenalty * 100).toFixed(0)}%
+                    </strong>
+                  </div>
+                )}
+              </div>
+
+              {report.terrainDetails.specializedEquipmentUsed && report.terrainDetails.specializedEquipmentUsed.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)', display: 'block', marginBottom: '4px' }}>
+                    Specialized Avionics & Equipment Deployed:
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    {report.terrainDetails.specializedEquipmentUsed.map((eq, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          fontSize: '10px',
+                          padding: '3px 7px',
+                          borderRadius: '4px',
+                          background: 'rgba(0, 230, 118, 0.1)',
+                          border: '1px solid rgba(0, 230, 118, 0.3)',
+                          color: '#00E676',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {eq}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {report.terrainDetails.terrainExplanation && (
+                <div
+                  style={{
+                    padding: '8px 10px',
+                    background: 'rgba(129, 199, 132, 0.08)',
+                    border: '1px solid rgba(129, 199, 132, 0.25)',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    color: '#C8E6C9',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  <strong style={{ color: '#81C784', display: 'block', marginBottom: '2px' }}>
+                    Tactical Topographic Telemetry:
+                  </strong>
+                  {report.terrainDetails.terrainExplanation}
                 </div>
               )}
             </div>

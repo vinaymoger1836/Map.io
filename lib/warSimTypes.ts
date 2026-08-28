@@ -83,6 +83,9 @@ export interface DetectedContact {
   knownCount?: number;
   knownPersonnel?: number;
   knownDamage?: 'intact' | 'damaged' | 'suppressed' | 'destroyed';
+  terrainMasked?: boolean;
+  terrainElevationM?: number;
+  blockingMountainRange?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -288,6 +291,69 @@ export interface StrikeSalvoTracker {
 }
 
 /* ------------------------------------------------------------------ */
+/* 5b. Theater Battle Operations (Multi-Phase Multi-Domain Planner)   */
+/* ------------------------------------------------------------------ */
+
+export type BattleOpsTaskType = 'strike' | 'patrol' | 'sead';
+
+export interface BattleOpsTask {
+  id: string;
+  name: string;
+  type: BattleOpsTaskType;
+  attackerEntityId: string;
+  attackerName: string;
+
+  // Strike / SEAD Configuration
+  targetEntityId?: string;
+  targetBaseId?: string;
+  targetLngLat?: [number, number];
+  targetName?: string;
+  weaponIndex?: number;
+  weaponName?: string;
+  salvoCount?: number;
+  postStrikeAction?: PostStrikeAction;
+  sortieCount?: number;
+  attackWaypoints?: [number, number][];
+
+  // Patrol / ISR Configuration
+  patrolCenterLngLat?: [number, number];
+  patrolRadiusKm?: number;
+  patrolAltitudeM?: number;
+  emcon?: 'active' | 'passive';
+  patrolRouteType?: 'orbit' | 'waypoints';
+  patrolWaypoints?: [number, number][];
+
+  // Live Execution Status
+  status: 'pending' | 'executing' | 'completed' | 'failed';
+  executedAtSimTimeSec?: number;
+  completedAtSimTimeSec?: number;
+  salvoId?: string;
+  resultSummary?: string;
+}
+
+export interface BattleOpsPhase {
+  id: string;
+  phaseNumber: number;
+  name: string;
+  triggerDelaySec: number; // Offset from plan start in seconds (e.g. 0 for T+00:00, 900 for T+00:15, 1800 for T+00:30)
+  status: 'pending' | 'in_progress' | 'completed';
+  tasks: BattleOpsTask[];
+}
+
+export interface BattleOpsPlan {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'executing' | 'completed' | 'aborted';
+  startedAtSimTimeSec?: number;
+  completedAtSimTimeSec?: number;
+  phases: BattleOpsPhase[];
+  activePhaseIndex: number;
+  finalReportGenerated?: boolean;
+  consolidatedReportId?: string;
+}
+
+/* ------------------------------------------------------------------ */
 /* 6. Battle Logging, Reports & After-Action Analytics                */
 /* ------------------------------------------------------------------ */
 
@@ -316,7 +382,8 @@ export interface SimBattleEvent {
 export type WarReportCategory =
   | 'under_attack'      // Incoming attack / defensive engagement / damage sustained
   | 'offensive_strike'  // Strike executed against hostile forces
-  | 'recon_intel';      // Positive identification (PID) & reconnaissance gathered
+  | 'recon_intel'       // Positive identification (PID) & reconnaissance gathered
+  | 'battle_ops';       // Multi-phase Theater Battle Operations consolidated report
 
 export interface CombatReport {
   id: string;
@@ -418,6 +485,37 @@ export interface CombatReport {
     detectionBottleneck?: string;
     physicsExplanation?: string;
   };
+
+  // Topographic Terrain & Mountain Line-of-Sight details
+  terrainDetails?: {
+    terrainMasked: boolean;
+    isObstructedByTerrain: boolean;
+    terrainElevationM?: number;
+    blockingMountainName?: string;
+    terrainClutterPenalty?: number;
+    specializedEquipmentUsed?: string[];
+    terrainExplanation?: string;
+  };
+
+  // Battle Ops Consolidated Theater Assessment
+  isConsolidatedBattleOps?: boolean;
+  battleOpsDetails?: {
+    planId: string;
+    planTitle: string;
+    totalPhases: number;
+    phasesSummary: {
+      phaseNumber: number;
+      name: string;
+      triggerTimeFormatted: string;
+      taskCount: number;
+      outcome: string;
+    }[];
+    totalSalvoLaunched: number;
+    totalIntercepted: number;
+    directHits: number;
+    targetCasualties: string[];
+    strategicOutcome: string;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -456,6 +554,7 @@ export interface WarSimSession {
   reports?: CombatReport[];
   salvoTrackers?: StrikeSalvoTracker[];
   networks?: BattlefieldNetwork[];
+  battleOpsPlan?: BattleOpsPlan;
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';

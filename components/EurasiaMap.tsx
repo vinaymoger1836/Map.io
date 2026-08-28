@@ -169,7 +169,11 @@ export default function EurasiaMap() {
   // Sync War Sim state to MapLibre layers
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
+    if (!map || !ready || mode !== 'wargames') return;
+    if (!warSim.session) {
+      removeWarSimLayers(map);
+      return;
+    }
     renderWarSimStateToMap(
       map,
       warSim.session,
@@ -197,8 +201,8 @@ export default function EurasiaMap() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || mode !== 'wargames' || !warSim.session) return;
-    updateWarSimPatrolPreview(map, warSim.targetPicking, cursor);
-  }, [cursor, warSim.targetPicking, ready, mode, warSim.session]);
+    updateWarSimPatrolPreview(map, warSim.targetPicking, cursor, warSim.session, war.systems);
+  }, [cursor, warSim.targetPicking, ready, mode, warSim.session, war.systems]);
 
   // War Sim Map Click & Interaction
   useEffect(() => {
@@ -770,16 +774,23 @@ export default function EurasiaMap() {
             onRemoveEntityFromNetwork={warSim.removeEntityFromNetwork}
             onSetNetworkDoctrine={warSim.setNetworkDoctrine}
             onToggleNetworkOth={warSim.toggleNetworkOth}
+            battleOpsPlan={warSim.battleOpsPlan}
+            onUpdateBattleOpsPlan={warSim.updateBattleOpsPlan}
+            onAddBattleOpsPhase={warSim.addBattleOpsPhase}
+            onRemoveBattleOpsPhase={warSim.removeBattleOpsPhase}
+            onUpdateBattleOpsPhase={warSim.updateBattleOpsPhase}
+            onAddBattleOpsTask={warSim.addBattleOpsTask}
+            onRemoveBattleOpsTask={warSim.removeBattleOpsTask}
+            onStartBattleOpsExecution={warSim.startBattleOpsExecution}
+            onResetBattleOpsPlan={warSim.resetBattleOpsPlan}
             targetPicking={warSim.targetPicking}
             onCancelTargetPicking={warSim.cancelTargetPicking}
             onConfirmCustomRoute={warSim.confirmCustomRoute}
             onUndoLastWaypoint={warSim.undoLastWaypoint}
+            onAutoAvoidThreats={warSim.autoAvoidThreats}
+            onStartCorridorPicking={warSim.startCorridorPicking}
             onOpenAar={() => setWarSimAarOpen(true)}
-            onExitSim={() => {
-              if (mapRef.current) removeWarSimLayers(mapRef.current);
-              writeDoc('warsim-session', null);
-              setActiveWarSimSession(null);
-            }}
+            onExitSim={warSim.exitSim}
             systemsLibrary={war.systems}
             countries={war.countries}
             onFlyToBase={(lngLat) => {

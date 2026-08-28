@@ -17,6 +17,9 @@ import {
   type BaseType,
   type DetectedContact,
   type PostStrikeAction,
+  type BattleOpsPlan,
+  type BattleOpsPhase,
+  type BattleOpsTask,
 } from './warSimTypes';
 import {
   tickWarSim,
@@ -28,10 +31,17 @@ import {
   addSimBase,
   renameSimBase,
   updateEntityRcs,
+  createDefaultBattleOpsPlan,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
+import { removeWarSimLayers } from './warSimLayers';
+import {
+  getKnownHostileThreatZones,
+  generateOptimalThreatAvoidanceRoute,
+  evaluateFlightCorridor,
+} from './threatAvoidance';
 
 export interface TargetPickingState {
   mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
@@ -50,6 +60,7 @@ export interface TargetPickingState {
   customWeapons?: import('./specs').WeaponFacet[];
   routeType?: 'orbit' | 'waypoints';
   pickedWaypoints?: [number, number][];
+  onCorridorConfirmed?: (waypoints: [number, number][]) => void;
   strikeParams?: {
     attackerEntityId: string;
     targetEntityId: string;
@@ -94,10 +105,16 @@ export function useWarSim({
   const sessionRef = useRef<WarSimSession | null>(session);
   sessionRef.current = session;
 
-  // Initialize from initialSession prop
+  // Sync internal session state from initialSession prop
   useEffect(() => {
-    if (initialSession) {
-      setSession(initialSession);
+    setSession(initialSession);
+    if (!initialSession) {
+      setSelectedEntityId(null);
+      setSelectedContactId(null);
+      setSelectedBaseId(null);
+      setTargetPicking(null);
+      setActiveWeaponIndex(null);
+      setShowAllEnvelopes(false);
     }
   }, [initialSession]);
 
@@ -444,10 +461,38 @@ export function useWarSim({
         originLngLat: attacker?.lngLat,
         pickedWaypoints: [],
         strikeParams: params,
-        label: `Planning Attack Route for ${attacker?.name || 'Unit'}. Click map to place Attack Waypoint #1.`,
+        label: `Planning Attack Route for ${attacker?.name || 'Unit'}. Click map to place Attack Waypoint #1, or click 'Auto-Avoid SAMs'.`,
       });
     },
     [session?.entities]
+  );
+
+  const startCorridorPicking = useCallback(
+    (params: {
+      originLngLat?: [number, number];
+      targetLngLat?: [number, number];
+      initialWaypoints?: [number, number][];
+      label?: string;
+      onConfirm: (waypoints: [number, number][]) => void;
+    }) => {
+      setSession((prev) => (prev ? { ...prev, status: 'paused' } : null));
+      setTargetPicking({
+        mode: 'strike_route',
+        originLngLat: params.originLngLat,
+        pickedWaypoints: params.initialWaypoints || [],
+        onCorridorConfirmed: params.onConfirm,
+        strikeParams: params.targetLngLat ? {
+          attackerEntityId: 'custom',
+          targetEntityId: 'target',
+          targetLngLat: params.targetLngLat,
+          weaponIndex: 0,
+          salvoCount: 1,
+          postStrikeAction: 'rtb',
+        } : undefined,
+        label: params.label || `Designate flight corridor waypoints on map, or click 'Auto-Avoid Hostile SAMs'.`,
+      });
+    },
+    []
   );
 
   const startBasePlacement = useCallback(
@@ -527,6 +572,14 @@ export function useWarSim({
   const confirmCustomRoute = useCallback(() => {
     if (!targetPicking) return;
 
+    if (targetPicking.onCorridorConfirmed) {
+      const waypoints = targetPicking.pickedWaypoints ?? [];
+      targetPicking.onCorridorConfirmed(waypoints);
+      setSession((prev) => (prev && prev.status === 'paused' ? { ...prev, status: 'running' } : prev));
+      setTargetPicking(null);
+      return;
+    }
+
     if (targetPicking.mode === 'strike_route' && targetPicking.strikeParams) {
       const waypoints = targetPicking.pickedWaypoints ?? [];
       const p = targetPicking.strikeParams;
@@ -593,6 +646,40 @@ export function useWarSim({
     });
     setTargetPicking(null);
   }, [targetPicking, orderSortieToPoint, systemsLibrary]);
+
+  const autoAvoidThreats = useCallback(() => {
+    if (!targetPicking || !session) return;
+    const origin = targetPicking.originLngLat;
+    if (!origin) return;
+
+    let target = targetPicking.strikeParams?.targetLngLat;
+    if (!target && targetPicking.pickedWaypoints && targetPicking.pickedWaypoints.length > 0) {
+      target = targetPicking.pickedWaypoints[targetPicking.pickedWaypoints.length - 1];
+    }
+    if (!target) return;
+
+    const threatZones = getKnownHostileThreatZones(session, systemsLibrary);
+    const autoRoute = generateOptimalThreatAvoidanceRoute(origin, target, threatZones, 900);
+
+    // If strike route, waypoints are intermediate doglegs before terminal release point
+    if (targetPicking.mode === 'strike_route') {
+      const doglegs = autoRoute.slice(1, autoRoute.length - 1);
+      setTargetPicking({
+        ...targetPicking,
+        pickedWaypoints: doglegs,
+        label: doglegs.length > 0
+          ? `⚡ Auto-routed around hostile SAMs (${doglegs.length} dogleg waypoints generated). Click 'Launch Attack Route'.`
+          : `Direct path is already clear of hostile SAM threats.`,
+      });
+    } else {
+      const fullWps = autoRoute.slice(1);
+      setTargetPicking({
+        ...targetPicking,
+        pickedWaypoints: fullWps,
+        label: `⚡ Auto-routed around hostile SAMs (${fullWps.length} waypoints generated). Click 'Confirm Route'.`,
+      });
+    }
+  }, [targetPicking, session, systemsLibrary]);
 
   const undoLastWaypoint = useCallback(() => {
     if (!targetPicking || !targetPicking.pickedWaypoints || targetPicking.pickedWaypoints.length === 0) return;
@@ -720,6 +807,181 @@ export function useWarSim({
     });
   }, []);
 
+  // -------------------------------------------------------------
+  // Battle Ops Multi-Phase Operational Management
+  // -------------------------------------------------------------
+
+  const updateBattleOpsPlan = useCallback((updates: Partial<BattleOpsPlan>) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...currentPlan,
+          ...updates,
+        },
+      };
+    });
+  }, []);
+
+  const addBattleOpsPhase = useCallback((name?: string, triggerDelaySec?: number) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      const nextNum = currentPlan.phases.length + 1;
+      const lastDelay = currentPlan.phases.length > 0
+        ? currentPlan.phases[currentPlan.phases.length - 1].triggerDelaySec
+        : 0;
+      const newPhase: BattleOpsPhase = {
+        id: `phase-${Date.now()}-${nextNum}`,
+        phaseNumber: nextNum,
+        name: name || `Phase ${nextNum}: Strategic Strike Package`,
+        triggerDelaySec: triggerDelaySec !== undefined ? triggerDelaySec : lastDelay + 900,
+        status: 'pending',
+        tasks: [],
+      };
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...currentPlan,
+          phases: [...currentPlan.phases, newPhase],
+        },
+      };
+    });
+  }, []);
+
+  const removeBattleOpsPhase = useCallback((phaseId: string) => {
+    setSession((prev) => {
+      if (!prev || !prev.battleOpsPlan) return prev;
+      const filtered = prev.battleOpsPlan.phases.filter((p) => p.id !== phaseId);
+      const renumbered = filtered.map((p, idx) => ({ ...p, phaseNumber: idx + 1 }));
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...prev.battleOpsPlan,
+          phases: renumbered,
+        },
+      };
+    });
+  }, []);
+
+  const updateBattleOpsPhase = useCallback((phaseId: string, updates: Partial<BattleOpsPhase>) => {
+    setSession((prev) => {
+      if (!prev || !prev.battleOpsPlan) return prev;
+      const updatedPhases = prev.battleOpsPlan.phases.map((p) => (p.id === phaseId ? { ...p, ...updates } : p));
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...prev.battleOpsPlan,
+          phases: updatedPhases,
+        },
+      };
+    });
+  }, []);
+
+  const addBattleOpsTask = useCallback((phaseId: string, taskData: Omit<BattleOpsTask, 'id' | 'status'>) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      const newTask: BattleOpsTask = {
+        ...taskData,
+        id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        status: 'pending',
+      };
+      const updatedPhases = currentPlan.phases.map((p) =>
+        p.id === phaseId ? { ...p, tasks: [...p.tasks, newTask] } : p
+      );
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...currentPlan,
+          phases: updatedPhases,
+        },
+      };
+    });
+  }, []);
+
+  const removeBattleOpsTask = useCallback((phaseId: string, taskId: string) => {
+    setSession((prev) => {
+      if (!prev || !prev.battleOpsPlan) return prev;
+      const updatedPhases = prev.battleOpsPlan.phases.map((p) =>
+        p.id === phaseId ? { ...p, tasks: p.tasks.filter((t) => t.id !== taskId) } : p
+      );
+      return {
+        ...prev,
+        battleOpsPlan: {
+          ...prev.battleOpsPlan,
+          phases: updatedPhases,
+        },
+      };
+    });
+  }, []);
+
+  const startBattleOpsExecution = useCallback(() => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      const resetPhases: BattleOpsPhase[] = currentPlan.phases.map((p) => ({
+        ...p,
+        status: 'pending',
+        tasks: p.tasks.map((t) => ({ ...t, status: 'pending', resultSummary: undefined, salvoId: undefined })),
+      }));
+
+      const plan: BattleOpsPlan = {
+        ...currentPlan,
+        status: 'executing',
+        startedAtSimTimeSec: prev.simTimeSec,
+        completedAtSimTimeSec: undefined,
+        finalReportGenerated: false,
+        phases: resetPhases,
+      };
+
+      return {
+        ...prev,
+        status: 'running', // Automatically unpause the simulation
+        battleOpsPlan: plan,
+      };
+    });
+  }, []);
+
+  const resetBattleOpsPlan = useCallback(() => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const newPlan = createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
+      return {
+        ...prev,
+        battleOpsPlan: newPlan,
+      };
+    });
+  }, []);
+
+  const exitSim = useCallback(() => {
+    // 1. Immediately reset internal session and all sub-selections
+    setSession(null);
+    setSelectedEntityId(null);
+    setSelectedContactId(null);
+    setSelectedBaseId(null);
+    setTargetPicking(null);
+    setActiveWeaponIndex(null);
+    setShowAllEnvelopes(false);
+
+    // 2. Erase persisted session doc so subsequent sessions start completely fresh
+    writeDoc('warsim-session', null);
+
+    // 3. Cleanly remove all live WarSim MapLibre layers and sources
+    if (mapRef.current) {
+      try {
+        removeWarSimLayers(mapRef.current);
+      } catch (err) {
+        console.warn('[useWarSim] Error removing map layers on exit:', err);
+      }
+    }
+
+    // 4. Notify parent callback
+    onClose?.();
+  }, [mapRef, onClose]);
+
   return {
     session,
     setSession,
@@ -744,6 +1006,15 @@ export function useWarSim({
     removeEntityFromNetwork,
     setNetworkDoctrine,
     toggleNetworkOth,
+    battleOpsPlan: session?.battleOpsPlan,
+    updateBattleOpsPlan,
+    addBattleOpsPhase,
+    removeBattleOpsPhase,
+    updateBattleOpsPhase,
+    addBattleOpsTask,
+    removeBattleOpsTask,
+    startBattleOpsExecution,
+    resetBattleOpsPlan,
     friendlyEntities,
     friendlyBases,
     visibleContacts,
@@ -763,11 +1034,14 @@ export function useWarSim({
     targetPicking,
     startSortiePicking,
     startStrikeRoutePicking,
+    startCorridorPicking,
     startAutonomousPicking,
     startBasePlacement,
     cancelTargetPicking,
     confirmTargetPick,
     confirmCustomRoute,
     undoLastWaypoint,
+    autoAvoidThreats,
+    exitSim,
   };
 }

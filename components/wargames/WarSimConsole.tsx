@@ -21,18 +21,27 @@ import {
   type CombatReport,
   type WarReportCategory,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, domainOf, radarHorizonKm, getSystemRcs } from '@/lib/specs';
+import {
+  type SystemSpec,
+  domainOf,
+  radarHorizonKm,
+  getSystemRcs,
+  defaultTerrainSensorFor,
+  defaultTerrainPlatformFor,
+} from '@/lib/specs';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
+import { getKnownHostileThreatZones, evaluateFlightCorridor } from '@/lib/threatAvoidance';
 import { DeploySystemModal } from './DeploySystemModal';
 import { BaseInspectorModal } from './BaseInspectorModal';
 import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
 import { CombatReportDetailModal } from './CombatReportDetailModal';
+import { BattleOpsPlanner } from './BattleOpsPlanner';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'battle_ops' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -71,6 +80,15 @@ export interface WarSimConsoleProps {
   onRemoveEntityFromNetwork?: (entityId: string) => void;
   onSetNetworkDoctrine?: (networkId: string, doctrine: import('@/lib/warSimTypes').NetworkDoctrine) => void;
   onToggleNetworkOth?: (networkId: string) => void;
+  battleOpsPlan?: import('@/lib/warSimTypes').BattleOpsPlan;
+  onUpdateBattleOpsPlan?: (updates: Partial<import('@/lib/warSimTypes').BattleOpsPlan>) => void;
+  onAddBattleOpsPhase?: (name?: string, triggerDelaySec?: number) => void;
+  onRemoveBattleOpsPhase?: (phaseId: string) => void;
+  onUpdateBattleOpsPhase?: (phaseId: string, updates: Partial<import('@/lib/warSimTypes').BattleOpsPhase>) => void;
+  onAddBattleOpsTask?: (phaseId: string, task: Omit<import('@/lib/warSimTypes').BattleOpsTask, 'id' | 'status'>) => void;
+  onRemoveBattleOpsTask?: (phaseId: string, taskId: string) => void;
+  onStartBattleOpsExecution?: () => void;
+  onResetBattleOpsPlan?: () => void;
   activeWeaponIndex?: number | null;
   onToggleWeapon?: (idx: number) => void;
   showAllEnvelopes?: boolean;
@@ -79,11 +97,23 @@ export interface WarSimConsoleProps {
     mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
     label?: string;
     routeType?: 'orbit' | 'waypoints';
+    originLngLat?: [number, number];
     pickedWaypoints?: [number, number][];
+    strikeParams?: {
+      targetLngLat?: [number, number];
+    };
   } | null;
   onCancelTargetPicking: () => void;
   onConfirmCustomRoute?: () => void;
   onUndoLastWaypoint?: () => void;
+  onAutoAvoidThreats?: () => void;
+  onStartCorridorPicking?: (params: {
+    originLngLat?: [number, number];
+    targetLngLat?: [number, number];
+    initialWaypoints?: [number, number][];
+    label?: string;
+    onConfirm: (waypoints: [number, number][]) => void;
+  }) => void;
   selectedContact?: DetectedContact | null;
   onSelectContact?: (id: string | null) => void;
   onOrderStrike?: (params: {
@@ -148,6 +178,15 @@ export function WarSimConsole({
   onRemoveEntityFromNetwork,
   onSetNetworkDoctrine,
   onToggleNetworkOth,
+  battleOpsPlan,
+  onUpdateBattleOpsPlan,
+  onAddBattleOpsPhase,
+  onRemoveBattleOpsPhase,
+  onUpdateBattleOpsPhase,
+  onAddBattleOpsTask,
+  onRemoveBattleOpsTask,
+  onStartBattleOpsExecution,
+  onResetBattleOpsPlan,
   activeWeaponIndex,
   onToggleWeapon,
   showAllEnvelopes = false,
@@ -156,6 +195,8 @@ export function WarSimConsole({
   onCancelTargetPicking,
   onConfirmCustomRoute,
   onUndoLastWaypoint,
+  onAutoAvoidThreats,
+  onStartCorridorPicking,
   onOpenAar,
   onExitSim,
   systemsLibrary,
@@ -396,100 +437,159 @@ export function WarSimConsole({
       </header>
 
       {/* 2. TARGET PICKING FLOATING BANNER (When designating patrol, base, or multi-waypoint route) */}
-      {targetPicking && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '80px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(7, 12, 20, 0.95)',
-            border: `1px solid ${targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
-            borderRadius: '10px',
-            padding: '8px 16px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
-            zIndex: 650,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            color: 'var(--paper)',
-            fontFamily: 'var(--font-sans, system-ui, sans-serif)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>
-              {targetPicking.mode === 'strike_route' ? '🎯' : targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
-                {targetPicking.mode === 'strike_route'
-                  ? `Attack Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Ingress Waypoints Plotted`
-                  : targetPicking.routeType === 'waypoints'
-                    ? `Custom Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints Plotted`
-                    : 'Target Designation Active'}
+      {targetPicking && (() => {
+        const isRouteMode = targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route';
+        const threatZones = session ? getKnownHostileThreatZones(session, systemsLibrary) : [];
+        const fullCorridorPath: [number, number][] = [];
+        if (targetPicking.originLngLat) fullCorridorPath.push(targetPicking.originLngLat);
+        if (targetPicking.pickedWaypoints) fullCorridorPath.push(...targetPicking.pickedWaypoints);
+        if (targetPicking.strikeParams?.targetLngLat && (!targetPicking.pickedWaypoints || targetPicking.pickedWaypoints.length === 0)) {
+          fullCorridorPath.push(targetPicking.strikeParams.targetLngLat);
+        }
+
+        const corridorEval = isRouteMode && fullCorridorPath.length >= 2
+          ? evaluateFlightCorridor(fullCorridorPath, threatZones, 900)
+          : null;
+
+        return (
+          <div
+            style={{
+              position: 'absolute',
+              top: '80px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(7, 12, 20, 0.96)',
+              border: `1px solid ${corridorEval?.threatLevel === 'danger' ? '#FF5252' : targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : 'rgba(255, 255, 255, 0.15)'}`,
+              borderRadius: '10px',
+              padding: '10px 18px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.85)',
+              zIndex: 650,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              color: 'var(--paper)',
+              fontFamily: 'var(--font-sans, system-ui, sans-serif)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '18px' }}>
+                {targetPicking.mode === 'strike_route' ? '🎯' : targetPicking.routeType === 'waypoints' ? '🗺️' : '📍'}
               </span>
-              <span style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                {targetPicking.label}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 700, color: targetPicking.mode === 'strike_route' ? '#FF9800' : targetPicking.routeType === 'waypoints' ? '#4FC3F7' : '#E8833A' }}>
+                    {targetPicking.mode === 'strike_route'
+                      ? `Attack Route Planning: ${targetPicking.pickedWaypoints?.length || 0} Ingress Waypoints`
+                      : targetPicking.routeType === 'waypoints'
+                        ? `Flight Corridor Planning: ${targetPicking.pickedWaypoints?.length || 0} Waypoints`
+                        : 'Target Designation Active'}
+                  </span>
+
+                  {corridorEval && (
+                    <span
+                      style={{
+                        fontSize: '9.5px',
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                        fontWeight: 700,
+                        background: corridorEval.threatLevel === 'danger' ? 'rgba(255, 82, 82, 0.2)' : corridorEval.threatLevel === 'caution' ? 'rgba(255, 213, 79, 0.2)' : 'rgba(0, 230, 118, 0.2)',
+                        color: corridorEval.threatLevel === 'danger' ? '#FF5252' : corridorEval.threatLevel === 'caution' ? '#FFD54F' : '#00E676',
+                        border: `1px solid ${corridorEval.threatLevel === 'danger' ? '#FF5252' : corridorEval.threatLevel === 'caution' ? '#FFD54F' : '#00E676'}55`,
+                      }}
+                    >
+                      {corridorEval.threatLevel === 'danger' ? `🔴 SAM KILL-ZONE (${corridorEval.interceptRiskPct}% Risk)` : corridorEval.threatLevel === 'caution' ? '🟡 RADAR DETECTED' : '🟢 SAFE AIRSPACE'}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                  <span>{targetPicking.label}</span>
+                  {corridorEval && corridorEval.totalDistanceKm > 0 && (
+                    <span style={{ color: '#B0BEC5', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
+                      Dist: <strong style={{ color: '#FFFFFF' }}>{corridorEval.totalDistanceKm.toFixed(0)} km</strong> · ETE: <strong style={{ color: '#4FC3F7' }}>{Math.round(corridorEval.estimatedFlightSec / 60)} min</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {(targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route') && (
-              <>
-                <button
-                  type="button"
-                  className="wg-btn accent"
-                  style={{
-                    background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'rgba(255, 255, 255, 0.08)',
-                    color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
-                    borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'transparent',
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
-                  }}
-                  disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
-                  onClick={onConfirmCustomRoute}
-                >
-                  {targetPicking.mode === 'strike_route'
-                    ? `✓ Launch Attack Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`
-                    : `✓ Launch Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`}
-                </button>
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {isRouteMode && onAutoAvoidThreats && (
                 <button
                   type="button"
                   className="wg-btn"
                   style={{
                     fontSize: '11px',
-                    padding: '4px 8px',
-                    cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                    padding: '4px 10px',
+                    background: 'rgba(255, 176, 32, 0.15)',
+                    color: '#FFB020',
+                    borderColor: '#FFB020',
+                    fontWeight: 700,
                   }}
-                  disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
-                  onClick={onUndoLastWaypoint}
+                  onClick={onAutoAvoidThreats}
+                  title="Automatically generate dogleg waypoints to skirt around hostile SAM engagement bubbles"
                 >
-                  ↩ Undo WP
+                  ⚡ Auto-Avoid SAMs
                 </button>
-              </>
-            )}
+              )}
 
-            <button
-              type="button"
-              className="wg-btn"
-              style={{
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderColor: '#D9534F',
-                color: '#D9534F',
-                background: 'transparent',
-              }}
-              onClick={onCancelTargetPicking}
-            >
-              ✕ Cancel
-            </button>
+              {(targetPicking.routeType === 'waypoints' || targetPicking.mode === 'strike_route') && (
+                <>
+                  <button
+                    type="button"
+                    className="wg-btn accent"
+                    style={{
+                      background: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'rgba(255, 255, 255, 0.08)',
+                      color: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? '#070C14' : 'var(--paper-dim)',
+                      borderColor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? (targetPicking.mode === 'strike_route' ? '#FF9800' : '#4FA85F') : 'transparent',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      padding: '4px 12px',
+                      cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                    }}
+                    disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
+                    onClick={onConfirmCustomRoute}
+                  >
+                    {targetPicking.mode === 'strike_route'
+                      ? `✓ Launch Attack Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`
+                      : `✓ Launch Route (${(targetPicking.pickedWaypoints?.length || 0)} WPs)`}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      cursor: (targetPicking.pickedWaypoints?.length || 0) >= 1 ? 'pointer' : 'not-allowed',
+                    }}
+                    disabled={(targetPicking.pickedWaypoints?.length || 0) < 1}
+                    onClick={onUndoLastWaypoint}
+                  >
+                    ↩ Undo WP
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                className="wg-btn"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderColor: '#D9534F',
+                  color: '#D9534F',
+                  background: 'transparent',
+                }}
+                onClick={onCancelTargetPicking}
+              >
+                ✕ Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 3. LEFT COLLAPSIBLE TACTICAL SIDEBAR */}
       <aside
@@ -498,7 +598,8 @@ export function WarSimConsole({
           top: '48px',
           bottom: 0,
           left: 0,
-          width: sidebarOpen ? '360px' : '44px',
+          width: sidebarOpen ? '460px' : '44px',
+          maxWidth: '90vw',
           background: 'rgba(7, 12, 20, 0.96)',
           backdropFilter: 'blur(10px)',
           borderRight: '1px solid var(--border)',
@@ -561,6 +662,21 @@ export function WarSimConsole({
                 🌐 Network
               </button>
               <button
+                className={`wg-btn ${activeTab === 'battle_ops' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'battle_ops' ? undefined : (session.battleOpsPlan?.status === 'executing' ? 'rgba(255, 176, 32, 0.15)' : 'rgba(255, 152, 0, 0.08)'),
+                  borderColor: activeTab === 'battle_ops' ? undefined : (session.battleOpsPlan?.status === 'executing' ? '#FFB020' : 'rgba(255, 152, 0, 0.3)'),
+                  color: activeTab === 'battle_ops' ? undefined : (session.battleOpsPlan?.status === 'executing' ? '#FFB020' : '#FF9800'),
+                  fontWeight: session.battleOpsPlan?.status === 'executing' ? 700 : undefined,
+                }}
+                onClick={() => setActiveTab('battle_ops')}
+              >
+                ⚡ Ops {session.battleOpsPlan?.status === 'executing' ? '🔥' : ''}
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'reports' ? 'accent' : ''}`}
                 style={{
                   fontSize: '10px',
@@ -588,6 +704,7 @@ export function WarSimConsole({
               <button onClick={() => { setSidebarOpen(true); setActiveTab('bases'); }} title="Bases" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🏰</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('intel'); }} title="Intel" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>🛰️</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('network'); }} title="Battlefield Network" style={{ background: 'none', border: 'none', color: '#00E676', cursor: 'pointer', fontSize: '16px' }}>🌐</button>
+              <button onClick={() => { setSidebarOpen(true); setActiveTab('battle_ops'); }} title="Battle Ops Planner" style={{ background: 'none', border: 'none', color: '#FF9800', cursor: 'pointer', fontSize: '16px' }}>⚡</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('reports'); }} title="Reports" style={{ background: 'none', border: 'none', color: '#4FC3F7', cursor: 'pointer', fontSize: '16px' }}>📊</button>
               <button onClick={() => { setSidebarOpen(true); setActiveTab('log'); }} title="Log" style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', fontSize: '16px' }}>📜</button>
             </div>
@@ -699,6 +816,56 @@ export function WarSimConsole({
                           Deployed: <strong>{quota.deployed}</strong>
                         </span>
                       </div>
+
+                      {/* Specialized Terrain & Sensor Avionics Badges */}
+                      {spec && (() => {
+                        const sensorEquip = defaultTerrainSensorFor(spec, spec.typeId);
+                        const platformEquip = defaultTerrainPlatformFor(spec, spec.typeId);
+                        const badges: { label: string; color: string; bg: string }[] = [];
+
+                        if (sensorEquip.lookDownShootDown) {
+                          badges.push({ label: '📡 LD/SD AESA', color: '#00E676', bg: 'rgba(0, 230, 118, 0.1)' });
+                        }
+                        if (sensorEquip.eoirTracking) {
+                          badges.push({ label: `🔥 IRST ${sensorEquip.irstRangeKm}km`, color: '#FF7043', bg: 'rgba(255, 112, 67, 0.1)' });
+                        }
+                        if (sensorEquip.sarGmtiCapable) {
+                          badges.push({ label: '🛰️ SAR/GMTI', color: '#4FC3F7', bg: 'rgba(79, 195, 247, 0.1)' });
+                        }
+                        if (sensorEquip.mastMountedSensor) {
+                          badges.push({ label: '🚁 Mast Radar', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.1)' });
+                        }
+                        if (platformEquip.tercomGuidance) {
+                          badges.push({ label: '🏔️ TERCOM 30m', color: '#FFD54F', bg: 'rgba(255, 213, 79, 0.1)' });
+                        } else if (platformEquip.terrainFollowing) {
+                          badges.push({ label: '🏔️ TFR 60m', color: '#81C784', bg: 'rgba(129, 199, 132, 0.1)' });
+                        } else if (platformEquip.noeCapable) {
+                          badges.push({ label: '🚁 NOE Masking', color: '#4DB6AC', bg: 'rgba(77, 182, 172, 0.1)' });
+                        }
+
+                        if (badges.length === 0) return null;
+
+                        return (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', margin: '2px 0' }}>
+                            {badges.map((b, i) => (
+                              <span
+                                key={i}
+                                style={{
+                                  fontSize: '9px',
+                                  padding: '1px 5px',
+                                  borderRadius: '3px',
+                                  color: b.color,
+                                  background: b.bg,
+                                  border: `1px solid ${b.color}33`,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {b.label}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
 
                       {/* Action Buttons */}
                       <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
@@ -927,9 +1094,22 @@ export function WarSimConsole({
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)' }}>
-                      Speed: <strong>{c.speedKmh} km/h</strong> · Heading: <strong>{c.headingDeg.toFixed(0)}°</strong>
+                    <div style={{ fontSize: '10.5px', color: 'var(--paper-dim)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>
+                        Speed: <strong>{c.speedKmh} km/h</strong> · Heading: <strong>{c.headingDeg.toFixed(0)}°</strong>
+                      </span>
+                      {c.terrainElevationM !== undefined && c.terrainElevationM > 100 && (
+                        <span style={{ fontSize: '9.5px', color: '#81C784', background: 'rgba(129, 199, 132, 0.1)', padding: '1px 4px', borderRadius: '3px' }}>
+                          ⛰️ {c.terrainElevationM}m ASL
+                        </span>
+                      )}
                     </div>
+
+                    {c.blockingMountainRange && (
+                      <div style={{ fontSize: '9.5px', color: '#FFB020', background: 'rgba(255, 176, 32, 0.1)', padding: '2px 5px', borderRadius: '3px', border: '1px solid rgba(255, 176, 32, 0.3)' }}>
+                        ⛰️ Masked behind {c.blockingMountainRange}
+                      </div>
+                    )}
 
                     {c.knownCount && (
                       <div style={{ fontSize: '10.5px', color: '#4FC3F7' }}>
@@ -1411,6 +1591,71 @@ export function WarSimConsole({
                   )}
                 </div>
               </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB: THEATER BATTLE OPERATIONS (BATTLE OPS PLANNER)        */}
+            {/* ========================================================= */}
+            {activeTab === 'battle_ops' && (
+              <BattleOpsPlanner
+                session={session}
+                plan={battleOpsPlan || session.battleOpsPlan || {
+                  id: `bop-${Date.now().toString(36)}`,
+                  title: `Operation ${activeCountryIso} Thunder: Multi-Phase Theater Strike`,
+                  status: 'draft',
+                  activePhaseIndex: 0,
+                  phases: [
+                    {
+                      id: `phase-1-${Date.now()}`,
+                      phaseNumber: 1,
+                      name: 'Phase 1: SEAD & Air Defense Suppression',
+                      triggerDelaySec: 0,
+                      status: 'pending',
+                      tasks: [],
+                    },
+                    {
+                      id: `phase-2-${Date.now() + 1}`,
+                      phaseNumber: 2,
+                      name: 'Phase 2: Deep ISR Ingress & Escort Sorties',
+                      triggerDelaySec: 900,
+                      status: 'pending',
+                      tasks: [],
+                    },
+                    {
+                      id: `phase-3-${Date.now() + 2}`,
+                      phaseNumber: 3,
+                      name: 'Phase 3: Main Strategic Strike Package',
+                      triggerDelaySec: 1800,
+                      status: 'pending',
+                      tasks: [],
+                    },
+                  ],
+                }}
+                onUpdatePlan={(updates) => onUpdateBattleOpsPlan?.(updates)}
+                onAddPhase={(name, delay) => onAddBattleOpsPhase?.(name, delay)}
+                onRemovePhase={(phaseId) => onRemoveBattleOpsPhase?.(phaseId)}
+                onUpdatePhase={(phaseId, updates) => onUpdateBattleOpsPhase?.(phaseId, updates)}
+                onAddTask={(phaseId, task) => onAddBattleOpsTask?.(phaseId, task)}
+                onRemoveTask={(phaseId, taskId) => onRemoveBattleOpsTask?.(phaseId, taskId)}
+                onStartExecution={() => onStartBattleOpsExecution?.()}
+                onResetPlan={() => onResetBattleOpsPlan?.()}
+                friendlyEntities={friendlyEntities}
+                friendlyBases={friendlyBases}
+                visibleContacts={visibleContacts}
+                systemsLibrary={systemsLibrary}
+                onOpenReport={(reportId) => {
+                  if (reportId) {
+                    const rpt = session.reports?.find((r) => r.id === reportId);
+                    if (rpt) {
+                      setSelectedReport(rpt);
+                      return;
+                    }
+                  }
+                  setActiveTab('reports');
+                }}
+                onSelectEntity={(id) => onSelectEntity(id)}
+                onStartCorridorPicking={onStartCorridorPicking}
+              />
             )}
 
             {/* ========================================================= */}
