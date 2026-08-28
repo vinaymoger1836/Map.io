@@ -100,6 +100,7 @@ export function BattleOpsPlanner({
   const [patrolRadiusKm, setPatrolRadiusKm] = useState<number>(80);
   const [patrolAltitudeM, setPatrolAltitudeM] = useState<number>(8000);
   const [emconMode, setEmconMode] = useState<'active' | 'passive'>('active');
+  const [customWaypoints, setCustomWaypoints] = useState<[number, number][]>([]);
 
   const selectedAttacker = friendlyEntities.find((e) => e.id === selectedAttackerId);
   const attackerSpec = selectedAttacker ? systemsLibrary.find((s) => s.id === selectedAttacker.systemId) : undefined;
@@ -111,6 +112,7 @@ export function BattleOpsPlanner({
 
   const handleOpenAddTaskModal = (phaseId: string) => {
     setActiveAddingPhaseId(phaseId);
+    setCustomWaypoints([]);
     if (!selectedAttackerId && friendlyEntities.length > 0) {
       setSelectedAttackerId(friendlyEntities[0].id);
     }
@@ -144,6 +146,7 @@ export function BattleOpsPlanner({
         weaponName,
         salvoCount,
         postStrikeAction,
+        attackWaypoints: customWaypoints.length > 0 ? customWaypoints : undefined,
       });
     } else if (taskType === 'patrol') {
       const targetContact = visibleContacts.find((c) => c.targetEntityId === selectedTargetId);
