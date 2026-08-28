@@ -37,6 +37,11 @@ import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
 import { removeWarSimLayers } from './warSimLayers';
+import {
+  getKnownHostileThreatZones,
+  generateOptimalThreatAvoidanceRoute,
+  evaluateFlightCorridor,
+} from './threatAvoidance';
 
 export interface TargetPickingState {
   mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
@@ -55,6 +60,7 @@ export interface TargetPickingState {
   customWeapons?: import('./specs').WeaponFacet[];
   routeType?: 'orbit' | 'waypoints';
   pickedWaypoints?: [number, number][];
+  onCorridorConfirmed?: (waypoints: [number, number][]) => void;
   strikeParams?: {
     attackerEntityId: string;
     targetEntityId: string;
