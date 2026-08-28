@@ -97,11 +97,23 @@ export interface WarSimConsoleProps {
     mode: 'sortie' | 'place_autonomous' | 'place_base' | 'strike_route';
     label?: string;
     routeType?: 'orbit' | 'waypoints';
+    originLngLat?: [number, number];
     pickedWaypoints?: [number, number][];
+    strikeParams?: {
+      targetLngLat?: [number, number];
+    };
   } | null;
   onCancelTargetPicking: () => void;
   onConfirmCustomRoute?: () => void;
   onUndoLastWaypoint?: () => void;
+  onAutoAvoidThreats?: () => void;
+  onStartCorridorPicking?: (params: {
+    originLngLat?: [number, number];
+    targetLngLat?: [number, number];
+    initialWaypoints?: [number, number][];
+    label?: string;
+    onConfirm: (waypoints: [number, number][]) => void;
+  }) => void;
   selectedContact?: DetectedContact | null;
   onSelectContact?: (id: string | null) => void;
   onOrderStrike?: (params: {
@@ -183,6 +195,8 @@ export function WarSimConsole({
   onCancelTargetPicking,
   onConfirmCustomRoute,
   onUndoLastWaypoint,
+  onAutoAvoidThreats,
+  onStartCorridorPicking,
   onOpenAar,
   onExitSim,
   systemsLibrary,
