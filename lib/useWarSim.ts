@@ -32,6 +32,7 @@ import {
   renameSimBase,
   updateEntityRcs,
   createDefaultBattleOpsPlan,
+  orderAerialRefueling,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
