@@ -65,6 +65,13 @@ import {
   calculateTerrainLineOfSight,
   type TerrainLOSResult,
 } from './terrainLOS';
+import {
+  initTankerState,
+  evaluateEmergencyBingoRescue,
+  stepAerialRefuelingTransfer,
+  createAarCombatReport,
+  findBestTankerForReceiver,
+} from './aerialRefueling';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
