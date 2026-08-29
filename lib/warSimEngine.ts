@@ -573,6 +573,33 @@ export function tickWarSim(
       const bingoThreshold = calculateBingoFuelThreshold(distToBase, combatRadiusKm);
 
       if (nextFuel <= bingoThreshold) {
+        const rescue = evaluateEmergencyBingoRescue(session, entity, homeLngLat, systemsLibrary);
+        if (rescue.shouldDivertToTanker && rescue.tanker) {
+          logEvent(
+            entity.iso === session.playerIso ? 'player' : 'enemy',
+            'aar_refuel',
+            `🚨 Emergency AAR Divert: ${entity.name}`,
+            `${entity.name} reached Bingo Fuel (${nextFuel.toFixed(1)}%). Diverting to friendly tanker ${rescue.tanker.name} (${rescue.distanceToTankerKm.toFixed(0)} km).`,
+            entity.lngLat
+          );
+          return {
+            ...entity,
+            status: 'aar_rendezvous',
+            currentFuelPct: nextFuel,
+            refuelingState: {
+              tankerEntityId: rescue.tanker.id,
+              stage: 'rendezvous',
+              targetFuelPct: 100,
+              flowRateKgPerSec: 35,
+              fuelReceivedKg: 0,
+              preRefuelStatus: 'takeoff_ingress',
+              preRefuelPatrolOrder: entity.patrolOrder,
+              wasBingoRescue: true,
+              durationSec: 0,
+            },
+          };
+        }
+
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'alert',
@@ -592,13 +619,18 @@ export function tickWarSim(
 
       if (distToTarget <= Math.max(isGround ? 4 : 8, stepDistanceKm)) {
         // Arrived at destination / station
+        const isTankerUnit = entity.typeId === 'tanker' || entity.name.toLowerCase().includes('tanker');
+        const initialTankerState = isTankerUnit ? (entity.tankerState || initTankerState(entity, spec)) : undefined;
+
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'rtb',
-          isGround ? `Unit In Position: ${entity.name}` : `On Station: ${entity.name}`,
+          isGround ? `Unit In Position: ${entity.name}` : isTankerUnit ? `⛽ AAR Anchor Established: ${entity.name}` : `On Station: ${entity.name}`,
           isGround
             ? `${entity.name} arrived at destination coordinates and assumed defensive posture.`
-            : `${entity.name} established patrol orbit at designated coordinates.`,
+            : isTankerUnit
+              ? `${entity.name} established Aerial Refueling Anchor Track (${initialTankerState?.offloadRemainingKg.toLocaleString() || 40000} kg transfer fuel available).`
+              : `${entity.name} established patrol orbit at designated coordinates.`,
           targetPos
         );
         return {
@@ -607,6 +639,7 @@ export function tickWarSim(
           status: 'on_station',
           altitudeM: effectiveAlt,
           currentFuelPct: nextFuel,
+          tankerState: initialTankerState,
         };
       }
 
@@ -624,11 +657,30 @@ export function tickWarSim(
       };
     }
 
-    // E. On Station / Holding Position / Multi-Waypoint Route Patrol
+    // E. On Station / Holding Position / Multi-Waypoint Route Patrol / Tanker Orbit
     if (entity.status === 'on_station' && entity.patrolOrder) {
       const isGround = isGroundCombatUnit(entity.typeId);
       const isStaticAD = isStaticAirDefense(entity.typeId);
       const { centerLngLat, patrolRadiusKm, orbitAngleDeg, routeType, waypoints } = entity.patrolOrder;
+
+      // Ensure tankerState is present if platform is a tanker
+      const isTanker = entity.typeId === 'tanker' || entity.name.toLowerCase().includes('tanker');
+      const activeTankerState = isTanker ? (entity.tankerState || initTankerState(entity, spec)) : undefined;
+
+      if (isTanker && activeTankerState && activeTankerState.offloadRemainingKg <= 0) {
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'alert',
+          `⚠️ Tanker Fuel Winchester: ${entity.name}`,
+          `${entity.name} transfer fuel reservoir is depleted. Returning to base.`,
+          entity.lngLat
+        );
+        return {
+          ...entity,
+          status: 'bingo_rtb',
+          tankerState: activeTankerState,
+        };
+      }
 
       // Ground formations & static batteries stay stationary at designated ground position
       if (isGround || isStaticAD) {
@@ -657,6 +709,33 @@ export function tickWarSim(
         const bingoThreshold = calculateBingoFuelThreshold(distToBase, combatRadiusKm);
 
         if (nextFuel <= bingoThreshold) {
+          const rescue = evaluateEmergencyBingoRescue(session, entity, homeLngLat, systemsLibrary);
+          if (rescue.shouldDivertToTanker && rescue.tanker) {
+            logEvent(
+              entity.iso === session.playerIso ? 'player' : 'enemy',
+              'aar_refuel',
+              `🚨 Emergency AAR Divert: ${entity.name}`,
+              `${entity.name} reached Bingo Fuel (${nextFuel.toFixed(1)}%). Diverting to tanker ${rescue.tanker.name} (${rescue.distanceToTankerKm.toFixed(0)} km).`,
+              entity.lngLat
+            );
+            return {
+              ...entity,
+              status: 'aar_rendezvous',
+              currentFuelPct: nextFuel,
+              refuelingState: {
+                tankerEntityId: rescue.tanker.id,
+                stage: 'rendezvous',
+                targetFuelPct: 100,
+                flowRateKgPerSec: 35,
+                fuelReceivedKg: 0,
+                preRefuelStatus: 'on_station',
+                preRefuelPatrolOrder: entity.patrolOrder,
+                wasBingoRescue: true,
+                durationSec: 0,
+              },
+            };
+          }
+
           logEvent(
             entity.iso === session.playerIso ? 'player' : 'enemy',
             'alert',
@@ -694,6 +773,7 @@ export function tickWarSim(
             lngLat: targetWp,
             headingDeg: nextHeading,
             currentFuelPct: nextFuel,
+            tankerState: activeTankerState,
             patrolOrder: {
               ...entity.patrolOrder,
               currentWaypointIdx: nextIdx,
@@ -712,6 +792,7 @@ export function tickWarSim(
           lngLat: nextLngLat,
           headingDeg: nextHeading,
           currentFuelPct: nextFuel,
+          tankerState: activeTankerState,
           patrolOrder: {
             ...entity.patrolOrder,
             currentWaypointIdx: currentIdx,
@@ -725,6 +806,7 @@ export function tickWarSim(
         return {
           ...entity,
           lngLat: centerLngLat,
+          tankerState: activeTankerState,
         };
       }
       
@@ -747,6 +829,34 @@ export function tickWarSim(
       const bingoThreshold = calculateBingoFuelThreshold(distToBase, combatRadiusKm);
 
       if (nextFuel <= bingoThreshold) {
+        const rescue = evaluateEmergencyBingoRescue(session, entity, homeLngLat, systemsLibrary);
+        if (rescue.shouldDivertToTanker && rescue.tanker) {
+          logEvent(
+            entity.iso === session.playerIso ? 'player' : 'enemy',
+            'aar_refuel',
+            `🚨 Emergency AAR Divert: ${entity.name}`,
+            `${entity.name} reached Bingo Fuel (${nextFuel.toFixed(1)}%). Diverting to tanker ${rescue.tanker.name} (${rescue.distanceToTankerKm.toFixed(0)} km).`,
+            nextLngLat
+          );
+          return {
+            ...entity,
+            lngLat: nextLngLat,
+            status: 'aar_rendezvous',
+            currentFuelPct: nextFuel,
+            refuelingState: {
+              tankerEntityId: rescue.tanker.id,
+              stage: 'rendezvous',
+              targetFuelPct: 100,
+              flowRateKgPerSec: 35,
+              fuelReceivedKg: 0,
+              preRefuelStatus: 'on_station',
+              preRefuelPatrolOrder: entity.patrolOrder,
+              wasBingoRescue: true,
+              durationSec: 0,
+            },
+          };
+        }
+
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'alert',
@@ -767,6 +877,7 @@ export function tickWarSim(
         lngLat: nextLngLat,
         headingDeg: nextHeading,
         currentFuelPct: nextFuel,
+        tankerState: activeTankerState,
         patrolOrder: {
           ...entity.patrolOrder,
           orbitAngleDeg: nextAngle,
@@ -798,11 +909,15 @@ export function tickWarSim(
             })
           : (spec?.weapons ? spec.weapons.map((w) => ({ ...w })) : []);
 
+        const isTankerUnit = entity.typeId === 'tanker' || entity.name.toLowerCase().includes('tanker');
+        const restoredTankerState = isTankerUnit ? initTankerState(entity, spec) : undefined;
+
         return {
           ...entity,
           lngLat: homeLngLat,
           currentFuelPct: 100,
           customWeapons: replenishedWeapons,
+          tankerState: restoredTankerState,
           status: isDamaged ? 'in_repair' : 'turnaround',
           repairTimerSec: isDamaged ? 45 * 60 : 0, // 45 min repairs
           turnaroundTimerSec: isDamaged ? 0 : 15 * 60, // 15 min turnaround
@@ -820,6 +935,124 @@ export function tickWarSim(
         headingDeg: nextHeading,
         currentFuelPct: nextFuel,
       };
+    }
+
+    // F.2. In-Flight Aerial Refueling Rendezvous ('aar_rendezvous')
+    if (entity.status === 'aar_rendezvous' && entity.refuelingState) {
+      const tanker = session.entities.find((e) => e.id === entity.refuelingState?.tankerEntityId);
+      if (!tanker || tanker.status === 'destroyed' || tanker.status === 'docked' || (tanker.tankerState?.offloadRemainingKg ?? 0) <= 0) {
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'alert',
+          `AAR Aborted: ${entity.name}`,
+          `Target tanker unavailable or depleted. ${entity.name} returning to base.`,
+          entity.lngLat
+        );
+        return {
+          ...entity,
+          status: 'bingo_rtb',
+          refuelingState: undefined,
+        };
+      }
+
+      const distToTanker = distanceKm(entity.lngLat, tanker.lngLat);
+      const stepDistanceKm = (speedKmh / 3600) * dtSimSec;
+
+      // Fuel burn during rendezvous flight
+      const fuelBurn = calculateFuelBurnPct(stepDistanceKm, combatRadiusKm, 0, speedKmh) * fuelRateMult;
+      const nextFuel = Math.max(0, entity.currentFuelPct - fuelBurn);
+
+      if (distToTanker <= Math.max(6, stepDistanceKm)) {
+        // Docked & Hooked up to Tanker Boom/Drogue!
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'aar_refuel',
+          `⛽ AAR Contact / Hook-Up: ${entity.name}`,
+          `${entity.name} made contact with ${tanker.name} at ${tanker.altitudeM || 7500}m altitude. Commencing fuel transfer.`,
+          tanker.lngLat
+        );
+
+        return {
+          ...entity,
+          lngLat: tanker.lngLat,
+          altitudeM: tanker.altitudeM || 7500,
+          headingDeg: tanker.headingDeg,
+          status: 'aar_refueling',
+          currentFuelPct: nextFuel,
+          refuelingState: {
+            ...entity.refuelingState,
+            stage: 'hooked',
+          },
+        };
+      }
+
+      const fraction = Math.min(1, stepDistanceKm / Math.max(1, distToTanker));
+      const nextLngLat = interpolate(entity.lngLat, tanker.lngLat, fraction);
+      const nextHeading = bearingDeg(entity.lngLat, tanker.lngLat);
+
+      return {
+        ...entity,
+        lngLat: nextLngLat,
+        headingDeg: nextHeading,
+        currentFuelPct: nextFuel,
+      };
+    }
+
+    // F.3. Active Fuel Transfer on Tanker Boom/Drogue ('aar_refueling')
+    if (entity.status === 'aar_refueling' && entity.refuelingState) {
+      const tanker = session.entities.find((e) => e.id === entity.refuelingState?.tankerEntityId);
+      if (!tanker || tanker.status === 'destroyed' || (tanker.tankerState?.offloadRemainingKg ?? 0) <= 0) {
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'alert',
+          `AAR Disconnect: ${entity.name}`,
+          `Tanker disconnected. ${entity.name} resuming mission.`,
+          entity.lngLat
+        );
+        return {
+          ...entity,
+          status: entity.refuelingState.preRefuelStatus || 'on_station',
+          refuelingState: undefined,
+        };
+      }
+
+      // Step physical fuel transfer
+      const transferRes = stepAerialRefuelingTransfer(entity, tanker, dtSimSec, systemsLibrary);
+
+      // Keep positions locked to tanker
+      const updatedRec = {
+        ...transferRes.updatedReceiver,
+        lngLat: tanker.lngLat,
+        headingDeg: tanker.headingDeg,
+        altitudeM: tanker.altitudeM || 7500,
+      };
+
+      if (transferRes.isComplete) {
+        logEvent(
+          entity.iso === session.playerIso ? 'player' : 'enemy',
+          'aar_refuel',
+          `✓ Refueling Complete: ${entity.name}`,
+          `${entity.name} finished fuel transfer from ${tanker.name} (${transferRes.fuelTransferredKg.toFixed(0)} kg offloaded). Fuel restored to ${updatedRec.currentFuelPct.toFixed(0)}%. Resuming mission.`,
+          tanker.lngLat
+        );
+
+        // Generate Combat Report for logistics / AAR tracking
+        const aarRpt = createAarCombatReport(
+          session,
+          tanker,
+          updatedRec,
+          updatedRec.refuelingState?.fuelReceivedKg || transferRes.fuelTransferredKg,
+          updatedRec.refuelingState?.durationSec || 60,
+          updatedRec.refuelingState?.wasBingoRescue || false,
+          entity.currentFuelPct,
+          updatedRec.currentFuelPct,
+          systemsLibrary
+        );
+        session.reports = session.reports || [];
+        session.reports.unshift(aarRpt);
+      }
+
+      return updatedRec;
     }
 
     // G. Strike Ingress & Weapon Release ('engaging')
