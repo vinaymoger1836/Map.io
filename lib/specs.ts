@@ -398,6 +398,140 @@ export interface PlatformFacet {
    * Allows hovering in mountain valleys and popping up above tree/ridge lines.
    */
   noeCapable?: boolean;
+  /** Internal & CFT total fuel mass capacity (kg). */
+  fuelCapacityKg?: number;
+  /** Aerial refueling transfer payload (kg) for tanker aircraft (e.g. KC-46, Il-78, A330 MRTT). */
+  fuelOffloadableKg?: number;
+  /** Fuel transfer flow rate (kg/min) via flying boom or hose-and-drogue pods. */
+  fuelOffloadRateKgPerMin?: number;
+  /** Refueling hardware system architecture. */
+  refuelingMethod?: 'boom' | 'probe_and_drogue' | 'universal';
+  /** Max simultaneous receiver aircraft serviced by tanker (1 for Boom, 2-3 for Wing Drogues). */
+  maxReceivers?: number;
+  /** True if aircraft is equipped with AAR receptacle/probe for mid-air refueling. */
+  canAerialRefuel?: boolean;
+}
+
+/**
+ * Military Aerial Refueling (AAR) Tanker Capabilities Resolver.
+ */
+export function defaultTankerSpecsFor(spec: SystemSpec | undefined, typeId: string): {
+  isTanker: boolean;
+  fuelOffloadableKg: number;
+  fuelOffloadRateKgPerMin: number;
+  refuelingMethod: 'boom' | 'probe_and_drogue' | 'universal';
+  maxReceivers: number;
+  aarAnchorRadiusKm: number;
+} {
+  const platform = spec?.platform || {};
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+  const isTanker = tid === 'tanker' || name.includes('tanker') || name.includes('stratotanker') || name.includes('pegasus') || name.includes('mrtt') || name.includes('il-78') || name.includes('kc-') || name.includes('mq-25');
+
+  if (!isTanker) {
+    return {
+      isTanker: false,
+      fuelOffloadableKg: 0,
+      fuelOffloadRateKgPerMin: 0,
+      refuelingMethod: 'universal',
+      maxReceivers: 0,
+      aarAnchorRadiusKm: 0,
+    };
+  }
+
+  // Specific Tanker Models
+  let offloadKg = platform.fuelOffloadableKg ?? 42000;
+  let flowRate = platform.fuelOffloadRateKgPerMin ?? 2000;
+  let method: 'boom' | 'probe_and_drogue' | 'universal' = platform.refuelingMethod ?? 'universal';
+  let receivers = platform.maxReceivers ?? 2;
+
+  if (name.includes('kc-46') || name.includes('pegasus')) {
+    offloadKg = 43000;
+    flowRate = 2800;
+    method = 'universal';
+    receivers = 3;
+  } else if (name.includes('kc-135') || name.includes('stratotanker')) {
+    offloadKg = 38000;
+    flowRate = 2200;
+    method = 'boom';
+    receivers = 1;
+  } else if (name.includes('il-78') || name.includes('midas')) {
+    offloadKg = 74000;
+    flowRate = 1400;
+    method = 'probe_and_drogue';
+    receivers = 3;
+  } else if (name.includes('mrtt') || name.includes('a330')) {
+    offloadKg = 48000;
+    flowRate = 2800;
+    method = 'universal';
+    receivers = 3;
+  } else if (name.includes('mq-25') || name.includes('stingray')) {
+    offloadKg = 6800;
+    flowRate = 950;
+    method = 'probe_and_drogue';
+    receivers = 1;
+  }
+
+  return {
+    isTanker: true,
+    fuelOffloadableKg: offloadKg,
+    fuelOffloadRateKgPerMin: flowRate,
+    refuelingMethod: method,
+    maxReceivers: receivers,
+    aarAnchorRadiusKm: 60,
+  };
+}
+
+/**
+ * Military Receiver Aircraft Fuel Capacity & Refueling Compatibility Resolver.
+ */
+export function defaultReceiverFuelFor(spec: SystemSpec | undefined, typeId: string): {
+  canAerialRefuel: boolean;
+  fuelCapacityKg: number;
+  refuelMethod: 'boom' | 'probe_and_drogue' | 'universal';
+} {
+  const platform = spec?.platform || {};
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+
+  // Non-air or unrefuelable platforms
+  if (tid === 'sam-launcher' || tid === 'radar' || tid === 'silo' || tid === 'tank' || tid === 'ifv' || tid === 'artillery' || tid === 'infantry' || tid === 'special-forces' || tid === 'destroyer' || tid === 'frigate' || tid === 'corvette' || tid === 'submarine' || tid === 'carrier') {
+    return { canAerialRefuel: false, fuelCapacityKg: 0, refuelMethod: 'universal' };
+  }
+
+  // Small tactical drones that cannot refuel
+  if ((tid === 'uav' || tid === 'drone') && !name.includes('global hawk') && !name.includes('mq-9') && !name.includes('wz-7')) {
+    return { canAerialRefuel: false, fuelCapacityKg: 200, refuelMethod: 'probe_and_drogue' };
+  }
+
+  let capKg = platform.fuelCapacityKg ?? 8000;
+  let method: 'boom' | 'probe_and_drogue' | 'universal' = 'universal';
+
+  if (tid === 'bomber' || name.includes('b-2') || name.includes('b-52') || name.includes('b-21')) {
+    capKg = 75000;
+    method = 'boom';
+  } else if (name.includes('tu-160') || name.includes('tu-95') || name.includes('tu-22')) {
+    capKg = 85000;
+    method = 'probe_and_drogue';
+  } else if (name.includes('f-35a') || name.includes('f-22') || name.includes('f-15') || name.includes('f-16') || name.includes('a-10')) {
+    capKg = name.includes('f-15') ? 14000 : 8300;
+    method = 'boom';
+  } else if (name.includes('f-35b') || name.includes('f-35c') || name.includes('f/a-18') || name.includes('rafale') || name.includes('typhoon') || name.includes('su-') || name.includes('mig-') || name.includes('j-')) {
+    capKg = name.includes('su-35') || name.includes('su-30') || name.includes('j-16') ? 11500 : 7500;
+    method = 'probe_and_drogue';
+  } else if (tid === 'awacs') {
+    capKg = 65000;
+    method = name.includes('a-50') ? 'probe_and_drogue' : 'boom';
+  } else if (tid === 'recon') {
+    capKg = 12000;
+    method = 'universal';
+  }
+
+  return {
+    canAerialRefuel: platform.canAerialRefuel ?? true,
+    fuelCapacityKg: capKg,
+    refuelMethod: method,
+  };
 }
 
 export interface SystemSpec {
