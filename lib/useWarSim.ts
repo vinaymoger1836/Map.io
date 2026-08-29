@@ -326,6 +326,16 @@ export function useWarSim({
     []
   );
 
+  const orderRefuelAtTanker = useCallback(
+    (receiverEntityId: string, tankerEntityId?: string, targetFuelPct = 100) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return orderAerialRefueling(prev, receiverEntityId, tankerEntityId, targetFuelPct, systemsLibrary);
+      });
+    },
+    [systemsLibrary]
+  );
+
   const startSortiePicking = useCallback(
     (
       entity: SimEntity,
@@ -999,6 +1009,7 @@ export function useWarSim({
     orderSortieToPoint,
     setEntityRcs,
     orderRtb,
+    orderRefuelAtTanker,
     orderStrike,
     createBaseAtLocation,
     renameBase,
