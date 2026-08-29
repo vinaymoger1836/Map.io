@@ -992,6 +992,127 @@ export function CombatReportDetailModal({
               )}
             </div>
           )}
+
+          {/* Section 4d: Combat Air Refueling & Logistics Telemetry */}
+          {report.aarDetails && (
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '14px',
+                borderRadius: '8px',
+                background: 'rgba(0, 229, 255, 0.04)',
+                border: '1px solid rgba(0, 229, 255, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: '#00E5FF',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  ⛽ Combat Air Refueling (AAR) & Logistics Telemetry
+                </span>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    background: report.aarDetails.wasEmergencyBingoRescue ? 'rgba(255, 82, 82, 0.2)' : 'rgba(0, 229, 255, 0.2)',
+                    color: report.aarDetails.wasEmergencyBingoRescue ? '#FF5252' : '#00E5FF',
+                    border: `1px solid ${report.aarDetails.wasEmergencyBingoRescue ? '#FF5252' : '#00E5FF'}55`,
+                  }}
+                >
+                  {report.aarDetails.wasEmergencyBingoRescue ? '🚨 EMERGENCY BINGO RESCUE' : '✓ SCHEDULED AAR SORTIE'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '8px',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Tanker Platform:</span>
+                  <strong style={{ color: '#00E5FF' }}>{report.aarDetails.tankerName}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Fuel Offloaded:</span>
+                  <strong style={{ color: '#00E676' }}>{report.aarDetails.fuelOffloadedKg.toLocaleString()} kg</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Transfer Method:</span>
+                  <strong style={{ color: '#FFFFFF', textTransform: 'capitalize' }}>
+                    {report.aarDetails.refuelingMethod.replace(/_/g, ' ')}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>Range Extension:</span>
+                  <strong style={{ color: '#FFB020' }}>+{report.aarDetails.combatRadiusExtensionKm} km</strong>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '11px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  padding: '8px 10px',
+                  borderRadius: '4px',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>Pre-AAR Fuel:</span>
+                  <strong style={{ color: report.aarDetails.preRefuelFuelPct < 20 ? '#FF5252' : '#FFD54F' }}>
+                    {report.aarDetails.preRefuelFuelPct}%
+                  </strong>
+                </div>
+                <span style={{ color: '#00E5FF', fontSize: '14px' }}>➔</span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>Post-AAR Fuel:</span>
+                  <strong style={{ color: '#00E676' }}>
+                    {report.aarDetails.postRefuelFuelPct}%
+                  </strong>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>Hook-Up Duration:</span>
+                  <strong style={{ color: '#E0E6ED' }}>{report.aarDetails.durationSec}s</strong>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: 'rgba(0, 229, 255, 0.06)',
+                  border: '1px solid rgba(0, 229, 255, 0.2)',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  color: '#B2EBF2',
+                  lineHeight: '1.4',
+                }}
+              >
+                <strong style={{ color: '#00E5FF', display: 'block', marginBottom: '2px' }}>
+                  Logistics & Operational Impact:
+                </strong>
+                {report.aarDetails.logisticsAssessment}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
