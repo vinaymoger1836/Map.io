@@ -73,6 +73,7 @@ export interface WarSimConsoleProps {
   ) => void;
   onUpdateEntityRcs?: (entityId: string, rcs: number) => void;
   onOrderRtb: (entityId: string) => void;
+  onOrderRefuelAtTanker?: (receiverEntityId: string, tankerEntityId?: string, targetFuelPct?: number) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
   onCreateNetwork?: (name: string, doctrine: import('@/lib/warSimTypes').NetworkDoctrine) => void;
