@@ -208,6 +208,33 @@ export interface SimEntity {
   networkId?: string;
   /** Detailed component & structural subsystem health profile */
   subsystems?: SubsystemStatus;
+  /** Aerial refueling tanker state (if this entity is a tanker aircraft) */
+  tankerState?: {
+    offloadRemainingKg: number;
+    totalOffloadCapacityKg: number;
+    fuelOffloadRateKgPerMin: number;
+    refuelingMethod: 'boom' | 'probe_and_drogue' | 'universal';
+    activeReceivers: string[]; // Entity IDs currently plugged into boom/drogue
+    maxReceivers: number;
+    orbitLengthKm: number;
+    orbitHeadingDeg: number;
+    totalTransferredKg: number;
+    sortiesServiced: number;
+    rescuedBingoCount: number;
+  };
+  /** Receiver aerial refueling state (if this aircraft is currently taking on fuel) */
+  refuelingState?: {
+    tankerEntityId: string;
+    stage: 'rendezvous' | 'hooked' | 'complete';
+    targetFuelPct: number;
+    flowRateKgPerSec: number;
+    fuelReceivedKg: number;
+    preRefuelStatus: EntityStatus;
+    preRefuelPatrolOrder?: PatrolOrder;
+    preRefuelStrikePlan?: StrikePlan;
+    wasBingoRescue?: boolean;
+    durationSec?: number;
+  };
 }
 
 /* ------------------------------------------------------------------ */
