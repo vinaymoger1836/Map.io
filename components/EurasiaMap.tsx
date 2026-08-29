@@ -767,6 +767,7 @@ export default function EurasiaMap() {
             }}
             onUpdateEntityRcs={warSim.setEntityRcs}
             onOrderRtb={warSim.orderRtb}
+            onOrderRefuelAtTanker={warSim.orderRefuelAtTanker}
             onStartBasePlacement={warSim.startBasePlacement}
             onRenameBase={warSim.renameBase}
             onCreateNetwork={warSim.createNetwork}
