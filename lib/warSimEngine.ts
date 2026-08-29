@@ -3121,11 +3121,42 @@ export function processBattleOpsPlanTick(
             completedAtSimTimeSec: currentSession.simTimeSec,
             resultSummary: 'Patrol sortie established on station',
           };
+        } else if (task.type === 'aar') {
+          currentSession = orderAerialRefueling(
+            currentSession,
+            task.attackerEntityId,
+            task.tankerEntityId,
+            task.fuelTransferTargetPct ?? 100,
+            systemsLibrary
+          );
+
+          phaseUpdated = true;
+          planUpdated = true;
+          return {
+            ...task,
+            status: 'executing' as const,
+            executedAtSimTimeSec: currentSession.simTimeSec,
+            resultSummary: 'En route to AAR Tanker Rendezvous',
+          };
         }
       }
 
       // 2. Task is executing -> Check completion
       if (task.status === 'executing') {
+        if (task.type === 'aar') {
+          const receiver = currentSession.entities.find((e) => e.id === task.attackerEntityId);
+          if (receiver && receiver.status !== 'aar_rendezvous' && receiver.status !== 'aar_refueling') {
+            phaseUpdated = true;
+            planUpdated = true;
+            return {
+              ...task,
+              status: 'completed' as const,
+              completedAtSimTimeSec: currentSession.simTimeSec,
+              resultSummary: `AAR Complete: Fuel topped off to ${receiver.currentFuelPct.toFixed(0)}%`,
+            };
+          }
+        }
+
         if (task.salvoId) {
           const tracker = currentSession.salvoTrackers?.find((t) => t.salvoId === task.salvoId);
           if (tracker && tracker.isConcluded) {
