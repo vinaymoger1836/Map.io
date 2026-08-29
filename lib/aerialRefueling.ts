@@ -16,7 +16,7 @@ import {
   defaultTankerSpecsFor,
   defaultReceiverFuelFor,
 } from './specs';
-import { distanceKm, destinationPoint } from './geo';
+import { distanceKm, destination } from './geo';
 
 /**
  * Initializes tanker-specific operational logistics on a SimEntity.
@@ -57,31 +57,31 @@ export function generateAarRacetrackCoordinates(
   const halfLen = lengthKm / 2;
 
   // Center points of the two semi-circle end turns
-  const end1Center = destinationPoint(centerLngLat, halfLen, (headingDeg + 180) % 360);
-  const end2Center = destinationPoint(centerLngLat, halfLen, headingDeg);
+  const end1Center = destination(centerLngLat, halfLen, (headingDeg + 180) % 360);
+  const end2Center = destination(centerLngLat, halfLen, headingDeg);
 
   const coords: [number, number][] = [];
 
   // 1. Straight leg 1: Right inbound leg
-  const p1 = destinationPoint(end1Center, turnRadiusKm, (headingDeg + 90) % 360);
-  const p2 = destinationPoint(end2Center, turnRadiusKm, (headingDeg + 90) % 360);
+  const p1 = destination(end1Center, turnRadiusKm, (headingDeg + 90) % 360);
+  const p2 = destination(end2Center, turnRadiusKm, (headingDeg + 90) % 360);
   coords.push(p1, p2);
 
   // 2. Turn 2: 180° semi-circle around end2Center
   for (let i = 1; i <= numTurnPoints; i++) {
     const angle = (headingDeg + 90 - (180 / numTurnPoints) * i) % 360;
-    coords.push(destinationPoint(end2Center, turnRadiusKm, (angle + 360) % 360));
+    coords.push(destination(end2Center, turnRadiusKm, (angle + 360) % 360));
   }
 
   // 3. Straight leg 2: Left outbound leg
-  const p3 = destinationPoint(end2Center, turnRadiusKm, (headingDeg + 270) % 360);
-  const p4 = destinationPoint(end1Center, turnRadiusKm, (headingDeg + 270) % 360);
+  const p3 = destination(end2Center, turnRadiusKm, (headingDeg + 270) % 360);
+  const p4 = destination(end1Center, turnRadiusKm, (headingDeg + 270) % 360);
   coords.push(p3, p4);
 
   // 4. Turn 1: 180° semi-circle around end1Center to close the loop
   for (let i = 1; i <= numTurnPoints; i++) {
     const angle = (headingDeg + 270 - (180 / numTurnPoints) * i) % 360;
-    coords.push(destinationPoint(end1Center, turnRadiusKm, (angle + 360) % 360));
+    coords.push(destination(end1Center, turnRadiusKm, (angle + 360) % 360));
   }
 
   // Close loop
