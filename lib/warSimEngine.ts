@@ -4065,3 +4065,73 @@ export function orderStrikeMission(
     };
   }
 }
+
+/**
+ * Orders a receiver aircraft to rendezvous with a friendly tanker in theater for in-flight aerial refueling.
+ */
+export function orderAerialRefueling(
+  session: WarSimSession,
+  receiverEntityId: string,
+  tankerEntityId?: string,
+  targetFuelPct = 100,
+  systemsLibrary: SystemSpec[] = []
+): WarSimSession {
+  const receiver = session.entities.find((e) => e.id === receiverEntityId);
+  if (!receiver) return session;
+
+  let targetTanker: SimEntity | null = null;
+
+  if (tankerEntityId) {
+    targetTanker = session.entities.find((e) => e.id === tankerEntityId) || null;
+  } else {
+    const best = findBestTankerForReceiver(session, receiver, systemsLibrary);
+    targetTanker = best.tanker;
+  }
+
+  if (!targetTanker) {
+    return session;
+  }
+
+  const faction: 'player' | 'enemy' = receiver.iso === session.playerIso ? 'player' : 'enemy';
+  const dist = distanceKm(receiver.lngLat, targetTanker.lngLat);
+
+  const updatedEntities = session.entities.map((e) => {
+    if (e.id !== receiverEntityId) return e;
+    return {
+      ...e,
+      status: 'aar_rendezvous' as const,
+      refuelingState: {
+        tankerEntityId: targetTanker!.id,
+        stage: 'rendezvous' as const,
+        targetFuelPct: Math.min(150, Math.max(80, targetFuelPct)),
+        flowRateKgPerSec: 35,
+        fuelReceivedKg: 0,
+        preRefuelStatus: e.status === 'aar_rendezvous' || e.status === 'aar_refueling' ? 'on_station' : e.status,
+        preRefuelPatrolOrder: e.patrolOrder,
+        preRefuelStrikePlan: e.strikePlan,
+        wasBingoRescue: false,
+        durationSec: 0,
+      },
+    };
+  });
+
+  const newEvents = [
+    ...session.eventLog,
+    {
+      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      simTimeSec: session.simTimeSec,
+      timeFormatted: formatSimTime(session.simTimeSec),
+      faction,
+      type: 'aar_refuel' as const,
+      title: `⛽ AAR Rendezvous Ordered: ${receiver.name}`,
+      detail: `${receiver.name} ordered to rendezvous with tanker ${targetTanker.name} (${dist.toFixed(0)} km away). Target offload: top off to ${targetFuelPct}%.`,
+      lngLat: receiver.lngLat,
+    },
+  ];
+
+  return {
+    ...session,
+    entities: updatedEntities,
+    eventLog: newEvents.slice(-200),
+  };
+}
