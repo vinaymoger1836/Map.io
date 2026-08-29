@@ -2349,8 +2349,27 @@ export function WarSimConsole({
               })()}
 
               {/* Quick Tactical Actions */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                {!isStaticAD && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
+              <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                {!isStaticAD && !isGround && !isNaval && (selectedEntity.typeId !== 'tanker' && !selectedEntity.name.toLowerCase().includes('tanker')) && onOrderRefuelAtTanker && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station' || selectedEntity.status === 'bingo_rtb') && (
+                  <button
+                    className="wg-btn"
+                    style={{
+                      flex: 1,
+                      fontSize: '11px',
+                      padding: '5px',
+                      borderColor: '#00E5FF',
+                      color: '#00E5FF',
+                      background: 'rgba(0, 229, 255, 0.08)',
+                      fontWeight: 600,
+                    }}
+                    title="Order immediate in-flight rendezvous with nearest friendly tanker"
+                    onClick={() => onOrderRefuelAtTanker(selectedEntity.id)}
+                  >
+                    ⛽ Refuel at Tanker
+                  </button>
+                )}
+
+                {!isStaticAD && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station' || selectedEntity.status === 'aar_rendezvous') && (
                   <button
                     className="wg-btn"
                     style={{ flex: 1, fontSize: '11px', padding: '5px', borderColor: '#FFB020', color: '#FFB020' }}
