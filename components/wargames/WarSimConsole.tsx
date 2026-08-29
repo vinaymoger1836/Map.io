@@ -2026,6 +2026,77 @@ export function WarSimConsole({
                 )}
               </div>
 
+              {/* Tanker Specific Logistics Telemetry */}
+              {(selectedEntity.typeId === 'tanker' || selectedEntity.name.toLowerCase().includes('tanker')) && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(0, 229, 255, 0.08)',
+                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    fontSize: '10.5px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#00E5FF', fontWeight: 700 }}>⛽ AAR Tanker Station Telemetry:</span>
+                    <span style={{ color: '#00E676', fontWeight: 600 }}>
+                      {selectedEntity.tankerState?.refuelingMethod?.toUpperCase().replace(/_/g, ' ') || 'FLYING BOOM'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--paper-dim)' }}>Offload Fuel Reserves:</span>
+                    <strong style={{ color: '#00E5FF' }}>
+                      {(selectedEntity.tankerState?.offloadRemainingKg ?? 40000).toLocaleString()} kg
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--paper-dim)' }}>Receiver Slots:</span>
+                    <span style={{ color: '#FFFFFF' }}>
+                      {selectedEntity.tankerState?.activeReceivers?.length ?? 0} / {selectedEntity.tankerState?.maxReceivers ?? 2} Serviced
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* In-Flight Refueling Active Hook-up Banner */}
+              {selectedEntity.status === 'aar_refueling' && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(0, 229, 255, 0.15)',
+                    border: '1px solid #00E5FF',
+                    color: '#00E5FF',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    animation: 'pulse 1.5s infinite',
+                  }}
+                >
+                  ⛽ Refueling in Progress · Boom Contact Active
+                </div>
+              )}
+
+              {selectedEntity.status === 'aar_rendezvous' && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(255, 176, 32, 0.12)',
+                    border: '1px solid #FFB020',
+                    color: '#FFB020',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                  }}
+                >
+                  ⛽ Ingress to Tanker Rendezvous Orbit
+                </div>
+              )}
+
               {(() => {
                 const entityDomain = spec ? domainOf(spec) : isGround ? 'ground' : isNaval ? 'sea' : 'air';
                 const rcsVal = selectedEntity.rcs ?? (spec ? getSystemRcs(spec, entityDomain) : 5.0);
