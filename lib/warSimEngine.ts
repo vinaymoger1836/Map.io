@@ -1075,6 +1075,33 @@ export function tickWarSim(
       const bingoThreshold = calculateBingoFuelThreshold(distToBase, combatRadiusKm);
 
       if (nextFuel <= bingoThreshold) {
+        const rescue = evaluateEmergencyBingoRescue(session, entity, homeLngLat, systemsLibrary);
+        if (rescue.shouldDivertToTanker && rescue.tanker) {
+          logEvent(
+            entity.iso === session.playerIso ? 'player' : 'enemy',
+            'aar_refuel',
+            `🚨 Strike AAR Divert: ${entity.name}`,
+            `${entity.name} reached Bingo Fuel (${nextFuel.toFixed(1)}%). Diverting to tanker ${rescue.tanker.name} (${rescue.distanceToTankerKm.toFixed(0)} km).`,
+            entity.lngLat
+          );
+          return {
+            ...entity,
+            status: 'aar_rendezvous',
+            currentFuelPct: nextFuel,
+            refuelingState: {
+              tankerEntityId: rescue.tanker.id,
+              stage: 'rendezvous',
+              targetFuelPct: 100,
+              flowRateKgPerSec: 35,
+              fuelReceivedKg: 0,
+              preRefuelStatus: 'engaging',
+              preRefuelStrikePlan: entity.strikePlan,
+              wasBingoRescue: true,
+              durationSec: 0,
+            },
+          };
+        }
+
         logEvent(
           entity.iso === session.playerIso ? 'player' : 'enemy',
           'alert',
