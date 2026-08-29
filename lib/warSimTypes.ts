@@ -548,6 +548,10 @@ export interface CombatReport {
     totalSalvoLaunched: number;
     totalIntercepted: number;
     directHits: number;
+    targetCasualties: string[];
+    strategicOutcome: string;
+  };
+
   // Aerial Refueling & Logistics Telemetry (if AAR report)
   aarDetails?: {
     tankerName: string;
