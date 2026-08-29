@@ -869,23 +869,32 @@ export function renderWarSimStateToMap(
 
     const isStaticAD = isStaticAirDefense(e.typeId);
     const isGround = isGroundCombatUnit(e.typeId);
+    const isTanker = e.typeId === 'tanker' || e.name.toLowerCase().includes('tanker');
     const cleanName = e.name.replace(/^\d+\s*[×x]\s*/i, '');
     const statusText =
       isStaticAD
         ? 'AIR DEFENSE'
-        : e.status === 'on_station'
-          ? (isGround ? 'ENTRENCHED' : 'PATROL')
-          : e.status === 'takeoff_ingress'
-            ? (isGround ? 'MARCHING' : 'INGRESS')
-            : e.status === 'bingo_rtb'
-              ? 'RTB'
-              : e.status.toUpperCase();
+        : e.status === 'aar_refueling'
+          ? '⛽ REFUELING'
+          : e.status === 'aar_rendezvous'
+            ? '⛽ AAR JOIN-UP'
+            : isTanker && e.status === 'on_station'
+              ? '⛽ AAR ANCHOR'
+              : e.status === 'on_station'
+                ? (isGround ? 'ENTRENCHED' : 'PATROL')
+                : e.status === 'takeoff_ingress'
+                  ? (isGround ? 'MARCHING' : 'INGRESS')
+                  : e.status === 'bingo_rtb'
+                    ? 'RTB'
+                    : e.status.toUpperCase();
 
     const label = isStaticAD
       ? `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [AIR DEFENSE]`
       : isGround
         ? `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}]`
-        : `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`;
+        : isTanker && e.status === 'on_station'
+          ? `${cleanName} [${statusText}] ${(e.tankerState?.offloadRemainingKg ?? 40000).toLocaleString()} kg Avail`
+          : `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`;
 
     return {
       type: 'Feature' as const,
@@ -895,7 +904,7 @@ export function renderWarSimStateToMap(
         selected: isSelected,
         icon: iconId,
         label,
-        color: factionColor,
+        color: e.status === 'aar_refueling' || e.status === 'aar_rendezvous' ? '#00E5FF' : factionColor,
       },
     };
   });
@@ -907,9 +916,50 @@ export function renderWarSimStateToMap(
     features: entityFeatures,
   });
 
-  // 3. Render Patrol Rings & Multi-Waypoint Flight Corridors
+  // 3. Render Patrol Rings, AAR Anchor Racetracks & Multi-Waypoint Flight Corridors
   const patrolFeatures: GeoJSON.Feature[] = [];
   friendlyEntities.forEach((e) => {
+    const isTanker = e.typeId === 'tanker' || e.name.toLowerCase().includes('tanker');
+
+    // AAR Tanker Anchor Track Racetrack Rendering
+    if (isTanker && e.status === 'on_station') {
+      const anchorCenter = e.patrolOrder?.centerLngLat || e.lngLat;
+      const lengthKm = e.tankerState?.orbitLengthKm ?? 80;
+      const headingDeg = e.tankerState?.orbitHeadingDeg ?? 90;
+      const racetrackCoords = generateAarRacetrackCoordinates(anchorCenter, lengthKm, 15, headingDeg);
+
+      patrolFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [racetrackCoords] },
+        properties: { color: '#00E5FF' },
+      });
+      return;
+    }
+
+    // Active AAR Umbilical Link Line (Receiver <-> Tanker)
+    if (e.status === 'aar_refueling' && e.refuelingState?.tankerEntityId) {
+      const tanker = session.entities.find((t) => t.id === e.refuelingState?.tankerEntityId);
+      if (tanker) {
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [tanker.lngLat, e.lngLat] },
+          properties: { color: '#00E5FF' },
+        });
+      }
+    }
+
+    // AAR Rendezvous Ingress Vector
+    if (e.status === 'aar_rendezvous' && e.refuelingState?.tankerEntityId) {
+      const tanker = session.entities.find((t) => t.id === e.refuelingState?.tankerEntityId);
+      if (tanker) {
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [e.lngLat, tanker.lngLat] },
+          properties: { color: '#00E5FF' },
+        });
+      }
+    }
+
     if (e.patrolOrder && (e.status === 'on_station' || e.status === 'takeoff_ingress')) {
       if (e.patrolOrder.routeType === 'waypoints' && e.patrolOrder.waypoints && e.patrolOrder.waypoints.length >= 2) {
         // Multi-waypoint route line corridor
