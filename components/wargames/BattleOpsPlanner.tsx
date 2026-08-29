@@ -526,6 +526,10 @@ export function BattleOpsPlanner({
                             <span>
                               Attacker: <strong>{task.attackerName}</strong> · Salvo: <strong>{task.salvoCount} × {task.weaponName}</strong> · Protocol: <strong>{task.postStrikeAction?.toUpperCase()}</strong>
                             </span>
+                          ) : task.type === 'aar' ? (
+                            <span>
+                              Receiver: <strong>{task.attackerName}</strong> · Tanker: <strong>{friendlyEntities.find((e) => e.id === task.tankerEntityId)?.name || 'Designated Tanker'}</strong> · Profile: <strong>Top-Off to {task.fuelTransferTargetPct ?? 100}%</strong>
+                            </span>
                           ) : (
                             <span>
                               Unit: <strong>{task.attackerName}</strong> · Envelope: <strong>{task.patrolRadiusKm} km radius</strong> · Alt: <strong>{task.patrolAltitudeM}m</strong> · EMCON: <strong>{task.emcon?.toUpperCase()}</strong>
