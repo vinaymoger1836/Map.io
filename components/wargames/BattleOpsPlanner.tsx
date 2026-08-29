@@ -101,12 +101,18 @@ export function BattleOpsPlanner({
   const [patrolAltitudeM, setPatrolAltitudeM] = useState<number>(8000);
   const [emconMode, setEmconMode] = useState<'active' | 'passive'>('active');
   const [customWaypoints, setCustomWaypoints] = useState<[number, number][]>([]);
+  const [selectedTankerId, setSelectedTankerId] = useState<string>('');
+  const [fuelTargetPct, setFuelTargetPct] = useState<number>(100);
 
   const selectedAttacker = friendlyEntities.find((e) => e.id === selectedAttackerId);
   const attackerSpec = selectedAttacker ? systemsLibrary.find((s) => s.id === selectedAttacker.systemId) : undefined;
   const availableWeapons = selectedAttacker?.customWeapons && selectedAttacker.customWeapons.length > 0
     ? selectedAttacker.customWeapons
     : (attackerSpec?.weapons || []);
+
+  const availableTankers = friendlyEntities.filter(
+    (e) => (e.typeId === 'tanker' || e.name.toLowerCase().includes('tanker')) && e.status !== 'destroyed'
+  );
 
   const totalAssignedTasks = plan.phases.reduce((sum, p) => sum + p.tasks.length, 0);
 
@@ -118,6 +124,9 @@ export function BattleOpsPlanner({
     }
     if (!selectedTargetId && visibleContacts.length > 0) {
       setSelectedTargetId(visibleContacts[0].targetEntityId);
+    }
+    if (availableTankers.length > 0) {
+      setSelectedTankerId(availableTankers[0].id);
     }
   };
 
@@ -161,6 +170,16 @@ export function BattleOpsPlanner({
         patrolRadiusKm,
         patrolAltitudeM,
         emcon: emconMode,
+      });
+    } else if (taskType === 'aar') {
+      const tanker = friendlyEntities.find((e) => e.id === selectedTankerId);
+      onAddTask(activeAddingPhaseId, {
+        name: `${selectedAttacker.name}: In-Flight AAR via ${tanker?.name || 'Tanker'}`,
+        type: 'aar',
+        attackerEntityId: selectedAttacker.id,
+        attackerName: selectedAttacker.name,
+        tankerEntityId: selectedTankerId || undefined,
+        fuelTransferTargetPct: fuelTargetPct,
       });
     }
 
