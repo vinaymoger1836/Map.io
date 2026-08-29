@@ -172,6 +172,7 @@ export function WarSimConsole({
   onStartSortie,
   onUpdateEntityRcs,
   onOrderRtb,
+  onOrderRefuelAtTanker,
   onStartBasePlacement,
   onRenameBase,
   onCreateNetwork,
