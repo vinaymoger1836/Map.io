@@ -101,6 +101,8 @@ export type EntityStatus =
   | 'takeoff_ingress'    // En route from base to assigned patrol station
   | 'on_station'         // Orbiting patrol station with active sensors
   | 'engaging'           // Maneuvering to release ordnance
+  | 'aar_rendezvous'     // En route to join friendly tanker orbit for in-flight refueling
+  | 'aar_refueling'      // Hooked up to tanker boom/drogue receiving fuel transfer
   | 'bingo_rtb'          // Low fuel: returning to home base
   | 'damaged_rtb'        // Battle damage: emergency RTB for repairs
   | 'destroyed';         // Permanently lost / removed from map
