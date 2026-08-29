@@ -31,6 +31,7 @@ import {
   evaluateFlightCorridor,
   type SAMThreatZone,
 } from './threatAvoidance';
+import { generateAarRacetrackCoordinates } from './aerialRefueling';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
