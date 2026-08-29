@@ -323,7 +323,7 @@ export interface StrikeSalvoTracker {
 /* 5b. Theater Battle Operations (Multi-Phase Multi-Domain Planner)   */
 /* ------------------------------------------------------------------ */
 
-export type BattleOpsTaskType = 'strike' | 'patrol' | 'sead';
+export type BattleOpsTaskType = 'strike' | 'patrol' | 'sead' | 'aar';
 
 export interface BattleOpsTask {
   id: string;
@@ -351,6 +351,10 @@ export interface BattleOpsTask {
   emcon?: 'active' | 'passive';
   patrolRouteType?: 'orbit' | 'waypoints';
   patrolWaypoints?: [number, number][];
+
+  // AAR Aerial Refueling Configuration
+  tankerEntityId?: string;
+  fuelTransferTargetPct?: number;
 
   // Live Execution Status
   status: 'pending' | 'executing' | 'completed' | 'failed';
@@ -402,7 +406,8 @@ export interface SimBattleEvent {
     | 'loss'
     | 'rtb'
     | 'repair'
-    | 'alert';
+    | 'alert'
+    | 'aar_refuel';
   title: string;
   detail: string;
   lngLat?: [number, number];
@@ -412,7 +417,8 @@ export type WarReportCategory =
   | 'under_attack'      // Incoming attack / defensive engagement / damage sustained
   | 'offensive_strike'  // Strike executed against hostile forces
   | 'recon_intel'       // Positive identification (PID) & reconnaissance gathered
-  | 'battle_ops';       // Multi-phase Theater Battle Operations consolidated report
+  | 'battle_ops'        // Multi-phase Theater Battle Operations consolidated report
+  | 'aar_logistics';    // Combat Air Refueling & logistics sortie after-action report
 
 export interface CombatReport {
   id: string;
