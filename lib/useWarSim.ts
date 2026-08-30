@@ -969,6 +969,10 @@ export function useWarSim({
     });
   }, []);
 
+  const setAirspaceRoe = useCallback((doctrine: AirspaceRoeDoctrine) => {
+    setSession((prev) => (prev ? setSessionAirspaceRoe(prev, doctrine) : null));
+  }, []);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
@@ -1013,6 +1017,7 @@ export function useWarSim({
     orderRtb,
     orderRefuelAtTanker,
     orderStrike,
+    setAirspaceRoe,
     createBaseAtLocation,
     renameBase,
     createNetwork,
