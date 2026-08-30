@@ -147,6 +147,7 @@ export interface WarSimConsoleProps {
   systemsLibrary: SystemSpec[];
   countries?: { iso: string; name: string }[];
   onFlyToBase?: (lngLat: [number, number]) => void;
+  onSetAirspaceRoe?: (doctrine: import('@/lib/warSimTypes').AirspaceRoeDoctrine) => void;
 }
 
 export function WarSimConsole({
@@ -204,6 +205,7 @@ export function WarSimConsole({
   systemsLibrary,
   countries = [],
   onFlyToBase,
+  onSetAirspaceRoe,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
@@ -341,6 +343,44 @@ export function WarSimConsole({
 
         {/* Right: Country Perspective Switcher & Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Airspace ROE Doctrine Selector */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#0E1724',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              border: '1px solid var(--border)',
+            }}
+            title="Airspace Rules of Engagement (ROE) Doctrine"
+          >
+            <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>🛡️ ROE:</span>
+            <select
+              value={session.airspaceRoeDoctrine || 'weapons_free'}
+              onChange={(e) => onSetAirspaceRoe?.(e.target.value as any)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color:
+                  session.airspaceRoeDoctrine === 'adiz_border_defense'
+                    ? '#FFCA28'
+                    : session.airspaceRoeDoctrine === 'neutral_sanctuary'
+                      ? '#4CAF50'
+                      : '#4FC3F7',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="weapons_free" style={{ background: '#0E1724', color: '#fff' }}>⚔️ Weapons Free</option>
+              <option value="adiz_border_defense" style={{ background: '#0E1724', color: '#fff' }}>🛡️ ADIZ Border Defense</option>
+              <option value="neutral_sanctuary" style={{ background: '#0E1724', color: '#fff' }}>🕊️ Neutral Sanctuary</option>
+            </select>
+          </div>
+
           {/* Country Perspective Pill Toggle */}
           <div
             style={{
@@ -2104,6 +2144,52 @@ export function WarSimConsole({
 
                 return (
                   <>
+                    {/* Real-Time Sovereign Airspace Badge */}
+                    <div
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        background:
+                          selectedEntity.currentAirspace?.classification === 'friendly'
+                            ? 'rgba(79, 168, 95, 0.15)'
+                            : selectedEntity.currentAirspace?.classification === 'hostile'
+                              ? 'rgba(217, 83, 79, 0.18)'
+                              : selectedEntity.currentAirspace?.classification === 'neutral'
+                                ? 'rgba(255, 202, 40, 0.15)'
+                                : 'rgba(79, 195, 247, 0.12)',
+                        border: `1px solid ${
+                          selectedEntity.currentAirspace?.classification === 'friendly'
+                            ? '#4FA85F'
+                            : selectedEntity.currentAirspace?.classification === 'hostile'
+                              ? '#D9534F'
+                              : selectedEntity.currentAirspace?.classification === 'neutral'
+                                ? '#FFCA28'
+                                : '#4FC3F7'
+                        }`,
+                        fontSize: '10.5px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span style={{ color: 'var(--paper-dim)' }}>📍 Sovereign Airspace:</span>
+                      <strong
+                        style={{
+                          color:
+                            selectedEntity.currentAirspace?.classification === 'friendly'
+                              ? '#4FA85F'
+                              : selectedEntity.currentAirspace?.classification === 'hostile'
+                                ? '#D9534F'
+                                : selectedEntity.currentAirspace?.classification === 'neutral'
+                                  ? '#FFCA28'
+                                  : '#4FC3F7',
+                        }}
+                      >
+                        {selectedEntity.currentAirspace?.countryName || 'International Airspace'} (
+                        {(selectedEntity.currentAirspace?.classification || 'INTL').toUpperCase()})
+                      </strong>
+                    </div>
+
                     {!isStaticAD ? (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                         <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>

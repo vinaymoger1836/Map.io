@@ -1113,6 +1113,115 @@ export function CombatReportDetailModal({
               </div>
             </div>
           )}
+
+          {/* Section 4e: Airspace Sovereignty & Border Incursions Telemetry */}
+          {report.borderDetails && (
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '14px',
+                borderRadius: '8px',
+                background: 'rgba(255, 202, 40, 0.04)',
+                border: '1px solid rgba(255, 202, 40, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: '#FFCA28',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  🌐 Airspace Sovereignty & Border Incursions Telemetry
+                </span>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    background:
+                      report.borderDetails.hostileAirspaceBreaches > 0
+                        ? 'rgba(255, 82, 82, 0.2)'
+                        : 'rgba(76, 175, 80, 0.2)',
+                    color:
+                      report.borderDetails.hostileAirspaceBreaches > 0 ? '#FF5252' : '#4CAF50',
+                    border: `1px solid ${
+                      report.borderDetails.hostileAirspaceBreaches > 0 ? '#FF5252' : '#4CAF50'
+                    }55`,
+                  }}
+                >
+                  {report.borderDetails.hostileAirspaceBreaches > 0
+                    ? `🚨 ${report.borderDetails.hostileAirspaceBreaches} HOSTILE BORDER BREACHES`
+                    : '✓ CORRIDOR SOVEREIGNTY COMPLIANT'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '8px',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Active ROE Doctrine:
+                  </span>
+                  <strong style={{ color: '#FFCA28', textTransform: 'capitalize' }}>
+                    {report.borderDetails.activeRoeDoctrine.replace(/_/g, ' ')}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Total Border Crossings:
+                  </span>
+                  <strong style={{ color: '#FFFFFF' }}>{report.borderDetails.totalIncursions}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Hostile Breaches:
+                  </span>
+                  <strong style={{ color: '#FF5252' }}>
+                    {report.borderDetails.hostileAirspaceBreaches}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Neutral Airspace Violations:
+                  </span>
+                  <strong style={{ color: '#FFCA28' }}>{report.borderDetails.neutralViolations}</strong>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: 'rgba(255, 202, 40, 0.06)',
+                  border: '1px solid rgba(255, 202, 40, 0.2)',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  color: '#FFF8E1',
+                  lineHeight: '1.4',
+                }}
+              >
+                <strong style={{ color: '#FFCA28', display: 'block', marginBottom: '2px' }}>
+                  Geopolitical & Airspace Assessment:
+                </strong>
+                {report.borderDetails.sovereigntyAssessment}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
