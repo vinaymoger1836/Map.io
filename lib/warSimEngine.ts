@@ -72,6 +72,12 @@ import {
   createAarCombatReport,
   findBestTankerForReceiver,
 } from './aerialRefueling';
+import {
+  resolveAirspaceLocation,
+  evaluateBorderIncursion,
+  canEngageUnderAirspaceRoe,
+  createAirspaceCombatReport,
+} from './airspaceSovereignty';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
