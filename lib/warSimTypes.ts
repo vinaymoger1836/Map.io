@@ -595,6 +595,22 @@ export interface CombatReport {
     combatRadiusExtensionKm: number;
     logisticsAssessment: string;
   };
+
+  // Airspace Sovereignty & Border Incursions Telemetry
+  borderDetails?: {
+    totalIncursions: number;
+    hostileAirspaceBreaches: number;
+    neutralViolations: number;
+    activeRoeDoctrine: AirspaceRoeDoctrine;
+    sovereigntyAssessment: string;
+    incursionLog: {
+      entityName: string;
+      fromCountry: string;
+      toCountry: string;
+      incursionType: 'hostile_breach' | 'neutral_violation' | 'friendly_entry' | 'international_exit';
+      simTimeSec: number;
+    }[];
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -634,6 +650,8 @@ export interface WarSimSession {
   salvoTrackers?: StrikeSalvoTracker[];
   networks?: BattlefieldNetwork[];
   battleOpsPlan?: BattleOpsPlan;
+  airspaceRoeDoctrine?: AirspaceRoeDoctrine;
+  borderIncursions?: BorderIncursionRecord[];
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';
