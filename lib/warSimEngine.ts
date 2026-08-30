@@ -2672,8 +2672,10 @@ export function tickWarSim(
     ...session,
     simTimeSec: newSimTimeSec,
     bases: updatedBases,
-    entities: updatedEntities,
+    entities: finalEntitiesWithAirspace,
     activeMissiles: updatedMissiles,
+    airspaceRoeDoctrine: session.airspaceRoeDoctrine || 'weapons_free',
+    borderIncursions: updatedBorderIncursions.slice(-100),
     fogOfWarContacts: {
       playerContacts: updatedPlayerContacts,
       enemyContacts: updatedEnemyContacts,
