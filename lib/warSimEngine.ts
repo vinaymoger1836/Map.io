@@ -1367,8 +1367,51 @@ export function tickWarSim(
     return entity;
   });
 
-  // -------------------------------------------------------------
-  // 4. Multi-Layered Air Defense, Defensive Interceptions & Impacts
+  // Track Real-Time Airspace Sovereignty & National Border Incursions
+  const updatedBorderIncursions = [...(session.borderIncursions || [])];
+  const finalEntitiesWithAirspace = updatedEntities.map((entity) => {
+    if (entity.status === 'destroyed' || entity.status === 'docked') {
+      return entity;
+    }
+
+    const currentLoc = resolveAirspaceLocation(entity.lngLat, session.playerIso, session.enemyIso);
+    const incursion = evaluateBorderIncursion(entity, currentLoc, entity.currentAirspace);
+
+    if (incursion) {
+      incursion.simTimeSec = session.simTimeSec;
+      updatedBorderIncursions.push(incursion);
+
+      const isPlayerFaction = entity.iso === session.playerIso;
+      const title =
+        incursion.incursionType === 'hostile_breach'
+          ? `🚨 Sovereign Airspace Incursion: ${entity.name}`
+          : incursion.incursionType === 'neutral_violation'
+            ? `⚠️ Neutral Airspace Intrusion: ${entity.name}`
+            : `ℹ️ International Airspace: ${entity.name}`;
+
+      const detail =
+        incursion.incursionType === 'hostile_breach'
+          ? `${entity.name} crossed the international border from ${incursion.fromName} into ${incursion.toName} sovereign airspace!`
+          : incursion.incursionType === 'neutral_violation'
+            ? `${entity.name} entered airspace over neutral ${incursion.toName} without diplomatic overflight clearance.`
+            : `${entity.name} exited ${incursion.fromName} sovereign airspace into international airspace.`;
+
+      logEvent(
+        isPlayerFaction ? 'player' : 'enemy',
+        'alert',
+        title,
+        detail,
+        entity.lngLat
+      );
+    }
+
+    return {
+      ...entity,
+      previousAirspace: entity.currentAirspace,
+      currentAirspace: currentLoc,
+    };
+  });
+
   // -------------------------------------------------------------
   // 4. Multi-Layered Air Defense, Defensive Interceptions & Impacts
   // -------------------------------------------------------------
