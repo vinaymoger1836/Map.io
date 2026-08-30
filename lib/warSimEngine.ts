@@ -1615,6 +1615,14 @@ export function tickWarSim(
           continue; // Target cruise missile is masked behind mountain ridge! Radar guidance blocked.
         }
 
+        // Airspace Sovereignty & Rules of Engagement (ROE) check
+        const targetAirspace = resolveAirspaceLocation(m.currentLngLat, session.playerIso, session.enemyIso);
+        const roeDoctrine = session.airspaceRoeDoctrine || 'weapons_free';
+        const roeCheck = canEngageUnderAirspaceRoe(targetAirspace, roeDoctrine, def.iso === session.playerIso ? 'player' : 'enemy');
+        if (!roeCheck.canFire) {
+          continue; // Fire held due to ADIZ / Neutral Sanctuary ROE restriction
+        }
+
         // Threat Detection Record
         const detectionTimes = m.defenderDetectionTimes || {};
         if (!detectionTimes[def.id]) {
