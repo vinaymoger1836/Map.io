@@ -20,6 +20,7 @@ import {
   type BattleOpsPlan,
   type BattleOpsPhase,
   type BattleOpsTask,
+  type AirspaceRoeDoctrine,
 } from './warSimTypes';
 import {
   tickWarSim,
@@ -33,6 +34,7 @@ import {
   updateEntityRcs,
   createDefaultBattleOpsPlan,
   orderAerialRefueling,
+  setSessionAirspaceRoe,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';

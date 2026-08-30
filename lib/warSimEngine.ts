@@ -4194,3 +4194,37 @@ export function orderAerialRefueling(
     eventLog: newEvents.slice(-200),
   };
 }
+
+/**
+ * Updates the active Airspace Rules of Engagement (ROE) Doctrine for the theater.
+ */
+export function setSessionAirspaceRoe(
+  session: WarSimSession,
+  doctrine: AirspaceRoeDoctrine
+): WarSimSession {
+  const doctrineLabels: Record<AirspaceRoeDoctrine, string> = {
+    weapons_free: '⚔️ Weapons Free (Kinetic reach across all borders authorized)',
+    adiz_border_defense: '🛡️ ADIZ Border Defense (Hold fire until sovereign border incursion)',
+    neutral_sanctuary: '🕊️ Neutral Airspace Sanctuary (Strict neutrality protection; firing over neutral airspace prohibited)',
+  };
+
+  const newEvents = [
+    ...session.eventLog,
+    {
+      id: `evt-${Date.now()}-roe-${Math.random().toString(36).slice(2, 6)}`,
+      simTimeSec: session.simTimeSec,
+      timeFormatted: formatSimTime(session.simTimeSec),
+      faction: session.activeFaction,
+      type: 'alert' as const,
+      title: `Airspace ROE Directive Updated`,
+      detail: `Theater Commander set Rules of Engagement to: ${doctrineLabels[doctrine]}.`,
+      lngLat: [0, 0] as [number, number],
+    },
+  ];
+
+  return {
+    ...session,
+    airspaceRoeDoctrine: doctrine,
+    eventLog: newEvents.slice(-200),
+  };
+}
