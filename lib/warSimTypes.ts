@@ -235,6 +235,34 @@ export interface SimEntity {
     wasBingoRescue?: boolean;
     durationSec?: number;
   };
+  /** Real-time Sovereign Airspace and Geographic Location */
+  currentAirspace?: AirspaceLocation;
+  previousAirspace?: AirspaceLocation;
+}
+
+export type AirspaceClassification = 'friendly' | 'hostile' | 'neutral' | 'international';
+export type AirspaceRoeDoctrine = 'weapons_free' | 'adiz_border_defense' | 'neutral_sanctuary';
+
+export interface AirspaceLocation {
+  countryIso: string;
+  countryName: string;
+  classification: AirspaceClassification;
+  isAirspaceViolated?: boolean;
+}
+
+export interface BorderIncursionRecord {
+  id: string;
+  simTimeSec: number;
+  entityId: string;
+  entityName: string;
+  entityIso: string;
+  faction: 'player' | 'enemy';
+  fromIso: string;
+  fromName: string;
+  toIso: string;
+  toName: string;
+  incursionType: 'hostile_breach' | 'neutral_violation' | 'friendly_entry' | 'international_exit';
+  lngLat: [number, number];
 }
 
 /* ------------------------------------------------------------------ */
