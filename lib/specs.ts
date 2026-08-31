@@ -536,6 +536,72 @@ export function defaultReceiverFuelFor(spec: SystemSpec | undefined, typeId: str
   };
 }
 
+/** Orbital mechanics and space reconnaissance sensors facet. */
+export interface OrbitFacet {
+  altitudeKm: number;
+  inclinationDeg: number;
+  periodMin: number;
+  sensorType: 'optical' | 'sar' | 'elint';
+  swathWidthKm: number;
+  resolutionM: number;
+  revisitIntervalHours?: number;
+}
+
+/**
+ * Resolves researched military space satellite specs for optical, SAR, and ELINT constellations.
+ */
+export function defaultSatelliteSpecsFor(spec?: SystemSpec, typeId?: string): OrbitFacet {
+  const orbit = spec?.orbit;
+  const name = (spec?.name ?? '').toLowerCase();
+  const tid = (typeId ?? spec?.typeId ?? '').toLowerCase();
+
+  let altKm = orbit?.altitudeKm ?? 500;
+  let incDeg = orbit?.inclinationDeg ?? 97.4;
+  let period = orbit?.periodMin ?? 94.6;
+  let sType: 'optical' | 'sar' | 'elint' = orbit?.sensorType ?? 'optical';
+  let swath = orbit?.swathWidthKm ?? 140;
+  let resM = orbit?.resolutionM ?? 0.3;
+
+  if (name.includes('kh-11') || name.includes('keyhole') || name.includes('persona') || name.includes('razdan')) {
+    altKm = 460;
+    incDeg = 97.4;
+    period = 94.2;
+    sType = 'optical';
+    swath = 120;
+    resM = 0.1;
+  } else if (name.includes('topaz') || name.includes('lacrosse') || name.includes('cosmos') || name.includes('yaogan') && name.includes('sar')) {
+    altKm = 520;
+    incDeg = 97.8;
+    period = 95.1;
+    sType = 'sar';
+    swath = 250;
+    resM = 0.5;
+  } else if (name.includes('orion') || name.includes('mentor') || name.includes('trumpet') || name.includes('lotos') || name.includes('elint') || name.includes('sigint')) {
+    altKm = 650;
+    incDeg = 63.4;
+    period = 98.0;
+    sType = 'elint';
+    swath = 800;
+    resM = 5.0;
+  } else if (name.includes('ofek')) {
+    altKm = 400;
+    incDeg = 142.0;
+    period = 92.5;
+    sType = 'sar';
+    swath = 100;
+    resM = 0.3;
+  }
+
+  return {
+    altitudeKm: altKm,
+    inclinationDeg: incDeg,
+    periodMin: period,
+    sensorType: sType,
+    swathWidthKm: swath,
+    resolutionM: resM,
+  };
+}
+
 export interface SystemSpec {
   id: string;
   name: string;
@@ -547,6 +613,7 @@ export interface SystemSpec {
   sensor?: SensorFacet;
   weapons?: WeaponFacet[];
   platform?: PlatformFacet;
+  orbit?: OrbitFacet;
   signature?: 'low' | 'medium' | 'high';
   /**
    * Radar Cross-Section (RCS) observable footprint measured in square meters (m²).
