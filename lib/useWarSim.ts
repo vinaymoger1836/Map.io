@@ -35,6 +35,7 @@ import {
   createDefaultBattleOpsPlan,
   orderAerialRefueling,
   setSessionAirspaceRoe,
+  launchAsatStrike,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
@@ -973,6 +974,14 @@ export function useWarSim({
     setSession((prev) => (prev ? setSessionAirspaceRoe(prev, doctrine) : null));
   }, []);
 
+  const orderAsatStrike = useCallback((launcherEntityId: string, targetSatelliteId: string) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const res = launchAsatStrike(prev, launcherEntityId, targetSatelliteId);
+      return res.session;
+    });
+  }, []);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
@@ -1018,6 +1027,7 @@ export function useWarSim({
     orderRefuelAtTanker,
     orderStrike,
     setAirspaceRoe,
+    orderAsatStrike,
     createBaseAtLocation,
     renameBase,
     createNetwork,

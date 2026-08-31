@@ -81,6 +81,12 @@ import {
   canEngageUnderAirspaceRoe,
   createAirspaceCombatReport,
 } from './airspaceSovereignty';
+import {
+  createDefaultSatellites,
+  stepSpaceLayer,
+  orderAsatStrike,
+  createSpaceCombatReport,
+} from './spaceLayer';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
@@ -1437,6 +1443,14 @@ export function tickWarSim(
       }
     }
 
+    // Dynamic guidance for ASAT interceptors tracking orbiting satellites in Low Earth Orbit
+    if (m.weaponCategory === 'asat' && m.targetSatelliteId) {
+      const liveSat = (session.satellites || []).find((s) => s.id === m.targetSatelliteId && s.status !== 'destroyed');
+      if (liveSat) {
+        m.targetLngLat = liveSat.currentLngLat;
+      }
+    }
+
     const totalDist = distanceKm(m.originLngLat, m.targetLngLat);
     const speedKmh = Math.max(600, m.speedKmh);
     const stepDist = (speedKmh / 3600) * dtSimSec;
@@ -1529,6 +1543,39 @@ export function tickWarSim(
       // Threat already destroyed by another interceptor
       if (sam.progress >= 0.95) {
         sam.isIntercepted = true;
+      }
+    }
+  }
+
+  // Pass 2b: ASAT Direct-Ascent Kinetic Interceptor Collisions in Low Earth Orbit
+  for (const asat of session.activeMissiles) {
+    if (asat.isIntercepted || asat.weaponCategory !== 'asat' || !asat.targetSatelliteId) continue;
+    if (session.simTimeSec < asat.startSimTimeSec) continue;
+
+    const targetSat = (session.satellites || []).find((s) => s.id === asat.targetSatelliteId);
+    if (targetSat && targetSat.status !== 'destroyed') {
+      const distToSat = distanceKm(asat.currentLngLat, targetSat.currentLngLat);
+      if (distToSat <= 35 || asat.progress >= 0.95) {
+        asat.isIntercepted = true;
+        const pk = asat.interceptorPk ?? 0.88;
+        if (Math.random() < pk) {
+          targetSat.status = 'destroyed';
+          logEvent(
+            asat.attackerIso === session.playerIso ? 'player' : 'enemy',
+            'strike',
+            `💥 Orbital Kinetic Kill: ${targetSat.name}`,
+            `Direct-Ascent ASAT interceptor scored direct hit-to-kill collision on hostile ${targetSat.name} in ${targetSat.altitudeKm}km Low Earth Orbit! Space reconnaissance in sector blinded.`,
+            asat.currentLngLat
+          );
+        } else {
+          logEvent(
+            asat.attackerIso === session.playerIso ? 'player' : 'enemy',
+            'alert',
+            `⚠️ ASAT Missed Target: ${targetSat.name}`,
+            `ASAT kinetic kill vehicle failed to achieve orbital hit-to-kill window with ${targetSat.name}. Satellite remains operational.`,
+            asat.currentLngLat
+          );
+        }
       }
     }
   }
@@ -2671,11 +2718,24 @@ export function tickWarSim(
   const updatedPlayerContacts = performSensorSweeps('player', session.playerIso, session.enemyIso);
   const updatedEnemyContacts = performSensorSweeps('enemy', session.enemyIso, session.playerIso);
 
+  // 5b. Step Space Layer Reconnaissance & Satellite Ground-Tracks
+  const effectiveSatellites = (session.satellites && session.satellites.length > 0)
+    ? session.satellites
+    : createDefaultSatellites(session.playerIso, session.enemyIso, systemsLibrary);
+
+  const { updatedSatellites, spaceEvents } = stepSpaceLayer(
+    { ...session, satellites: effectiveSatellites },
+    dtSimSec,
+    systemsLibrary
+  );
+  newEvents.push(...spaceEvents);
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
     bases: updatedBases,
     entities: finalEntitiesWithAirspace,
+    satellites: updatedSatellites,
     activeMissiles: updatedMissiles,
     airspaceRoeDoctrine: session.airspaceRoeDoctrine || 'weapons_free',
     borderIncursions: updatedBorderIncursions.slice(-100),
@@ -4230,4 +4290,19 @@ export function setSessionAirspaceRoe(
     airspaceRoeDoctrine: doctrine,
     eventLog: newEvents.slice(-200),
   };
+}
+
+/**
+ * Orders a Direct-Ascent Anti-Satellite (ASAT) kinetic interceptor strike against a tracked hostile satellite in Low Earth Orbit.
+ */
+export function launchAsatStrike(
+  session: WarSimSession,
+  launcherEntityId: string,
+  targetSatelliteId: string
+): {
+  session: WarSimSession;
+  status: 'launched' | 'failed';
+  summary: string;
+} {
+  return orderAsatStrike(session, launcherEntityId, targetSatelliteId);
 }

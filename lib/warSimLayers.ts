@@ -41,6 +41,7 @@ const SRC_MISSILES = 'warsim-missiles-src';
 const SRC_REACH_RING = 'warsim-reach-ring-src';
 const SRC_ENVELOPES = 'warsim-envelopes-src';
 const SRC_PATROL_PREVIEW = 'warsim-patrol-preview-src';
+const SRC_SATELLITES = 'warsim-satellites-src';
 
 const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
@@ -50,6 +51,12 @@ const LYR_PATROL_PREVIEW_CENTER = 'warsim-patrol-preview-center';
 const LYR_PATROL_PREVIEW_LABEL = 'warsim-patrol-preview-label';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
+
+const LYR_SATELLITES_GROUNDTRACK = 'warsim-satellites-groundtrack';
+const LYR_SATELLITES_SWATH_FILL = 'warsim-satellites-swath-fill';
+const LYR_SATELLITES_SWATH_LINE = 'warsim-satellites-swath-line';
+const LYR_SATELLITES_MARKER = 'warsim-satellites-marker';
+const LYR_SATELLITES_LABEL = 'warsim-satellites-label';
 
 const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
@@ -68,6 +75,8 @@ const LYR_MISSILES_LABEL = 'warsim-missiles-label';
 
 export function getSimUnitIcon(typeId: string): string {
   switch (typeId) {
+    case 'satellite':
+      return '🛰️';
     case 'fighter':
     case 'strike':
     case 'multirole':
@@ -593,6 +602,82 @@ export function installWarSimLayers(map: MLMap) {
       'text-halo-width': 2,
     },
   });
+
+  // 6. Space Layer: Orbital Satellites & Reconnaissance Swaths
+  map.addSource(SRC_SATELLITES, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_GROUNDTRACK,
+    type: 'line',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'groundtrack'],
+    paint: {
+      'line-color': ['coalesce', ['get', 'color'], '#FFD54F'],
+      'line-width': 1.6,
+      'line-dasharray': [4, 4],
+      'line-opacity': 0.65,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_SWATH_FILL,
+    type: 'fill',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'swath'],
+    paint: {
+      'fill-color': ['coalesce', ['get', 'swathColor'], '#00E5FF'],
+      'fill-opacity': 0.12,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_SWATH_LINE,
+    type: 'line',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'swath'],
+    paint: {
+      'line-color': ['coalesce', ['get', 'swathColor'], '#00E5FF'],
+      'line-width': 1.2,
+      'line-opacity': 0.55,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_MARKER,
+    type: 'circle',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'satellite'],
+    paint: {
+      'circle-radius': 6,
+      'circle-color': ['coalesce', ['get', 'color'], '#FFD54F'],
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#FFFFFF',
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_LABEL,
+    type: 'symbol',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'satellite'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 10,
+      'text-offset': [0, 1.3],
+      'text-anchor': 'top',
+      'text-font': font,
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': '#FFD54F',
+      'text-halo-color': '#070C14',
+      'text-halo-width': 2,
+    },
+  });
 }
 
 /**
@@ -1113,6 +1198,60 @@ export function renderWarSimStateToMap(
     type: 'FeatureCollection',
     features: missileFeatures,
   });
+
+  // 6. Render Space Layer: Satellites, Orbital Ground Tracks & Sensor Swaths
+  const satellites = session.satellites || [];
+  const satelliteFeatures: GeoJSON.Feature[] = [];
+
+  satellites.forEach((sat) => {
+    if (sat.status === 'destroyed') return;
+
+    const isSatFriendly = sat.faction === activeFaction;
+    const satColor = isSatFriendly ? '#FFD54F' : '#FF5252';
+    const swathColor = isSatFriendly ? '#00E5FF' : '#FF5252';
+
+    // 6a. Orbital Ground-Track Linestring
+    if (sat.groundTrack && sat.groundTrack.length > 1) {
+      satelliteFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: sat.groundTrack },
+        properties: {
+          kind: 'groundtrack',
+          color: satColor,
+        },
+      });
+    }
+
+    // 6b. Dynamic Sensor Swath Footprint Polygon
+    if (sat.groundSwathPolygon && sat.groundSwathPolygon.length > 2) {
+      satelliteFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [sat.groundSwathPolygon] },
+        properties: {
+          kind: 'swath',
+          swathColor,
+        },
+      });
+    }
+
+    // 6c. Satellite Orbital Marker & Label
+    satelliteFeatures.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: sat.currentLngLat },
+      properties: {
+        kind: 'satellite',
+        id: sat.id,
+        name: sat.name,
+        color: satColor,
+        label: `🛰️ ${sat.name} [${sat.sensorType.toUpperCase()} ${sat.altitudeKm}km]`,
+      },
+    });
+  });
+
+  (map.getSource(SRC_SATELLITES) as GeoJSONSource)?.setData({
+    type: 'FeatureCollection',
+    features: satelliteFeatures,
+  });
 }
 
 /**
@@ -1381,6 +1520,11 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_PATROL_PREVIEW_FILL,
     LYR_ENVELOPES_LINE,
     LYR_ENVELOPES_FILL,
+    LYR_SATELLITES_LABEL,
+    LYR_SATELLITES_MARKER,
+    LYR_SATELLITES_SWATH_LINE,
+    LYR_SATELLITES_SWATH_FILL,
+    LYR_SATELLITES_GROUNDTRACK,
   ];
   layerIds.forEach((id) => {
     if (map.getLayer(id)) map.removeLayer(id);
@@ -1395,6 +1539,7 @@ export function removeWarSimLayers(map: MLMap) {
     SRC_REACH_RING,
     SRC_PATROL_PREVIEW,
     SRC_ENVELOPES,
+    SRC_SATELLITES,
   ];
   sourceIds.forEach((id) => {
     if (map.getSource(id)) map.removeSource(id);

@@ -1222,6 +1222,113 @@ export function CombatReportDetailModal({
               </div>
             </div>
           )}
+
+          {/* Section 4f: Space Reconnaissance & ASAT Warfare Telemetry */}
+          {report.spaceDetails && (
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '14px',
+                borderRadius: '8px',
+                background: 'rgba(0, 229, 255, 0.04)',
+                border: '1px solid rgba(0, 229, 255, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: '#00E5FF',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  🛰️ Space Reconnaissance & ASAT Warfare Telemetry
+                </span>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    background:
+                      report.spaceDetails.destroyedSatellites > 0
+                        ? 'rgba(255, 82, 82, 0.2)'
+                        : 'rgba(0, 230, 118, 0.2)',
+                    color:
+                      report.spaceDetails.destroyedSatellites > 0 ? '#FF5252' : '#00E676',
+                  }}
+                >
+                  {report.spaceDetails.destroyedSatellites > 0
+                    ? `⚠️ ${report.spaceDetails.destroyedSatellites} ASAT KILLS`
+                    : '🟢 CONSTELLATION SECURE'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: '10px',
+                  fontSize: '11px',
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Orbital Passes:
+                  </span>
+                  <strong style={{ color: '#00E5FF' }}>
+                    {report.spaceDetails.totalPasses} Overhead Sweeps
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Operational Satellites:
+                  </span>
+                  <strong style={{ color: '#00E676' }}>
+                    {report.spaceDetails.operationalSatellites} in LEO
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    ASAT Interceptions:
+                  </span>
+                  <strong style={{ color: report.spaceDetails.destroyedSatellites > 0 ? '#FF5252' : '#78909C' }}>
+                    {report.spaceDetails.destroyedSatellites} Neutralized
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Space PID Contacts:
+                  </span>
+                  <strong style={{ color: '#FFD54F' }}>
+                    {report.spaceDetails.targetsDiscoveredCount} Unmasked
+                  </strong>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: 'rgba(0, 229, 255, 0.06)',
+                  border: '1px solid rgba(0, 229, 255, 0.2)',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  color: '#B2EBF2',
+                  lineHeight: '1.4',
+                }}
+              >
+                <strong style={{ color: '#00E5FF', display: 'block', marginBottom: '2px' }}>
+                  Space ISR Impact:
+                </strong>
+                {report.spaceDetails.spaceAssessment}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

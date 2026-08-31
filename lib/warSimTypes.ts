@@ -635,6 +635,22 @@ export interface CombatReport {
       simTimeSec: number;
     }[];
   };
+
+  // Space Reconnaissance & ASAT Warfare Telemetry
+  spaceDetails?: {
+    totalPasses: number;
+    operationalSatellites: number;
+    destroyedSatellites: number;
+    targetsDiscoveredCount: number;
+    asatInterceptsCount: number;
+    spaceAssessment: string;
+    satelliteEvents: {
+      satelliteName: string;
+      sensorType: 'optical' | 'sar' | 'elint';
+      event: string;
+      simTimeSec: number;
+    }[];
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -664,6 +680,7 @@ export interface WarSimSession {
   };
   bases: SimBase[];
   entities: SimEntity[];
+  satellites?: SimSatellite[];
   activeMissiles: MissileFlyoutTrack[];
   fogOfWarContacts: {
     playerContacts: DetectedContact[];

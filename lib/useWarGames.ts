@@ -409,6 +409,7 @@ export function useWarGames({
       surface: true,
       ground: true,
       subsurface: true,
+      space: true,
     },
     // Medium rather than high: 10,000 m flatters every ground radar by giving it
     // most of its brochure range back, which is the least informative default.

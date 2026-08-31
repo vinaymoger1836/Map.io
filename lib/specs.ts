@@ -736,6 +736,7 @@ export const TARGET_LABEL: Record<TargetClass, string> = {
   surface: 'ships',
   ground: 'ground',
   subsurface: 'submarines',
+  space: 'satellites & orbital assets',
 };
 
 /** Short form of a ballistic tier, for when several are listed together. */

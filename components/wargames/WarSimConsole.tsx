@@ -29,6 +29,7 @@ import {
   defaultTerrainSensorFor,
   defaultTerrainPlatformFor,
 } from '@/lib/specs';
+import { distanceKm } from '@/lib/geo';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
 import { getKnownHostileThreatZones, evaluateFlightCorridor } from '@/lib/threatAvoidance';
 import { DeploySystemModal } from './DeploySystemModal';
@@ -41,7 +42,7 @@ import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'battle_ops' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'network' | 'battle_ops' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -148,6 +149,7 @@ export interface WarSimConsoleProps {
   countries?: { iso: string; name: string }[];
   onFlyToBase?: (lngLat: [number, number]) => void;
   onSetAirspaceRoe?: (doctrine: import('@/lib/warSimTypes').AirspaceRoeDoctrine) => void;
+  onLaunchAsat?: (launcherEntityId: string, targetSatelliteId: string) => void;
 }
 
 export function WarSimConsole({
@@ -206,6 +208,7 @@ export function WarSimConsole({
   countries = [],
   onFlyToBase,
   onSetAirspaceRoe,
+  onLaunchAsat,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
@@ -222,6 +225,8 @@ export function WarSimConsole({
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [newNetworkName, setNewNetworkName] = useState<string>('');
   const [showCreateNetwork, setShowCreateNetwork] = useState<boolean>(false);
+  const [selectedAsatSatId, setSelectedAsatSatId] = useState<string | null>(null);
+  const [selectedAsatLauncherId, setSelectedAsatLauncherId] = useState<string | null>(null);
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -687,7 +692,21 @@ export function WarSimConsole({
                 style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('intel')}
               >
-                🛰️ Intel ({visibleContacts.length})
+                👁️ Intel ({visibleContacts.length})
+              </button>
+              <button
+                className={`wg-btn ${activeTab === 'space' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'space' ? undefined : 'rgba(255, 213, 79, 0.08)',
+                  borderColor: activeTab === 'space' ? undefined : 'rgba(255, 213, 79, 0.3)',
+                  color: activeTab === 'space' ? undefined : '#FFD54F',
+                }}
+                onClick={() => setActiveTab('space')}
+              >
+                🛰️ Space ({(session.satellites || []).filter((s) => s.status !== 'destroyed').length})
               </button>
               <button
                 className={`wg-btn ${activeTab === 'network' ? 'accent' : ''}`}
@@ -1162,6 +1181,224 @@ export function WarSimConsole({
                 ))}
               </div>
             )}
+
+            {/* ========================================================= */}
+            {/* TAB: SPACE LAYER & RECONNAISSANCE SATELLITES (LEO / ASAT) */}
+            {/* ========================================================= */}
+            {activeTab === 'space' && (() => {
+              const allSats = session.satellites || [];
+              const friendlySats = allSats.filter((s) => s.faction === activeFaction);
+              const enemySats = allSats.filter((s) => s.faction !== activeFaction);
+              const totalDiscovered = friendlySats.reduce((sum, s) => sum + s.contactsDiscoveredCount, 0);
+
+              // Eligible friendly launchers for ASAT
+              const asatCapableLaunchers = friendlyEntities.filter(
+                (e) => e.status !== 'destroyed' && (isStaticAirDefense(e.typeId) || isNavalCombatant(e.typeId) || e.typeId === 'silo')
+              );
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Space Telemetry Header Banner */}
+                  <div
+                    style={{
+                      background: 'rgba(255, 213, 79, 0.05)',
+                      border: '1px solid rgba(255, 213, 79, 0.3)',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '14px' }}>🛰️</span>
+                        <strong style={{ fontSize: '11px', color: '#FFD54F', textTransform: 'uppercase' }}>
+                          Space Layer: Reconnaissance & ASAT
+                        </strong>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '9.5px',
+                          padding: '1px 5px',
+                          borderRadius: '3px',
+                          background: 'rgba(255, 213, 79, 0.15)',
+                          color: '#FFD54F',
+                          fontWeight: 700,
+                        }}
+                      >
+                        LEO ~500km
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                      <span>
+                        Operational Constellation: <strong style={{ color: '#00E676' }}>{friendlySats.filter((s) => s.status === 'operational').length}</strong> / {friendlySats.length}
+                      </span>
+                      <span>
+                        Space PID Tracks: <strong style={{ color: '#4FC3F7' }}>{totalDiscovered} unmasked</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 1. FRIENDLY SATELLITE CONSTELLATIONS */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', color: '#B0BEC5', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Friendly Reconnaissance Constellation ({friendlySats.length})
+                    </span>
+
+                    {friendlySats.map((sat) => {
+                      const isAlive = sat.status === 'operational';
+                      const sensorLabel =
+                        sat.sensorType === 'optical'
+                          ? '📷 Optical EO/IR (0.1m Res)'
+                          : sat.sensorType === 'sar'
+                            ? '📡 SAR Radar (All-Weather)'
+                            : '📶 ELINT / SIGINT (800km Cone)';
+
+                      return (
+                        <div
+                          key={sat.id}
+                          style={{
+                            background: '#09101B',
+                            borderLeft: `3px solid ${isAlive ? '#00E5FF' : '#FF5252'}`,
+                            borderRadius: '4px',
+                            padding: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong style={{ fontSize: '11.5px', color: isAlive ? '#FFFFFF' : '#FF5252' }}>
+                              🛰️ {sat.name}
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                fontWeight: 700,
+                                background: isAlive ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 82, 82, 0.2)',
+                                color: isAlive ? '#00E676' : '#FF5252',
+                              }}
+                            >
+                              {isAlive ? 'IN ORBIT' : '💥 DESTROYED'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '10px', color: '#4FC3F7' }}>
+                            {sensorLabel} · Swath: {sat.swathWidthKm} km
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                            <span>Alt: <strong>{sat.altitudeKm} km LEO</strong></span>
+                            <span>Inc: <strong>{sat.inclinationDeg}°</strong></span>
+                            <span>Period: <strong>{sat.periodMin} min</strong></span>
+                            <span>Acquired: <strong style={{ color: '#FFD54F' }}>{sat.contactsDiscoveredCount}</strong></span>
+                          </div>
+
+                          <div style={{ fontSize: '9px', color: '#78909C' }}>
+                            Sub-Sat Position: {sat.currentLngLat[1].toFixed(2)}°N, {sat.currentLngLat[0].toFixed(2)}°E
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 2. HOSTILE SATELLITE TRACKS & DIRECT-ASCENT ASAT STRIKES */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', color: '#FF5252', textTransform: 'uppercase', fontWeight: 700 }}>
+                        Hostile Satellites & ASAT Intercept ({enemySats.length})
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--paper-dim)' }}>Max Reach: 1,400 km</span>
+                    </div>
+
+                    {enemySats.map((sat) => {
+                      const isAlive = sat.status === 'operational';
+
+                      // Find closest friendly launcher
+                      let closestLauncher: SimEntity | null = null;
+                      let minLauncherDistKm = Infinity;
+                      for (const l of asatCapableLaunchers) {
+                        const d = distanceKm(l.lngLat, sat.currentLngLat);
+                        if (d < minLauncherDistKm) {
+                          minLauncherDistKm = d;
+                          closestLauncher = l;
+                        }
+                      }
+
+                      const isInAsatRange = minLauncherDistKm <= 1400;
+
+                      return (
+                        <div
+                          key={sat.id}
+                          style={{
+                            background: '#09101B',
+                            borderLeft: `3px solid ${isAlive ? '#FF5252' : '#546E7A'}`,
+                            borderRadius: '4px',
+                            padding: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '5px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong style={{ fontSize: '11px', color: isAlive ? '#FF5252' : '#78909C' }}>
+                              ⚠️ {sat.name} ({sat.iso})
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                fontWeight: 700,
+                                background: isAlive ? 'rgba(255, 82, 82, 0.15)' : 'rgba(120, 144, 156, 0.2)',
+                                color: isAlive ? '#FF5252' : '#78909C',
+                              }}
+                            >
+                              {isAlive ? `${sat.altitudeKm}km LEO` : 'NEUTRALIZED'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                            Sensor: {sat.sensorType.toUpperCase()} · Nearest Defender: {closestLauncher ? `${closestLauncher.name} (${minLauncherDistKm.toFixed(0)} km)` : 'No ASAT Battery'}
+                          </div>
+
+                          {isAlive && onLaunchAsat && (
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                              <button
+                                type="button"
+                                className="wg-btn"
+                                style={{
+                                  fontSize: '10px',
+                                  padding: '4px 8px',
+                                  flex: 1,
+                                  background: isInAsatRange ? 'rgba(255, 82, 82, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                  borderColor: isInAsatRange ? '#FF5252' : 'var(--border)',
+                                  color: isInAsatRange ? '#FF5252' : 'var(--paper-dim)',
+                                  cursor: isInAsatRange && closestLauncher ? 'pointer' : 'not-allowed',
+                                  fontWeight: 700,
+                                }}
+                                disabled={!isInAsatRange || !closestLauncher}
+                                onClick={() => {
+                                  if (closestLauncher) {
+                                    onLaunchAsat(closestLauncher.id, sat.id);
+                                  }
+                                }}
+                              >
+                                {isInAsatRange ? `🚀 Launch Direct-Ascent ASAT (${minLauncherDistKm.toFixed(0)} km)` : `⚠️ Out of ASAT Range (${minLauncherDistKm.toFixed(0)} km > 1400km)`}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ========================================================= */}
             {/* TAB: BATTLEFIELD NETWORK & COOPERATIVE ENGAGEMENT (CEC)   */}
