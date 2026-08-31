@@ -269,6 +269,28 @@ export interface BorderIncursionRecord {
 /* 5. Live Munitions, Missile Flyouts & Point Defense                 */
 /* ------------------------------------------------------------------ */
 
+export interface SimSatellite {
+  id: string;
+  systemId: string;
+  name: string;
+  iso: string;
+  faction: 'player' | 'enemy';
+  altitudeKm: number;
+  inclinationDeg: number;
+  periodMin: number;
+  sensorType: 'optical' | 'sar' | 'elint';
+  swathWidthKm: number;
+  resolutionM: number;
+  currentLngLat: [number, number];
+  groundTrack: [number, number][]; // Pre-calculated orbital ground track coordinates across the map
+  groundSwathPolygon: [number, number][]; // Current active coverage footprint polygon
+  status: 'operational' | 'degraded' | 'destroyed';
+  lastScanSimTimeSec?: number;
+  contactsDiscoveredCount: number;
+  priorityTargetZone?: [number, number];
+  orbitPhaseOffsetSec: number;
+}
+
 export interface MissileFlyoutTrack {
   id: string;
   originLngLat: [number, number];
@@ -279,7 +301,7 @@ export interface MissileFlyoutTrack {
   attackerIso: string;
   targetIso: string;
   weaponName: string;
-  weaponCategory: 'cruise' | 'ballistic' | 'sam' | 'torpedo' | 'air_to_air' | 'bomb' | 'artillery';
+  weaponCategory: 'cruise' | 'ballistic' | 'sam' | 'torpedo' | 'air_to_air' | 'bomb' | 'artillery' | 'asat';
   speedKmh: number;
   startSimTimeSec: number;
   etaSimTimeSec: number;
@@ -289,6 +311,8 @@ export interface MissileFlyoutTrack {
   engagedByDefenderIds?: string[];
   /** Target threat missile ID being intercepted (for SAM / interceptor tracks) */
   targetMissileId?: string;
+  /** Target satellite ID being intercepted (for ASAT exo-atmospheric kinetic kill vehicles) */
+  targetSatelliteId?: string;
   /** Probability of kill committed by this interceptor (0.0 to 1.0) */
   interceptorPk?: number;
   /** Timestamp when this threat was first acquired by defender radar (for reaction time delay) */
