@@ -14,7 +14,6 @@ It has three modes:
 npm install
 npm run dev      # http://localhost:3000
 ```
-
 No API keys. Basemap tiles come from CARTO and OpenFreeMap; country geometry is
 fetched from world-atlas (Natural Earth) on jsDelivr.
 
