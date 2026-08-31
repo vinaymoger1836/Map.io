@@ -41,7 +41,8 @@ export type TargetClass =
   | 'ballistic-imrbm'
   | 'surface'
   | 'ground'
-  | 'subsurface';
+  | 'subsurface'
+  | 'space';
 
 export const TARGET_CLASSES: { id: TargetClass; label: string; hint: string }[] = [
   { id: 'air', label: 'Air', hint: 'Aircraft, cruise missiles and drones — anything that flies on wings' },
@@ -51,6 +52,7 @@ export const TARGET_CLASSES: { id: TargetClass; label: string; hint: string }[] 
   { id: 'surface', label: 'Ships', hint: 'Surface vessels' },
   { id: 'ground', label: 'Ground', hint: 'Land targets — fixed sites, formations, infrastructure' },
   { id: 'subsurface', label: 'Submarines', hint: 'Submerged contacts' },
+  { id: 'space', label: 'Satellites', hint: 'Low Earth Orbit (LEO) satellites and space assets' },
 ];
 
 /** The ballistic tiers, in ascending order of threat — grouped in the UI. */
