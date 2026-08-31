@@ -20,6 +20,7 @@ import {
   type BattleOpsPlan,
   type BattleOpsPhase,
   type BattleOpsTask,
+  type AirspaceRoeDoctrine,
 } from './warSimTypes';
 import {
   tickWarSim,
@@ -32,6 +33,9 @@ import {
   renameSimBase,
   updateEntityRcs,
   createDefaultBattleOpsPlan,
+  orderAerialRefueling,
+  setSessionAirspaceRoe,
+  launchAsatStrike,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
@@ -323,6 +327,16 @@ export function useWarSim({
       });
     },
     []
+  );
+
+  const orderRefuelAtTanker = useCallback(
+    (receiverEntityId: string, tankerEntityId?: string, targetFuelPct = 100) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        return orderAerialRefueling(prev, receiverEntityId, tankerEntityId, targetFuelPct, systemsLibrary);
+      });
+    },
+    [systemsLibrary]
   );
 
   const startSortiePicking = useCallback(
@@ -956,6 +970,18 @@ export function useWarSim({
     });
   }, []);
 
+  const setAirspaceRoe = useCallback((doctrine: AirspaceRoeDoctrine) => {
+    setSession((prev) => (prev ? setSessionAirspaceRoe(prev, doctrine) : null));
+  }, []);
+
+  const orderAsatStrike = useCallback((launcherEntityId: string, targetSatelliteId: string) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const res = launchAsatStrike(prev, launcherEntityId, targetSatelliteId);
+      return res.session;
+    });
+  }, []);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
@@ -998,7 +1024,10 @@ export function useWarSim({
     orderSortieToPoint,
     setEntityRcs,
     orderRtb,
+    orderRefuelAtTanker,
     orderStrike,
+    setAirspaceRoe,
+    orderAsatStrike,
     createBaseAtLocation,
     renameBase,
     createNetwork,

@@ -27,6 +27,7 @@ import {
 import { getPreAssignedQuotasForCountry, keyOf } from '@/lib/forces';
 import { readDoc, writeDoc } from '@/lib/store';
 import { PreFlightValidationModal } from './PreFlightValidationModal';
+import { createDefaultSatellites } from '@/lib/spaceLayer';
 
 export interface WarSimLauncherProps {
   wg: WarGames;
@@ -302,6 +303,7 @@ export function WarSimLauncher({
       },
       bases: [],
       entities: [],
+      satellites: createDefaultSatellites(playerIso, enemyIso, wg.systems),
       activeMissiles: [],
       fogOfWarContacts: {
         playerContacts: [],

@@ -101,12 +101,18 @@ export function BattleOpsPlanner({
   const [patrolAltitudeM, setPatrolAltitudeM] = useState<number>(8000);
   const [emconMode, setEmconMode] = useState<'active' | 'passive'>('active');
   const [customWaypoints, setCustomWaypoints] = useState<[number, number][]>([]);
+  const [selectedTankerId, setSelectedTankerId] = useState<string>('');
+  const [fuelTargetPct, setFuelTargetPct] = useState<number>(100);
 
   const selectedAttacker = friendlyEntities.find((e) => e.id === selectedAttackerId);
   const attackerSpec = selectedAttacker ? systemsLibrary.find((s) => s.id === selectedAttacker.systemId) : undefined;
   const availableWeapons = selectedAttacker?.customWeapons && selectedAttacker.customWeapons.length > 0
     ? selectedAttacker.customWeapons
     : (attackerSpec?.weapons || []);
+
+  const availableTankers = friendlyEntities.filter(
+    (e) => (e.typeId === 'tanker' || e.name.toLowerCase().includes('tanker')) && e.status !== 'destroyed'
+  );
 
   const totalAssignedTasks = plan.phases.reduce((sum, p) => sum + p.tasks.length, 0);
 
@@ -118,6 +124,9 @@ export function BattleOpsPlanner({
     }
     if (!selectedTargetId && visibleContacts.length > 0) {
       setSelectedTargetId(visibleContacts[0].targetEntityId);
+    }
+    if (availableTankers.length > 0) {
+      setSelectedTankerId(availableTankers[0].id);
     }
   };
 
@@ -161,6 +170,16 @@ export function BattleOpsPlanner({
         patrolRadiusKm,
         patrolAltitudeM,
         emcon: emconMode,
+      });
+    } else if (taskType === 'aar') {
+      const tanker = friendlyEntities.find((e) => e.id === selectedTankerId);
+      onAddTask(activeAddingPhaseId, {
+        name: `${selectedAttacker.name}: In-Flight AAR via ${tanker?.name || 'Tanker'}`,
+        type: 'aar',
+        attackerEntityId: selectedAttacker.id,
+        attackerName: selectedAttacker.name,
+        tankerEntityId: selectedTankerId || undefined,
+        fuelTransferTargetPct: fuelTargetPct,
       });
     }
 
@@ -507,6 +526,10 @@ export function BattleOpsPlanner({
                             <span>
                               Attacker: <strong>{task.attackerName}</strong> · Salvo: <strong>{task.salvoCount} × {task.weaponName}</strong> · Protocol: <strong>{task.postStrikeAction?.toUpperCase()}</strong>
                             </span>
+                          ) : task.type === 'aar' ? (
+                            <span>
+                              Receiver: <strong>{task.attackerName}</strong> · Tanker: <strong>{friendlyEntities.find((e) => e.id === task.tankerEntityId)?.name || 'Designated Tanker'}</strong> · Profile: <strong>Top-Off to {task.fuelTransferTargetPct ?? 100}%</strong>
+                            </span>
                           ) : (
                             <span>
                               Unit: <strong>{task.attackerName}</strong> · Envelope: <strong>{task.patrolRadiusKm} km radius</strong> · Alt: <strong>{task.patrolAltitudeM}m</strong> · EMCON: <strong>{task.emcon?.toUpperCase()}</strong>
@@ -590,26 +613,34 @@ export function BattleOpsPlanner({
             <button
               type="button"
               className={`wg-btn ${taskType === 'strike' ? 'accent' : ''}`}
-              style={{ fontSize: '10px', padding: '3px 8px', flex: 1 }}
+              style={{ fontSize: '10px', padding: '3px 6px', flex: 1 }}
               onClick={() => setTaskType('strike')}
             >
-              🎯 Kinetic Strike
+              🎯 Strike
             </button>
             <button
               type="button"
               className={`wg-btn ${taskType === 'sead' ? 'accent' : ''}`}
-              style={{ fontSize: '10px', padding: '3px 8px', flex: 1 }}
+              style={{ fontSize: '10px', padding: '3px 6px', flex: 1 }}
               onClick={() => setTaskType('sead')}
             >
-              🛡️ SEAD Suppression
+              🛡️ SEAD
             </button>
             <button
               type="button"
               className={`wg-btn ${taskType === 'patrol' ? 'accent' : ''}`}
-              style={{ fontSize: '10px', padding: '3px 8px', flex: 1 }}
+              style={{ fontSize: '10px', padding: '3px 6px', flex: 1 }}
               onClick={() => setTaskType('patrol')}
             >
-              📡 ISR & Patrol
+              📡 Patrol
+            </button>
+            <button
+              type="button"
+              className={`wg-btn ${taskType === 'aar' ? 'accent' : ''}`}
+              style={{ fontSize: '10px', padding: '3px 6px', flex: 1, borderColor: taskType === 'aar' ? '#00E5FF' : undefined, color: taskType === 'aar' ? '#00E5FF' : undefined }}
+              onClick={() => setTaskType('aar')}
+            >
+              ⛽ AAR Refuel
             </button>
           </div>
 
@@ -841,6 +872,57 @@ export function BattleOpsPlanner({
                 >
                   <option value="active">Active Radar Search</option>
                   <option value="passive">Passive Radio Silence</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* AAR Specific Options */}
+          {taskType === 'aar' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>Designated Tanker Orbit:</span>
+                <select
+                  value={selectedTankerId}
+                  onChange={(e) => setSelectedTankerId(e.target.value)}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    border: '1px solid #00E5FF',
+                    color: '#00E5FF',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    padding: '4px',
+                  }}
+                >
+                  {availableTankers.length === 0 ? (
+                    <option value="">No Active Tankers in Theater (Will Search Closest)</option>
+                  ) : (
+                    availableTankers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        ⛽ {t.name} ({(t.tankerState?.offloadRemainingKg ?? 40000).toLocaleString()} kg Available)
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--paper-dim)' }}>Fuel Transfer Target Profile:</span>
+                <select
+                  value={fuelTargetPct}
+                  onChange={(e) => setFuelTargetPct(Number(e.target.value))}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--paper)',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    padding: '4px',
+                  }}
+                >
+                  <option value={100}>100% Standard Full Tank Top-Off</option>
+                  <option value={125}>125% Deep Strike Ingress (Over-Fuel Reserve)</option>
+                  <option value={150}>150% Extended Strategic Combat Radius (+75% Range)</option>
                 </select>
               </div>
             </div>

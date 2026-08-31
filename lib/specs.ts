@@ -41,7 +41,8 @@ export type TargetClass =
   | 'ballistic-imrbm'
   | 'surface'
   | 'ground'
-  | 'subsurface';
+  | 'subsurface'
+  | 'space';
 
 export const TARGET_CLASSES: { id: TargetClass; label: string; hint: string }[] = [
   { id: 'air', label: 'Air', hint: 'Aircraft, cruise missiles and drones — anything that flies on wings' },
@@ -51,6 +52,7 @@ export const TARGET_CLASSES: { id: TargetClass; label: string; hint: string }[] 
   { id: 'surface', label: 'Ships', hint: 'Surface vessels' },
   { id: 'ground', label: 'Ground', hint: 'Land targets — fixed sites, formations, infrastructure' },
   { id: 'subsurface', label: 'Submarines', hint: 'Submerged contacts' },
+  { id: 'space', label: 'Satellites', hint: 'Low Earth Orbit (LEO) satellites and space assets' },
 ];
 
 /** The ballistic tiers, in ascending order of threat — grouped in the UI. */
@@ -398,6 +400,206 @@ export interface PlatformFacet {
    * Allows hovering in mountain valleys and popping up above tree/ridge lines.
    */
   noeCapable?: boolean;
+  /** Internal & CFT total fuel mass capacity (kg). */
+  fuelCapacityKg?: number;
+  /** Aerial refueling transfer payload (kg) for tanker aircraft (e.g. KC-46, Il-78, A330 MRTT). */
+  fuelOffloadableKg?: number;
+  /** Fuel transfer flow rate (kg/min) via flying boom or hose-and-drogue pods. */
+  fuelOffloadRateKgPerMin?: number;
+  /** Refueling hardware system architecture. */
+  refuelingMethod?: 'boom' | 'probe_and_drogue' | 'universal';
+  /** Max simultaneous receiver aircraft serviced by tanker (1 for Boom, 2-3 for Wing Drogues). */
+  maxReceivers?: number;
+  /** True if aircraft is equipped with AAR receptacle/probe for mid-air refueling. */
+  canAerialRefuel?: boolean;
+}
+
+/**
+ * Military Aerial Refueling (AAR) Tanker Capabilities Resolver.
+ */
+export function defaultTankerSpecsFor(spec: SystemSpec | undefined, typeId: string): {
+  isTanker: boolean;
+  fuelOffloadableKg: number;
+  fuelOffloadRateKgPerMin: number;
+  refuelingMethod: 'boom' | 'probe_and_drogue' | 'universal';
+  maxReceivers: number;
+  aarAnchorRadiusKm: number;
+} {
+  const platform = spec?.platform || {};
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+  const isTanker = tid === 'tanker' || name.includes('tanker') || name.includes('stratotanker') || name.includes('pegasus') || name.includes('mrtt') || name.includes('il-78') || name.includes('kc-') || name.includes('mq-25');
+
+  if (!isTanker) {
+    return {
+      isTanker: false,
+      fuelOffloadableKg: 0,
+      fuelOffloadRateKgPerMin: 0,
+      refuelingMethod: 'universal',
+      maxReceivers: 0,
+      aarAnchorRadiusKm: 0,
+    };
+  }
+
+  // Specific Tanker Models
+  let offloadKg = platform.fuelOffloadableKg ?? 42000;
+  let flowRate = platform.fuelOffloadRateKgPerMin ?? 2000;
+  let method: 'boom' | 'probe_and_drogue' | 'universal' = platform.refuelingMethod ?? 'universal';
+  let receivers = platform.maxReceivers ?? 2;
+
+  if (name.includes('kc-46') || name.includes('pegasus')) {
+    offloadKg = 43000;
+    flowRate = 2800;
+    method = 'universal';
+    receivers = 3;
+  } else if (name.includes('kc-135') || name.includes('stratotanker')) {
+    offloadKg = 38000;
+    flowRate = 2200;
+    method = 'boom';
+    receivers = 1;
+  } else if (name.includes('il-78') || name.includes('midas')) {
+    offloadKg = 74000;
+    flowRate = 1400;
+    method = 'probe_and_drogue';
+    receivers = 3;
+  } else if (name.includes('mrtt') || name.includes('a330')) {
+    offloadKg = 48000;
+    flowRate = 2800;
+    method = 'universal';
+    receivers = 3;
+  } else if (name.includes('mq-25') || name.includes('stingray')) {
+    offloadKg = 6800;
+    flowRate = 950;
+    method = 'probe_and_drogue';
+    receivers = 1;
+  }
+
+  return {
+    isTanker: true,
+    fuelOffloadableKg: offloadKg,
+    fuelOffloadRateKgPerMin: flowRate,
+    refuelingMethod: method,
+    maxReceivers: receivers,
+    aarAnchorRadiusKm: 60,
+  };
+}
+
+/**
+ * Military Receiver Aircraft Fuel Capacity & Refueling Compatibility Resolver.
+ */
+export function defaultReceiverFuelFor(spec: SystemSpec | undefined, typeId: string): {
+  canAerialRefuel: boolean;
+  fuelCapacityKg: number;
+  refuelMethod: 'boom' | 'probe_and_drogue' | 'universal';
+} {
+  const platform = spec?.platform || {};
+  const tid = typeId.toLowerCase();
+  const name = (spec?.name ?? '').toLowerCase();
+
+  // Non-air or unrefuelable platforms
+  if (tid === 'sam-launcher' || tid === 'radar' || tid === 'silo' || tid === 'tank' || tid === 'ifv' || tid === 'artillery' || tid === 'infantry' || tid === 'special-forces' || tid === 'destroyer' || tid === 'frigate' || tid === 'corvette' || tid === 'submarine' || tid === 'carrier') {
+    return { canAerialRefuel: false, fuelCapacityKg: 0, refuelMethod: 'universal' };
+  }
+
+  // Small tactical drones that cannot refuel
+  if ((tid === 'uav' || tid === 'drone') && !name.includes('global hawk') && !name.includes('mq-9') && !name.includes('wz-7')) {
+    return { canAerialRefuel: false, fuelCapacityKg: 200, refuelMethod: 'probe_and_drogue' };
+  }
+
+  let capKg = platform.fuelCapacityKg ?? 8000;
+  let method: 'boom' | 'probe_and_drogue' | 'universal' = 'universal';
+
+  if (tid === 'bomber' || name.includes('b-2') || name.includes('b-52') || name.includes('b-21')) {
+    capKg = 75000;
+    method = 'boom';
+  } else if (name.includes('tu-160') || name.includes('tu-95') || name.includes('tu-22')) {
+    capKg = 85000;
+    method = 'probe_and_drogue';
+  } else if (name.includes('f-35a') || name.includes('f-22') || name.includes('f-15') || name.includes('f-16') || name.includes('a-10')) {
+    capKg = name.includes('f-15') ? 14000 : 8300;
+    method = 'boom';
+  } else if (name.includes('f-35b') || name.includes('f-35c') || name.includes('f/a-18') || name.includes('rafale') || name.includes('typhoon') || name.includes('su-') || name.includes('mig-') || name.includes('j-')) {
+    capKg = name.includes('su-35') || name.includes('su-30') || name.includes('j-16') ? 11500 : 7500;
+    method = 'probe_and_drogue';
+  } else if (tid === 'awacs') {
+    capKg = 65000;
+    method = name.includes('a-50') ? 'probe_and_drogue' : 'boom';
+  } else if (tid === 'recon') {
+    capKg = 12000;
+    method = 'universal';
+  }
+
+  return {
+    canAerialRefuel: platform.canAerialRefuel ?? true,
+    fuelCapacityKg: capKg,
+    refuelMethod: method,
+  };
+}
+
+/** Orbital mechanics and space reconnaissance sensors facet. */
+export interface OrbitFacet {
+  altitudeKm: number;
+  inclinationDeg: number;
+  periodMin: number;
+  sensorType: 'optical' | 'sar' | 'elint';
+  swathWidthKm: number;
+  resolutionM: number;
+  revisitIntervalHours?: number;
+}
+
+/**
+ * Resolves researched military space satellite specs for optical, SAR, and ELINT constellations.
+ */
+export function defaultSatelliteSpecsFor(spec?: SystemSpec, typeId?: string): OrbitFacet {
+  const orbit = spec?.orbit;
+  const name = (spec?.name ?? '').toLowerCase();
+  const tid = (typeId ?? spec?.typeId ?? '').toLowerCase();
+
+  let altKm = orbit?.altitudeKm ?? 500;
+  let incDeg = orbit?.inclinationDeg ?? 97.4;
+  let period = orbit?.periodMin ?? 94.6;
+  let sType: 'optical' | 'sar' | 'elint' = orbit?.sensorType ?? 'optical';
+  let swath = orbit?.swathWidthKm ?? 140;
+  let resM = orbit?.resolutionM ?? 0.3;
+
+  if (name.includes('kh-11') || name.includes('keyhole') || name.includes('persona') || name.includes('razdan')) {
+    altKm = 460;
+    incDeg = 97.4;
+    period = 94.2;
+    sType = 'optical';
+    swath = 120;
+    resM = 0.1;
+  } else if (name.includes('topaz') || name.includes('lacrosse') || name.includes('cosmos') || name.includes('yaogan') && name.includes('sar')) {
+    altKm = 520;
+    incDeg = 97.8;
+    period = 95.1;
+    sType = 'sar';
+    swath = 250;
+    resM = 0.5;
+  } else if (name.includes('orion') || name.includes('mentor') || name.includes('trumpet') || name.includes('lotos') || name.includes('elint') || name.includes('sigint')) {
+    altKm = 650;
+    incDeg = 63.4;
+    period = 98.0;
+    sType = 'elint';
+    swath = 800;
+    resM = 5.0;
+  } else if (name.includes('ofek')) {
+    altKm = 400;
+    incDeg = 142.0;
+    period = 92.5;
+    sType = 'sar';
+    swath = 100;
+    resM = 0.3;
+  }
+
+  return {
+    altitudeKm: altKm,
+    inclinationDeg: incDeg,
+    periodMin: period,
+    sensorType: sType,
+    swathWidthKm: swath,
+    resolutionM: resM,
+  };
 }
 
 export interface SystemSpec {
@@ -411,6 +613,7 @@ export interface SystemSpec {
   sensor?: SensorFacet;
   weapons?: WeaponFacet[];
   platform?: PlatformFacet;
+  orbit?: OrbitFacet;
   signature?: 'low' | 'medium' | 'high';
   /**
    * Radar Cross-Section (RCS) observable footprint measured in square meters (m²).
@@ -533,6 +736,7 @@ export const TARGET_LABEL: Record<TargetClass, string> = {
   surface: 'ships',
   ground: 'ground',
   subsurface: 'submarines',
+  space: 'satellites & orbital assets',
 };
 
 /** Short form of a ballistic tier, for when several are listed together. */

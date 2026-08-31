@@ -767,6 +767,7 @@ export default function EurasiaMap() {
             }}
             onUpdateEntityRcs={warSim.setEntityRcs}
             onOrderRtb={warSim.orderRtb}
+            onOrderRefuelAtTanker={warSim.orderRefuelAtTanker}
             onStartBasePlacement={warSim.startBasePlacement}
             onRenameBase={warSim.renameBase}
             onCreateNetwork={warSim.createNetwork}
@@ -793,6 +794,8 @@ export default function EurasiaMap() {
             onExitSim={warSim.exitSim}
             systemsLibrary={war.systems}
             countries={war.countries}
+            onSetAirspaceRoe={warSim.setAirspaceRoe}
+            onLaunchAsat={warSim.orderAsatStrike}
             onFlyToBase={(lngLat) => {
               mapRef.current?.flyTo({ center: lngLat, zoom: 6, duration: 1200 });
             }}

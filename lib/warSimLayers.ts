@@ -31,6 +31,7 @@ import {
   evaluateFlightCorridor,
   type SAMThreatZone,
 } from './threatAvoidance';
+import { generateAarRacetrackCoordinates } from './aerialRefueling';
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -40,6 +41,7 @@ const SRC_MISSILES = 'warsim-missiles-src';
 const SRC_REACH_RING = 'warsim-reach-ring-src';
 const SRC_ENVELOPES = 'warsim-envelopes-src';
 const SRC_PATROL_PREVIEW = 'warsim-patrol-preview-src';
+const SRC_SATELLITES = 'warsim-satellites-src';
 
 const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
@@ -49,6 +51,12 @@ const LYR_PATROL_PREVIEW_CENTER = 'warsim-patrol-preview-center';
 const LYR_PATROL_PREVIEW_LABEL = 'warsim-patrol-preview-label';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
+
+const LYR_SATELLITES_GROUNDTRACK = 'warsim-satellites-groundtrack';
+const LYR_SATELLITES_SWATH_FILL = 'warsim-satellites-swath-fill';
+const LYR_SATELLITES_SWATH_LINE = 'warsim-satellites-swath-line';
+const LYR_SATELLITES_MARKER = 'warsim-satellites-marker';
+const LYR_SATELLITES_LABEL = 'warsim-satellites-label';
 
 const LYR_BASES_CIRCLE = 'warsim-bases-circle';
 const LYR_BASES_LABEL = 'warsim-bases-label';
@@ -67,6 +75,8 @@ const LYR_MISSILES_LABEL = 'warsim-missiles-label';
 
 export function getSimUnitIcon(typeId: string): string {
   switch (typeId) {
+    case 'satellite':
+      return '🛰️';
     case 'fighter':
     case 'strike':
     case 'multirole':
@@ -592,6 +602,82 @@ export function installWarSimLayers(map: MLMap) {
       'text-halo-width': 2,
     },
   });
+
+  // 6. Space Layer: Orbital Satellites & Reconnaissance Swaths
+  map.addSource(SRC_SATELLITES, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_GROUNDTRACK,
+    type: 'line',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'groundtrack'],
+    paint: {
+      'line-color': ['coalesce', ['get', 'color'], '#FFD54F'],
+      'line-width': 1.6,
+      'line-dasharray': [4, 4],
+      'line-opacity': 0.65,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_SWATH_FILL,
+    type: 'fill',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'swath'],
+    paint: {
+      'fill-color': ['coalesce', ['get', 'swathColor'], '#00E5FF'],
+      'fill-opacity': 0.12,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_SWATH_LINE,
+    type: 'line',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'swath'],
+    paint: {
+      'line-color': ['coalesce', ['get', 'swathColor'], '#00E5FF'],
+      'line-width': 1.2,
+      'line-opacity': 0.55,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_MARKER,
+    type: 'circle',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'satellite'],
+    paint: {
+      'circle-radius': 6,
+      'circle-color': ['coalesce', ['get', 'color'], '#FFD54F'],
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#FFFFFF',
+    },
+  });
+
+  map.addLayer({
+    id: LYR_SATELLITES_LABEL,
+    type: 'symbol',
+    source: SRC_SATELLITES,
+    filter: ['==', ['get', 'kind'], 'satellite'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 10,
+      'text-offset': [0, 1.3],
+      'text-anchor': 'top',
+      'text-font': font,
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': '#FFD54F',
+      'text-halo-color': '#070C14',
+      'text-halo-width': 2,
+    },
+  });
 }
 
 /**
@@ -868,23 +954,32 @@ export function renderWarSimStateToMap(
 
     const isStaticAD = isStaticAirDefense(e.typeId);
     const isGround = isGroundCombatUnit(e.typeId);
+    const isTanker = e.typeId === 'tanker' || e.name.toLowerCase().includes('tanker');
     const cleanName = e.name.replace(/^\d+\s*[×x]\s*/i, '');
     const statusText =
       isStaticAD
         ? 'AIR DEFENSE'
-        : e.status === 'on_station'
-          ? (isGround ? 'ENTRENCHED' : 'PATROL')
-          : e.status === 'takeoff_ingress'
-            ? (isGround ? 'MARCHING' : 'INGRESS')
-            : e.status === 'bingo_rtb'
-              ? 'RTB'
-              : e.status.toUpperCase();
+        : e.status === 'aar_refueling'
+          ? '⛽ REFUELING'
+          : e.status === 'aar_rendezvous'
+            ? '⛽ AAR JOIN-UP'
+            : isTanker && e.status === 'on_station'
+              ? '⛽ AAR ANCHOR'
+              : e.status === 'on_station'
+                ? (isGround ? 'ENTRENCHED' : 'PATROL')
+                : e.status === 'takeoff_ingress'
+                  ? (isGround ? 'MARCHING' : 'INGRESS')
+                  : e.status === 'bingo_rtb'
+                    ? 'RTB'
+                    : e.status.toUpperCase();
 
     const label = isStaticAD
       ? `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [AIR DEFENSE]`
       : isGround
         ? `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}]`
-        : `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`;
+        : isTanker && e.status === 'on_station'
+          ? `${cleanName} [${statusText}] ${(e.tankerState?.offloadRemainingKg ?? 40000).toLocaleString()} kg Avail`
+          : `${e.count > 1 ? `${e.count} × ` : ''}${cleanName} [${statusText}] ${e.currentFuelPct.toFixed(0)}%`;
 
     return {
       type: 'Feature' as const,
@@ -894,7 +989,7 @@ export function renderWarSimStateToMap(
         selected: isSelected,
         icon: iconId,
         label,
-        color: factionColor,
+        color: e.status === 'aar_refueling' || e.status === 'aar_rendezvous' ? '#00E5FF' : factionColor,
       },
     };
   });
@@ -906,9 +1001,50 @@ export function renderWarSimStateToMap(
     features: entityFeatures,
   });
 
-  // 3. Render Patrol Rings & Multi-Waypoint Flight Corridors
+  // 3. Render Patrol Rings, AAR Anchor Racetracks & Multi-Waypoint Flight Corridors
   const patrolFeatures: GeoJSON.Feature[] = [];
   friendlyEntities.forEach((e) => {
+    const isTanker = e.typeId === 'tanker' || e.name.toLowerCase().includes('tanker');
+
+    // AAR Tanker Anchor Track Racetrack Rendering
+    if (isTanker && e.status === 'on_station') {
+      const anchorCenter = e.patrolOrder?.centerLngLat || e.lngLat;
+      const lengthKm = e.tankerState?.orbitLengthKm ?? 80;
+      const headingDeg = e.tankerState?.orbitHeadingDeg ?? 90;
+      const racetrackCoords = generateAarRacetrackCoordinates(anchorCenter, lengthKm, 15, headingDeg);
+
+      patrolFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [racetrackCoords] },
+        properties: { color: '#00E5FF' },
+      });
+      return;
+    }
+
+    // Active AAR Umbilical Link Line (Receiver <-> Tanker)
+    if (e.status === 'aar_refueling' && e.refuelingState?.tankerEntityId) {
+      const tanker = session.entities.find((t) => t.id === e.refuelingState?.tankerEntityId);
+      if (tanker) {
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [tanker.lngLat, e.lngLat] },
+          properties: { color: '#00E5FF' },
+        });
+      }
+    }
+
+    // AAR Rendezvous Ingress Vector
+    if (e.status === 'aar_rendezvous' && e.refuelingState?.tankerEntityId) {
+      const tanker = session.entities.find((t) => t.id === e.refuelingState?.tankerEntityId);
+      if (tanker) {
+        patrolFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [e.lngLat, tanker.lngLat] },
+          properties: { color: '#00E5FF' },
+        });
+      }
+    }
+
     if (e.patrolOrder && (e.status === 'on_station' || e.status === 'takeoff_ingress')) {
       if (e.patrolOrder.routeType === 'waypoints' && e.patrolOrder.waypoints && e.patrolOrder.waypoints.length >= 2) {
         // Multi-waypoint route line corridor
@@ -1061,6 +1197,60 @@ export function renderWarSimStateToMap(
   (map.getSource(SRC_MISSILES) as GeoJSONSource)?.setData({
     type: 'FeatureCollection',
     features: missileFeatures,
+  });
+
+  // 6. Render Space Layer: Satellites, Orbital Ground Tracks & Sensor Swaths
+  const satellites = session.satellites || [];
+  const satelliteFeatures: GeoJSON.Feature[] = [];
+
+  satellites.forEach((sat) => {
+    if (sat.status === 'destroyed') return;
+
+    const isSatFriendly = sat.faction === activeFaction;
+    const satColor = isSatFriendly ? '#FFD54F' : '#FF5252';
+    const swathColor = isSatFriendly ? '#00E5FF' : '#FF5252';
+
+    // 6a. Orbital Ground-Track Linestring
+    if (sat.groundTrack && sat.groundTrack.length > 1) {
+      satelliteFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: sat.groundTrack },
+        properties: {
+          kind: 'groundtrack',
+          color: satColor,
+        },
+      });
+    }
+
+    // 6b. Dynamic Sensor Swath Footprint Polygon
+    if (sat.groundSwathPolygon && sat.groundSwathPolygon.length > 2) {
+      satelliteFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [sat.groundSwathPolygon] },
+        properties: {
+          kind: 'swath',
+          swathColor,
+        },
+      });
+    }
+
+    // 6c. Satellite Orbital Marker & Label
+    satelliteFeatures.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: sat.currentLngLat },
+      properties: {
+        kind: 'satellite',
+        id: sat.id,
+        name: sat.name,
+        color: satColor,
+        label: `🛰️ ${sat.name} [${sat.sensorType.toUpperCase()} ${sat.altitudeKm}km]`,
+      },
+    });
+  });
+
+  (map.getSource(SRC_SATELLITES) as GeoJSONSource)?.setData({
+    type: 'FeatureCollection',
+    features: satelliteFeatures,
   });
 }
 
@@ -1330,6 +1520,11 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_PATROL_PREVIEW_FILL,
     LYR_ENVELOPES_LINE,
     LYR_ENVELOPES_FILL,
+    LYR_SATELLITES_LABEL,
+    LYR_SATELLITES_MARKER,
+    LYR_SATELLITES_SWATH_LINE,
+    LYR_SATELLITES_SWATH_FILL,
+    LYR_SATELLITES_GROUNDTRACK,
   ];
   layerIds.forEach((id) => {
     if (map.getLayer(id)) map.removeLayer(id);
@@ -1344,6 +1539,7 @@ export function removeWarSimLayers(map: MLMap) {
     SRC_REACH_RING,
     SRC_PATROL_PREVIEW,
     SRC_ENVELOPES,
+    SRC_SATELLITES,
   ];
   sourceIds.forEach((id) => {
     if (map.getSource(id)) map.removeSource(id);

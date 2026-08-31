@@ -29,6 +29,7 @@ import {
   defaultTerrainSensorFor,
   defaultTerrainPlatformFor,
 } from '@/lib/specs';
+import { distanceKm } from '@/lib/geo';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
 import { getKnownHostileThreatZones, evaluateFlightCorridor } from '@/lib/threatAvoidance';
 import { DeploySystemModal } from './DeploySystemModal';
@@ -41,7 +42,7 @@ import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'network' | 'battle_ops' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'network' | 'battle_ops' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -73,6 +74,7 @@ export interface WarSimConsoleProps {
   ) => void;
   onUpdateEntityRcs?: (entityId: string, rcs: number) => void;
   onOrderRtb: (entityId: string) => void;
+  onOrderRefuelAtTanker?: (receiverEntityId: string, tankerEntityId?: string, targetFuelPct?: number) => void;
   onStartBasePlacement: (baseType: BaseType, baseName?: string) => void;
   onRenameBase?: (baseId: string, newName: string) => void;
   onCreateNetwork?: (name: string, doctrine: import('@/lib/warSimTypes').NetworkDoctrine) => void;
@@ -146,6 +148,8 @@ export interface WarSimConsoleProps {
   systemsLibrary: SystemSpec[];
   countries?: { iso: string; name: string }[];
   onFlyToBase?: (lngLat: [number, number]) => void;
+  onSetAirspaceRoe?: (doctrine: import('@/lib/warSimTypes').AirspaceRoeDoctrine) => void;
+  onLaunchAsat?: (launcherEntityId: string, targetSatelliteId: string) => void;
 }
 
 export function WarSimConsole({
@@ -171,6 +175,7 @@ export function WarSimConsole({
   onStartSortie,
   onUpdateEntityRcs,
   onOrderRtb,
+  onOrderRefuelAtTanker,
   onStartBasePlacement,
   onRenameBase,
   onCreateNetwork,
@@ -202,6 +207,8 @@ export function WarSimConsole({
   systemsLibrary,
   countries = [],
   onFlyToBase,
+  onSetAirspaceRoe,
+  onLaunchAsat,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
@@ -218,6 +225,8 @@ export function WarSimConsole({
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [newNetworkName, setNewNetworkName] = useState<string>('');
   const [showCreateNetwork, setShowCreateNetwork] = useState<boolean>(false);
+  const [selectedAsatSatId, setSelectedAsatSatId] = useState<string | null>(null);
+  const [selectedAsatLauncherId, setSelectedAsatLauncherId] = useState<string | null>(null);
 
   const activeFaction = session.activeFaction;
   const isPlayer = activeFaction === 'player';
@@ -339,6 +348,44 @@ export function WarSimConsole({
 
         {/* Right: Country Perspective Switcher & Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Airspace ROE Doctrine Selector */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#0E1724',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              border: '1px solid var(--border)',
+            }}
+            title="Airspace Rules of Engagement (ROE) Doctrine"
+          >
+            <span style={{ fontSize: '11px', color: 'var(--paper-dim)' }}>🛡️ ROE:</span>
+            <select
+              value={session.airspaceRoeDoctrine || 'weapons_free'}
+              onChange={(e) => onSetAirspaceRoe?.(e.target.value as any)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color:
+                  session.airspaceRoeDoctrine === 'adiz_border_defense'
+                    ? '#FFCA28'
+                    : session.airspaceRoeDoctrine === 'neutral_sanctuary'
+                      ? '#4CAF50'
+                      : '#4FC3F7',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="weapons_free" style={{ background: '#0E1724', color: '#fff' }}>⚔️ Weapons Free</option>
+              <option value="adiz_border_defense" style={{ background: '#0E1724', color: '#fff' }}>🛡️ ADIZ Border Defense</option>
+              <option value="neutral_sanctuary" style={{ background: '#0E1724', color: '#fff' }}>🕊️ Neutral Sanctuary</option>
+            </select>
+          </div>
+
           {/* Country Perspective Pill Toggle */}
           <div
             style={{
@@ -645,7 +692,21 @@ export function WarSimConsole({
                 style={{ fontSize: '10px', padding: '4px 6px', flex: 1 }}
                 onClick={() => setActiveTab('intel')}
               >
-                🛰️ Intel ({visibleContacts.length})
+                👁️ Intel ({visibleContacts.length})
+              </button>
+              <button
+                className={`wg-btn ${activeTab === 'space' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'space' ? undefined : 'rgba(255, 213, 79, 0.08)',
+                  borderColor: activeTab === 'space' ? undefined : 'rgba(255, 213, 79, 0.3)',
+                  color: activeTab === 'space' ? undefined : '#FFD54F',
+                }}
+                onClick={() => setActiveTab('space')}
+              >
+                🛰️ Space ({(session.satellites || []).filter((s) => s.status !== 'destroyed').length})
               </button>
               <button
                 className={`wg-btn ${activeTab === 'network' ? 'accent' : ''}`}
@@ -1120,6 +1181,224 @@ export function WarSimConsole({
                 ))}
               </div>
             )}
+
+            {/* ========================================================= */}
+            {/* TAB: SPACE LAYER & RECONNAISSANCE SATELLITES (LEO / ASAT) */}
+            {/* ========================================================= */}
+            {activeTab === 'space' && (() => {
+              const allSats = session.satellites || [];
+              const friendlySats = allSats.filter((s) => s.faction === activeFaction);
+              const enemySats = allSats.filter((s) => s.faction !== activeFaction);
+              const totalDiscovered = friendlySats.reduce((sum, s) => sum + s.contactsDiscoveredCount, 0);
+
+              // Eligible friendly launchers for ASAT
+              const asatCapableLaunchers = friendlyEntities.filter(
+                (e) => e.status !== 'destroyed' && (isStaticAirDefense(e.typeId) || isNavalCombatant(e.typeId) || e.typeId === 'silo')
+              );
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Space Telemetry Header Banner */}
+                  <div
+                    style={{
+                      background: 'rgba(255, 213, 79, 0.05)',
+                      border: '1px solid rgba(255, 213, 79, 0.3)',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '14px' }}>🛰️</span>
+                        <strong style={{ fontSize: '11px', color: '#FFD54F', textTransform: 'uppercase' }}>
+                          Space Layer: Reconnaissance & ASAT
+                        </strong>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '9.5px',
+                          padding: '1px 5px',
+                          borderRadius: '3px',
+                          background: 'rgba(255, 213, 79, 0.15)',
+                          color: '#FFD54F',
+                          fontWeight: 700,
+                        }}
+                      >
+                        LEO ~500km
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--paper-dim)' }}>
+                      <span>
+                        Operational Constellation: <strong style={{ color: '#00E676' }}>{friendlySats.filter((s) => s.status === 'operational').length}</strong> / {friendlySats.length}
+                      </span>
+                      <span>
+                        Space PID Tracks: <strong style={{ color: '#4FC3F7' }}>{totalDiscovered} unmasked</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 1. FRIENDLY SATELLITE CONSTELLATIONS */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', color: '#B0BEC5', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Friendly Reconnaissance Constellation ({friendlySats.length})
+                    </span>
+
+                    {friendlySats.map((sat) => {
+                      const isAlive = sat.status === 'operational';
+                      const sensorLabel =
+                        sat.sensorType === 'optical'
+                          ? '📷 Optical EO/IR (0.1m Res)'
+                          : sat.sensorType === 'sar'
+                            ? '📡 SAR Radar (All-Weather)'
+                            : '📶 ELINT / SIGINT (800km Cone)';
+
+                      return (
+                        <div
+                          key={sat.id}
+                          style={{
+                            background: '#09101B',
+                            borderLeft: `3px solid ${isAlive ? '#00E5FF' : '#FF5252'}`,
+                            borderRadius: '4px',
+                            padding: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong style={{ fontSize: '11.5px', color: isAlive ? '#FFFFFF' : '#FF5252' }}>
+                              🛰️ {sat.name}
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                fontWeight: 700,
+                                background: isAlive ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 82, 82, 0.2)',
+                                color: isAlive ? '#00E676' : '#FF5252',
+                              }}
+                            >
+                              {isAlive ? 'IN ORBIT' : '💥 DESTROYED'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '10px', color: '#4FC3F7' }}>
+                            {sensorLabel} · Swath: {sat.swathWidthKm} km
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                            <span>Alt: <strong>{sat.altitudeKm} km LEO</strong></span>
+                            <span>Inc: <strong>{sat.inclinationDeg}°</strong></span>
+                            <span>Period: <strong>{sat.periodMin} min</strong></span>
+                            <span>Acquired: <strong style={{ color: '#FFD54F' }}>{sat.contactsDiscoveredCount}</strong></span>
+                          </div>
+
+                          <div style={{ fontSize: '9px', color: '#78909C' }}>
+                            Sub-Sat Position: {sat.currentLngLat[1].toFixed(2)}°N, {sat.currentLngLat[0].toFixed(2)}°E
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 2. HOSTILE SATELLITE TRACKS & DIRECT-ASCENT ASAT STRIKES */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', color: '#FF5252', textTransform: 'uppercase', fontWeight: 700 }}>
+                        Hostile Satellites & ASAT Intercept ({enemySats.length})
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--paper-dim)' }}>Max Reach: 1,400 km</span>
+                    </div>
+
+                    {enemySats.map((sat) => {
+                      const isAlive = sat.status === 'operational';
+
+                      // Find closest friendly launcher
+                      let closestLauncher: SimEntity | null = null;
+                      let minLauncherDistKm = Infinity;
+                      for (const l of asatCapableLaunchers) {
+                        const d = distanceKm(l.lngLat, sat.currentLngLat);
+                        if (d < minLauncherDistKm) {
+                          minLauncherDistKm = d;
+                          closestLauncher = l;
+                        }
+                      }
+
+                      const isInAsatRange = minLauncherDistKm <= 1400;
+
+                      return (
+                        <div
+                          key={sat.id}
+                          style={{
+                            background: '#09101B',
+                            borderLeft: `3px solid ${isAlive ? '#FF5252' : '#546E7A'}`,
+                            borderRadius: '4px',
+                            padding: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '5px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong style={{ fontSize: '11px', color: isAlive ? '#FF5252' : '#78909C' }}>
+                              ⚠️ {sat.name} ({sat.iso})
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                fontWeight: 700,
+                                background: isAlive ? 'rgba(255, 82, 82, 0.15)' : 'rgba(120, 144, 156, 0.2)',
+                                color: isAlive ? '#FF5252' : '#78909C',
+                              }}
+                            >
+                              {isAlive ? `${sat.altitudeKm}km LEO` : 'NEUTRALIZED'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                            Sensor: {sat.sensorType.toUpperCase()} · Nearest Defender: {closestLauncher ? `${closestLauncher.name} (${minLauncherDistKm.toFixed(0)} km)` : 'No ASAT Battery'}
+                          </div>
+
+                          {isAlive && onLaunchAsat && (
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                              <button
+                                type="button"
+                                className="wg-btn"
+                                style={{
+                                  fontSize: '10px',
+                                  padding: '4px 8px',
+                                  flex: 1,
+                                  background: isInAsatRange ? 'rgba(255, 82, 82, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                  borderColor: isInAsatRange ? '#FF5252' : 'var(--border)',
+                                  color: isInAsatRange ? '#FF5252' : 'var(--paper-dim)',
+                                  cursor: isInAsatRange && closestLauncher ? 'pointer' : 'not-allowed',
+                                  fontWeight: 700,
+                                }}
+                                disabled={!isInAsatRange || !closestLauncher}
+                                onClick={() => {
+                                  if (closestLauncher) {
+                                    onLaunchAsat(closestLauncher.id, sat.id);
+                                  }
+                                }}
+                              >
+                                {isInAsatRange ? `🚀 Launch Direct-Ascent ASAT (${minLauncherDistKm.toFixed(0)} km)` : `⚠️ Out of ASAT Range (${minLauncherDistKm.toFixed(0)} km > 1400km)`}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ========================================================= */}
             {/* TAB: BATTLEFIELD NETWORK & COOPERATIVE ENGAGEMENT (CEC)   */}
@@ -2024,6 +2303,77 @@ export function WarSimConsole({
                 )}
               </div>
 
+              {/* Tanker Specific Logistics Telemetry */}
+              {(selectedEntity.typeId === 'tanker' || selectedEntity.name.toLowerCase().includes('tanker')) && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(0, 229, 255, 0.08)',
+                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    fontSize: '10.5px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#00E5FF', fontWeight: 700 }}>⛽ AAR Tanker Station Telemetry:</span>
+                    <span style={{ color: '#00E676', fontWeight: 600 }}>
+                      {selectedEntity.tankerState?.refuelingMethod?.toUpperCase().replace(/_/g, ' ') || 'FLYING BOOM'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--paper-dim)' }}>Offload Fuel Reserves:</span>
+                    <strong style={{ color: '#00E5FF' }}>
+                      {(selectedEntity.tankerState?.offloadRemainingKg ?? 40000).toLocaleString()} kg
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--paper-dim)' }}>Receiver Slots:</span>
+                    <span style={{ color: '#FFFFFF' }}>
+                      {selectedEntity.tankerState?.activeReceivers?.length ?? 0} / {selectedEntity.tankerState?.maxReceivers ?? 2} Serviced
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* In-Flight Refueling Active Hook-up Banner */}
+              {selectedEntity.status === 'aar_refueling' && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(0, 229, 255, 0.15)',
+                    border: '1px solid #00E5FF',
+                    color: '#00E5FF',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    animation: 'pulse 1.5s infinite',
+                  }}
+                >
+                  ⛽ Refueling in Progress · Boom Contact Active
+                </div>
+              )}
+
+              {selectedEntity.status === 'aar_rendezvous' && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '5px',
+                    background: 'rgba(255, 176, 32, 0.12)',
+                    border: '1px solid #FFB020',
+                    color: '#FFB020',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                  }}
+                >
+                  ⛽ Ingress to Tanker Rendezvous Orbit
+                </div>
+              )}
+
               {(() => {
                 const entityDomain = spec ? domainOf(spec) : isGround ? 'ground' : isNaval ? 'sea' : 'air';
                 const rcsVal = selectedEntity.rcs ?? (spec ? getSystemRcs(spec, entityDomain) : 5.0);
@@ -2031,6 +2381,52 @@ export function WarSimConsole({
 
                 return (
                   <>
+                    {/* Real-Time Sovereign Airspace Badge */}
+                    <div
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        background:
+                          selectedEntity.currentAirspace?.classification === 'friendly'
+                            ? 'rgba(79, 168, 95, 0.15)'
+                            : selectedEntity.currentAirspace?.classification === 'hostile'
+                              ? 'rgba(217, 83, 79, 0.18)'
+                              : selectedEntity.currentAirspace?.classification === 'neutral'
+                                ? 'rgba(255, 202, 40, 0.15)'
+                                : 'rgba(79, 195, 247, 0.12)',
+                        border: `1px solid ${
+                          selectedEntity.currentAirspace?.classification === 'friendly'
+                            ? '#4FA85F'
+                            : selectedEntity.currentAirspace?.classification === 'hostile'
+                              ? '#D9534F'
+                              : selectedEntity.currentAirspace?.classification === 'neutral'
+                                ? '#FFCA28'
+                                : '#4FC3F7'
+                        }`,
+                        fontSize: '10.5px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span style={{ color: 'var(--paper-dim)' }}>📍 Sovereign Airspace:</span>
+                      <strong
+                        style={{
+                          color:
+                            selectedEntity.currentAirspace?.classification === 'friendly'
+                              ? '#4FA85F'
+                              : selectedEntity.currentAirspace?.classification === 'hostile'
+                                ? '#D9534F'
+                                : selectedEntity.currentAirspace?.classification === 'neutral'
+                                  ? '#FFCA28'
+                                  : '#4FC3F7',
+                        }}
+                      >
+                        {selectedEntity.currentAirspace?.countryName || 'International Airspace'} (
+                        {(selectedEntity.currentAirspace?.classification || 'INTL').toUpperCase()})
+                      </strong>
+                    </div>
+
                     {!isStaticAD ? (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                         <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
@@ -2276,8 +2672,27 @@ export function WarSimConsole({
               })()}
 
               {/* Quick Tactical Actions */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                {!isStaticAD && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station') && (
+              <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                {!isStaticAD && !isGround && !isNaval && (selectedEntity.typeId !== 'tanker' && !selectedEntity.name.toLowerCase().includes('tanker')) && onOrderRefuelAtTanker && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station' || selectedEntity.status === 'bingo_rtb') && (
+                  <button
+                    className="wg-btn"
+                    style={{
+                      flex: 1,
+                      fontSize: '11px',
+                      padding: '5px',
+                      borderColor: '#00E5FF',
+                      color: '#00E5FF',
+                      background: 'rgba(0, 229, 255, 0.08)',
+                      fontWeight: 600,
+                    }}
+                    title="Order immediate in-flight rendezvous with nearest friendly tanker"
+                    onClick={() => onOrderRefuelAtTanker(selectedEntity.id)}
+                  >
+                    ⛽ Refuel at Tanker
+                  </button>
+                )}
+
+                {!isStaticAD && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station' || selectedEntity.status === 'aar_rendezvous') && (
                   <button
                     className="wg-btn"
                     style={{ flex: 1, fontSize: '11px', padding: '5px', borderColor: '#FFB020', color: '#FFB020' }}

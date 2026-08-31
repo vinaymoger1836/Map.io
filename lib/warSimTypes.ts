@@ -101,6 +101,8 @@ export type EntityStatus =
   | 'takeoff_ingress'    // En route from base to assigned patrol station
   | 'on_station'         // Orbiting patrol station with active sensors
   | 'engaging'           // Maneuvering to release ordnance
+  | 'aar_rendezvous'     // En route to join friendly tanker orbit for in-flight refueling
+  | 'aar_refueling'      // Hooked up to tanker boom/drogue receiving fuel transfer
   | 'bingo_rtb'          // Low fuel: returning to home base
   | 'damaged_rtb'        // Battle damage: emergency RTB for repairs
   | 'destroyed';         // Permanently lost / removed from map
@@ -206,11 +208,88 @@ export interface SimEntity {
   networkId?: string;
   /** Detailed component & structural subsystem health profile */
   subsystems?: SubsystemStatus;
+  /** Aerial refueling tanker state (if this entity is a tanker aircraft) */
+  tankerState?: {
+    offloadRemainingKg: number;
+    totalOffloadCapacityKg: number;
+    fuelOffloadRateKgPerMin: number;
+    refuelingMethod: 'boom' | 'probe_and_drogue' | 'universal';
+    activeReceivers: string[]; // Entity IDs currently plugged into boom/drogue
+    maxReceivers: number;
+    orbitLengthKm: number;
+    orbitHeadingDeg: number;
+    totalTransferredKg: number;
+    sortiesServiced: number;
+    rescuedBingoCount: number;
+  };
+  /** Receiver aerial refueling state (if this aircraft is currently taking on fuel) */
+  refuelingState?: {
+    tankerEntityId: string;
+    stage: 'rendezvous' | 'hooked' | 'complete';
+    targetFuelPct: number;
+    flowRateKgPerSec: number;
+    fuelReceivedKg: number;
+    preRefuelStatus: EntityStatus;
+    preRefuelPatrolOrder?: PatrolOrder;
+    preRefuelStrikePlan?: StrikePlan;
+    wasBingoRescue?: boolean;
+    durationSec?: number;
+  };
+  /** Real-time Sovereign Airspace and Geographic Location */
+  currentAirspace?: AirspaceLocation;
+  previousAirspace?: AirspaceLocation;
+}
+
+export type AirspaceClassification = 'friendly' | 'hostile' | 'neutral' | 'international';
+export type AirspaceRoeDoctrine = 'weapons_free' | 'adiz_border_defense' | 'neutral_sanctuary';
+
+export interface AirspaceLocation {
+  countryIso: string;
+  countryName: string;
+  classification: AirspaceClassification;
+  isAirspaceViolated?: boolean;
+}
+
+export interface BorderIncursionRecord {
+  id: string;
+  simTimeSec: number;
+  entityId: string;
+  entityName: string;
+  entityIso: string;
+  faction: 'player' | 'enemy';
+  fromIso: string;
+  fromName: string;
+  toIso: string;
+  toName: string;
+  incursionType: 'hostile_breach' | 'neutral_violation' | 'friendly_entry' | 'international_exit';
+  lngLat: [number, number];
 }
 
 /* ------------------------------------------------------------------ */
 /* 5. Live Munitions, Missile Flyouts & Point Defense                 */
 /* ------------------------------------------------------------------ */
+
+export interface SimSatellite {
+  id: string;
+  systemId: string;
+  name: string;
+  iso: string;
+  faction: 'player' | 'enemy';
+  altitudeKm: number;
+  inclinationDeg: number;
+  periodMin: number;
+  sensorType: 'optical' | 'sar' | 'elint';
+  swathWidthKm: number;
+  resolutionM: number;
+  currentLngLat: [number, number];
+  groundTrack: [number, number][]; // Pre-calculated orbital ground track coordinates across the map
+  groundSwathPolygon: [number, number][]; // Current active coverage footprint polygon
+  status: 'operational' | 'degraded' | 'destroyed';
+  lastScanSimTimeSec?: number;
+  contactsDiscoveredCount: number;
+  priorityTargetZone?: [number, number];
+  orbitPhaseOffsetSec: number;
+}
 
 export interface MissileFlyoutTrack {
   id: string;
@@ -222,7 +301,7 @@ export interface MissileFlyoutTrack {
   attackerIso: string;
   targetIso: string;
   weaponName: string;
-  weaponCategory: 'cruise' | 'ballistic' | 'sam' | 'torpedo' | 'air_to_air' | 'bomb' | 'artillery';
+  weaponCategory: 'cruise' | 'ballistic' | 'sam' | 'torpedo' | 'air_to_air' | 'bomb' | 'artillery' | 'asat';
   speedKmh: number;
   startSimTimeSec: number;
   etaSimTimeSec: number;
@@ -232,6 +311,8 @@ export interface MissileFlyoutTrack {
   engagedByDefenderIds?: string[];
   /** Target threat missile ID being intercepted (for SAM / interceptor tracks) */
   targetMissileId?: string;
+  /** Target satellite ID being intercepted (for ASAT exo-atmospheric kinetic kill vehicles) */
+  targetSatelliteId?: string;
   /** Probability of kill committed by this interceptor (0.0 to 1.0) */
   interceptorPk?: number;
   /** Timestamp when this threat was first acquired by defender radar (for reaction time delay) */
@@ -294,7 +375,7 @@ export interface StrikeSalvoTracker {
 /* 5b. Theater Battle Operations (Multi-Phase Multi-Domain Planner)   */
 /* ------------------------------------------------------------------ */
 
-export type BattleOpsTaskType = 'strike' | 'patrol' | 'sead';
+export type BattleOpsTaskType = 'strike' | 'patrol' | 'sead' | 'aar';
 
 export interface BattleOpsTask {
   id: string;
@@ -322,6 +403,10 @@ export interface BattleOpsTask {
   emcon?: 'active' | 'passive';
   patrolRouteType?: 'orbit' | 'waypoints';
   patrolWaypoints?: [number, number][];
+
+  // AAR Aerial Refueling Configuration
+  tankerEntityId?: string;
+  fuelTransferTargetPct?: number;
 
   // Live Execution Status
   status: 'pending' | 'executing' | 'completed' | 'failed';
@@ -373,7 +458,8 @@ export interface SimBattleEvent {
     | 'loss'
     | 'rtb'
     | 'repair'
-    | 'alert';
+    | 'alert'
+    | 'aar_refuel';
   title: string;
   detail: string;
   lngLat?: [number, number];
@@ -383,7 +469,8 @@ export type WarReportCategory =
   | 'under_attack'      // Incoming attack / defensive engagement / damage sustained
   | 'offensive_strike'  // Strike executed against hostile forces
   | 'recon_intel'       // Positive identification (PID) & reconnaissance gathered
-  | 'battle_ops';       // Multi-phase Theater Battle Operations consolidated report
+  | 'battle_ops'        // Multi-phase Theater Battle Operations consolidated report
+  | 'aar_logistics';    // Combat Air Refueling & logistics sortie after-action report
 
 export interface CombatReport {
   id: string;
@@ -516,6 +603,54 @@ export interface CombatReport {
     targetCasualties: string[];
     strategicOutcome: string;
   };
+
+  // Aerial Refueling & Logistics Telemetry (if AAR report)
+  aarDetails?: {
+    tankerName: string;
+    tankerIso: string;
+    receiverName: string;
+    receiverType: string;
+    refuelingMethod: string;
+    fuelOffloadedKg: number;
+    durationSec: number;
+    preRefuelFuelPct: number;
+    postRefuelFuelPct: number;
+    wasEmergencyBingoRescue: boolean;
+    combatRadiusExtensionKm: number;
+    logisticsAssessment: string;
+  };
+
+  // Airspace Sovereignty & Border Incursions Telemetry
+  borderDetails?: {
+    totalIncursions: number;
+    hostileAirspaceBreaches: number;
+    neutralViolations: number;
+    activeRoeDoctrine: AirspaceRoeDoctrine;
+    sovereigntyAssessment: string;
+    incursionLog: {
+      entityName: string;
+      fromCountry: string;
+      toCountry: string;
+      incursionType: 'hostile_breach' | 'neutral_violation' | 'friendly_entry' | 'international_exit';
+      simTimeSec: number;
+    }[];
+  };
+
+  // Space Reconnaissance & ASAT Warfare Telemetry
+  spaceDetails?: {
+    totalPasses: number;
+    operationalSatellites: number;
+    destroyedSatellites: number;
+    targetsDiscoveredCount: number;
+    asatInterceptsCount: number;
+    spaceAssessment: string;
+    satelliteEvents: {
+      satelliteName: string;
+      sensorType: 'optical' | 'sar' | 'elint';
+      event: string;
+      simTimeSec: number;
+    }[];
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -545,6 +680,7 @@ export interface WarSimSession {
   };
   bases: SimBase[];
   entities: SimEntity[];
+  satellites?: SimSatellite[];
   activeMissiles: MissileFlyoutTrack[];
   fogOfWarContacts: {
     playerContacts: DetectedContact[];
@@ -555,6 +691,8 @@ export interface WarSimSession {
   salvoTrackers?: StrikeSalvoTracker[];
   networks?: BattlefieldNetwork[];
   battleOpsPlan?: BattleOpsPlan;
+  airspaceRoeDoctrine?: AirspaceRoeDoctrine;
+  borderIncursions?: BorderIncursionRecord[];
   selectedEntityId?: string;
   selectedTargetId?: string;
   waypointPlacingMode?: 'patrol_center' | 'strike_target' | 'base_location';
