@@ -235,6 +235,20 @@ export interface SimEntity {
     wasBingoRescue?: boolean;
     durationSec?: number;
   };
+  /** Electronic Warfare (EW) & Electronic Attack configuration */
+  ewState?: {
+    mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection';
+    jammingTargetLngLat?: [number, number];
+    jammingSectorCone?: [number, number][]; // 3-point or 4-point polygon of directional jamming cone
+    activePowerKw?: number;
+    effectiveJammingRangeKm?: number;
+  };
+  /** Whether this radar is currently suppressed/degraded by enemy EW jamming */
+  isRadarJammed?: boolean;
+  /** Effective compressed radar detection reach under jamming (km) */
+  jammedDetectionRangeKm?: number;
+  /** Whether this platform is currently navigating inside an enemy GPS denial bubble */
+  isGpsDenied?: boolean;
   /** Real-time Sovereign Airspace and Geographic Location */
   currentAirspace?: AirspaceLocation;
   previousAirspace?: AirspaceLocation;
