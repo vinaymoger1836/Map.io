@@ -4332,3 +4332,45 @@ export function launchAsatStrike(
 } {
   return orderAsatStrike(session, launcherEntityId, targetSatelliteId);
 }
+
+/**
+ * Orders a dedicated SEAD Anti-Radiation Missile strike (e.g. AGM-88 HARM / Kh-31P)
+ * homing autonomously on an active hostile radar emitter.
+ */
+export function launchSeadStrike(
+  session: WarSimSession,
+  attackerEntityId: string,
+  targetRadarEntityId: string
+): {
+  session: WarSimSession;
+  status: 'launched' | 'failed';
+  summary: string;
+} {
+  return orderSeadAntiRadiationStrike(session, attackerEntityId, targetRadarEntityId);
+}
+
+/**
+ * Updates an entity's Electronic Warfare (EW) mode and directional jamming focus.
+ */
+export function setEntityEwMode(
+  session: WarSimSession,
+  entityId: string,
+  mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection',
+  jammingTargetLngLat?: [number, number]
+): WarSimSession {
+  const updatedEntities = session.entities.map((e) => {
+    if (e.id !== entityId) return e;
+    return {
+      ...e,
+      ewState: {
+        mode,
+        jammingTargetLngLat,
+      },
+    };
+  });
+
+  return {
+    ...session,
+    entities: updatedEntities,
+  };
+}
