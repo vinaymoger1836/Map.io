@@ -1679,6 +1679,11 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_SATELLITES_SWATH_LINE,
     LYR_SATELLITES_SWATH_FILL,
     LYR_SATELLITES_GROUNDTRACK,
+    LYR_EW_LABEL,
+    LYR_EW_GPS_BUBBLE_LINE,
+    LYR_EW_GPS_BUBBLE_FILL,
+    LYR_EW_JAMMING_CONE_LINE,
+    LYR_EW_JAMMING_CONE_FILL,
   ];
   layerIds.forEach((id) => {
     if (map.getLayer(id)) map.removeLayer(id);
@@ -1694,6 +1699,7 @@ export function removeWarSimLayers(map: MLMap) {
     SRC_PATROL_PREVIEW,
     SRC_ENVELOPES,
     SRC_SATELLITES,
+    SRC_EW,
   ];
   sourceIds.forEach((id) => {
     if (map.getSource(id)) map.removeSource(id);
