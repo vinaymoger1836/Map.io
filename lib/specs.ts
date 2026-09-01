@@ -608,6 +608,69 @@ export function defaultSatelliteSpecsFor(spec?: SystemSpec, typeId?: string): Or
   };
 }
 
+/** Electronic Warfare (EW), Radar Jamming & GPS Denial Facet */
+export interface EwFacet {
+  isDedicatedEw?: boolean;
+  /** Effective stand-off noise & deception jamming reach against hostile radars (km) */
+  jammingRangeKm: number;
+  /** Directional jamming beam sector angle in degrees (e.g. 45°–90° cone) */
+  coneAngleDeg: number;
+  /** Jammer Effective Radiated Power (ERP) in kilowatts (kW) */
+  jammerPowerKw?: number;
+  /** Omnidirectional GPS jamming denial bubble radius (km) */
+  gpsJammerRadiusKm?: number;
+  /** Radar detection range reduction factor when inside jammer beam (0.0 to 1.0, e.g. 0.70 means 70% range compression) */
+  burnThroughReductionFactor?: number;
+}
+
+/**
+ * Resolves military Electronic Warfare (EW) specifications for dedicated EW aircraft,
+ * ground jammers, and multirole fighter self-protection suites.
+ */
+export function defaultEwFacetFor(spec?: SystemSpec, typeId?: string): EwFacet | undefined {
+  if (spec?.ew) return spec.ew;
+  const name = (spec?.name ?? '').toLowerCase();
+  const tid = (typeId ?? spec?.typeId ?? '').toLowerCase();
+
+  // 1. Dedicated Stand-Off / Escort EW Aircraft
+  if (name.includes('ea-18g') || name.includes('growler') || name.includes('compass call') || name.includes('ec-37') || name.includes('tornado ecr') || name.includes('j-16d')) {
+    return {
+      isDedicatedEw: true,
+      jammingRangeKm: 280,
+      coneAngleDeg: 60,
+      jammerPowerKw: 120,
+      gpsJammerRadiusKm: 80,
+      burnThroughReductionFactor: 0.75,
+    };
+  }
+
+  // 2. Heavy Ground-Based Strategic/Operational Radar & GPS Jammers (Krasukha-4, Murmansk-BN, Pole-21)
+  if (name.includes('krasukha') || name.includes('murmansk') || name.includes('pole-21') || name.includes('scorpius') || name.includes('tirada')) {
+    return {
+      isDedicatedEw: true,
+      jammingRangeKm: 300,
+      coneAngleDeg: 90,
+      jammerPowerKw: 250,
+      gpsJammerRadiusKm: 200,
+      burnThroughReductionFactor: 0.85,
+    };
+  }
+
+  // 3. Tactical Strike Aircraft with Integrated Heavy EW Pods (Su-34 Khibiny, F-35 AESA EA)
+  if (name.includes('su-34') || name.includes('khibiny') || name.includes('vitebsk') || name.includes('f-35') || name.includes('typhoon') || name.includes('rafale') && name.includes('spectra')) {
+    return {
+      isDedicatedEw: false,
+      jammingRangeKm: 150,
+      coneAngleDeg: 45,
+      jammerPowerKw: 45,
+      gpsJammerRadiusKm: 30,
+      burnThroughReductionFactor: 0.55,
+    };
+  }
+
+  return undefined;
+}
+
 export interface SystemSpec {
   id: string;
   name: string;
@@ -620,6 +683,7 @@ export interface SystemSpec {
   weapons?: WeaponFacet[];
   platform?: PlatformFacet;
   orbit?: OrbitFacet;
+  ew?: EwFacet;
   signature?: 'low' | 'medium' | 'high';
   /**
    * Radar Cross-Section (RCS) observable footprint measured in square meters (m²).
