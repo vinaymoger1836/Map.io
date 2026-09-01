@@ -2941,6 +2941,8 @@ export function generateConsolidatedBattleOpsReport(
       targetCasualties,
       strategicOutcome,
     },
+    spaceDetails: createSpaceCombatReport(session),
+    ewDetails: createEwCombatReport(session),
   };
 }
 
