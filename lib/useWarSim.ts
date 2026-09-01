@@ -36,6 +36,8 @@ import {
   orderAerialRefueling,
   setSessionAirspaceRoe,
   launchAsatStrike,
+  launchSeadStrike,
+  setEntityEwMode,
 } from './warSimEngine';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
