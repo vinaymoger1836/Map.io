@@ -685,6 +685,81 @@ export function installWarSimLayers(map: MLMap) {
       'text-halo-width': 2,
     },
   });
+
+  // 7. Electronic Warfare (EW), Directional Jamming Cones & GPS Denial
+  map.addSource(SRC_EW, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  map.addLayer({
+    id: LYR_EW_JAMMING_CONE_FILL,
+    type: 'fill',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'jamming_cone'],
+    paint: {
+      'fill-color': ['coalesce', ['get', 'color'], '#00E5FF'],
+      'fill-opacity': 0.14,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_JAMMING_CONE_LINE,
+    type: 'line',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'jamming_cone'],
+    paint: {
+      'line-color': ['coalesce', ['get', 'color'], '#00E5FF'],
+      'line-width': 1.5,
+      'line-dasharray': [3, 2],
+      'line-opacity': 0.75,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_GPS_BUBBLE_FILL,
+    type: 'fill',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'gps_bubble'],
+    paint: {
+      'fill-color': '#9C27B0',
+      'fill-opacity': 0.08,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_GPS_BUBBLE_LINE,
+    type: 'line',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'gps_bubble'],
+    paint: {
+      'line-color': '#E040FB',
+      'line-width': 1.3,
+      'line-dasharray': [4, 4],
+      'line-opacity': 0.7,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_LABEL,
+    type: 'symbol',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'label'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 9.5,
+      'text-offset': [0, 1.2],
+      'text-anchor': 'top',
+      'text-font': font,
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': ['coalesce', ['get', 'color'], '#E040FB'],
+      'text-halo-color': '#070C14',
+      'text-halo-width': 2,
+    },
+  });
 }
 
 /**
