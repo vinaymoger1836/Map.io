@@ -42,6 +42,7 @@ const SRC_REACH_RING = 'warsim-reach-ring-src';
 const SRC_ENVELOPES = 'warsim-envelopes-src';
 const SRC_PATROL_PREVIEW = 'warsim-patrol-preview-src';
 const SRC_SATELLITES = 'warsim-satellites-src';
+const SRC_EW = 'warsim-ew-src';
 
 const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
@@ -51,6 +52,12 @@ const LYR_PATROL_PREVIEW_CENTER = 'warsim-patrol-preview-center';
 const LYR_PATROL_PREVIEW_LABEL = 'warsim-patrol-preview-label';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
+
+const LYR_EW_JAMMING_CONE_FILL = 'warsim-ew-jamming-cone-fill';
+const LYR_EW_JAMMING_CONE_LINE = 'warsim-ew-jamming-cone-line';
+const LYR_EW_GPS_BUBBLE_FILL = 'warsim-ew-gps-bubble-fill';
+const LYR_EW_GPS_BUBBLE_LINE = 'warsim-ew-gps-bubble-line';
+const LYR_EW_LABEL = 'warsim-ew-label';
 
 const LYR_SATELLITES_GROUNDTRACK = 'warsim-satellites-groundtrack';
 const LYR_SATELLITES_SWATH_FILL = 'warsim-satellites-swath-fill';
