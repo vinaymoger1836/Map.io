@@ -2740,13 +2740,29 @@ export function tickWarSim(
   );
   newEvents.push(...spaceEvents);
 
+  // 5c. Step Electronic Warfare (EW), Directional Radar Jamming & GPS Denial
+  const {
+    updatedEntities: ewEntities,
+    updatedMissiles: ewMissiles,
+    ewEvents,
+  } = stepElectronicWarfare(
+    {
+      ...session,
+      entities: finalEntitiesWithAirspace,
+      activeMissiles: updatedMissiles,
+    },
+    dtSimSec,
+    systemsLibrary
+  );
+  newEvents.push(...ewEvents);
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
     bases: updatedBases,
-    entities: finalEntitiesWithAirspace,
+    entities: ewEntities,
     satellites: updatedSatellites,
-    activeMissiles: updatedMissiles,
+    activeMissiles: ewMissiles,
     airspaceRoeDoctrine: session.airspaceRoeDoctrine || 'weapons_free',
     borderIncursions: updatedBorderIncursions.slice(-100),
     fogOfWarContacts: {
