@@ -1334,6 +1334,78 @@ export function renderWarSimStateToMap(
     type: 'FeatureCollection',
     features: satelliteFeatures,
   });
+
+  // 7. Render Electronic Warfare (EW), Directional Jamming Cones & GPS Denial Bubbles
+  const ewFeatures: GeoJSON.Feature[] = [];
+
+  session.entities.forEach((entity) => {
+    if (
+      entity.status === 'destroyed' ||
+      entity.status === 'docked' ||
+      entity.status === 'turnaround' ||
+      entity.status === 'in_repair'
+    ) {
+      return;
+    }
+
+    const isFriendly = entity.iso === factionIso;
+    const coneColor = isFriendly ? '#00E5FF' : '#E040FB';
+
+    // 7a. Directional Standoff Noise Jamming Cone
+    if (entity.ewState?.jammingSectorCone && entity.ewState.jammingSectorCone.length > 2) {
+      ewFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [entity.ewState.jammingSectorCone] },
+        properties: {
+          kind: 'jamming_cone',
+          color: coneColor,
+        },
+      });
+
+      // Jamming cone label at perimeter
+      const coneTip = entity.ewState.jammingSectorCone[Math.floor(entity.ewState.jammingSectorCone.length / 2)];
+      if (coneTip) {
+        ewFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: coneTip },
+          properties: {
+            kind: 'label',
+            color: coneColor,
+            label: `⚡ ${entity.name} [EW NOISE JAMMING]`,
+          },
+        });
+      }
+    }
+
+    // 7b. Omnidirectional GPS Denial Bubble
+    const spec = systemsLibrary.find((s) => s.id === entity.systemId);
+    const gpsRadius = spec?.ew?.gpsJammerRadiusKm;
+    if (gpsRadius && gpsRadius > 0 && (entity.ewState?.mode === 'gps_denial' || spec?.ew?.isDedicatedEw)) {
+      const bubbleCoords = geodesicRing(entity.lngLat, gpsRadius, 48);
+      ewFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [bubbleCoords] },
+        properties: {
+          kind: 'gps_bubble',
+        },
+      });
+
+      ewFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [entity.lngLat[0], entity.lngLat[1] + (gpsRadius / 111.0)] },
+        properties: {
+          kind: 'label',
+          color: '#E040FB',
+          label: `🚫 GPS DENIAL BUBBLE (${gpsRadius}km)`,
+        },
+      });
+    }
+  });
+
+  (map.getSource(SRC_EW) as GeoJSONSource)?.setData({
+    type: 'FeatureCollection',
+    features: ewFeatures,
+  });
 }
 
 /**
