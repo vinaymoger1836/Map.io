@@ -150,6 +150,8 @@ export interface WarSimConsoleProps {
   onFlyToBase?: (lngLat: [number, number]) => void;
   onSetAirspaceRoe?: (doctrine: import('@/lib/warSimTypes').AirspaceRoeDoctrine) => void;
   onLaunchAsat?: (launcherEntityId: string, targetSatelliteId: string) => void;
+  onLaunchSead?: (attackerEntityId: string, targetRadarEntityId: string) => void;
+  onSetEwMode?: (entityId: string, mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection', jammingTargetLngLat?: [number, number]) => void;
 }
 
 export function WarSimConsole({
@@ -209,6 +211,8 @@ export function WarSimConsole({
   onFlyToBase,
   onSetAirspaceRoe,
   onLaunchAsat,
+  onLaunchSead,
+  onSetEwMode,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
