@@ -87,6 +87,11 @@ import {
   orderAsatStrike,
   createSpaceCombatReport,
 } from './spaceLayer';
+import {
+  stepElectronicWarfare,
+  orderSeadAntiRadiationStrike,
+  createEwCombatReport,
+} from './electronicWarfare';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
