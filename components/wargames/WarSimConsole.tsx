@@ -28,6 +28,7 @@ import {
   getSystemRcs,
   defaultTerrainSensorFor,
   defaultTerrainPlatformFor,
+  defaultEwFacetFor,
 } from '@/lib/specs';
 import { distanceKm } from '@/lib/geo';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
