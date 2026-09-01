@@ -339,6 +339,14 @@ export interface MissileFlyoutTrack {
   threatAltitudeM?: number;
   threatRcsM2?: number;
   threatSpeedMach?: number;
+  /** Anti-Radiation Missile (ARM) tracking active SAM/EW radar emitter */
+  isAntiRadiation?: boolean;
+  /** Home-On-Jam (HOJ) tracking active jammer emitter */
+  isHomeOnJam?: boolean;
+  /** Whether the missile guidance is currently experiencing GPS denial / jamming */
+  isGpsDenied?: boolean;
+  /** Cumulative Inertial Navigation System (INS) drift error in meters */
+  insDriftErrorM?: number;
 }
 
 export interface InterceptionBreakdownEntry {
