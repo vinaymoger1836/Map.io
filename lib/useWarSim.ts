@@ -1046,6 +1046,8 @@ export function useWarSim({
     orderStrike,
     setAirspaceRoe,
     orderAsatStrike,
+    orderSeadStrike,
+    updateEntityEwMode,
     createBaseAtLocation,
     renameBase,
     createNetwork,
