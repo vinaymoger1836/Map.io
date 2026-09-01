@@ -2363,6 +2363,11 @@ export function tickWarSim(
           ratedEnvelopeKm = Math.max(ratedEnvelopeKm, 180);
         }
 
+        // Radar Electronic Warfare Suppression: If radar is jammed by hostile EW cone, compress reach
+        if (scanner.isRadarJammed && scanner.jammedDetectionRangeKm !== undefined) {
+          ratedEnvelopeKm = Math.min(ratedEnvelopeKm, scanner.jammedDetectionRangeKm);
+        }
+
         if (scanner.patrolOrder?.emcon === 'passive') {
           ratedEnvelopeKm = 0; // Passive silent running
         }
