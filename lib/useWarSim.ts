@@ -984,6 +984,22 @@ export function useWarSim({
     });
   }, []);
 
+  const orderSeadStrike = useCallback((attackerEntityId: string, targetRadarEntityId: string) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const res = launchSeadStrike(prev, attackerEntityId, targetRadarEntityId);
+      return res.session;
+    });
+  }, []);
+
+  const updateEntityEwMode = useCallback((
+    entityId: string,
+    mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection',
+    jammingTargetLngLat?: [number, number]
+  ) => {
+    setSession((prev) => (prev ? setEntityEwMode(prev, entityId, mode, jammingTargetLngLat) : null));
+  }, []);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
