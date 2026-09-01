@@ -42,7 +42,7 @@ import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'network' | 'battle_ops' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'ew' | 'network' | 'battle_ops' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
