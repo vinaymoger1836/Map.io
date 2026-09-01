@@ -673,6 +673,23 @@ export interface CombatReport {
       simTimeSec: number;
     }[];
   };
+
+  // Electronic Warfare (EW), GPS Denial & SEAD Telemetry
+  ewDetails?: {
+    radarsJammedCount: number;
+    jammingSortiesCount: number;
+    gpsDeniedStrikesCount: number;
+    averageInsDriftM: number;
+    antiRadiationStrikesCount: number;
+    antiRadiationHitsCount: number;
+    ewAssessment: string;
+    ewEvents: {
+      platformName: string;
+      ewAction: string;
+      targetName: string;
+      simTimeSec: number;
+    }[];
+  };
 }
 
 /* ------------------------------------------------------------------ */
