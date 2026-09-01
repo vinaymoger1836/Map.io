@@ -176,6 +176,12 @@ export interface WeaponFacet {
   /** Detection to launch, in seconds. */
   reactionSec?: number;
   engages?: TargetClass[];
+  /** Seeker guidance technology */
+  seekerType?: 'radar_active' | 'radar_semi_active' | 'anti_radiation' | 'gps_ins' | 'optical' | 'thermal_ir' | 'dual_mode_arm_mmw';
+  /** Autonomous Anti-Radiation Missile (ARM) homing on active radar emitters (SEAD/DEAD) */
+  isAntiRadiation?: boolean;
+  /** Home-On-Jam (HOJ) seeker guidance mode against hostile noise jammers */
+  homeOnJam?: boolean;
 }
 
 /**
