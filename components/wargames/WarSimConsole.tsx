@@ -713,6 +713,20 @@ export function WarSimConsole({
                 🛰️ Space ({(session.satellites || []).filter((s) => s.status !== 'destroyed').length})
               </button>
               <button
+                className={`wg-btn ${activeTab === 'ew' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'ew' ? undefined : 'rgba(224, 64, 251, 0.08)',
+                  borderColor: activeTab === 'ew' ? undefined : 'rgba(224, 64, 251, 0.3)',
+                  color: activeTab === 'ew' ? undefined : '#E040FB',
+                }}
+                onClick={() => setActiveTab('ew')}
+              >
+                ⚡ EW & SEAD
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'network' ? 'accent' : ''}`}
                 style={{
                   fontSize: '10px',
