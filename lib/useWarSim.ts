@@ -1003,6 +1003,18 @@ export function useWarSim({
     setSession((prev) => (prev ? setEntityEwMode(prev, entityId, mode, jammingTargetLngLat) : null));
   }, []);
 
+  const setEntityThreatLevel = useCallback((entityId: string, threatLevel: SystemThreatLevel) => {
+    setSession((prev) => (prev ? updateEntityThreatLevel(prev, entityId, threatLevel) : null));
+  }, []);
+
+  const setGlobalThreatLevel = useCallback((
+    factionIso: string,
+    threatLevel: SystemThreatLevel,
+    typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground'
+  ) => {
+    setSession((prev) => (prev ? updateGlobalFactionThreatLevel(prev, factionIso, threatLevel, typeCategory) : null));
+  }, []);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
@@ -1051,6 +1063,8 @@ export function useWarSim({
     orderAsatStrike,
     orderSeadStrike,
     updateEntityEwMode,
+    setEntityThreatLevel,
+    setGlobalThreatLevel,
     createBaseAtLocation,
     renameBase,
     createNetwork,
