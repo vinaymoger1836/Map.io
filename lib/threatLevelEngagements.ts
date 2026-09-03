@@ -190,7 +190,7 @@ export function stepThreatLevelEngagements(
     const hostileSpec = systemsLibrary.find((s) => s.id === hostile.systemId);
     const isHostileNaval = isNavalCombatant(hostile.typeId) || (hostileSpec ? domainOf(hostileSpec) === 'sea' : false);
     const isHostileAir = hostile.typeId === 'fighter' || hostile.typeId === 'bomber' || hostile.typeId === 'uav' || hostile.typeId === 'recon' || hostile.typeId === 'awacs' || hostile.typeId === 'tanker' || hostile.typeId === 'helicopter';
-    const hostileDomain: 'air' | 'sea' | 'ground' = isHostileNaval ? 'sea' : isHostileAir ? 'air' : 'ground';
+    const targetClass: import('./specs').TargetClass = isHostileNaval ? 'surface' : isHostileAir ? 'air' : 'ground';
 
     // Check all friendly defenders in range
     const eligibleDefenders: {
@@ -222,7 +222,7 @@ export function stepThreatLevelEngagements(
         targetLngLat: hostile.lngLat,
         targetAltitudeM: hostile.altitudeM || (isHostileAir ? 7000 : 20),
         sensorEquipment: scannerEquip,
-        isGroundTarget: hostileDomain === 'ground',
+        isGroundTarget: targetClass === 'ground',
       });
 
       if (los.isMasked) continue;
@@ -266,7 +266,7 @@ export function stepThreatLevelEngagements(
         if (mag <= 0) continue;
         if (w.rangeKm < dist) continue;
 
-        const canEngage = canWeaponEngageTarget(w, hostileDomain) || w.engages?.includes(hostileDomain);
+        const canEngage = canWeaponEngageTarget(w, targetClass) || w.engages?.includes(targetClass);
         if (canEngage) {
           if (!bestW || w.rangeKm > bestW.rangeKm) {
             bestW = w;
