@@ -92,6 +92,11 @@ import {
   orderSeadAntiRadiationStrike,
   createEwCombatReport,
 } from './electronicWarfare';
+import {
+  stepThreatLevelEngagements,
+  setSystemThreatLevel,
+  setGlobalThreatLevel,
+} from './threatLevelEngagements';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
