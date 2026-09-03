@@ -843,6 +843,59 @@ export function WarSimConsole({
                   </select>
                 </div>
 
+                {/* Global Batch Threat Level / DEFCON ROE Selector */}
+                {onSetGlobalThreatLevel && (
+                  <div
+                    style={{
+                      padding: '6px 8px',
+                      borderRadius: '4px',
+                      background: 'rgba(79, 195, 247, 0.06)',
+                      border: '1px solid rgba(79, 195, 247, 0.2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', color: '#4FC3F7', fontWeight: 700 }}>
+                        FLEET DEFCON ROE:
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--paper-dim)' }}>
+                        Apply to {systemDomainFilter === 'all' ? 'All Deployed' : systemDomainFilter.toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#4FA85F', color: '#4FA85F' }}
+                        title="DEFCON 3 (Level 1): Shadow & Radar Lock. Track intruder on border breach; hold fire unless intruder fires first."
+                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_3', systemDomainFilter as any)}
+                      >
+                        🟢 DEFCON 3
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#FFB020', color: '#FFB020' }}
+                        title="DEFCON 2 (Level 2): Sovereign Defense. Immediate weapons-free engagement on any border breach."
+                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_2', systemDomainFilter as any)}
+                      >
+                        🟡 DEFCON 2
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#D9534F', color: '#D9534F' }}
+                        title="DEFCON 1 (Level 3): Total Offensive. Weapons-free engagement anywhere across the map (neutral, enemy, international)."
+                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_1', systemDomainFilter as any)}
+                      >
+                        🔴 DEFCON 1
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {Object.keys(quotaLedger).length === 0 && (
                   <div style={{ textAlign: 'center', padding: '20px', color: 'var(--paper-dim)', fontSize: '12px' }}>
                     No systems allocated for {activeCountryIso}.
