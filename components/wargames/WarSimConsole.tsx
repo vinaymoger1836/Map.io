@@ -153,6 +153,8 @@ export interface WarSimConsoleProps {
   onLaunchAsat?: (launcherEntityId: string, targetSatelliteId: string) => void;
   onLaunchSead?: (attackerEntityId: string, targetRadarEntityId: string) => void;
   onSetEwMode?: (entityId: string, mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection', jammingTargetLngLat?: [number, number]) => void;
+  onSetEntityThreatLevel?: (entityId: string, threatLevel: import('@/lib/warSimTypes').SystemThreatLevel) => void;
+  onSetGlobalThreatLevel?: (factionIso: string, threatLevel: import('@/lib/warSimTypes').SystemThreatLevel, typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground') => void;
 }
 
 export function WarSimConsole({
@@ -214,6 +216,8 @@ export function WarSimConsole({
   onLaunchAsat,
   onLaunchSead,
   onSetEwMode,
+  onSetEntityThreatLevel,
+  onSetGlobalThreatLevel,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
