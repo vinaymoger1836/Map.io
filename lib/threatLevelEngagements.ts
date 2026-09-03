@@ -327,10 +327,8 @@ export function stepThreatLevelEngagements(
             magazine: Math.max(0, curMag - salvoCommit),
           };
         }
-        const nextMags = e.magazines ? [...e.magazines] : undefined;
-        if (nextMags) {
-          nextMags[bestWeaponIdx] = Math.max(0, curMag - salvoCommit);
-        }
+        const nextMags: Record<number, number> = { ...(e.magazines || {}) };
+        nextMags[bestWeaponIdx] = Math.max(0, curMag - salvoCommit);
         return {
           ...e,
           customWeapons: nextCustom,
