@@ -2782,6 +2782,93 @@ export function WarSimConsole({
                       </strong>
                     </div>
 
+                    {/* Operational Threat Level / DEFCON ROE Pill */}
+                    <div
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 700 }}>
+                          ROE THREAT LEVEL:
+                        </span>
+                        {selectedEntity.isTargetLocked && (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              padding: '1px 5px',
+                              borderRadius: '2px',
+                              background: 'rgba(255, 176, 32, 0.2)',
+                              color: '#FFB020',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🎯 RADAR LOCKED ON INTRUDER
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '3px' }}>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 4px',
+                            flex: 1,
+                            background: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? 'rgba(79, 168, 95, 0.25)' : undefined,
+                            borderColor: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? '#4FA85F' : undefined,
+                            color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? '#4FA85F' : undefined,
+                            fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? 700 : 400,
+                          }}
+                          title="DEFCON 3 (Level 1): Shadow & Radar Lock. Track intruder on border breach; hold fire unless intruder fires first."
+                          onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_3')}
+                        >
+                          🟢 DEFCON 3 (SHADOW)
+                        </button>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 4px',
+                            flex: 1,
+                            background: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? 'rgba(255, 176, 32, 0.25)' : undefined,
+                            borderColor: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? '#FFB020' : undefined,
+                            color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? '#FFB020' : undefined,
+                            fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? 700 : 400,
+                          }}
+                          title="DEFCON 2 (Level 2): Sovereign Defense. Immediate weapons-free engagement on any border breach."
+                          onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_2')}
+                        >
+                          🟡 DEFCON 2 (DEFENSE)
+                        </button>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 4px',
+                            flex: 1,
+                            background: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? 'rgba(217, 83, 79, 0.25)' : undefined,
+                            borderColor: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? '#D9534F' : undefined,
+                            color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? '#D9534F' : undefined,
+                            fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? 700 : 400,
+                          }}
+                          title="DEFCON 1 (Level 3): Total Offensive. Weapons-free engagement anywhere across the map (neutral, enemy, international)."
+                          onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_1')}
+                        >
+                          🔴 DEFCON 1 (TOTAL)
+                        </button>
+                      </div>
+                    </div>
+
                     {!isStaticAD ? (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                         <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
