@@ -361,7 +361,7 @@ export function stepThreatLevelEngagements(
         isIntercepted: false,
         progress: 0.0,
         interceptorPk: bestWeapon.pk ?? 0.85,
-        threatSpeedMach: (hostileSpec?.platform?.speedKnots ?? 450) / 666.7,
+        threatSpeedMach: (hostile.speedKmh || 850) / 1225,
         threatRcsM2: hostile.rcs ?? 2.0,
         threatAltitudeM: hostile.altitudeM ?? (isHostileAir ? 7000 : 20),
       };
