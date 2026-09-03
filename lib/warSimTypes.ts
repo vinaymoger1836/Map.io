@@ -252,8 +252,17 @@ export interface SimEntity {
   /** Real-time Sovereign Airspace and Geographic Location */
   currentAirspace?: AirspaceLocation;
   previousAirspace?: AirspaceLocation;
+  /** Per-system operational ROE threat level for deployed assets on the map */
+  threatLevel?: SystemThreatLevel;
+  /** Whether this system is currently maintaining a fire-control radar lock on an intruder */
+  isTargetLocked?: boolean;
+  /** ID of the intruder entity currently illuminated/locked by this system */
+  lockedTargetEntityId?: string;
+  /** Whether this entity has initiated offensive hostile fire against friendlies */
+  hasFiredHostile?: boolean;
 }
 
+export type SystemThreatLevel = 'defcon_3' | 'defcon_2' | 'defcon_1';
 export type AirspaceClassification = 'friendly' | 'hostile' | 'neutral' | 'international';
 export type AirspaceRoeDoctrine = 'weapons_free' | 'adiz_border_defense' | 'neutral_sanctuary';
 
