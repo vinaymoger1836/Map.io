@@ -38,7 +38,10 @@ import {
   launchAsatStrike,
   launchSeadStrike,
   setEntityEwMode,
+  updateEntityThreatLevel,
+  updateGlobalFactionThreatLevel,
 } from './warSimEngine';
+import { type SystemThreatLevel } from './warSimTypes';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
