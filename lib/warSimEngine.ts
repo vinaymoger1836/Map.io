@@ -38,6 +38,7 @@ import {
   type AirspaceRoeDoctrine,
   type BorderIncursionRecord,
   type AirspaceLocation,
+  type SystemThreatLevel,
 } from './warSimTypes';
 import {
   canStationAtBase,
