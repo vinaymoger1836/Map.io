@@ -4396,3 +4396,26 @@ export function setEntityEwMode(
     entities: updatedEntities,
   };
 }
+
+/**
+ * Updates a specific deployed entity's operational Threat Level (DEFCON ROE).
+ */
+export function updateEntityThreatLevel(
+  session: WarSimSession,
+  entityId: string,
+  threatLevel: SystemThreatLevel
+): WarSimSession {
+  return setSystemThreatLevel(session, entityId, threatLevel);
+}
+
+/**
+ * Updates global / category operational Threat Level (DEFCON ROE) across all deployed assets of a faction.
+ */
+export function updateGlobalFactionThreatLevel(
+  session: WarSimSession,
+  factionIso: string,
+  threatLevel: SystemThreatLevel,
+  typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground'
+): WarSimSession {
+  return setGlobalThreatLevel(session, factionIso, threatLevel, typeCategory);
+}
