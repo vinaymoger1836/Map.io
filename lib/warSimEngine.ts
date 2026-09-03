@@ -2761,13 +2761,28 @@ export function tickWarSim(
   );
   newEvents.push(...ewEvents);
 
+  // 5d. Step Per-System Threat Levels (DEFCON ROE) & Automated Intelligent Retaliation
+  const {
+    updatedEntities: roeEntities,
+    newMissiles: roeMissiles,
+    engagementEvents: roeEvents,
+  } = stepThreatLevelEngagements(
+    {
+      ...session,
+      entities: ewEntities,
+      activeMissiles: ewMissiles,
+    },
+    systemsLibrary
+  );
+  newEvents.push(...roeEvents);
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
     bases: updatedBases,
-    entities: ewEntities,
+    entities: roeEntities,
     satellites: updatedSatellites,
-    activeMissiles: ewMissiles,
+    activeMissiles: [...ewMissiles, ...roeMissiles],
     airspaceRoeDoctrine: session.airspaceRoeDoctrine || 'weapons_free',
     borderIncursions: updatedBorderIncursions.slice(-100),
     fogOfWarContacts: {
