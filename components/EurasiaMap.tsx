@@ -798,6 +798,8 @@ export default function EurasiaMap() {
             onLaunchAsat={warSim.orderAsatStrike}
             onLaunchSead={warSim.orderSeadStrike}
             onSetEwMode={warSim.updateEntityEwMode}
+            onSetEntityThreatLevel={warSim.setEntityThreatLevel}
+            onSetGlobalThreatLevel={warSim.setGlobalThreatLevel}
             onFlyToBase={(lngLat) => {
               mapRef.current?.flyTo({ center: lngLat, zoom: 6, duration: 1200 });
             }}
