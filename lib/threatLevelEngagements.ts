@@ -24,7 +24,7 @@ import { type SystemSpec, type WeaponFacet, domainOf, defaultTerrainSensorFor } 
 import { canWeaponEngageTarget, isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
 import { isNavalCombatant } from './navalEngagement';
 import { resolveAirspaceLocation } from './airspaceSovereignty';
-import { calculateTerrainLineOfSight } from './terrainMasking';
+import { calculateTerrainLineOfSight } from './terrainLOS';
 
 /* ------------------------------------------------------------------ */
 /* 1. Threat Level Evaluation Logic                                   */
