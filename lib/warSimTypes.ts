@@ -262,6 +262,12 @@ export interface SimEntity {
   lockedTargetEntityId?: string;
   /** Whether this entity has initiated offensive hostile fire against friendlies */
   hasFiredHostile?: boolean;
+  /** True if this surface combatant is a mobile Aircraft Carrier */
+  isCarrier?: boolean;
+  /** Linked mobile carrier_group base ID representing this carrier's flight deck */
+  carrierBaseId?: string;
+  /** Escort combatants (cruisers/destroyers/frigates) screening this carrier in the CSG */
+  csgEscortIds?: string[];
 }
 
 export type SystemThreatLevel = 'defcon_3' | 'defcon_2' | 'defcon_1';
