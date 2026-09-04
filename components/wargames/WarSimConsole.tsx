@@ -3122,6 +3122,31 @@ export function WarSimConsole({
 
               {/* Quick Tactical Actions */}
               <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                {isCarrierPlatform(selectedEntity, spec) && (
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{
+                      width: '100%',
+                      fontSize: '11px',
+                      padding: '6px 8px',
+                      borderColor: '#00E5FF',
+                      color: '#00E5FF',
+                      background: 'rgba(0, 229, 255, 0.12)',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      marginBottom: '2px',
+                    }}
+                    title="Open Carrier Air Wing (CVW) Operations, Flight Deck Management & Weapon Loadout Customizer"
+                    onClick={() => setCarrierAirWingEntity(selectedEntity)}
+                  >
+                    <span>🚢</span> Flight Deck & Carrier Air Wing (CVW)
+                  </button>
+                )}
+
                 {!isStaticAD && !isGround && !isNaval && (selectedEntity.typeId !== 'tanker' && !selectedEntity.name.toLowerCase().includes('tanker')) && onOrderRefuelAtTanker && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station' || selectedEntity.status === 'bingo_rtb') && (
                   <button
                     className="wg-btn"
