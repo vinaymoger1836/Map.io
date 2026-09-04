@@ -1424,6 +1424,86 @@ export function CombatReportDetailModal({
               </div>
             </div>
           )}
+
+          {/* Section 4h: Carrier Strike Group (CSG) & Moving Airbase Operations */}
+          {report.csgDetails && (
+            <div
+              style={{
+                background: 'var(--card-bg)',
+                border: '1px solid rgba(0, 229, 255, 0.3)',
+                borderRadius: '6px',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#00E5FF' }}>
+                  🚢 Section 4h: Carrier Strike Group (CSG) & Moving Airbase Operations
+                </h4>
+                <span
+                  style={{
+                    fontSize: '9px',
+                    padding: '2px 6px',
+                    background: 'rgba(0, 229, 255, 0.15)',
+                    color: '#00E5FF',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                  }}
+                >
+                  NAVAL AIRPOWER
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: '8px',
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  padding: '10px',
+                  borderRadius: '4px',
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Total Carrier Sorties:
+                  </span>
+                  <strong style={{ color: '#00E5FF' }}>{report.csgDetails.totalCarrierSorties}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Flight Deck Traps:
+                  </span>
+                  <strong style={{ color: '#00E676' }}>{report.csgDetails.carrierTrapsCompleted}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--paper-dim)', display: 'block', fontSize: '10px' }}>
+                    Standoff Strikes:
+                  </span>
+                  <strong style={{ color: '#FF5252' }}>{report.csgDetails.carrierStrikesLaunched}</strong>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: 'rgba(0, 229, 255, 0.06)',
+                  border: '1px solid rgba(0, 229, 255, 0.2)',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  color: '#E0F7FA',
+                  lineHeight: '1.4',
+                }}
+              >
+                <strong style={{ color: '#00E5FF', display: 'block', marginBottom: '2px' }}>
+                  Carrier Air Wing Assessment:
+                </strong>
+                {report.csgDetails.csgAssessment}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
