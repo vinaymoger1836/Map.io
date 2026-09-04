@@ -1104,6 +1104,8 @@ export function useWarSim({
     updateEntityEwMode,
     setEntityThreatLevel,
     setGlobalThreatLevel,
+    rearmCarrierAirWing: orderRearmCarrierAirWing,
+    launchCarrierStrike: orderLaunchCarrierStrike,
     createBaseAtLocation,
     renameBase,
     createNetwork,
