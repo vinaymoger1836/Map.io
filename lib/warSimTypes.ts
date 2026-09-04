@@ -49,6 +49,8 @@ export interface SimBase {
   stationedEntityIds: string[];
   runwayStatus: 'operational' | 'damaged' | 'destroyed';
   repairCountdownSec: number;
+  /** Linked mobile aircraft carrier entity ID (for mobile sea bases) */
+  carrierEntityId?: string;
   supplies: {
     fuelPct: number;
     ammoPct: number;
