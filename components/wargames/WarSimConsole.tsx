@@ -3378,6 +3378,32 @@ export function WarSimConsole({
           enemyCountryName={enemyCountryName}
         />
       )}
+
+      {/* 8. Carrier Air Wing & Flight Deck Operations Modal */}
+      {carrierAirWingEntity && (
+        <CarrierAirWingModal
+          isOpen={Boolean(carrierAirWingEntity)}
+          onClose={() => setCarrierAirWingEntity(null)}
+          carrier={carrierAirWingEntity}
+          carrierBase={session.bases.find(
+            (b) => b.carrierEntityId === carrierAirWingEntity.id || b.id === carrierAirWingEntity.carrierBaseId
+          )}
+          embarkedSquadrons={friendlyEntities.filter(
+            (e) =>
+              e.homeBaseId === carrierAirWingEntity.carrierBaseId ||
+              e.currentBaseId === carrierAirWingEntity.carrierBaseId ||
+              (carrierAirWingEntity.carrierBaseId && e.homeBaseId?.includes(carrierAirWingEntity.id))
+          )}
+          session={session}
+          systemsLibrary={systemsLibrary}
+          onRearmSquadron={onRearmCarrierAirWing}
+          onLaunchStrike={onLaunchCarrierStrike}
+          onStartSortie={(entity) => {
+            setCarrierAirWingEntity(null);
+            onStartSortie(entity);
+          }}
+        />
+      )}
     </>
   );
 }
