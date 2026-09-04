@@ -4445,3 +4445,56 @@ export function updateGlobalFactionThreatLevel(
 ): WarSimSession {
   return setGlobalThreatLevel(session, factionIso, threatLevel, typeCategory);
 }
+
+/**
+ * Customizes the weapon loadout for an embarked carrier squadron.
+ */
+export function rearmCarrierAirWing(
+  session: WarSimSession,
+  squadronEntityId: string,
+  presetKey: keyof typeof CARRIER_LOADOUT_PRESETS
+): { session: WarSimSession; summary: string } {
+  return applyCarrierAirWingLoadout(session, squadronEntityId, presetKey);
+}
+
+/**
+ * Launches a precision carrier air strike directly from a moving aircraft carrier.
+ */
+export function orderCarrierAirStrike(
+  session: WarSimSession,
+  carrierEntityId: string,
+  squadronEntityId: string,
+  targetEntityId: string,
+  targetLngLat: [number, number],
+  weaponIndex = 0,
+  salvoCount = 2,
+  systemsLibrary: SystemSpec[] = []
+): {
+  session: WarSimSession;
+  status: 'launched' | 'failed';
+  summary: string;
+} {
+  return launchCarrierAirStrike(
+    session,
+    carrierEntityId,
+    squadronEntityId,
+    targetEntityId,
+    targetLngLat,
+    weaponIndex,
+    salvoCount,
+    systemsLibrary
+  );
+}
+
+/**
+ * Computes the Carrier Strike Group (CSG) multi-layered escort defense umbrella.
+ */
+export function getCarrierEscortScreen(
+  carrier: SimEntity,
+  session: WarSimSession,
+  systemsLibrary: SystemSpec[] = []
+) {
+  return getCarrierStrikeGroupScreen(carrier, session, systemsLibrary);
+}
+
+export { CARRIER_LOADOUT_PRESETS, isCarrierPlatform };
