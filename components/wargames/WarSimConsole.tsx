@@ -157,6 +157,8 @@ export interface WarSimConsoleProps {
   onSetEwMode?: (entityId: string, mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection', jammingTargetLngLat?: [number, number]) => void;
   onSetEntityThreatLevel?: (entityId: string, threatLevel: import('@/lib/warSimTypes').SystemThreatLevel) => void;
   onSetGlobalThreatLevel?: (factionIso: string, threatLevel: import('@/lib/warSimTypes').SystemThreatLevel, typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground') => void;
+  onRearmCarrierAirWing?: (squadronEntityId: string, presetKey: any) => void;
+  onLaunchCarrierStrike?: (carrierEntityId: string, squadronEntityId: string, targetEntityId: string, targetLngLat: [number, number], weaponIndex: number, salvoCount: number) => void;
 }
 
 export function WarSimConsole({
@@ -220,6 +222,8 @@ export function WarSimConsole({
   onSetEwMode,
   onSetEntityThreatLevel,
   onSetGlobalThreatLevel,
+  onRearmCarrierAirWing,
+  onLaunchCarrierStrike,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
@@ -229,6 +233,7 @@ export function WarSimConsole({
   const [customBaseName, setCustomBaseName] = useState<string>('');
   const [hudTaskingEntity, setHudTaskingEntity] = useState<SimEntity | null>(null);
   const [strikeModalTarget, setStrikeModalTarget] = useState<StrikeTargetInfo | null>(null);
+  const [carrierAirWingEntity, setCarrierAirWingEntity] = useState<SimEntity | null>(null);
   const [selectedReport, setSelectedReport] = useState<CombatReport | null>(null);
   const [reportCategoryFilter, setReportCategoryFilter] = useState<'all' | WarReportCategory>('all');
   const [editingRcs, setEditingRcs] = useState<boolean>(false);
