@@ -3391,7 +3391,6 @@ export function WarSimConsole({
           embarkedSquadrons={friendlyEntities.filter(
             (e) =>
               e.homeBaseId === carrierAirWingEntity.carrierBaseId ||
-              e.currentBaseId === carrierAirWingEntity.carrierBaseId ||
               (carrierAirWingEntity.carrierBaseId && e.homeBaseId?.includes(carrierAirWingEntity.id))
           )}
           session={session}
