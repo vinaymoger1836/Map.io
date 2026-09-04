@@ -1048,11 +1048,11 @@ export function useWarSim({
         targetLngLat,
         weaponIndex,
         salvoCount,
-        systemsRef.current
+        systemsLibrary
       );
       return res.session;
     });
-  }, []);
+  }, [systemsLibrary]);
 
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
