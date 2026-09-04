@@ -98,6 +98,15 @@ import {
   setSystemThreatLevel,
   setGlobalThreatLevel,
 } from './threatLevelEngagements';
+import {
+  syncMovingCarrierBases,
+  applyCarrierAirWingLoadout,
+  getCarrierStrikeGroupScreen,
+  launchCarrierAirStrike,
+  createCsgCombatReport,
+  CARRIER_LOADOUT_PRESETS,
+  isCarrierPlatform,
+} from './carrierOps';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
