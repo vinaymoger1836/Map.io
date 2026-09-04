@@ -39,9 +39,11 @@ import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
 import { CombatReportDetailModal } from './CombatReportDetailModal';
 import { BattleOpsPlanner } from './BattleOpsPlanner';
+import { CarrierAirWingModal } from './CarrierAirWingModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
+import { isCarrierPlatform } from '@/lib/carrierOps';
 
 export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'ew' | 'network' | 'battle_ops' | 'reports' | 'log';
 
