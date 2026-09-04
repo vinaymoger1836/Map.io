@@ -2988,7 +2988,7 @@ export function generateConsolidatedBattleOpsReport(
     },
     spaceDetails: createSpaceCombatReport(session),
     ewDetails: createEwCombatReport(session),
-    csgDetails: createCsgCombatReport(session, systemsLibrary),
+    csgDetails: createCsgCombatReport(session),
   };
 }
 
