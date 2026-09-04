@@ -264,8 +264,7 @@ export function syncMovingCarrierBases(
 
     // 3. Move all aircraft stationed on this carrier along with the carrier ship
     workingEntities = workingEntities.map((e) => {
-      const isStationedOnThisCarrier =
-        e.homeBaseId === carrierBase!.id || e.currentBaseId === carrierBase!.id;
+      const isStationedOnThisCarrier = e.homeBaseId === carrierBase!.id;
 
       if (!isStationedOnThisCarrier) return e;
 
@@ -299,7 +298,7 @@ export function syncMovingCarrierBases(
             status: 'turnaround',
             currentFuelPct: 100,
             lngLat: carrier.lngLat,
-            currentBaseId: carrierBase!.id,
+            homeBaseId: carrierBase!.id,
           };
         }
       }
