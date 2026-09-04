@@ -36,7 +36,16 @@ import {
   orderAerialRefueling,
   setSessionAirspaceRoe,
   launchAsatStrike,
+  launchSeadStrike,
+  setEntityEwMode,
+  updateEntityThreatLevel,
+  updateGlobalFactionThreatLevel,
+  rearmCarrierAirWing,
+  orderCarrierAirStrike,
+  CARRIER_LOADOUT_PRESETS,
+  isCarrierPlatform,
 } from './warSimEngine';
+import { type SystemThreatLevel } from './warSimTypes';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
@@ -982,6 +991,69 @@ export function useWarSim({
     });
   }, []);
 
+  const orderSeadStrike = useCallback((attackerEntityId: string, targetRadarEntityId: string) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const res = launchSeadStrike(prev, attackerEntityId, targetRadarEntityId);
+      return res.session;
+    });
+  }, []);
+
+  const updateEntityEwMode = useCallback((
+    entityId: string,
+    mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection',
+    jammingTargetLngLat?: [number, number]
+  ) => {
+    setSession((prev) => (prev ? setEntityEwMode(prev, entityId, mode, jammingTargetLngLat) : null));
+  }, []);
+
+  const setEntityThreatLevel = useCallback((entityId: string, threatLevel: SystemThreatLevel) => {
+    setSession((prev) => (prev ? updateEntityThreatLevel(prev, entityId, threatLevel) : null));
+  }, []);
+
+  const setGlobalThreatLevel = useCallback((
+    factionIso: string,
+    threatLevel: SystemThreatLevel,
+    typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground'
+  ) => {
+    setSession((prev) => (prev ? updateGlobalFactionThreatLevel(prev, factionIso, threatLevel, typeCategory) : null));
+  }, []);
+
+  const orderRearmCarrierAirWing = useCallback((
+    squadronEntityId: string,
+    presetKey: keyof typeof CARRIER_LOADOUT_PRESETS
+  ) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const res = rearmCarrierAirWing(prev, squadronEntityId, presetKey);
+      return res.session;
+    });
+  }, []);
+
+  const orderLaunchCarrierStrike = useCallback((
+    carrierEntityId: string,
+    squadronEntityId: string,
+    targetEntityId: string,
+    targetLngLat: [number, number],
+    weaponIndex = 0,
+    salvoCount = 2
+  ) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const res = orderCarrierAirStrike(
+        prev,
+        carrierEntityId,
+        squadronEntityId,
+        targetEntityId,
+        targetLngLat,
+        weaponIndex,
+        salvoCount,
+        systemsLibrary
+      );
+      return res.session;
+    });
+  }, [systemsLibrary]);
+
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
     setSession(null);
@@ -1028,6 +1100,12 @@ export function useWarSim({
     orderStrike,
     setAirspaceRoe,
     orderAsatStrike,
+    orderSeadStrike,
+    updateEntityEwMode,
+    setEntityThreatLevel,
+    setGlobalThreatLevel,
+    rearmCarrierAirWing: orderRearmCarrierAirWing,
+    launchCarrierStrike: orderLaunchCarrierStrike,
     createBaseAtLocation,
     renameBase,
     createNetwork,

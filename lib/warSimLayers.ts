@@ -42,6 +42,7 @@ const SRC_REACH_RING = 'warsim-reach-ring-src';
 const SRC_ENVELOPES = 'warsim-envelopes-src';
 const SRC_PATROL_PREVIEW = 'warsim-patrol-preview-src';
 const SRC_SATELLITES = 'warsim-satellites-src';
+const SRC_EW = 'warsim-ew-src';
 
 const LYR_REACH_RING_FILL = 'warsim-reach-ring-fill';
 const LYR_REACH_RING_LINE = 'warsim-reach-ring-line';
@@ -51,6 +52,12 @@ const LYR_PATROL_PREVIEW_CENTER = 'warsim-patrol-preview-center';
 const LYR_PATROL_PREVIEW_LABEL = 'warsim-patrol-preview-label';
 const LYR_ENVELOPES_FILL = 'warsim-envelopes-fill';
 const LYR_ENVELOPES_LINE = 'warsim-envelopes-line';
+
+const LYR_EW_JAMMING_CONE_FILL = 'warsim-ew-jamming-cone-fill';
+const LYR_EW_JAMMING_CONE_LINE = 'warsim-ew-jamming-cone-line';
+const LYR_EW_GPS_BUBBLE_FILL = 'warsim-ew-gps-bubble-fill';
+const LYR_EW_GPS_BUBBLE_LINE = 'warsim-ew-gps-bubble-line';
+const LYR_EW_LABEL = 'warsim-ew-label';
 
 const LYR_SATELLITES_GROUNDTRACK = 'warsim-satellites-groundtrack';
 const LYR_SATELLITES_SWATH_FILL = 'warsim-satellites-swath-fill';
@@ -678,6 +685,81 @@ export function installWarSimLayers(map: MLMap) {
       'text-halo-width': 2,
     },
   });
+
+  // 7. Electronic Warfare (EW), Directional Jamming Cones & GPS Denial
+  map.addSource(SRC_EW, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  map.addLayer({
+    id: LYR_EW_JAMMING_CONE_FILL,
+    type: 'fill',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'jamming_cone'],
+    paint: {
+      'fill-color': ['coalesce', ['get', 'color'], '#00E5FF'],
+      'fill-opacity': 0.14,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_JAMMING_CONE_LINE,
+    type: 'line',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'jamming_cone'],
+    paint: {
+      'line-color': ['coalesce', ['get', 'color'], '#00E5FF'],
+      'line-width': 1.5,
+      'line-dasharray': [3, 2],
+      'line-opacity': 0.75,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_GPS_BUBBLE_FILL,
+    type: 'fill',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'gps_bubble'],
+    paint: {
+      'fill-color': '#9C27B0',
+      'fill-opacity': 0.08,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_GPS_BUBBLE_LINE,
+    type: 'line',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'gps_bubble'],
+    paint: {
+      'line-color': '#E040FB',
+      'line-width': 1.3,
+      'line-dasharray': [4, 4],
+      'line-opacity': 0.7,
+    },
+  });
+
+  map.addLayer({
+    id: LYR_EW_LABEL,
+    type: 'symbol',
+    source: SRC_EW,
+    filter: ['==', ['get', 'kind'], 'label'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-size': 9.5,
+      'text-offset': [0, 1.2],
+      'text-anchor': 'top',
+      'text-font': font,
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': ['coalesce', ['get', 'color'], '#E040FB'],
+      'text-halo-color': '#070C14',
+      'text-halo-width': 2,
+    },
+  });
 }
 
 /**
@@ -1252,6 +1334,78 @@ export function renderWarSimStateToMap(
     type: 'FeatureCollection',
     features: satelliteFeatures,
   });
+
+  // 7. Render Electronic Warfare (EW), Directional Jamming Cones & GPS Denial Bubbles
+  const ewFeatures: GeoJSON.Feature[] = [];
+
+  session.entities.forEach((entity) => {
+    if (
+      entity.status === 'destroyed' ||
+      entity.status === 'docked' ||
+      entity.status === 'turnaround' ||
+      entity.status === 'in_repair'
+    ) {
+      return;
+    }
+
+    const isFriendly = entity.iso === factionIso;
+    const coneColor = isFriendly ? '#00E5FF' : '#E040FB';
+
+    // 7a. Directional Standoff Noise Jamming Cone
+    if (entity.ewState?.jammingSectorCone && entity.ewState.jammingSectorCone.length > 2) {
+      ewFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [entity.ewState.jammingSectorCone] },
+        properties: {
+          kind: 'jamming_cone',
+          color: coneColor,
+        },
+      });
+
+      // Jamming cone label at perimeter
+      const coneTip = entity.ewState.jammingSectorCone[Math.floor(entity.ewState.jammingSectorCone.length / 2)];
+      if (coneTip) {
+        ewFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: coneTip },
+          properties: {
+            kind: 'label',
+            color: coneColor,
+            label: `⚡ ${entity.name} [EW NOISE JAMMING]`,
+          },
+        });
+      }
+    }
+
+    // 7b. Omnidirectional GPS Denial Bubble
+    const spec = systemsLibrary.find((s) => s.id === entity.systemId);
+    const gpsRadius = spec?.ew?.gpsJammerRadiusKm;
+    if (gpsRadius && gpsRadius > 0 && (entity.ewState?.mode === 'gps_denial' || spec?.ew?.isDedicatedEw)) {
+      const bubbleCoords = geodesicRing(entity.lngLat, gpsRadius, 48);
+      ewFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [bubbleCoords] },
+        properties: {
+          kind: 'gps_bubble',
+        },
+      });
+
+      ewFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [entity.lngLat[0], entity.lngLat[1] + (gpsRadius / 111.0)] },
+        properties: {
+          kind: 'label',
+          color: '#E040FB',
+          label: `🚫 GPS DENIAL BUBBLE (${gpsRadius}km)`,
+        },
+      });
+    }
+  });
+
+  (map.getSource(SRC_EW) as GeoJSONSource)?.setData({
+    type: 'FeatureCollection',
+    features: ewFeatures,
+  });
 }
 
 /**
@@ -1525,6 +1679,11 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_SATELLITES_SWATH_LINE,
     LYR_SATELLITES_SWATH_FILL,
     LYR_SATELLITES_GROUNDTRACK,
+    LYR_EW_LABEL,
+    LYR_EW_GPS_BUBBLE_LINE,
+    LYR_EW_GPS_BUBBLE_FILL,
+    LYR_EW_JAMMING_CONE_LINE,
+    LYR_EW_JAMMING_CONE_FILL,
   ];
   layerIds.forEach((id) => {
     if (map.getLayer(id)) map.removeLayer(id);
@@ -1540,6 +1699,7 @@ export function removeWarSimLayers(map: MLMap) {
     SRC_PATROL_PREVIEW,
     SRC_ENVELOPES,
     SRC_SATELLITES,
+    SRC_EW,
   ];
   sourceIds.forEach((id) => {
     if (map.getSource(id)) map.removeSource(id);

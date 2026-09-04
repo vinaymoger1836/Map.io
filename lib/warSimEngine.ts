@@ -38,6 +38,7 @@ import {
   type AirspaceRoeDoctrine,
   type BorderIncursionRecord,
   type AirspaceLocation,
+  type SystemThreatLevel,
 } from './warSimTypes';
 import {
   canStationAtBase,
@@ -87,6 +88,25 @@ import {
   orderAsatStrike,
   createSpaceCombatReport,
 } from './spaceLayer';
+import {
+  stepElectronicWarfare,
+  orderSeadAntiRadiationStrike,
+  createEwCombatReport,
+} from './electronicWarfare';
+import {
+  stepThreatLevelEngagements,
+  setSystemThreatLevel,
+  setGlobalThreatLevel,
+} from './threatLevelEngagements';
+import {
+  syncMovingCarrierBases,
+  applyCarrierAirWingLoadout,
+  getCarrierStrikeGroupScreen,
+  launchCarrierAirStrike,
+  createCsgCombatReport,
+  CARRIER_LOADOUT_PRESETS,
+  isCarrierPlatform,
+} from './carrierOps';
 
 /* ------------------------------------------------------------------ */
 /* 1. Time-Step Clock & Master Engine Loop                            */
@@ -2358,6 +2378,11 @@ export function tickWarSim(
           ratedEnvelopeKm = Math.max(ratedEnvelopeKm, 180);
         }
 
+        // Radar Electronic Warfare Suppression: If radar is jammed by hostile EW cone, compress reach
+        if (scanner.isRadarJammed && scanner.jammedDetectionRangeKm !== undefined) {
+          ratedEnvelopeKm = Math.min(ratedEnvelopeKm, scanner.jammedDetectionRangeKm);
+        }
+
         if (scanner.patrolOrder?.emcon === 'passive') {
           ratedEnvelopeKm = 0; // Passive silent running
         }
@@ -2730,13 +2755,59 @@ export function tickWarSim(
   );
   newEvents.push(...spaceEvents);
 
+  // 5c. Step Electronic Warfare (EW), Directional Radar Jamming & GPS Denial
+  const {
+    updatedEntities: ewEntities,
+    updatedMissiles: ewMissiles,
+    ewEvents,
+  } = stepElectronicWarfare(
+    {
+      ...session,
+      entities: finalEntitiesWithAirspace,
+      activeMissiles: updatedMissiles,
+    },
+    dtSimSec,
+    systemsLibrary
+  );
+  newEvents.push(...ewEvents);
+
+  // 5d. Step Per-System Threat Levels (DEFCON ROE) & Automated Intelligent Retaliation
+  const {
+    updatedEntities: roeEntities,
+    newMissiles: roeMissiles,
+    engagementEvents: roeEvents,
+  } = stepThreatLevelEngagements(
+    {
+      ...session,
+      entities: ewEntities,
+      activeMissiles: ewMissiles,
+    },
+    systemsLibrary
+  );
+  newEvents.push(...roeEvents);
+
+  // 5e. Synchronize Moving Carrier Bases & Flight Deck Trapping Operations
+  const {
+    updatedBases: carrierBases,
+    updatedEntities: carrierEntities,
+    csgEvents,
+  } = syncMovingCarrierBases(
+    {
+      ...session,
+      bases: updatedBases,
+      entities: roeEntities,
+    },
+    systemsLibrary
+  );
+  newEvents.push(...csgEvents);
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
-    bases: updatedBases,
-    entities: finalEntitiesWithAirspace,
+    bases: carrierBases,
+    entities: carrierEntities,
     satellites: updatedSatellites,
-    activeMissiles: updatedMissiles,
+    activeMissiles: [...ewMissiles, ...roeMissiles],
     airspaceRoeDoctrine: session.airspaceRoeDoctrine || 'weapons_free',
     borderIncursions: updatedBorderIncursions.slice(-100),
     fogOfWarContacts: {
@@ -2915,6 +2986,9 @@ export function generateConsolidatedBattleOpsReport(
       targetCasualties,
       strategicOutcome,
     },
+    spaceDetails: createSpaceCombatReport(session),
+    ewDetails: createEwCombatReport(session),
+    csgDetails: createCsgCombatReport(session),
   };
 }
 
@@ -4306,3 +4380,121 @@ export function launchAsatStrike(
 } {
   return orderAsatStrike(session, launcherEntityId, targetSatelliteId);
 }
+
+/**
+ * Orders a dedicated SEAD Anti-Radiation Missile strike (e.g. AGM-88 HARM / Kh-31P)
+ * homing autonomously on an active hostile radar emitter.
+ */
+export function launchSeadStrike(
+  session: WarSimSession,
+  attackerEntityId: string,
+  targetRadarEntityId: string
+): {
+  session: WarSimSession;
+  status: 'launched' | 'failed';
+  summary: string;
+} {
+  return orderSeadAntiRadiationStrike(session, attackerEntityId, targetRadarEntityId);
+}
+
+/**
+ * Updates an entity's Electronic Warfare (EW) mode and directional jamming focus.
+ */
+export function setEntityEwMode(
+  session: WarSimSession,
+  entityId: string,
+  mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection',
+  jammingTargetLngLat?: [number, number]
+): WarSimSession {
+  const updatedEntities = session.entities.map((e) => {
+    if (e.id !== entityId) return e;
+    return {
+      ...e,
+      ewState: {
+        mode,
+        jammingTargetLngLat,
+      },
+    };
+  });
+
+  return {
+    ...session,
+    entities: updatedEntities,
+  };
+}
+
+/**
+ * Updates a specific deployed entity's operational Threat Level (DEFCON ROE).
+ */
+export function updateEntityThreatLevel(
+  session: WarSimSession,
+  entityId: string,
+  threatLevel: SystemThreatLevel
+): WarSimSession {
+  return setSystemThreatLevel(session, entityId, threatLevel);
+}
+
+/**
+ * Updates global / category operational Threat Level (DEFCON ROE) across all deployed assets of a faction.
+ */
+export function updateGlobalFactionThreatLevel(
+  session: WarSimSession,
+  factionIso: string,
+  threatLevel: SystemThreatLevel,
+  typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground'
+): WarSimSession {
+  return setGlobalThreatLevel(session, factionIso, threatLevel, typeCategory);
+}
+
+/**
+ * Customizes the weapon loadout for an embarked carrier squadron.
+ */
+export function rearmCarrierAirWing(
+  session: WarSimSession,
+  squadronEntityId: string,
+  presetKey: keyof typeof CARRIER_LOADOUT_PRESETS
+): { session: WarSimSession; summary: string } {
+  return applyCarrierAirWingLoadout(session, squadronEntityId, presetKey);
+}
+
+/**
+ * Launches a precision carrier air strike directly from a moving aircraft carrier.
+ */
+export function orderCarrierAirStrike(
+  session: WarSimSession,
+  carrierEntityId: string,
+  squadronEntityId: string,
+  targetEntityId: string,
+  targetLngLat: [number, number],
+  weaponIndex = 0,
+  salvoCount = 2,
+  systemsLibrary: SystemSpec[] = []
+): {
+  session: WarSimSession;
+  status: 'launched' | 'failed';
+  summary: string;
+} {
+  return launchCarrierAirStrike(
+    session,
+    carrierEntityId,
+    squadronEntityId,
+    targetEntityId,
+    targetLngLat,
+    weaponIndex,
+    salvoCount,
+    systemsLibrary
+  );
+}
+
+/**
+ * Computes the Carrier Strike Group (CSG) multi-layered escort defense umbrella.
+ */
+export function getCarrierEscortScreen(
+  carrier: SimEntity,
+  session: WarSimSession,
+  systemsLibrary: SystemSpec[] = []
+) {
+  return getCarrierStrikeGroupScreen(carrier, session, systemsLibrary);
+}
+
+export { CARRIER_LOADOUT_PRESETS, isCarrierPlatform };

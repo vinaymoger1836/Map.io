@@ -28,6 +28,7 @@ import {
   getSystemRcs,
   defaultTerrainSensorFor,
   defaultTerrainPlatformFor,
+  defaultEwFacetFor,
 } from '@/lib/specs';
 import { distanceKm } from '@/lib/geo';
 import { formatSimTime, isEntityDeployed } from '@/lib/warSimEngine';
@@ -38,11 +39,13 @@ import { SortieTaskingModal } from './SortieTaskingModal';
 import { StrikeTaskingModal, type StrikeTargetInfo } from './StrikeTaskingModal';
 import { CombatReportDetailModal } from './CombatReportDetailModal';
 import { BattleOpsPlanner } from './BattleOpsPlanner';
+import { CarrierAirWingModal } from './CarrierAirWingModal';
 import { getSimUnitIcon } from '@/lib/warSimLayers';
 import { isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { isNavalCombatant } from '@/lib/navalEngagement';
+import { isCarrierPlatform } from '@/lib/carrierOps';
 
-export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'network' | 'battle_ops' | 'reports' | 'log';
+export type WarSimTab = 'systems' | 'bases' | 'intel' | 'space' | 'ew' | 'network' | 'battle_ops' | 'reports' | 'log';
 
 export interface WarSimConsoleProps {
   session: WarSimSession;
@@ -150,6 +153,12 @@ export interface WarSimConsoleProps {
   onFlyToBase?: (lngLat: [number, number]) => void;
   onSetAirspaceRoe?: (doctrine: import('@/lib/warSimTypes').AirspaceRoeDoctrine) => void;
   onLaunchAsat?: (launcherEntityId: string, targetSatelliteId: string) => void;
+  onLaunchSead?: (attackerEntityId: string, targetRadarEntityId: string) => void;
+  onSetEwMode?: (entityId: string, mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection', jammingTargetLngLat?: [number, number]) => void;
+  onSetEntityThreatLevel?: (entityId: string, threatLevel: import('@/lib/warSimTypes').SystemThreatLevel) => void;
+  onSetGlobalThreatLevel?: (factionIso: string, threatLevel: import('@/lib/warSimTypes').SystemThreatLevel, typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground') => void;
+  onRearmCarrierAirWing?: (squadronEntityId: string, presetKey: any) => void;
+  onLaunchCarrierStrike?: (carrierEntityId: string, squadronEntityId: string, targetEntityId: string, targetLngLat: [number, number], weaponIndex: number, salvoCount: number) => void;
 }
 
 export function WarSimConsole({
@@ -209,6 +218,12 @@ export function WarSimConsole({
   onFlyToBase,
   onSetAirspaceRoe,
   onLaunchAsat,
+  onLaunchSead,
+  onSetEwMode,
+  onSetEntityThreatLevel,
+  onSetGlobalThreatLevel,
+  onRearmCarrierAirWing,
+  onLaunchCarrierStrike,
 }: WarSimConsoleProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<WarSimTab>('systems');
@@ -218,6 +233,7 @@ export function WarSimConsole({
   const [customBaseName, setCustomBaseName] = useState<string>('');
   const [hudTaskingEntity, setHudTaskingEntity] = useState<SimEntity | null>(null);
   const [strikeModalTarget, setStrikeModalTarget] = useState<StrikeTargetInfo | null>(null);
+  const [carrierAirWingEntity, setCarrierAirWingEntity] = useState<SimEntity | null>(null);
   const [selectedReport, setSelectedReport] = useState<CombatReport | null>(null);
   const [reportCategoryFilter, setReportCategoryFilter] = useState<'all' | WarReportCategory>('all');
   const [editingRcs, setEditingRcs] = useState<boolean>(false);
@@ -709,6 +725,20 @@ export function WarSimConsole({
                 🛰️ Space ({(session.satellites || []).filter((s) => s.status !== 'destroyed').length})
               </button>
               <button
+                className={`wg-btn ${activeTab === 'ew' ? 'accent' : ''}`}
+                style={{
+                  fontSize: '10px',
+                  padding: '4px 6px',
+                  flex: 1,
+                  background: activeTab === 'ew' ? undefined : 'rgba(224, 64, 251, 0.08)',
+                  borderColor: activeTab === 'ew' ? undefined : 'rgba(224, 64, 251, 0.3)',
+                  color: activeTab === 'ew' ? undefined : '#E040FB',
+                }}
+                onClick={() => setActiveTab('ew')}
+              >
+                ⚡ EW & SEAD
+              </button>
+              <button
                 className={`wg-btn ${activeTab === 'network' ? 'accent' : ''}`}
                 style={{
                   fontSize: '10px',
@@ -819,6 +849,59 @@ export function WarSimConsole({
                     <option value="sam">Air Defense (SAM)</option>
                   </select>
                 </div>
+
+                {/* Global Batch Threat Level / DEFCON ROE Selector */}
+                {onSetGlobalThreatLevel && (
+                  <div
+                    style={{
+                      padding: '6px 8px',
+                      borderRadius: '4px',
+                      background: 'rgba(79, 195, 247, 0.06)',
+                      border: '1px solid rgba(79, 195, 247, 0.2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', color: '#4FC3F7', fontWeight: 700 }}>
+                        FLEET DEFCON ROE:
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--paper-dim)' }}>
+                        Apply to {systemDomainFilter === 'all' ? 'All Deployed' : systemDomainFilter.toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#4FA85F', color: '#4FA85F' }}
+                        title="DEFCON 3 (Level 1): Shadow & Radar Lock. Track intruder on border breach; hold fire unless intruder fires first."
+                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_3', systemDomainFilter as any)}
+                      >
+                        🟢 DEFCON 3
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#FFB020', color: '#FFB020' }}
+                        title="DEFCON 2 (Level 2): Sovereign Defense. Immediate weapons-free engagement on any border breach."
+                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_2', systemDomainFilter as any)}
+                      >
+                        🟡 DEFCON 2
+                      </button>
+                      <button
+                        type="button"
+                        className="wg-btn"
+                        style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#D9534F', color: '#D9534F' }}
+                        title="DEFCON 1 (Level 3): Total Offensive. Weapons-free engagement anywhere across the map (neutral, enemy, international)."
+                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_1', systemDomainFilter as any)}
+                      >
+                        🔴 DEFCON 1
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {Object.keys(quotaLedger).length === 0 && (
                   <div style={{ textAlign: 'center', padding: '20px', color: 'var(--paper-dim)', fontSize: '12px' }}>
@@ -1395,6 +1478,285 @@ export function WarSimConsole({
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ========================================================= */}
+            {/* TAB: ELECTRONIC WARFARE (EW), GPS DENIAL & SEAD OPERATIONS*/}
+            {/* ========================================================= */}
+            {activeTab === 'ew' && (() => {
+              const friendlyEwUnits = friendlyEntities.filter((e) => {
+                const spec = systemsLibrary.find((s) => s.id === e.systemId);
+                const ew = defaultEwFacetFor(spec, e.typeId);
+                return Boolean(ew);
+              });
+
+              const jammedHostileRadars = session.entities.filter(
+                (e) => e.iso !== session.playerIso && e.isRadarJammed && e.status !== 'destroyed'
+              );
+
+              const radiatingHostileRadars = session.entities.filter(
+                (e) => e.iso !== session.playerIso && isStaticAirDefense(e.typeId) && e.status !== 'destroyed' && e.patrolOrder?.emcon !== 'passive'
+              );
+
+              const friendlySeadShooters = friendlyEntities.filter(
+                (e) => e.status !== 'destroyed' && (e.typeId === 'fighter' || e.typeId === 'bomber' || e.name.toLowerCase().includes('ea-18') || e.name.toLowerCase().includes('f-16') || e.name.toLowerCase().includes('f-35') || e.name.toLowerCase().includes('su-34'))
+              );
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Header info */}
+                  <div
+                    style={{
+                      background: 'rgba(224, 64, 251, 0.08)',
+                      border: '1px solid rgba(224, 64, 251, 0.25)',
+                      borderRadius: '4px',
+                      padding: '8px 10px',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: '#E040FB', marginBottom: '3px' }}>
+                      ⚡ Tactical Electronic Warfare & SEAD/DEAD Suite
+                    </div>
+                    <div style={{ color: 'var(--paper-dim)', fontSize: '10px', lineHeight: 1.4 }}>
+                      Deploy directional stand-off radar noise jamming to blind enemy SAM acquisition radars. Activate wide-area GPS denial bubbles to induce INS guidance drift on incoming cruise missiles. Order SEAD Anti-Radiation strikes against radiating emitters.
+                    </div>
+                  </div>
+
+                  {/* 1. Friendly EW Platforms */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--paper-dim)', textTransform: 'uppercase' }}>
+                      ⚡ Friendly Electronic Attack Platforms ({friendlyEwUnits.length})
+                    </div>
+
+                    {friendlyEwUnits.length === 0 ? (
+                      <div style={{ fontSize: '11px', color: 'var(--paper-dim)', fontStyle: 'italic', padding: '6px 0' }}>
+                        No dedicated EW aircraft or electronic attack platforms currently fielded. Deploy EA-18G Growler, Su-34 EW, or Krasukha-4 to initiate electronic suppression.
+                      </div>
+                    ) : (
+                      friendlyEwUnits.map((unit) => {
+                        const spec = systemsLibrary.find((s) => s.id === unit.systemId);
+                        const ew = defaultEwFacetFor(spec, unit.typeId);
+                        const currentMode = unit.ewState?.mode || (ew?.isDedicatedEw ? 'standoff_jamming' : 'off');
+
+                        return (
+                          <div
+                            key={unit.id}
+                            style={{
+                              background: 'var(--card-bg)',
+                              border: `1px solid ${currentMode !== 'off' ? 'rgba(224, 64, 251, 0.4)' : 'var(--border)'}`,
+                              borderRadius: '4px',
+                              padding: '8px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '6px',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <strong style={{ fontSize: '11.5px', color: 'var(--paper)' }}>
+                                ⚡ {unit.name}
+                              </strong>
+                              <span
+                                style={{
+                                  fontSize: '9px',
+                                  padding: '1px 6px',
+                                  borderRadius: '3px',
+                                  fontWeight: 700,
+                                  background: currentMode !== 'off' ? 'rgba(224, 64, 251, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                  color: currentMode !== 'off' ? '#E040FB' : 'var(--paper-dim)',
+                                }}
+                              >
+                                {currentMode.toUpperCase().replace('_', ' ')}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                              Reach: {ew?.jammingRangeKm ?? 280} km · Cone: {ew?.coneAngleDeg ?? 60}° · GPS Denial: {ew?.gpsJammerRadiusKm ?? 80} km · Power: {ew?.jammerPowerKw ?? 120} kW
+                            </div>
+
+                            {/* Mode Switching Buttons */}
+                            {onSetEwMode && (
+                              <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
+                                <button
+                                  type="button"
+                                  className="wg-btn"
+                                  style={{
+                                    fontSize: '9.5px',
+                                    padding: '3px 6px',
+                                    flex: 1,
+                                    background: currentMode === 'off' ? 'rgba(255, 255, 255, 0.15)' : undefined,
+                                    borderColor: currentMode === 'off' ? 'var(--paper)' : undefined,
+                                  }}
+                                  onClick={() => onSetEwMode(unit.id, 'off')}
+                                >
+                                  OFF
+                                </button>
+                                <button
+                                  type="button"
+                                  className="wg-btn"
+                                  style={{
+                                    fontSize: '9.5px',
+                                    padding: '3px 6px',
+                                    flex: 2,
+                                    background: currentMode === 'standoff_jamming' ? 'rgba(0, 229, 255, 0.2)' : undefined,
+                                    borderColor: currentMode === 'standoff_jamming' ? '#00E5FF' : undefined,
+                                    color: currentMode === 'standoff_jamming' ? '#00E5FF' : undefined,
+                                    fontWeight: currentMode === 'standoff_jamming' ? 700 : 400,
+                                  }}
+                                  onClick={() => onSetEwMode(unit.id, 'standoff_jamming')}
+                                >
+                                  ⚡ NOISE JAMMING
+                                </button>
+                                <button
+                                  type="button"
+                                  className="wg-btn"
+                                  style={{
+                                    fontSize: '9.5px',
+                                    padding: '3px 6px',
+                                    flex: 2,
+                                    background: currentMode === 'gps_denial' ? 'rgba(224, 64, 251, 0.2)' : undefined,
+                                    borderColor: currentMode === 'gps_denial' ? '#E040FB' : undefined,
+                                    color: currentMode === 'gps_denial' ? '#E040FB' : undefined,
+                                    fontWeight: currentMode === 'gps_denial' ? 700 : 400,
+                                  }}
+                                  onClick={() => onSetEwMode(unit.id, 'gps_denial')}
+                                >
+                                  🚫 GPS DENIAL
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* 2. Blinded Hostile Radars Status */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#E040FB', textTransform: 'uppercase' }}>
+                      ⚡ Hostile Radars Under Jamming Suppression ({jammedHostileRadars.length})
+                    </div>
+
+                    {jammedHostileRadars.length === 0 ? (
+                      <div style={{ fontSize: '10px', color: 'var(--paper-dim)', fontStyle: 'italic' }}>
+                        No hostile radars currently inside active friendly jamming cones.
+                      </div>
+                    ) : (
+                      jammedHostileRadars.map((r) => (
+                        <div
+                          key={r.id}
+                          style={{
+                            background: 'rgba(224, 64, 251, 0.05)',
+                            border: '1px solid rgba(224, 64, 251, 0.3)',
+                            borderRadius: '3px',
+                            padding: '5px 8px',
+                            fontSize: '10px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span style={{ color: '#FF80AB', fontWeight: 600 }}>⚠️ {r.name}</span>
+                          <span style={{ color: '#E040FB', fontWeight: 700 }}>
+                            Blinded ➔ {r.jammedDetectionRangeKm} km
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* 3. Radiating Hostile Radars & SEAD Strike Operations */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#FF5252', textTransform: 'uppercase' }}>
+                      🎯 Radiating Radar Targets & SEAD Operations ({radiatingHostileRadars.length})
+                    </div>
+
+                    {radiatingHostileRadars.length === 0 ? (
+                      <div style={{ fontSize: '10px', color: 'var(--paper-dim)', fontStyle: 'italic' }}>
+                        No active hostile SAM/surveillance radar emitters detected radiating in sector.
+                      </div>
+                    ) : (
+                      radiatingHostileRadars.map((radar) => {
+                        // Find closest friendly SEAD shooter
+                        let closestShooter: SimEntity | null = null;
+                        let minShooterDistKm = Infinity;
+                        for (const s of friendlySeadShooters) {
+                          const d = distanceKm(s.lngLat, radar.lngLat);
+                          if (d < minShooterDistKm) {
+                            minShooterDistKm = d;
+                            closestShooter = s;
+                          }
+                        }
+
+                        const inSeadRange = minShooterDistKm <= 240;
+
+                        return (
+                          <div
+                            key={radar.id}
+                            style={{
+                              background: 'var(--card-bg)',
+                              border: '1px solid rgba(255, 82, 82, 0.35)',
+                              borderRadius: '4px',
+                              padding: '8px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '5px',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <strong style={{ fontSize: '11px', color: '#FF5252' }}>
+                                📡 {radar.name} ({radar.iso})
+                              </strong>
+                              <span
+                                style={{
+                                  fontSize: '9px',
+                                  padding: '1px 5px',
+                                  borderRadius: '3px',
+                                  fontWeight: 700,
+                                  background: 'rgba(255, 82, 82, 0.15)',
+                                  color: '#FF5252',
+                                }}
+                              >
+                                ACTIVE EMITTER
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: '9.5px', color: 'var(--paper-dim)' }}>
+                              Nearest SEAD Platform: {closestShooter ? `${closestShooter.name} (${minShooterDistKm.toFixed(0)} km)` : 'No Available Aircraft'}
+                            </div>
+
+                            {onLaunchSead && (
+                              <button
+                                type="button"
+                                className="wg-btn"
+                                style={{
+                                  fontSize: '10px',
+                                  padding: '4px 8px',
+                                  marginTop: '2px',
+                                  background: inSeadRange ? 'rgba(255, 82, 82, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                  borderColor: inSeadRange ? '#FF5252' : 'var(--border)',
+                                  color: inSeadRange ? '#FF5252' : 'var(--paper-dim)',
+                                  cursor: inSeadRange && closestShooter ? 'pointer' : 'not-allowed',
+                                  fontWeight: 700,
+                                }}
+                                disabled={!inSeadRange || !closestShooter}
+                                onClick={() => {
+                                  if (closestShooter) {
+                                    onLaunchSead(closestShooter.id, radar.id);
+                                  }
+                                }}
+                              >
+                                {inSeadRange
+                                  ? `🚀 Fire Anti-Radiation Missile (AARGM-ER - ${minShooterDistKm.toFixed(0)} km)`
+                                  : `⚠️ Out of Standoff Range (${minShooterDistKm.toFixed(0)} km > 240km)`}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               );
@@ -2427,6 +2789,93 @@ export function WarSimConsole({
                       </strong>
                     </div>
 
+                    {/* Operational Threat Level / DEFCON ROE Pill */}
+                    <div
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--paper-dim)', fontWeight: 700 }}>
+                          ROE THREAT LEVEL:
+                        </span>
+                        {selectedEntity.isTargetLocked && (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              padding: '1px 5px',
+                              borderRadius: '2px',
+                              background: 'rgba(255, 176, 32, 0.2)',
+                              color: '#FFB020',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🎯 RADAR LOCKED ON INTRUDER
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '3px' }}>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 4px',
+                            flex: 1,
+                            background: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? 'rgba(79, 168, 95, 0.25)' : undefined,
+                            borderColor: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? '#4FA85F' : undefined,
+                            color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? '#4FA85F' : undefined,
+                            fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_3' ? 700 : 400,
+                          }}
+                          title="DEFCON 3 (Level 1): Shadow & Radar Lock. Track intruder on border breach; hold fire unless intruder fires first."
+                          onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_3')}
+                        >
+                          🟢 DEFCON 3 (SHADOW)
+                        </button>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 4px',
+                            flex: 1,
+                            background: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? 'rgba(255, 176, 32, 0.25)' : undefined,
+                            borderColor: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? '#FFB020' : undefined,
+                            color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? '#FFB020' : undefined,
+                            fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_2' ? 700 : 400,
+                          }}
+                          title="DEFCON 2 (Level 2): Sovereign Defense. Immediate weapons-free engagement on any border breach."
+                          onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_2')}
+                        >
+                          🟡 DEFCON 2 (DEFENSE)
+                        </button>
+                        <button
+                          type="button"
+                          className="wg-btn"
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 4px',
+                            flex: 1,
+                            background: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? 'rgba(217, 83, 79, 0.25)' : undefined,
+                            borderColor: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? '#D9534F' : undefined,
+                            color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? '#D9534F' : undefined,
+                            fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? 700 : 400,
+                          }}
+                          title="DEFCON 1 (Level 3): Total Offensive. Weapons-free engagement anywhere across the map (neutral, enemy, international)."
+                          onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_1')}
+                        >
+                          🔴 DEFCON 1 (TOTAL)
+                        </button>
+                      </div>
+                    </div>
+
                     {!isStaticAD ? (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--paper-dim)' }}>
                         <span>Speed: <strong>{selectedEntity.speedKmh} km/h</strong></span>
@@ -2673,6 +3122,31 @@ export function WarSimConsole({
 
               {/* Quick Tactical Actions */}
               <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                {isCarrierPlatform(selectedEntity, spec) && (
+                  <button
+                    type="button"
+                    className="wg-btn"
+                    style={{
+                      width: '100%',
+                      fontSize: '11px',
+                      padding: '6px 8px',
+                      borderColor: '#00E5FF',
+                      color: '#00E5FF',
+                      background: 'rgba(0, 229, 255, 0.12)',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      marginBottom: '2px',
+                    }}
+                    title="Open Carrier Air Wing (CVW) Operations, Flight Deck Management & Weapon Loadout Customizer"
+                    onClick={() => setCarrierAirWingEntity(selectedEntity)}
+                  >
+                    <span>🚢</span> Flight Deck & Carrier Air Wing (CVW)
+                  </button>
+                )}
+
                 {!isStaticAD && !isGround && !isNaval && (selectedEntity.typeId !== 'tanker' && !selectedEntity.name.toLowerCase().includes('tanker')) && onOrderRefuelAtTanker && (selectedEntity.status === 'takeoff_ingress' || selectedEntity.status === 'on_station' || selectedEntity.status === 'bingo_rtb') && (
                   <button
                     className="wg-btn"
@@ -2902,6 +3376,31 @@ export function WarSimConsole({
           onFlyToLocation={onFlyToBase}
           playerCountryName={playerCountryName}
           enemyCountryName={enemyCountryName}
+        />
+      )}
+
+      {/* 8. Carrier Air Wing & Flight Deck Operations Modal */}
+      {carrierAirWingEntity && (
+        <CarrierAirWingModal
+          isOpen={Boolean(carrierAirWingEntity)}
+          onClose={() => setCarrierAirWingEntity(null)}
+          carrier={carrierAirWingEntity}
+          carrierBase={session.bases.find(
+            (b) => b.carrierEntityId === carrierAirWingEntity.id || b.id === carrierAirWingEntity.carrierBaseId
+          )}
+          embarkedSquadrons={friendlyEntities.filter(
+            (e) =>
+              e.homeBaseId === carrierAirWingEntity.carrierBaseId ||
+              (carrierAirWingEntity.carrierBaseId && e.homeBaseId?.includes(carrierAirWingEntity.id))
+          )}
+          session={session}
+          systemsLibrary={systemsLibrary}
+          onRearmSquadron={onRearmCarrierAirWing}
+          onLaunchStrike={onLaunchCarrierStrike}
+          onStartSortie={(entity) => {
+            setCarrierAirWingEntity(null);
+            onStartSortie(entity);
+          }}
         />
       )}
     </>

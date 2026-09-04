@@ -49,6 +49,8 @@ export interface SimBase {
   stationedEntityIds: string[];
   runwayStatus: 'operational' | 'damaged' | 'destroyed';
   repairCountdownSec: number;
+  /** Linked mobile aircraft carrier entity ID (for mobile sea bases) */
+  carrierEntityId?: string;
   supplies: {
     fuelPct: number;
     ammoPct: number;
@@ -235,11 +237,40 @@ export interface SimEntity {
     wasBingoRescue?: boolean;
     durationSec?: number;
   };
+  /** Electronic Warfare (EW) & Electronic Attack configuration */
+  ewState?: {
+    mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection';
+    jammingTargetLngLat?: [number, number];
+    jammingSectorCone?: [number, number][]; // 3-point or 4-point polygon of directional jamming cone
+    activePowerKw?: number;
+    effectiveJammingRangeKm?: number;
+  };
+  /** Whether this radar is currently suppressed/degraded by enemy EW jamming */
+  isRadarJammed?: boolean;
+  /** Effective compressed radar detection reach under jamming (km) */
+  jammedDetectionRangeKm?: number;
+  /** Whether this platform is currently navigating inside an enemy GPS denial bubble */
+  isGpsDenied?: boolean;
   /** Real-time Sovereign Airspace and Geographic Location */
   currentAirspace?: AirspaceLocation;
   previousAirspace?: AirspaceLocation;
+  /** Per-system operational ROE threat level for deployed assets on the map */
+  threatLevel?: SystemThreatLevel;
+  /** Whether this system is currently maintaining a fire-control radar lock on an intruder */
+  isTargetLocked?: boolean;
+  /** ID of the intruder entity currently illuminated/locked by this system */
+  lockedTargetEntityId?: string;
+  /** Whether this entity has initiated offensive hostile fire against friendlies */
+  hasFiredHostile?: boolean;
+  /** True if this surface combatant is a mobile Aircraft Carrier */
+  isCarrier?: boolean;
+  /** Linked mobile carrier_group base ID representing this carrier's flight deck */
+  carrierBaseId?: string;
+  /** Escort combatants (cruisers/destroyers/frigates) screening this carrier in the CSG */
+  csgEscortIds?: string[];
 }
 
+export type SystemThreatLevel = 'defcon_3' | 'defcon_2' | 'defcon_1';
 export type AirspaceClassification = 'friendly' | 'hostile' | 'neutral' | 'international';
 export type AirspaceRoeDoctrine = 'weapons_free' | 'adiz_border_defense' | 'neutral_sanctuary';
 
@@ -325,6 +356,14 @@ export interface MissileFlyoutTrack {
   threatAltitudeM?: number;
   threatRcsM2?: number;
   threatSpeedMach?: number;
+  /** Anti-Radiation Missile (ARM) tracking active SAM/EW radar emitter */
+  isAntiRadiation?: boolean;
+  /** Home-On-Jam (HOJ) tracking active jammer emitter */
+  isHomeOnJam?: boolean;
+  /** Whether the missile guidance is currently experiencing GPS denial / jamming */
+  isGpsDenied?: boolean;
+  /** Cumulative Inertial Navigation System (INS) drift error in meters */
+  insDriftErrorM?: number;
 }
 
 export interface InterceptionBreakdownEntry {
@@ -648,6 +687,38 @@ export interface CombatReport {
       satelliteName: string;
       sensorType: 'optical' | 'sar' | 'elint';
       event: string;
+      simTimeSec: number;
+    }[];
+  };
+
+  // Electronic Warfare (EW), GPS Denial & SEAD Telemetry
+  ewDetails?: {
+    radarsJammedCount: number;
+    jammingSortiesCount: number;
+    gpsDeniedStrikesCount: number;
+    averageInsDriftM: number;
+    antiRadiationStrikesCount: number;
+    antiRadiationHitsCount: number;
+    ewAssessment: string;
+    ewEvents: {
+      platformName: string;
+      ewAction: string;
+      targetName: string;
+      simTimeSec: number;
+    }[];
+  };
+
+  // Carrier Strike Group (CSG) & Moving Airbase Operations Telemetry
+  csgDetails?: {
+    totalCarrierSorties: number;
+    carrierTrapsCompleted: number;
+    carrierStrikesLaunched: number;
+    escortInterceptionsCount: number;
+    csgAssessment: string;
+    carrierEvents: {
+      carrierName: string;
+      event: string;
+      aircraftName: string;
       simTimeSec: number;
     }[];
   };

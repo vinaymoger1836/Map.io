@@ -796,6 +796,12 @@ export default function EurasiaMap() {
             countries={war.countries}
             onSetAirspaceRoe={warSim.setAirspaceRoe}
             onLaunchAsat={warSim.orderAsatStrike}
+            onLaunchSead={warSim.orderSeadStrike}
+            onSetEwMode={warSim.updateEntityEwMode}
+            onSetEntityThreatLevel={warSim.setEntityThreatLevel}
+            onSetGlobalThreatLevel={warSim.setGlobalThreatLevel}
+            onRearmCarrierAirWing={warSim.rearmCarrierAirWing}
+            onLaunchCarrierStrike={warSim.launchCarrierStrike}
             onFlyToBase={(lngLat) => {
               mapRef.current?.flyTo({ center: lngLat, zoom: 6, duration: 1200 });
             }}
