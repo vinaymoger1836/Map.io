@@ -2786,11 +2786,26 @@ export function tickWarSim(
   );
   newEvents.push(...roeEvents);
 
+  // 5e. Synchronize Moving Carrier Bases & Flight Deck Trapping Operations
+  const {
+    updatedBases: carrierBases,
+    updatedEntities: carrierEntities,
+    csgEvents,
+  } = syncMovingCarrierBases(
+    {
+      ...session,
+      bases: updatedBases,
+      entities: roeEntities,
+    },
+    systemsLibrary
+  );
+  newEvents.push(...csgEvents);
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
-    bases: updatedBases,
-    entities: roeEntities,
+    bases: carrierBases,
+    entities: carrierEntities,
     satellites: updatedSatellites,
     activeMissiles: [...ewMissiles, ...roeMissiles],
     airspaceRoeDoctrine: session.airspaceRoeDoctrine || 'weapons_free',
