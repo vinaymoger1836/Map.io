@@ -707,6 +707,21 @@ export interface CombatReport {
       simTimeSec: number;
     }[];
   };
+
+  // Carrier Strike Group (CSG) & Moving Airbase Operations Telemetry
+  csgDetails?: {
+    totalCarrierSorties: number;
+    carrierTrapsCompleted: number;
+    carrierStrikesLaunched: number;
+    escortInterceptionsCount: number;
+    csgAssessment: string;
+    carrierEvents: {
+      carrierName: string;
+      event: string;
+      aircraftName: string;
+      simTimeSec: number;
+    }[];
+  };
 }
 
 /* ------------------------------------------------------------------ */
