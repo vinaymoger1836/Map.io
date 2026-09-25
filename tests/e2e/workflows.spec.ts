@@ -9,12 +9,19 @@ test('server isolation blocks disk writes even without browser interception', as
 });
 
 test('situation map opens sandbox and launches a fresh simulation', async ({ page }) => {
-  const { pageErrors } = await preparePage(page, createFixture('transit'), false);
+  const fixture = createFixture('transit');
+  // Fresh setup validates every quota platform, including this synthetic fighter.
+  fixture.systems.find((system) => system.id === 'fixture-aircraft')!.weapons = [{
+    id: 'fixture-air-round', name: 'Fixture air round', rangeKm: 80,
+    speedMach: 2, magazine: 4, salvo: 1, pk: 0.5, reactionSec: 2, engages: ['air'],
+  }];
+  const { pageErrors } = await preparePage(page, fixture, false);
   await page.goto('/');
   await waitForMap(page);
   await page.getByRole('button', { name: 'War games', exact: true }).click();
   await page.getByRole('button', { name: /War Sim/ }).first().click();
   await expect(page.getByRole('heading', { name: 'War Simulation Staging Deck' })).toBeVisible();
+  await page.getByRole('combobox').last().selectOption('156');
   await page.getByRole('button', { name: /Begin Simulation/ }).click();
   await expect(page.getByRole('button', { name: /PAUSE/ })).toBeVisible();
   await page.getByRole('button', { name: /PAUSE/ }).click();
