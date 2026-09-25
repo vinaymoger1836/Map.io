@@ -78,4 +78,7 @@ desktop.ini
 
 # claude code local state
 .claude
+
+# local WarSim planning documents
 warsim_architecture_plan.md
+/warsim_plan.md
