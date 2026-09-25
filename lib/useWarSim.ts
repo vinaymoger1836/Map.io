@@ -49,6 +49,7 @@ import { type SystemThreatLevel } from './warSimTypes';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
 import { writeDoc } from './store';
+import { measureWarSim } from './warsim/diagnostics';
 import { removeWarSimLayers } from './warSimLayers';
 import {
   getKnownHostileThreatZones,
@@ -147,7 +148,7 @@ export function useWarSim({
       lastTickTimeRef.current = now;
 
       if (sessionRef.current && sessionRef.current.status === 'running') {
-        const next = tickWarSim(sessionRef.current, dtRealSec, systemsLibrary);
+        const next = measureWarSim('engine.tick.ms', () => tickWarSim(sessionRef.current!, dtRealSec, systemsLibrary));
         setSession(next);
       }
     }, 100);

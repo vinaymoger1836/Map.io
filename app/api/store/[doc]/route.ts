@@ -36,6 +36,9 @@ function resolveDoc(doc: string): string | null {
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ doc: string }> }) {
+  // Playwright supplies isolated documents through request routing. Even if a
+  // test forgets that routing, its server must never read the user's documents.
+  if (process.env.MAPIO_E2E === '1') return NextResponse.json(null);
   const { doc } = await params;
   const file = resolveDoc(doc);
   if (!file) return NextResponse.json({ error: 'bad document name' }, { status: 400 });
@@ -54,6 +57,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ doc
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ doc: string }> }) {
+  if (process.env.MAPIO_E2E === '1') {
+    return NextResponse.json({ error: 'Test server: disk writes are disabled' }, { status: 403 });
+  }
   const { doc } = await params;
   const file = resolveDoc(doc);
   if (!file) return NextResponse.json({ error: 'bad document name' }, { status: 400 });

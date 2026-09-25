@@ -32,6 +32,13 @@ import {
   type SAMThreatZone,
 } from './threatAvoidance';
 import { generateAarRacetrackCoordinates } from './aerialRefueling';
+import { measureWarSim } from './warsim/diagnostics';
+
+function setMeasuredSourceData(map: MLMap, id: string, data: GeoJSON.FeatureCollection) {
+  const source = map.getSource(id) as GeoJSONSource | undefined;
+  if (source) measureWarSim('map.setData.ms', () => source.setData(data));
+}
+
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
@@ -820,7 +827,7 @@ export function renderWarSimStateToMap(
       properties: {},
     });
   }
-  (map.getSource(SRC_REACH_RING) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_REACH_RING, {
     type: 'FeatureCollection',
     features: reachRingFeatures,
   });
@@ -984,7 +991,7 @@ export function renderWarSimStateToMap(
     }
   }
 
-  (map.getSource(SRC_ENVELOPES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_ENVELOPES, {
     type: 'FeatureCollection',
     features: envelopeFeatures,
   });
@@ -1012,7 +1019,7 @@ export function renderWarSimStateToMap(
       },
     };
   });
-  (map.getSource(SRC_BASES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_BASES, {
     type: 'FeatureCollection',
     features: basesFeatures,
   });
@@ -1078,7 +1085,7 @@ export function renderWarSimStateToMap(
 
   ensureIcons(map, iconSpecs);
 
-  (map.getSource(SRC_ENTITIES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_ENTITIES, {
     type: 'FeatureCollection',
     features: entityFeatures,
   });
@@ -1170,7 +1177,7 @@ export function renderWarSimStateToMap(
       });
     }
   });
-  (map.getSource(SRC_PATROLS) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_PATROLS, {
     type: 'FeatureCollection',
     features: patrolFeatures,
   });
@@ -1240,7 +1247,7 @@ export function renderWarSimStateToMap(
   // Ensure all NATO icon badges (for both friendly units and PID Tier 2 enemy contacts) are registered in MapLibre
   ensureIcons(map, iconSpecs);
 
-  (map.getSource(SRC_CONTACTS) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_CONTACTS, {
     type: 'FeatureCollection',
     features: contactFeatures,
   });
@@ -1276,7 +1283,7 @@ export function renderWarSimStateToMap(
       },
     });
   });
-  (map.getSource(SRC_MISSILES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_MISSILES, {
     type: 'FeatureCollection',
     features: missileFeatures,
   });
@@ -1330,7 +1337,7 @@ export function renderWarSimStateToMap(
     });
   });
 
-  (map.getSource(SRC_SATELLITES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_SATELLITES, {
     type: 'FeatureCollection',
     features: satelliteFeatures,
   });
@@ -1402,7 +1409,7 @@ export function renderWarSimStateToMap(
     }
   });
 
-  (map.getSource(SRC_EW) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_EW, {
     type: 'FeatureCollection',
     features: ewFeatures,
   });

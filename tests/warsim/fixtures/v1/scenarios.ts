@@ -72,9 +72,10 @@ function session(id: FixtureId): WarSimSession {
     salvoTrackers: [], networks: [], airspaceRoeDoctrine: 'neutral_sanctuary',
     // The legacy engine replaces [] with real-world default satellites. A
     // destroyed synthetic entry disables that unrelated default in these cases.
-    satellites: [{ id: 'fixture-disabled-orbiter', name: 'Disabled fixture orbiter', faction: 'player',
-      iso: '840', altitudeKm: 500, inclinationDeg: 0, periodMin: 90, phaseOffsetDeg: 0,
+    satellites: [{ id: 'fixture-disabled-orbiter', systemId: 'fixture-orbiter', name: 'Disabled fixture orbiter', faction: 'player',
+      iso: '840', altitudeKm: 500, inclinationDeg: 0, periodMin: 90, orbitPhaseOffsetSec: 0,
       sensorType: 'optical', swathWidthKm: 0, status: 'destroyed', currentLngLat: [0, 0],
+      resolutionM: 10, groundTrack: [], groundSwathPolygon: [],
       lastScanSimTimeSec: 0, contactsDiscoveredCount: 0 }],
   };
 }

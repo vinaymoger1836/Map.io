@@ -31,6 +31,9 @@ research/systems.merged.json
 # testing
 coverage
 *.lcov
+test-results/
+playwright-report/
+.next-e2e/
 
 # secrets & credentials
 # .env*.local alone is not enough — a plain .env is the usual leak.

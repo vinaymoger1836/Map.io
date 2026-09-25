@@ -220,7 +220,9 @@ export function readBundle(text: string): BundleRead {
   }
 
   const raw = parsed as Record<string, unknown>;
-  if (raw.kind !== BUNDLE_KIND) {
+  // Early shared scenarios used this marker. Preserve their board instead of
+  // falling through to the systems/forces-only arsenal import path.
+  if (raw.kind !== BUNDLE_KIND && raw.kind !== 'wargames-bundle') {
     if (raw.format === 'mapio-arsenal-package' || Array.isArray(raw.systems) || (raw.forces && typeof raw.forces === 'object')) {
       const systems = Array.isArray(raw.systems)
         ? raw.systems.map(reviveImportedSpec).filter((s): s is SystemSpec => Boolean(s))

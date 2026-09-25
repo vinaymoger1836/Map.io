@@ -28,6 +28,7 @@ import { useWarSim } from '@/lib/useWarSim';
 import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
 import { readDoc, writeDoc } from '@/lib/store';
+import { measureWarSim } from '@/lib/warsim/diagnostics';
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -174,17 +175,17 @@ export default function EurasiaMap() {
       removeWarSimLayers(map);
       return;
     }
-    renderWarSimStateToMap(
+    measureWarSim('render.sync.ms', () => renderWarSimStateToMap(
       map,
-      warSim.session,
-      warSim.session.activeFaction,
+      warSim.session!,
+      warSim.session!.activeFaction,
       warSim.targetPicking,
       warSim.selectedEntityId,
       war.systems,
       warSim.activeWeaponIndex,
       warSim.showAllEnvelopes,
       warSim.selectedContactId
-    );
+    ));
   }, [
     ready,
     mode,
