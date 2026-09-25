@@ -1,4 +1,3 @@
-import os from 'node:os';
 import path from 'node:path';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -6,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { createFixture, FIXTURE_IDS, FIXTURE_VERSION } from '../tests/warsim/fixtures/v1/scenarios';
 import { withLegacyRuntime } from '../tests/warsim/helpers/legacyRuntime';
+import { machineEnvironment } from '../tests/warsim/helpers/machine';
 import { tickWarSim, launchSimStrikeSalvoDirectly } from '../lib/warSimEngine';
 
 const warmupTicks = 20;
@@ -62,8 +62,7 @@ let revision = 'unavailable';
 try { revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { /* source hashes still identify the run */ }
 const report = {
   schemaVersion: 1, capturedAt: new Date().toISOString(), revision, sourceHashes: hashes,
-  environment: { node: process.version, os: `${os.platform()} ${os.release()}`, architecture: os.arch(),
-    cpu: os.cpus()[0]?.model, logicalCores: os.cpus().length, totalMemoryBytes: os.totalmem(), gcAvailable: Boolean(global.gc) },
+  environment: { ...machineEnvironment(), node: process.version, gcAvailable: Boolean(global.gc) },
   method: { warmupTicks, measuredTicks, repetitions, dtRealSec, timeMultiplier: 1,
     caveats: ['Legacy randomness/Date.now controlled only by the synchronous harness; production has no replay seed.',
       'CPU simulation only; no renderer/React cost. Short-run heap deltas are not a leak test.',

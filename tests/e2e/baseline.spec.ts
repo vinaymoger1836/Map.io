@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
-import os from 'node:os';
 import path from 'node:path';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { createFixture } from '../warsim/fixtures/v1/scenarios';
+import { machineEnvironment } from '../warsim/helpers/machine';
 import { preparePage, waitForMap, storedSession } from './support';
 
 test('capture browser baseline on the 100-platform / 50-projectile fixture', async ({ page, browser }, testInfo) => {
@@ -39,12 +40,16 @@ test('capture browser baseline on the 100-platform / 50-projectile fixture', asy
       renderer: String(gl.getParameter(ext?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER)) };
   });
   const report = { schemaVersion: 1, capturedAt: new Date().toISOString(), fixture: fixture.id, fixtureVersion: fixture.schemaVersion,
-    environment: { browser: browser.version(), os: `${os.platform()} ${os.release()}`, cpu: os.cpus()[0]?.model,
-      logicalCores: os.cpus().length, ramBytes: os.totalmem(), viewport: testInfo.project.use.viewport, gpu,
-      mode: 'Next.js development, React StrictMode, headless Chromium', powerMode: 'not measured' },
+    sourceHashes: Object.fromEntries(['lib/warSimEngine.ts', 'lib/warSimLayers.ts', 'lib/useWarSim.ts',
+      'lib/warsim/diagnostics.ts', 'components/MapShell.tsx', 'components/EurasiaMap.tsx',
+      'tests/warsim/fixtures/v1/scenarios.ts', 'tests/e2e/support.ts', 'package-lock.json']
+      .map((file) => [file, createHash('sha256').update(readFileSync(file)).digest('hex')])),
+    environment: { ...machineEnvironment(), browser: browser.version(), viewport: testInfo.project.use.viewport, gpu,
+      mode: 'Next.js development, React StrictMode, headless Chromium' },
     caveats: ['Offline blank basemap and fixture geography: no external tile/font cost.',
       'setData cost is synchronous submission/serialization, not asynchronous worker or GPU completion.',
       'React commit metric is Profiler actualDuration in development; frames are requestAnimationFrame intervals.',
+      'Browser execution uses the legacy wall clock and RNG; only the initial fixture is seeded.',
       '12-second heap deltas are an initial observation, not proof of a memory leak or leak freedom.'],
     metrics, memory: { before: memoryBefore, beforeGc: memoryBeforeGc, afterGc: memoryAfterGc },
     initialSessionBytes: Buffer.byteLength(JSON.stringify(fixture.session)), finalSessionBytes: Buffer.byteLength(JSON.stringify(final)),
