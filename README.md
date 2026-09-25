@@ -659,6 +659,20 @@ The simulation implements continuous, physics-based radar and optical reconnaiss
 
 ---
 
+## WarSim development and verification
+
+Phase 0 adds isolated simulation fixtures, migration checks, browser workflows and performance measurements. See [the baseline guide](docs/warsim/phase-0.md), [current model capabilities](docs/warsim/capabilities.md) and [save migration inventory](docs/warsim/migration-inventory.md) for verified scope and limitations of the feature descriptions above.
+
+```sh
+npm run test
+npm run typecheck
+npm run test:e2e
+npm run bench:warsim
+npm run bench:warsim:browser
+```
+
+Follow the baseline guide's Chromium setup before browser runs. Tests use a separate server and isolated documents; benchmark reports are written to `.cache/warsim-baseline/`.
+
 ## Adding a layer
 
 1. Add the GeoJSON to `public/data/`, load it in `lib/data.ts`.
