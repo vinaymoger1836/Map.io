@@ -22,7 +22,7 @@
 .error { position:absolute; top:140px; left:30%; right:30%; padding:20px; background:#4a2424; border:1px solid #fda38b; z-index:10; } .error button { display:block; margin-top:15px; }
 .intelPanel { position:absolute; top:150px; bottom:105px; left:32px; width:340px; overflow:auto; padding:18px;
   background:#091925f2; border:1px solid #80bacb55; border-radius:7px; box-shadow:0 20px 45px #0008; backdrop-filter:blur(14px); }
-.intelHead { display:flex; justify-content:space-between; align-items:start; gap:12px; } .intelHead h2 { font-size:20px; font-weight:500; margin:0 0 14px; }
+.intelHead { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; } .intelHead h2 { font-size:20px; font-weight:500; margin:0 0 14px; }
 .intelPanel>.eyebrow { margin-top:23px; } .intelPanel label { display:block; font-size:11px; color:#b5c8d0; margin:8px 0; }
 .intelPanel label span { float:right; } .intelPanel select,.intelPanel input[type=number] { display:block; width:100%; margin-top:6px; }
 .intelPanel input[type=range] { display:block; width:100%; margin:8px 0; accent-color:#7bd5e3; }

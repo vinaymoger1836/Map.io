@@ -10,7 +10,7 @@ interface Props {
   session: WarSimSession; selectedId: string | null; selectedContactId: string | null;
   onSelect: (id: string | null) => void; onSelectContact: (id: string | null) => void;
   dispatch: (command: SimulationCommand) => void; onClose: () => void; onExit: () => void;
-  runtimeError: string | null;
+  runtimeError: string | null; onDismissRuntimeError: () => void;
 }
 export default function TacticalViewport(p: Props) {
   const host = useRef<HTMLDivElement>(null), scene = useRef<TacticalScene | null>(null), latest = useRef(p); latest.current = p;
@@ -22,6 +22,7 @@ export default function TacticalViewport(p: Props) {
   const selected = s.entities.find(e => e.id === p.selectedId) ?? s.entities[0];
   const target = contacts.find(c => c.contactId === p.selectedContactId) ?? contacts[0];
   const actor = s.physical?.actors.find(a => a.id === selected?.id);
+  const reservedRounds = s.intelView?.reservations.filter(r => r.assetId === actor?.id && r.resource === 'strike-round').length ?? 0;
   useEffect(() => {
     setError(''); setSound(false);
     try { scene.current = new TacticalScene(host.current!, latest.current.session, (id, contact) => {
@@ -64,13 +65,14 @@ export default function TacticalViewport(p: Props) {
         <label>Course <span>{heading.toFixed(0)}°</span><input aria-label="Course" type="range" min="0" max="359" value={heading} onChange={e => setHeading(+e.target.value)} /></label>
         <label>Speed <span>{speed} m/s</span><input aria-label="Vessel speed" type="range" min="0" max="16" value={speed} onChange={e => setSpeed(+e.target.value)} /></label>
         <button disabled={actor.health <= 0} onClick={() => send({ type: 'setPhysicalCourse', args: [actor.id, heading, speed] })}>Apply course & speed</button>
-        <button className={styles.fire} disabled={!target || actor.rounds < 1 || actor.health <= 0 || actor.cooldown > s.simTimeSec || target.trackState === 'lost'} onClick={() => target && send({ type: 'launchPhysical', args: [actor.id, target.contactId, target.revision] })}>Launch guided round</button>
+        <button className={styles.fire} disabled={!target || actor.rounds - reservedRounds < 1 || actor.health <= 0 || actor.cooldown > s.simTimeSec || target.trackState === 'lost' || (target.confidence ?? 0) < .3} onClick={() => target && send({ type: 'launchPhysical', args: [actor.id, target.contactId, target.revision] })}>Launch guided round</button>
         <p>Defensive fire is automatic inside 1.8 km. Start time to advance launched rounds.</p></>}
       {target && <p>Track: {target.trackState ?? 'legacy'} · ±{Math.round(target.uncertaintyM ?? 0)} m · {((target.confidence ?? 0) * 100).toFixed(0)}% confidence</p>}
       <div className={styles.eyebrow}>ENGAGEMENT LOG</div>
       <div className={styles.log} aria-live="polite">{s.eventLog.slice(-5).reverse().map(e => <div key={e.id}><time>{e.timeFormatted}</time> {e.title}</div>)}{!s.eventLog.length && <p>Awaiting orders.</p>}</div>
     </aside>
-    {(error || p.runtimeError) && <div className={styles.error} role="alert">{error || p.runtimeError}<button onClick={p.onClose}>Return to command map</button></div>}
+    {error && <div className={styles.error} role="alert">{error}<button onClick={p.onClose}>Return to command map</button></div>}
+    {p.runtimeError && !error && <div className={styles.error} role="alert">{p.runtimeError}<button onClick={p.onDismissRuntimeError}>Dismiss order message</button></div>}
     <footer className={styles.footer}>
       <div><div className={styles.eyebrow}>SIMULATION TIME</div><strong data-testid="tactical-time">T+{s.simTimeSec.toFixed(1).padStart(6, '0')}</strong></div>
       <button className={styles.play} onClick={() => send({ type: 'togglePlay', args: [] })}>{s.status === 'running' ? 'Pause time' : 'Start time'}</button>

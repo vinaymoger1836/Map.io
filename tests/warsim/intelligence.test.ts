@@ -21,7 +21,7 @@ describe('physical reference / intelligence and coordination', () => {
     expect(observedContacts(s, hq(s.playerIso), 4)[0].evidenceIds).toEqual(initial.evidenceIds);
     expect(observedContacts(s, `${s.playerIso}:faction`, 4)).toHaveLength(0);
     advance(s, 10);
-    expect(observedContacts(s, hq(s.playerIso), 14)[0].evidenceIds.length).toBeGreaterThan(1);
+    expect(observedContacts(s, hq(s.playerIso), 14)[0].evidenceIds?.length).toBeGreaterThan(1);
     expect(observedContacts(s, `${s.playerIso}:faction`, 14)).toHaveLength(0);
     advance(s, 5);
     expect(observedContacts(s, `${s.playerIso}:faction`, 19)).toHaveLength(1);
