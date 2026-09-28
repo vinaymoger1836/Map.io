@@ -18,6 +18,10 @@ export function createPhysicalReference(): WarSimSession {
   s.entities = s.physical!.actors.map(a => ({ id: a.id, systemId: 'reference-frigate', iso: a.iso, name: a.id === 'blue-scout' ? 'FS Surveyor' : a.iso === '840' ? 'FS Resolute' : 'FS Meridian',
     typeId: 'destroyer', count: 1, lngLat: [-150, 20], altitudeM: 0, headingDeg: a.heading, speedKmh: a.speed * 3.6,
     currentFuelPct: 100, status: 'on_station', damage: 'intact', turnaroundTimerSec: 0, repairTimerSec: 0, personnel: 100, magazines: { 0: a.rounds, 1: a.interceptors }, rcs: 100 }));
+  for (const actor of s.physical!.actors) {
+    actor.condition = { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 };
+    actor.repairKits = actor.id === 'blue-scout' ? 1 : 2;
+  }
   s.physical!.intel = createPhysicalIntel(s);
   syncPhysical(s); return s;
 }

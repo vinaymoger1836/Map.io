@@ -117,7 +117,7 @@ export class SimulationRuntime {
     const args = command.args as unknown[];
     if (this.world.physical && !['setPlayback', 'togglePlay', 'setSpeedMultiplier', 'switchActiveFaction', 'launchPhysical', 'setPhysicalCourse',
       'setObserverScope', 'requestPhysicalCollection', 'setPhysicalEmission', 'setPhysicalLink', 'forwardPhysicalReport',
-      'setCoalitionSharing', 'planPhysicalStrike', 'cancelPhysicalMission'].includes(command.type)) {
+      'setCoalitionSharing', 'planPhysicalStrike', 'cancelPhysicalMission', 'startPhysicalRepair', 'cancelPhysicalRepair'].includes(command.type)) {
       throw new Error('This reference encounter does not support that order.');
     }
     const iso = scope.faction === 'player' ? this.world.playerIso : this.world.enemyIso;

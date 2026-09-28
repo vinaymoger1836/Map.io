@@ -7,7 +7,7 @@ import { aircraft, contactMarker, disposeObject, vessel } from './assets';
 import { recordWarSimMetric } from '../diagnostics';
 import { UNIT_BY_ID } from '../../warGames';
 
-interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'platform' | 'contact' | 'round'; color: string; speed: number; uncertainty?: number }
+interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'platform' | 'contact' | 'round'; color: string; speed: number; uncertainty?: number; health?: number }
 type Display = { from: Body; to: Body; mesh: T.Object3D };
 export class TacticalScene {
   private renderer: T.WebGLRenderer;
@@ -98,7 +98,8 @@ export class TacticalScene {
     const records: Body[] = s.entities.filter(e => e.status !== 'destroyed').map(e => ({ id: e.id,
       position: s.physical?.actors.find(a => a.id === e.id)?.position ?? toENU([...e.lngLat, e.altitudeM], this.origin), heading: e.headingDeg,
       kind: UNIT_BY_ID.get(e.typeId)?.domain === 'air' ? 'air' : s.physical || UNIT_BY_ID.get(e.typeId)?.domain === 'sea' ? 'ship' : 'platform',
-      color: e.iso === s.playerIso ? s.playerColor : s.enemyColor, speed: e.speedKmh / 3.6 }));
+      color: e.iso === s.playerIso ? s.playerColor : s.enemyColor, speed: e.speedKmh / 3.6,
+      health: s.physical?.actors.find(a => a.id === e.id)?.health }));
     const contacts = s.activeFaction === 'player' ? s.fogOfWarContacts.playerContacts : s.fogOfWarContacts.enemyContacts;
     records.push(...contacts.map(c => ({ id: c.contactId, position: toENU([...c.lastKnownLngLat, 0], this.origin), heading: c.headingDeg,
       kind: 'contact' as const, color: c.trackState === 'stale' ? '#ffcb77' : '#ff8f74', speed: c.speedKmh / 3.6, uncertainty: c.uncertaintyM ?? 150 })));
@@ -113,6 +114,15 @@ export class TacticalScene {
       else {
         const mesh = r.kind === 'ship' ? vessel(r.color) : r.kind === 'air' ? aircraft(r.color) : r.kind === 'contact' || r.kind === 'platform' ? contactMarker(r.color)
           : new T.Mesh(new T.SphereGeometry(2.2, 8, 6), new T.MeshBasicMaterial({ color: r.color }));
+        if (r.kind === 'ship') {
+          const damage = new T.Group(); damage.userData.damage = true;
+          for (let n = 0; n < 3; n++) {
+            const puff = new T.Mesh(new T.SphereGeometry(2.4 + n * 1.2, 8, 6),
+              new T.MeshBasicMaterial({ color: n === 0 ? '#dc6d3b' : '#32353a', transparent: true, opacity: .6 - n * .12, depthWrite: false }));
+            puff.position.set(n * 1.5, 11 + n * 5, 0); damage.add(puff);
+          }
+          mesh.add(damage);
+        }
         mesh.userData.id = r.id; this.scene.add(mesh); this.bodies.set(r.id, { from: r, to: r, mesh });
       }
     }
@@ -194,6 +204,8 @@ export class TacticalScene {
         if (ring) ring.scale.setScalar(Math.min(3000, Math.max(30, b.to.uncertainty ?? 150)));
       }
       if (b.to.kind === 'ship') { b.mesh.rotation.z = Math.sin(time * .6) * .008; b.mesh.rotation.x = Math.sin(time * .9) * .003;
+        const damage = b.mesh.children.find(c => c.userData.damage);
+        if (damage) { damage.visible = (b.to.health ?? 100) < 100; damage.scale.setScalar(.7 + (100 - (b.to.health ?? 100)) / 100); }
         const wake = b.mesh.children.find(c => c.userData.wake) as T.Mesh<T.PlaneGeometry, T.ShaderMaterial> | undefined;
         if (wake) { wake.visible = b.to.speed > 1; wake.material.uniforms.time.value = time; }
       }

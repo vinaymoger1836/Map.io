@@ -3,6 +3,9 @@ export interface PhysicalActor {
   id: string; iso: string; position: Vec3; velocity: Vec3;
   heading: number; course: number; speed: number; desiredSpeed: number;
   fuel: number; health: number; rounds: number; interceptors: number; cooldown: number;
+  condition?: { propulsion: number; sensor: number; strikeLauncher: number; pointDefense: number };
+  repairKits?: number; repairJob?: { capability: keyof NonNullable<PhysicalActor['condition']>; remainingSec: number };
+  damageHits?: number;
 }
 export interface PhysicalRound {
   id: string; shooterId: string; iso: string; targetId: string; interceptor: boolean;

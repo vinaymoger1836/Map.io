@@ -1,5 +1,6 @@
 import type { WarSimSession, DetectedContact } from '../warSimTypes';
 import { add, sub, scale, length, fromENU, toENU, type Vec3 } from './physics/coordinates';
+import { operational } from './physics/readiness';
 
 export type TrackState = 'fresh' | 'stale' | 'lost';
 export interface IntelObservation {
@@ -36,7 +37,8 @@ export interface IntelMission {
   id: string; shooterId: string; supportId: string; trackId: string; trackRevision: number; scopeId: string;
   targetRef: string; status: 'awaiting-support' | 'ready' | 'held' | 'executed' | 'aborted';
   onLoss: 'hold' | 'abort' | 'continue-local'; createdTick: number; readyTick?: number;
-  firedRoundId?: string; reason: string; evidenceIds: string[];
+  notBeforeTick?: number; firedRoundId?: string; outcome?: 'impact' | 'intercept' | 'expired'; completedTick?: number;
+  reason: string; evidenceIds: string[];
 }
 export interface PhysicalIntel {
   version: 1; sequence: number; contacts: Record<string, string>; observations: IntelObservation[];
@@ -182,7 +184,7 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     if (tick < sensor.nextScanTick) continue;
     sensor.nextScanTick = tick + sensor.intervalTicks;
     const actor = p.actors.find(a => a.id === sensor.actorId);
-    if (!actor || actor.health <= 0 || sensor.mode === 'passive' || sensor.sensorTime <= 0) continue;
+    if (!actor || !operational(actor, 'sensor') || sensor.mode === 'passive' || sensor.sensorTime <= 0) continue;
     sensor.sensorTime = Math.max(0, sensor.sensorTime - .002);
     const tasks = i.tasks.filter(t => t.assetId === actor.id && ['requested', 'collecting'].includes(t.status));
     for (const task of tasks) task.status = 'collecting';
@@ -290,14 +292,18 @@ export function projectIntel(s: WarSimSession, scopeId: string, tick: number) {
     links: i.links.filter(link => ownerIso(s, link.from) === iso).map(link => ({ ...link })),
     coverage: i.coverage.filter(c => c.scopeId === scopeId && c.observedTick <= tick).map(c => ({ ...c })),
     messages: i.messages.filter(m => ownerIso(s, m.from) === iso && (m.from === scopeId || m.to === scopeId)).map(m => ({ id: m.id, status: m.status, sentTick: m.sentTick, deliveryTick: m.deliveryTick, from: m.from, to: m.to })),
-    missions: i.missions.filter(m => actorIso(s, m.shooterId) === iso).map(m => ({ ...m, targetRef: undefined })),
+    missions: i.missions.filter(m => actorIso(s, m.shooterId) === iso).map(m => {
+      const observedOutcome = s.physical!.events.some(e => e.terminatedRoundIds.includes(m.firedRoundId ?? '') && e.kind === m.outcome && e.visibleTo.includes(scopeId));
+      return { ...m, targetRef: undefined, outcome: observedOutcome ? m.outcome : undefined,
+        completedTick: observedOutcome ? m.completedTick : undefined };
+    }),
     reservations: i.reservations.filter(r => actorIso(s, r.assetId) === iso).map(r => ({ ...r })),
   };
 }
 export function requestPhysicalCollection(s: WarSimSession, assetId: string, center: Vec3, radiusM: number, tick: number) {
   const i = ensurePhysicalIntel(s), iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const sensor = i.sensors.find(x => x.actorId === assetId), actor = s.physical!.actors.find(a => a.id === assetId && a.iso === iso && a.health > 0);
-  if (!sensor || !actor || sensor.mode !== 'active' || !Array.isArray(center) || center.length !== 3 || !center.every(Number.isFinite)
+  if (!sensor || !actor || !operational(actor, 'sensor') || sensor.mode !== 'active' || !Array.isArray(center) || center.length !== 3 || !center.every(Number.isFinite)
     || !Number.isFinite(radiusM) || radiusM < 100 || radiusM > sensor.rangeM || length(sub(center, actor.position)) > sensor.rangeM)
     throw new Error('Choose an active sensor and a reachable 100 m to 9 km search area.');
   if (i.tasks.some(t => t.assetId === assetId && !['complete', 'interrupted', 'cancelled'].includes(t.status))) throw new Error('Sensor already has a collection task.');
@@ -309,6 +315,8 @@ export function setPhysicalEmission(s: WarSimSession, assetId: string, mode: Int
   const i = ensurePhysicalIntel(s), iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const sensor = i.sensors.find(x => x.actorId === assetId && actorIso(s, assetId) === iso);
   if (!sensor || !['active', 'passive'].includes(mode)) throw new Error('Invalid sensor emission order.');
+  if (mode === 'active' && !operational(s.physical!.actors.find(a => a.id === assetId)!, 'sensor'))
+    throw new Error('Sensor is damaged and cannot transmit.');
   sensor.mode = mode;
   for (const task of i.tasks) if (task.assetId === assetId && !['complete', 'cancelled'].includes(task.status) && mode === 'passive') task.status = 'interrupted';
   return s;
@@ -336,7 +344,7 @@ export function setCoalitionSharing(s: WarSimSession, active: boolean) {
   link.active = active; return s;
 }
 export function reservePhysicalMission(s: WarSimSession, shooterId: string, trackId: string, supportId: string,
-  revision: number, onLoss: IntelMission['onLoss'], tick: number) {
+  revision: number, onLoss: IntelMission['onLoss'], tick: number, delaySec = 0) {
   const i = ensurePhysicalIntel(s), iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const scopeId = s.observerScope ?? hq(iso), shooter = s.physical!.actors.find(a => a.id === shooterId && a.iso === iso && a.health > 0);
   const support = s.physical!.actors.find(a => a.id === supportId && a.iso === iso && a.health > 0);
@@ -344,6 +352,9 @@ export function reservePhysicalMission(s: WarSimSession, shooterId: string, trac
   if (!shooter || !support || shooter.id === support.id || !track || track.revision !== revision || effectiveConfidence(track, tick) < .5
     || tick - track.observedTick > 15 || !['hold', 'abort', 'continue-local'].includes(onLoss))
     throw new Error('Mission requires an owned shooter, support sensor and current track revision.');
+  if (!operational(shooter, 'strikeLauncher') || !operational(support, 'sensor'))
+    throw new Error('Damaged strike launcher or support sensor blocks this mission.');
+  if (!Number.isFinite(delaySec) || delaySec < 0 || delaySec > 30) throw new Error('Mission delay must be between 0 and 30 seconds.');
   if (!i.sensors.some(x => x.actorId === supportId && x.mode === 'active') || !i.links.some(l => l.from === local(supportId) && l.active))
     throw new Error('Support sensor or its data link is unavailable.');
   if (shooter.rounds - i.reservations.filter(r => r.assetId === shooterId && r.resource === 'strike-round').length < 1
@@ -352,7 +363,8 @@ export function reservePhysicalMission(s: WarSimSession, shooterId: string, trac
     throw new Error('The support sensor has not produced a fresh local observation.');
   const id = nextId(i, 'mission');
   i.missions.push({ id, shooterId, supportId, trackId, trackRevision: revision, scopeId, targetRef: track.targetRef,
-    status: 'awaiting-support', onLoss, createdTick: tick, reason: 'Awaiting support acknowledgement', evidenceIds: [...track.evidenceIds] });
+    status: 'awaiting-support', onLoss, createdTick: tick, notBeforeTick: tick + Math.round(delaySec * 10),
+    reason: delaySec ? `Queued for T+${((tick + Math.round(delaySec * 10)) / 10).toFixed(1)}` : 'Awaiting support acknowledgement', evidenceIds: [...track.evidenceIds] });
   i.reservations.push({ id: nextId(i, 'reserve'), missionId: id, assetId: shooterId, resource: 'strike-round', quantity: 1, expiresTick: tick + 600 });
   i.reservations.push({ id: nextId(i, 'reserve'), missionId: id, assetId: supportId, resource: 'sensor-channel', quantity: 1, expiresTick: tick + 600 });
   return s;
@@ -384,5 +396,25 @@ export function validatePhysicalIntel(i: PhysicalIntel, s: WarSimSession) {
   for (const t of i.tracks) if (!t.id || !t.scopeId || !Array.isArray(t.evidenceIds) || !Array.isArray(t.position)
     || t.position.length !== 3 || t.uncertaintyM < 0 || t.confidence < 0 || t.confidence > 1) throw new Error('Invalid contact track.');
   for (const sensor of i.sensors) if (!s.physical!.actors.some(a => a.id === sensor.actorId) || sensor.sensorTime < 0) throw new Error('Invalid sensor state.');
-  for (const r of i.reservations) if (r.quantity <= 0 || !i.missions.some(m => m.id === r.missionId)) throw new Error('Invalid resource reservation.');
+  const commitments = new Set<string>();
+  for (const r of i.reservations) {
+    const mission = i.missions.find(m => m.id === r.missionId);
+    const actor = s.physical!.actors.find(a => a.id === r.assetId);
+    const key = `${r.missionId}:${r.resource}`;
+    if (!Number.isSafeInteger(r.quantity) || r.quantity !== 1 || !mission || !actor || ['executed', 'aborted'].includes(mission.status)
+      || r.assetId !== (r.resource === 'strike-round' ? mission.shooterId : mission.supportId)
+      || !Number.isSafeInteger(r.expiresTick) || r.expiresTick <= mission.createdTick || commitments.has(key)) throw new Error('Invalid resource reservation.');
+    commitments.add(key);
+  }
+  for (const m of i.missions) {
+    if (!Number.isSafeInteger(m.createdTick) || m.notBeforeTick !== undefined && (!Number.isSafeInteger(m.notBeforeTick) || m.notBeforeTick < m.createdTick))
+      throw new Error('Invalid queued mission.');
+    if (!['executed', 'aborted'].includes(m.status) && (!commitments.has(`${m.id}:strike-round`) || !commitments.has(`${m.id}:sensor-channel`)))
+      throw new Error('Mission has incomplete reservations.');
+  }
+  for (const actor of s.physical!.actors) {
+    const rounds = i.reservations.filter(r => r.assetId === actor.id && r.resource === 'strike-round').reduce((n, r) => n + r.quantity, 0);
+    const channels = i.reservations.filter(r => r.assetId === actor.id && r.resource === 'sensor-channel').reduce((n, r) => n + r.quantity, 0);
+    if (rounds > actor.rounds || channels > 1) throw new Error('Resources are overcommitted.');
+  }
 }

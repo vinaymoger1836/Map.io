@@ -5,6 +5,7 @@ import type { SimulationCommand } from '@/lib/warsim/contracts';
 import { TacticalScene } from '@/lib/warsim/tactical/scene';
 import styles from './TacticalViewport.module.css';
 import { IntelligenceBoard } from './IntelligenceBoard';
+import { CAPABILITIES, condition } from '@/lib/warsim/physics/readiness';
 
 interface Props {
   session: WarSimSession; selectedId: string | null; selectedContactId: string | null;
@@ -52,7 +53,7 @@ export default function TacticalViewport(p: Props) {
     </header>
     {!intelOpen && <aside className={styles.assets}>
       <div className={styles.eyebrow}>FRIENDLY PLATFORMS</div>
-      {s.entities.map(e => <button key={e.id} className={e.id === selected?.id ? styles.selected : ''} onClick={() => { p.onSelect(e.id); scene.current?.focus(e.id); }}><span>{e.name}</span><small>{e.status === 'destroyed' ? 'LOST' : `${e.speedKmh.toFixed(0)} km/h · ${e.currentFuelPct.toFixed(0)}% fuel`}</small></button>)}
+      {s.entities.map(e => <button key={e.id} className={e.id === selected?.id ? styles.selected : ''} onClick={() => { p.onSelect(e.id); scene.current?.focus(e.id); }}><span>{e.name}</span><small>{e.status === 'destroyed' ? 'LOST' : `${e.speedKmh.toFixed(0)} km/h · ${e.currentFuelPct.toFixed(0)}% fuel · ${e.status === 'in_repair' ? 'REPAIRING' : e.damage === 'damaged' ? 'DAMAGED' : 'READY'}`}</small></button>)}
       <div className={styles.eyebrow}>OBSERVED CONTACTS / {contacts.length}</div>
       {contacts.map(c => <button key={c.contactId} className={c.contactId === target?.contactId ? styles.hostile : ''} onClick={() => p.onSelectContact(c.contactId)}><span>{c.knownName ?? 'Unclassified track'}</span><small>{c.domain.toUpperCase()} · updated T+{c.lastDetectedSimTimeSec.toFixed(1)}</small></button>)}
       <p>Contact markers show reported positions. Drag to orbit, right-drag to pan, scroll to zoom.</p>
@@ -61,11 +62,19 @@ export default function TacticalViewport(p: Props) {
       onSelectContact={p.onSelectContact} onClearSelection={() => { p.onSelect(null); p.onSelectContact(null); }} onClose={() => setIntelOpen(false)} />}
     <aside className={styles.orders}>
       <div className={styles.eyebrow}>SELECTED PLATFORM</div><h2>{selected?.name ?? 'No platform selected'}</h2>
-      {actor && <><div className={styles.stats}><div><strong>{actor.rounds}</strong><small>STRIKE ROUNDS</small></div><div><strong>{actor.interceptors}</strong><small>DEFENSIVE ROUNDS</small></div><div><strong>{actor.health}%</strong><small>INTEGRITY</small></div></div>
+      {actor && <><div className={styles.stats}><div><strong>{actor.rounds}</strong><small>STRIKE ROUNDS</small></div><div><strong>{actor.interceptors}</strong><small>DEFENSIVE ROUNDS</small></div><div><strong>{actor.health.toFixed(0)}%</strong><small>INTEGRITY</small></div></div>
+        <div className={styles.eyebrow}>READINESS / {actor.repairKits ?? 0} REPAIR KITS</div>
+        {CAPABILITIES.map(capability => <div key={capability} className={styles.intelEntry}>
+          <strong>{capability.replace(/([A-Z])/g, ' $1')} · {condition(actor, capability).toFixed(0)}%</strong>
+          <small>{condition(actor, capability) < 30 ? 'Unavailable' : condition(actor, capability) < 100 ? 'Degraded' : 'Ready'}</small>
+          {condition(actor, capability) < 100 && !actor.repairJob && <button disabled={actor.health <= 0 || actor.speed > .5 || actor.desiredSpeed > .5 || !actor.repairKits} onClick={() => send({ type: 'startPhysicalRepair', args: [actor.id, capability] })}>Repair</button>}
+        </div>)}
+        {actor.repairJob && <div className={styles.intelEntry}>Repairing {actor.repairJob.capability} · {actor.repairJob.remainingSec.toFixed(1)} s remaining
+          <button onClick={() => send({ type: 'cancelPhysicalRepair', args: [actor.id] })}>Cancel repair</button></div>}
         <label>Course <span>{heading.toFixed(0)}°</span><input aria-label="Course" type="range" min="0" max="359" value={heading} onChange={e => setHeading(+e.target.value)} /></label>
         <label>Speed <span>{speed} m/s</span><input aria-label="Vessel speed" type="range" min="0" max="16" value={speed} onChange={e => setSpeed(+e.target.value)} /></label>
-        <button disabled={actor.health <= 0} onClick={() => send({ type: 'setPhysicalCourse', args: [actor.id, heading, speed] })}>Apply course & speed</button>
-        <button className={styles.fire} disabled={!target || actor.rounds - reservedRounds < 1 || actor.health <= 0 || actor.cooldown > s.simTimeSec || target.trackState === 'lost' || (target.confidence ?? 0) < .3} onClick={() => target && send({ type: 'launchPhysical', args: [actor.id, target.contactId, target.revision] })}>Launch guided round</button>
+        <button disabled={actor.health <= 0 || speed > 0 && (!!actor.repairJob || condition(actor, 'propulsion') < 30)} onClick={() => send({ type: 'setPhysicalCourse', args: [actor.id, heading, speed] })}>Apply course & speed</button>
+        <button className={styles.fire} disabled={!target || actor.rounds - reservedRounds < 1 || actor.health <= 0 || condition(actor, 'strikeLauncher') < 30 || actor.cooldown > s.simTimeSec || target.trackState === 'lost' || (target.confidence ?? 0) < .3} onClick={() => target && send({ type: 'launchPhysical', args: [actor.id, target.contactId, target.revision] })}>Launch guided round</button>
         <p>Defensive fire is automatic inside 1.8 km. Start time to advance launched rounds.</p></>}
       {target && <p>Track: {target.trackState ?? 'legacy'} · ±{Math.round(target.uncertaintyM ?? 0)} m · {((target.confidence ?? 0) * 100).toFixed(0)}% confidence</p>}
       <div className={styles.eyebrow}>ENGAGEMENT LOG</div>

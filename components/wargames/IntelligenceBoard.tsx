@@ -16,6 +16,7 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
   const [asset, setAsset] = useState(''), [support, setSupport] = useState(''), [radius, setRadius] = useState(1200);
   const [longitude, setLongitude] = useState(''), [latitude, setLatitude] = useState('');
   const [onLoss, setOnLoss] = useState<'hold' | 'abort' | 'continue-local'>('hold');
+  const [delaySec, setDelaySec] = useState(0);
   const [shooter, setShooter] = useState('');
   const friendly = s.entities.filter(e => e.status !== 'destroyed');
   useEffect(() => {
@@ -28,6 +29,7 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
   ], [iso, friendly.map(e => e.id).join('|')]);
   const scope = s.observerScope ?? `${iso}:hq`;
   const selectedSensor = intel?.sensors.find(x => x.actorId === asset);
+  const sensorCondition = s.physical?.actors.find(a => a.id === asset)?.condition?.sensor ?? 100;
   const selectedLink = intel?.links.find(x => x.from === `${asset}:local`);
   const coverage = intel?.coverage.slice(-4).reverse() ?? [];
   const targetEvidence = intel?.tracks.find(t => t.id === target?.contactId);
@@ -60,16 +62,17 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
     <div className={styles.eyebrow}>COLLECTION PLANNER</div>
     <label>Sensor asset<select aria-label="Collection asset" value={asset} onChange={e => setAsset(e.target.value)}>{friendly.map(e => <option value={e.id} key={e.id}>{e.name}</option>)}</select></label>
     <div className={styles.intelStats}><span>Emission: {selectedSensor?.mode ?? '—'}</span><span>Link: {selectedLink?.active ? 'online' : 'offline'}</span><span>Time: {selectedSensor?.sensorTime.toFixed(1) ?? '—'}%</span></div>
+    {sensorCondition < 30 && <p>Sensor damaged: collection and active emission are blocked until repaired.</p>}
     <p>Data link latency: {((selectedLink?.latencyTicks ?? 0) / 10).toFixed(1)} s; queued reports: {intel?.messages.filter(m => m.from === `${asset}:local` && m.status === 'queued').length ?? 0}.</p>
     <div className={styles.intelActions}>
-      <button disabled={!asset} onClick={() => dispatch({ type: 'setPhysicalEmission', args: [asset, selectedSensor?.mode === 'active' ? 'passive' : 'active'] })}>{selectedSensor?.mode === 'active' ? 'Go passive' : 'Activate sensor'}</button>
+      <button disabled={!asset || selectedSensor?.mode !== 'active' && sensorCondition < 30} onClick={() => dispatch({ type: 'setPhysicalEmission', args: [asset, selectedSensor?.mode === 'active' ? 'passive' : 'active'] })}>{selectedSensor?.mode === 'active' ? 'Go passive' : 'Activate sensor'}</button>
       <button disabled={!asset} onClick={() => dispatch({ type: 'setPhysicalLink', args: [asset, !selectedLink?.active] })}>{selectedLink?.active ? 'Disconnect link' : 'Reconnect link'}</button>
     </div>
     <p>Search center defaults to the selected contact estimate. Enter coordinates to search elsewhere.</p>
     <div className={styles.intelCoords}><label>Longitude<input aria-label="Search longitude" type="number" step="0.001" value={longitude} onChange={e => setLongitude(e.target.value)} placeholder={coord?.[0].toFixed(3)} /></label>
       <label>Latitude<input aria-label="Search latitude" type="number" step="0.001" value={latitude} onChange={e => setLatitude(e.target.value)} placeholder={coord?.[1].toFixed(3)} /></label></div>
     <label>Area radius <span>{radius} m</span><input aria-label="Search radius" type="range" min="100" max="9000" step="100" value={radius} onChange={e => setRadius(+e.target.value)} /></label>
-    <button onClick={collection} disabled={!asset}>Request collection</button>
+    <button onClick={collection} disabled={!asset || sensorCondition < 30}>Request collection</button>
     {intel?.tasks.slice(-4).reverse().map(task => <div className={styles.intelEntry} key={task.id}>{task.id} · {task.status}
       <small>{task.assetId} · {task.evidenceIds.length} observation(s)</small></div>)}
     <div className={styles.eyebrow}>RECENT COVERAGE</div>
@@ -80,8 +83,10 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
     <label>If support is lost<select aria-label="Mission fallback" value={onLoss} onChange={e => setOnLoss(e.target.value as typeof onLoss)}>
       <option value="hold">Hold and resume</option><option value="abort">Abort and release</option><option value="continue-local">Continue on local track</option>
     </select></label>
-    <button disabled={!target || !shooter || !support || shooter === support} onClick={() => target && dispatch({ type: 'planPhysicalStrike', args: [shooter, target.contactId, support, target.revision ?? 0, onLoss] })}>Reserve coordinated strike</button>
+    <label>Execution delay <span>{delaySec} s</span><input aria-label="Mission delay" type="range" min="0" max="30" step="1" value={delaySec} onChange={e => setDelaySec(+e.target.value)} /></label>
+    <button disabled={!target || !shooter || !support || shooter === support || (s.physical?.actors.find(a => a.id === shooter)?.condition?.strikeLauncher ?? 100) < 30 || (s.physical?.actors.find(a => a.id === support)?.condition?.sensor ?? 100) < 30} onClick={() => target && dispatch({ type: 'planPhysicalStrike', args: [shooter, target.contactId, support, target.revision ?? 0, onLoss, delaySec] })}>Reserve coordinated strike</button>
     {intel?.missions.slice(-4).reverse().map(m => <div className={styles.intelEntry} key={m.id}><strong>{m.id} · {m.status}</strong><small>{m.reason}</small>
+      {m.notBeforeTick !== undefined && <small>Earliest launch T+{(m.notBeforeTick / 10).toFixed(1)} {m.outcome ? `· outcome: ${m.outcome} at T+${((m.completedTick ?? 0) / 10).toFixed(1)}` : ''}</small>}
       <small>Support: {m.supportId} · evidence {m.evidenceIds.slice(-2).join(', ')}</small>
       {!['executed', 'aborted'].includes(m.status) && <button onClick={() => dispatch({ type: 'cancelPhysicalMission', args: [m.id] })}>Cancel mission</button>}</div>)}
     <p>Reserved rounds: {intel?.reservations.filter(r => r.resource === 'strike-round').length ?? 0}. Sensor channels: {intel?.reservations.filter(r => r.resource === 'sensor-channel').length ?? 0}.</p>

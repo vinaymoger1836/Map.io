@@ -5,6 +5,7 @@ import { simNow, simRandom } from './context';
 import { cancelPhysicalMission, coalitionScope, factionScope, forwardPhysicalReport, hq, requestPhysicalCollection, reservePhysicalMission,
   setCoalitionSharing, setPhysicalEmission, setPhysicalLink } from './intelligence';
 import { launchPhysical, setPhysicalCourse } from './physics/model';
+import { cancelPhysicalRepair, startPhysicalRepair, type Capability } from './physics/readiness';
 import {
   deployEntityToBase,
   deployAutonomousEntity,
@@ -43,8 +44,10 @@ forwardPhysicalReport: (s: WarSimSession, _d: SystemSpec[], evidenceId: string, 
   forwardPhysicalReport(s, evidenceId, to, Math.round(s.simTimeSec * 10)),
 setCoalitionSharing: (s: WarSimSession, _d: SystemSpec[], active: boolean) => setCoalitionSharing(s, active),
 planPhysicalStrike: (s: WarSimSession, _d: SystemSpec[], shooter: string, trackId: string, supportId: string, revision: number,
-  onLoss: 'hold' | 'abort' | 'continue-local') => reservePhysicalMission(s, shooter, trackId, supportId, revision, onLoss, Math.round(s.simTimeSec * 10)),
+  onLoss: 'hold' | 'abort' | 'continue-local', delaySec = 0) => reservePhysicalMission(s, shooter, trackId, supportId, revision, onLoss, Math.round(s.simTimeSec * 10), delaySec),
 cancelPhysicalMission: (s: WarSimSession, _d: SystemSpec[], missionId: string) => cancelPhysicalMission(s, missionId),
+startPhysicalRepair: (s: WarSimSession, _d: SystemSpec[], actorId: string, capability: Capability) => startPhysicalRepair(s, actorId, capability),
+cancelPhysicalRepair: (s: WarSimSession, _d: SystemSpec[], actorId: string) => cancelPhysicalRepair(s, actorId),
 setPlayback: (prev: WarSimSession, _systems: SystemSpec[], status: 'running' | 'paused'): WarSimSession => ({ ...prev, status }),
 orderWaypointPatrol: (prev: WarSimSession, _systems: SystemSpec[], entityId: string,
   waypoints: [number, number][], altitudeM: number, emcon: 'active' | 'passive',

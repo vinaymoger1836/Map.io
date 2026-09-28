@@ -8,7 +8,7 @@
 .viewport button,.viewport select { color:#dae8ed; border:1px solid #7897a344; background:#0b1b28df; border-radius:4px; padding:10px 13px; font:inherit; cursor:pointer; }
 .viewport button:hover { border-color:#9bd2e4; background:#1e3746; } .viewport button:disabled { opacity:.4; cursor:default; }
 .assets,.orders { position:absolute; top:160px; width:248px; padding:18px; background:linear-gradient(120deg,#091825ed,#112938ce); border:1px solid #91b8c42a; border-radius:7px; backdrop-filter:blur(12px); box-shadow:0 15px 40px #0003; }
-.assets { left:32px; } .orders { right:32px; width:276px; }
+.assets { left:32px; } .orders { right:32px; width:276px; bottom:105px; overflow:auto; }
 .assets button { display:block; width:100%; text-align:left; margin-bottom:10px; } .assets span { display:block; } .assets small { color:#91a9b7; display:block; margin-top:7px; font-size:10px; }
 .assets .selected { border-left:3px solid #66d9eb; background:#183747df; } .assets .hostile { border-left:3px solid #fb9a80; }
 .assets .eyebrow:not(:first-child) { margin-top:24px; } .viewport p { font-size:11px; line-height:1.6; color:#9cb2bf; }

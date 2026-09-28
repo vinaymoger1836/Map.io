@@ -3,6 +3,7 @@ import type { PhysicalActor, PhysicalEncounter, PhysicalRound, PhysicalEvent } f
 import { add, sub, scale, length, unit, dot, fromENU, sweptSphere, type Vec3 } from './coordinates';
 import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
+import { CAPABILITIES, condition, damageActor, operational, stepPhysicalRepairs } from './readiness';
 
 // Fictional reference profile; SI units. No calibration to real equipment.
 export const PROFILE = Object.freeze({ mass: 180, thrust: 7800, burnSec: 12, dragArea: .035,
@@ -37,6 +38,9 @@ function event(s: WarSimSession, kind: PhysicalEvent['kind'], round: PhysicalRou
   for (const scopeId of visibleTo) schedule(scopeId, [], tick);
   p.events.push({ id: ++p.sequence, time, kind, roundId: round.id, position: [...round.position], visibleTo: [...visibleTo],
     terminatedRoundIds: kind === 'launch' ? [] : interceptedId ? [round.id, interceptedId] : [round.id], deliveries: [...deliveries.values()] });
+  if (kind !== 'launch') for (const mission of i.missions) if (mission.firedRoundId === round.id || mission.firedRoundId === interceptedId) {
+    mission.outcome = mission.firedRoundId === interceptedId ? 'intercept' : kind; mission.completedTick = tick;
+  }
   p.events = p.events.slice(-256);
   publishPhysicalEvent(s, p.events.at(-1)!);
 }
@@ -90,6 +94,7 @@ export function launchPhysical(s: WarSimSession, shooterId: string, trackId: str
   if (!a || !b || !track || effectiveConfidence(track, tick) < .3 || revision !== undefined && track.revision !== revision
     || length(sub(a.position, track.position)) > PROFILE.sensorRange) throw new Error('A current scoped contact within 9 km is required.');
   const reserved = i.reservations.filter(r => r.assetId === shooterId && r.resource === 'strike-round').length;
+  if (!operational(a, 'strikeLauncher')) throw new Error('Strike launcher is damaged and unavailable.');
   if (a.rounds - reserved < 1 || a.cooldown > s.simTimeSec) throw new Error('Launcher is reloading or its unreserved magazine is empty.');
   launch(s, a, b, false, s.simTimeSec, track, scopeId);
   syncPhysical(s);
@@ -99,6 +104,8 @@ export function setPhysicalCourse(s: WarSimSession, id: string, heading: number,
   const iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const a = s.physical?.actors.find(a => a.id === id && a.iso === iso && a.health > 0);
   if (!a || !Number.isFinite(heading) || !Number.isFinite(speed) || speed < 0 || speed > 16) throw new Error('Select an available vessel; speed must be 0–16 m/s.');
+  if (a.repairJob && speed > 0) throw new Error('Cancel or finish repairs before getting under way.');
+  if (speed > 0 && !operational(a, 'propulsion')) throw new Error('Propulsion is damaged and unavailable.');
   a.course = ((heading % 360) + 360) % 360; a.desiredSpeed = speed;
   return s;
 }
@@ -109,17 +116,23 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
   runPhysicalIntelligence(s, tick);
   deliverPhysicalEvents(s, tick);
   expireReservations(i, tick);
+  stepPhysicalRepairs(p.actors, dt);
   for (const m of i.missions) {
     if (['executed', 'aborted'].includes(m.status)) continue;
     const a = p.actors.find(a => a.id === m.shooterId && a.health > 0);
     const b = p.actors.find(b => b.id === m.targetRef);
     const support = p.actors.find(a => a.id === m.supportId && a.health > 0);
     const track = currentTrack(i, m.scopeId, m.trackId, tick);
-    const available = Boolean(a && a.rounds > 0 && b && support && track && tick - track.observedTick <= 15
+    if (!a || !b || b.health <= 0) {
+      m.status = 'aborted'; m.reason = !a ? 'Shooter unavailable' : 'Target no longer available';
+      i.reservations = i.reservations.filter(r => r.missionId !== m.id); continue;
+    }
+    const available = Boolean(operational(a, 'strikeLauncher') && a.rounds > 0 && support && operational(support, 'sensor') && track && tick - track.observedTick <= 15
       && effectiveConfidence(track, tick) >= .5 && missionSupport(i, m, tick));
     if (!available) {
       const ownTrack = i.tracks.find(t => t.scopeId === local(m.shooterId) && t.targetRef === m.targetRef && t.state === 'fresh');
-      if (m.onLoss === 'continue-local' && a && b && ownTrack && a.cooldown <= s.simTimeSec) {
+      if (m.onLoss === 'continue-local' && operational(a, 'strikeLauncher') && b && ownTrack
+        && tick >= (m.notBeforeTick ?? tick) && a.cooldown <= s.simTimeSec) {
         const before = p.rounds.length;
         launch(s, a, b, false, s.simTimeSec, ownTrack, local(a.id));
         m.firedRoundId = p.rounds[before]?.id; m.status = 'executed'; m.reason = 'Fired on the shooter’s local track after support loss';
@@ -131,7 +144,7 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
       continue;
     }
     if (m.status === 'held' || m.status === 'awaiting-support') { m.status = 'ready'; m.readyTick = tick + 2; m.reason = 'Support acknowledged; fire queued'; }
-    if (m.status === 'ready' && tick >= (m.readyTick ?? tick) && a!.cooldown <= s.simTimeSec) {
+    if (m.status === 'ready' && tick >= Math.max(m.readyTick ?? tick, m.notBeforeTick ?? tick) && a!.cooldown <= s.simTimeSec) {
       const before = p.rounds.length;
       launch(s, a!, b!, false, s.simTimeSec, track!, m.scopeId);
       m.firedRoundId = p.rounds[before]?.id; m.status = 'executed'; m.reason = 'Coordinated strike launched';
@@ -143,7 +156,7 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
   for (let step = 0; step < count; step++) {
     const time = s.simTimeSec + step * h;
     for (const a of p.actors) {
-      if (a.health <= 0 || a.cooldown > time || a.interceptors <= 0) continue;
+      if (!operational(a, 'pointDefense') || a.cooldown > time || a.interceptors <= 0) continue;
       const threatTrack = scopeTracks(i, local(a.id)).find(t => t.domain === 'missile' && t.state === 'fresh'
         && length(sub(t.position, a.position)) < 1800 && p.rounds.some(r => r.id === t.targetRef && r.iso !== a.iso)
         && !p.rounds.some(r => r.interceptor && r.targetId === t.targetRef && r.iso === a.iso));
@@ -155,7 +168,7 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
       if (a.health <= 0) { a.velocity = [0, 0, 0]; continue; }
       const turn = ((a.course - a.heading + 540) % 360) - 180;
       a.heading += Math.max(-2 * h, Math.min(2 * h, turn));
-      const desired = a.fuel > 0 ? a.desiredSpeed : 0;
+      const desired = a.fuel > 0 && operational(a, 'propulsion') ? Math.min(a.desiredSpeed, 16 * condition(a, 'propulsion') / 100) : 0;
       a.speed += Math.max(-.8 * h, Math.min(.4 * h, desired - a.speed));
       a.velocity = [Math.sin(a.heading * Math.PI / 180) * a.speed, Math.cos(a.heading * Math.PI / 180) * a.speed, 0];
       a.position = add(a.position, scale(a.velocity, h));
@@ -209,7 +222,10 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
       r.position = add(starts.get(r.id)!, scale(sub(r.position, starts.get(r.id)!), hit.fraction));
       dead.add(r.id);
       if (hit.target) {
-        if ('health' in hit.target) hit.target.health = Math.max(0, hit.target.health - PROFILE.damage);
+        if ('health' in hit.target) {
+          const impactNumber = Number.parseInt(r.id.replace(/^round-/, ''), 10);
+          damageActor(hit.target, PROFILE.damage, CAPABILITIES[(Number.isFinite(impactNumber) ? impactNumber : 0) % CAPABILITIES.length]);
+        }
         else dead.add(hit.target.id);
       }
       event(s, hit.kind, r, time + hit.fraction * h, hit.kind === 'intercept' ? hit.target?.id : undefined);
@@ -226,7 +242,9 @@ export function syncPhysical(s: WarSimSession, time = s.simTimeSec) {
     const geo = fromENU(a.position, p.origin);
     e.lngLat = [geo[0], geo[1]]; e.altitudeM = geo[2]; e.headingDeg = a.heading; e.speedKmh = a.speed * 3.6;
     e.currentFuelPct = a.fuel; e.magazines = { 0: a.rounds, 1: a.interceptors };
-    e.status = a.health <= 0 ? 'destroyed' : 'on_station'; e.damage = a.health <= 0 ? 'destroyed' : a.health < 100 ? 'damaged' : 'intact';
+    e.status = a.health <= 0 ? 'destroyed' : a.repairJob ? 'in_repair' : 'on_station';
+    e.damage = a.health <= 0 ? 'destroyed' : a.health < 100 || CAPABILITIES.some(key => condition(a, key) < 100) ? 'damaged' : 'intact';
+    e.repairTimerSec = a.repairJob?.remainingSec ?? 0;
   }
   const tick = Math.round(time * 10);
   s.fogOfWarContacts.playerContacts = observedContacts(s, hq(s.playerIso), tick);
@@ -252,6 +270,12 @@ export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
   for (const a of p.actors) if (!s.entities.some(e => e.id === a.id && e.iso === a.iso) || a.health < 0 || a.health > 100
     || a.fuel < 0 || a.fuel > 100 || a.desiredSpeed < 0 || a.desiredSpeed > 16 || !Number.isSafeInteger(a.rounds) || a.rounds < 0
     || !Number.isSafeInteger(a.interceptors) || a.interceptors < 0) throw new Error('Invalid physical platform.');
+  for (const a of p.actors) {
+    if (a.condition && CAPABILITIES.some(key => !Number.isFinite(a.condition![key]) || a.condition![key] < 0 || a.condition![key] > 100)
+      || a.repairKits !== undefined && (!Number.isSafeInteger(a.repairKits) || a.repairKits < 0)
+      || a.repairJob && (!CAPABILITIES.includes(a.repairJob.capability) || !Number.isFinite(a.repairJob.remainingSec)
+        || a.repairJob.remainingSec <= 0 || a.repairJob.remainingSec > 30 || a.health <= 0)) throw new Error('Invalid physical repair state.');
+  }
   for (const r of p.rounds) if (!p.actors.some(a => a.id === r.shooterId && a.iso === r.iso) || r.age < 0) throw new Error('Invalid physical round.');
   if (p.intel) validatePhysicalIntel(p.intel, s);
 }
