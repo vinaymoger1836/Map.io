@@ -47,7 +47,10 @@ export function aircraft(color: string) {
 export function contactMarker(color: string) {
   const g = new T.Group();
   const m = new T.Mesh(new T.OctahedronGeometry(20), new T.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: .8 }));
-  m.position.y = 32; g.add(m); return g;
+  m.position.y = 32; g.add(m);
+  const ring = new T.Mesh(new T.RingGeometry(.97, 1, 48), new T.MeshBasicMaterial({ color, side: T.DoubleSide, transparent: true, opacity: .42, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 2; ring.userData.uncertainty = true; g.add(ring);
+  return g;
 }
 export function disposeObject(root: T.Object3D) {
   const materials = new Set<T.Material>(), geometries = new Set<T.BufferGeometry>();

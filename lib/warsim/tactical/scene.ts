@@ -7,7 +7,7 @@ import { aircraft, contactMarker, disposeObject, vessel } from './assets';
 import { recordWarSimMetric } from '../diagnostics';
 import { UNIT_BY_ID } from '../../warGames';
 
-interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'platform' | 'contact' | 'round'; color: string; speed: number }
+interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'platform' | 'contact' | 'round'; color: string; speed: number; uncertainty?: number }
 type Display = { from: Body; to: Body; mesh: T.Object3D };
 export class TacticalScene {
   private renderer: T.WebGLRenderer;
@@ -100,7 +100,7 @@ export class TacticalScene {
       color: e.iso === s.playerIso ? s.playerColor : s.enemyColor, speed: e.speedKmh / 3.6 }));
     const contacts = s.activeFaction === 'player' ? s.fogOfWarContacts.playerContacts : s.fogOfWarContacts.enemyContacts;
     records.push(...contacts.map(c => ({ id: c.contactId, position: toENU([...c.lastKnownLngLat, 0], this.origin), heading: c.headingDeg,
-      kind: 'contact' as const, color: '#ff8f74', speed: c.speedKmh / 3.6 })));
+      kind: 'contact' as const, color: c.trackState === 'stale' ? '#ffcb77' : '#ff8f74', speed: c.speedKmh / 3.6, uncertainty: c.uncertaintyM ?? 150 })));
     if (s.physical) records.push(...s.physical.rounds.map(r => ({ id: r.id, position: r.position, heading: Math.atan2(r.velocity[0], r.velocity[1]) * 180 / Math.PI,
       kind: 'round' as const, color: r.interceptor ? '#b3efff' : '#ffc478', speed: 0 })));
     else records.push(...s.activeMissiles.map(r => ({ id: r.id, position: toENU([...r.currentLngLat, r.threatAltitudeM ?? 100], this.origin), heading: 0, kind: 'round' as const, color: '#ffc478', speed: 0 })));
@@ -166,6 +166,10 @@ export class TacticalScene {
       const p = b.from.position.map((n, i) => T.MathUtils.lerp(n, b.to.position[i], alpha)) as Vec3;
       b.mesh.position.copy(this.point(p)); const delta = ((b.to.heading - b.from.heading + 540) % 360) - 180;
       b.mesh.rotation.y = -(b.from.heading + delta * alpha) * Math.PI / 180;
+      if (b.to.kind === 'contact') {
+        const ring = b.mesh.children.find(c => c.userData.uncertainty);
+        if (ring) ring.scale.setScalar(Math.min(3000, Math.max(30, b.to.uncertainty ?? 150)));
+      }
       if (b.to.kind === 'ship') { b.mesh.rotation.z = Math.sin(time * .6) * .008; b.mesh.rotation.x = Math.sin(time * .9) * .003;
         const wake = b.mesh.children.find(c => c.userData.wake) as T.Mesh<T.PlaneGeometry, T.ShaderMaterial> | undefined;
         if (wake) { wake.visible = b.to.speed > 1; wake.material.uniforms.time.value = time; }
