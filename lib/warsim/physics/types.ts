@@ -1,7 +1,7 @@
 import type { Geo, Vec3 } from './coordinates';
 export interface PhysicalActor {
   id: string; iso: string; position: Vec3; velocity: Vec3;
-  domain?: 'sea' | 'air' | 'land';
+  domain?: 'sea' | 'air' | 'land' | 'subsurface' | 'space';
   heading: number; course: number; speed: number; desiredSpeed: number;
   fuel: number; health: number; rounds: number; interceptors: number; cooldown: number;
   condition?: { propulsion: number; sensor: number; strikeLauncher: number; pointDefense: number };

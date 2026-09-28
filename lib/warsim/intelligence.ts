@@ -7,15 +7,15 @@ export type TrackState = 'fresh' | 'stale' | 'lost';
 export interface IntelObservation {
   id: string; targetRef: string; sourceId: string; scopeId: string;
   position: Vec3; velocity: Vec3; uncertaintyM: number; confidence: number;
-  collectedTick: number; processedTick: number; modality: 'radar' | 'briefing' | 'seeker' | 'ground-radar' | 'air-radar';
-  domain?: 'sea' | 'air' | 'land' | 'missile';
+  collectedTick: number; processedTick: number; modality: 'radar' | 'briefing' | 'seeker' | 'ground-radar' | 'air-radar' | 'sonar' | 'orbital';
+  domain?: 'sea' | 'air' | 'land' | 'subsurface' | 'space' | 'missile';
   taskId?: string; processed: boolean;
 }
 export interface IntelTrack {
   id: string; targetRef: string; scopeId: string; position: Vec3; velocity: Vec3;
   uncertaintyM: number; confidence: number; observedTick: number; receivedTick: number;
   state: TrackState; revision: number; evidenceIds: string[]; sourceIds: string[];
-  domain: 'sea' | 'air' | 'land' | 'missile';
+  domain: 'sea' | 'air' | 'land' | 'subsurface' | 'space' | 'missile';
 }
 export interface IntelLink {
   id: string; from: string; to: string; active: boolean; latencyTicks: number; capacity: number;
@@ -64,9 +64,12 @@ export function createPhysicalIntel(s: WarSimSession): PhysicalIntel {
   const i: PhysicalIntel = { version: 1, sequence: 0, contacts: {}, observations: [], tracks: [], links: [], messages: [],
     sensors: [], tasks: [], coverage: [], missions: [], reservations: [], coalitionSharing: { [s.playerIso]: false, [s.enemyIso]: false } };
   for (const a of p.actors) {
-    i.sensors.push({ actorId: a.id, mode: 'active', rangeM: a.domain === 'air' ? 12000 : a.id === 'blue-frigate' ? 2500 : 9000,
-      intervalTicks: a.domain === 'air' || a.id.includes('scout') ? 5 : 10, nextScanTick: 0, sensorTime: 100 });
-    i.links.push({ id: `link-${a.id}`, from: local(a.id), to: hq(a.iso), active: true, latencyTicks: 10, capacity: 2 });
+    i.sensors.push({ actorId: a.id, mode: 'active', rangeM: a.domain === 'space' ? 15000 : a.domain === 'subsurface' ? 3000
+      : a.domain === 'air' ? 12000 : a.id === 'blue-frigate' ? 2500 : 9000,
+      intervalTicks: a.domain === 'space' ? 300 : a.domain === 'air' || a.id.includes('scout') ? 5 : 10,
+      nextScanTick: 0, sensorTime: 100 });
+    i.links.push({ id: `link-${a.id}`, from: local(a.id), to: hq(a.iso), active: true,
+      latencyTicks: a.domain === 'space' ? 20 : 10, capacity: 2 });
   }
   for (const iso of [s.playerIso, s.enemyIso]) {
     i.links.push({ id: `link-${iso}-faction`, from: hq(iso), to: factionScope(iso), active: true, latencyTicks: 5, capacity: 8 });
@@ -153,7 +156,7 @@ function observe(s: WarSimSession, sourceId: string, targetRef: string, scopeId:
     position: add(target.position, [noise(sourceId + targetRef, tick) * uncertaintyM * .6,
       noise(targetRef + sourceId, tick + 11) * uncertaintyM * .6, 0]),
     velocity: [...target.velocity], uncertaintyM, confidence: modality === 'seeker' ? .95 : .7,
-    collectedTick: tick, processedTick: tick + (immediate ? 0 : 3), modality, taskId, processed: immediate };
+    collectedTick: tick, processedTick: tick + (immediate ? 0 : modality === 'orbital' ? 10 : 3), modality, taskId, processed: immediate };
   i.observations.push(o); if (immediate) fuse(i, o, scopeId, tick);
   i.observations = i.observations.slice(-512);
   return o;
@@ -191,16 +194,28 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     sensor.sensorTime = Math.max(0, sensor.sensorTime - .002);
     const tasks = i.tasks.filter(t => t.assetId === actor.id && ['requested', 'collecting'].includes(t.status));
     for (const task of tasks) task.status = 'collecting';
-    const effectiveRange = sensor.rangeM * radarWeatherFactor(p.environment);
+    const effectiveRange = sensor.rangeM * (actor.domain === 'subsurface' ? 1 : radarWeatherFactor(p.environment));
     const spotted = [...p.actors.filter(target => target.health > 0), ...p.rounds]
-      .filter(target => target.iso !== actor.iso && length(sub(target.position, actor.position)) <= effectiveRange
-        && (actor.domain !== 'land' || !p.environment || terrainSight(p.environment, actor.position, target.position) === 'clear'));
+      .filter(target => {
+        const domain = 'domain' in target ? target.domain ?? 'sea' : 'missile';
+        const horizontal = Math.hypot(target.position[0] - actor.position[0], target.position[1] - actor.position[1]);
+        const range = actor.domain === 'space' ? horizontal : length(sub(target.position, actor.position));
+        const compatible = actor.domain === 'subsurface' ? domain === 'subsurface' || domain === 'sea'
+          : actor.domain === 'space' ? domain !== 'space' && domain !== 'missile' && domain !== 'subsurface'
+            : domain !== 'subsurface' && domain !== 'space';
+        return target.iso !== actor.iso && compatible && range <= effectiveRange
+          && (actor.domain !== 'land' || !p.environment || terrainSight(p.environment, actor.position, target.position) === 'clear');
+      });
     for (const target of spotted) {
-      const task = tasks.find(t => length(sub(target.position, t.center)) <= t.radiusM);
-      const uncertainty = target.id.startsWith('round-') ? 25 + length(sub(target.position, actor.position)) * .015
+      const task = tasks.find(t => (actor.domain === 'space'
+        ? Math.hypot(target.position[0] - t.center[0], target.position[1] - t.center[1])
+        : length(sub(target.position, t.center))) <= t.radiusM);
+      const uncertainty = actor.domain === 'space' ? 300 : actor.domain === 'subsurface' ? 100
+        : target.id.startsWith('round-') ? 25 + length(sub(target.position, actor.position)) * .015
         : 70 + length(sub(target.position, actor.position)) * .025;
       const o = observe(s, actor.id, target.id, local(actor.id), tick, uncertainty,
-        actor.domain === 'land' ? 'ground-radar' : actor.domain === 'air' ? 'air-radar' : 'radar', task?.id);
+        actor.domain === 'land' ? 'ground-radar' : actor.domain === 'air' ? 'air-radar'
+          : actor.domain === 'subsurface' ? 'sonar' : actor.domain === 'space' ? 'orbital' : 'radar', task?.id);
       if (task) task.evidenceIds.push(o.id);
     }
     for (const task of tasks) {
@@ -221,7 +236,8 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     }
   }
   for (const task of i.tasks) {
-    if (task.status === 'processing' && !task.evidenceIds.length && tick >= (i.coverage.find(c => c.id === task.coverageId)?.observedTick ?? tick) + 3) {
+    if (task.status === 'processing' && !task.evidenceIds.length && tick >= (i.coverage.find(c => c.id === task.coverageId)?.observedTick ?? tick)
+      + (s.physical!.actors.find(a => a.id === task.assetId)?.domain === 'space' ? 10 : 3)) {
       const path = route(i, local(task.assetId), task.scopeId);
       task.status = path ? 'disseminating' : 'interrupted';
       if (path) task.finishedTick = tick + path.reduce((latency, link) => latency + link.latencyTicks, 0);
@@ -261,7 +277,7 @@ export function acquireSeeker(s: WarSimSession, roundId: string, tick: number): 
   const aim = r.aimPosition
     ? add(r.aimPosition, scale(r.aimVelocity ?? [0, 0, 0], Math.max(0, tick - (r.aimObservedTick ?? tick)) / 10))
     : add(r.position, scale(r.velocity, 4));
-  const target = [...p.actors.filter(a => a.health > 0), ...p.rounds.filter(candidate => candidate.id !== r.id)]
+  const target = [...p.actors.filter(a => a.health > 0 && a.domain !== 'subsurface' && a.domain !== 'space'), ...p.rounds.filter(candidate => candidate.id !== r.id)]
     .filter(candidate => candidate.iso !== r.iso && length(sub(candidate.position, r.position)) <= 4000)
     .sort((a, b) => length(sub(a.position, aim)) - length(sub(b.position, aim)) || a.id.localeCompare(b.id))[0];
   if (!target || length(sub(target.position, aim)) > (r.interceptor ? 350 : Math.max(300, r.age * 15 + 250)))
@@ -277,10 +293,12 @@ export function observedContacts(s: WarSimSession, scopeId: string, tick: number
     const estimated = add(t.position, scale(t.velocity, Math.min(age, 15)));
     const pos = fromENU(estimated, p.origin);
     return { contactId: t.id, targetEntityId: t.id, targetIso: 'unknown', discoveredByFaction: iso === s.playerIso ? 'player' : 'enemy',
-      intelTier: 1, domain: t.domain === 'land' ? 'ground' : t.domain, lastKnownLngLat: [pos[0], pos[1]], headingDeg: Math.atan2(t.velocity[0], t.velocity[1]) * 180 / Math.PI,
+      intelTier: 1, domain: t.domain === 'land' ? 'ground' : t.domain === 'air' ? 'air'
+        : t.domain === 'subsurface' ? 'sub' : t.domain === 'space' ? 'space' : 'sea',
+      lastKnownLngLat: [pos[0], pos[1]], headingDeg: Math.atan2(t.velocity[0], t.velocity[1]) * 180 / Math.PI,
       speedKmh: length(t.velocity) * 3.6, lastDetectedSimTimeSec: t.observedTick / 10, decayTimerSec: age,
-      knownName: t.state === 'fresh' ? `${t.domain === 'air' ? 'Air' : t.domain === 'land' ? 'Ground' : 'Surface'} contact`
-        : `${t.domain === 'air' ? 'Air' : t.domain === 'land' ? 'Ground' : 'Surface'} contact · ${t.state}`,
+      knownName: `${t.domain === 'air' ? 'Air' : t.domain === 'land' ? 'Ground' : t.domain === 'subsurface' ? 'Subsurface'
+        : t.domain === 'space' ? 'Orbital' : 'Surface'} contact${t.state === 'fresh' ? '' : ` · ${t.state}`}`,
       uncertaintyM: t.uncertaintyM + age * 25, confidence: t.confidence * Math.exp(-age / 30), trackState: t.state,
       evidenceIds: [...t.evidenceIds], revision: t.revision, sourceIds: [...t.sourceIds] };
   });
@@ -311,7 +329,9 @@ export function requestPhysicalCollection(s: WarSimSession, assetId: string, cen
   const i = ensurePhysicalIntel(s), iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const sensor = i.sensors.find(x => x.actorId === assetId), actor = s.physical!.actors.find(a => a.id === assetId && a.iso === iso && a.health > 0);
   if (!sensor || !actor || !operational(actor, 'sensor') || sensor.mode !== 'active' || !Array.isArray(center) || center.length !== 3 || !center.every(Number.isFinite)
-    || !Number.isFinite(radiusM) || radiusM < 100 || radiusM > sensor.rangeM || length(sub(center, actor.position)) > sensor.rangeM)
+    || !Number.isFinite(radiusM) || radiusM < 100 || radiusM > sensor.rangeM
+    || (actor.domain === 'space' ? Math.hypot(center[0] - actor.position[0], center[1] - actor.position[1])
+      : length(sub(center, actor.position))) > sensor.rangeM)
     throw new Error('Choose an active sensor and a reachable 100 m to 9 km search area.');
   if (i.tasks.some(t => t.assetId === assetId && !['complete', 'interrupted', 'cancelled'].includes(t.status))) throw new Error('Sensor already has a collection task.');
   const task: IntelTask = { id: nextId(i, 'task'), assetId, scopeId: s.observerScope ?? hq(iso), center: [...center], radiusM,
@@ -359,6 +379,7 @@ export function reservePhysicalMission(s: WarSimSession, shooterId: string, trac
   if (!shooter || !support || shooter.id === support.id || !track || track.revision !== revision || effectiveConfidence(track, tick) < .5
     || tick - track.observedTick > 15 || !['hold', 'abort', 'continue-local'].includes(onLoss))
     throw new Error('Mission requires an owned shooter, support sensor and current track revision.');
+  if (track.domain === 'subsurface' || track.domain === 'space') throw new Error('This surface strike cannot engage that contact domain.');
   if (!operational(shooter, 'strikeLauncher') || !operational(support, 'sensor'))
     throw new Error('Damaged strike launcher or support sensor blocks this mission.');
   if (!Number.isFinite(delaySec) || delaySec < 0 || delaySec > 30) throw new Error('Mission delay must be between 0 and 30 seconds.');

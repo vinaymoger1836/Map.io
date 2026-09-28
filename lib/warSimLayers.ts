@@ -188,6 +188,8 @@ export function mapSimTypeToUnitType(typeId: string): string {
     case 'radar':
     case 'early-warning':
       return 'radar';
+    case 'satellite':
+      return 'satellite';
     case 'tank':
     case 'mbt':
     case 'armor':
@@ -1221,6 +1223,8 @@ export function renderWarSimStateToMap(
         const mappedKey =
           c.domain === 'air'
             ? 'fighter'
+            : c.domain === 'space'
+              ? 'satellite'
             : c.domain === 'sea'
               ? 'destroyer'
               : c.domain === 'sub'

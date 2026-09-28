@@ -375,7 +375,7 @@ export function WarSimLauncher({
             Coastal encounter · 3D physics
           </button>
           <button className="wg-btn" onClick={() => onLaunchSimulation(createLittoralReference())}>
-            Littoral probe · air / ground / sea
+            Joint probe · five domains
           </button>
           <button
             className="wg-btn"

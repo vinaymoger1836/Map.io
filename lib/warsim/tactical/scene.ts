@@ -6,6 +6,21 @@ import { toENU, type Geo, type Vec3 } from '../physics/coordinates';
 import { aircraft, contactMarker, disposeObject, vessel } from './assets';
 import { recordWarSimMetric } from '../diagnostics';
 import { UNIT_BY_ID } from '../../warGames';
+import type { EnvironmentSnapshot } from '../physics/environment';
+
+function terrainMesh(environment: EnvironmentSnapshot): T.Mesh {
+  const t = environment.terrain, vertices: number[] = [];
+  const vertex = (x: number, y: number, h: number) => [t.westM + x * t.cellM, h, -(t.southM + y * t.cellM)];
+  for (let y = 0; y < t.rows - 1; y++) for (let x = 0; x < t.columns - 1; x++) {
+    const a = t.heightsM[y * t.columns + x], b = t.heightsM[y * t.columns + x + 1];
+    const c = t.heightsM[(y + 1) * t.columns + x], d = t.heightsM[(y + 1) * t.columns + x + 1];
+    if ([a, b, c, d].some(h => h === null) || Math.max(a!, b!, c!, d!) <= 0) continue;
+    vertices.push(...vertex(x, y, a!), ...vertex(x + 1, y, b!), ...vertex(x, y + 1, c!),
+      ...vertex(x + 1, y, b!), ...vertex(x + 1, y + 1, d!), ...vertex(x, y + 1, c!));
+  }
+  const geometry = new T.BufferGeometry(); geometry.setAttribute('position', new T.Float32BufferAttribute(vertices, 3)); geometry.computeVertexNormals();
+  return new T.Mesh(geometry, new T.MeshStandardMaterial({ color: '#52664f', roughness: 1, side: T.DoubleSide }));
+}
 
 interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'platform' | 'contact' | 'round'; color: string; speed: number; uncertainty?: number; health?: number }
 type Display = { from: Body; to: Body; mesh: T.Object3D };
@@ -32,6 +47,7 @@ export class TacticalScene {
   private audio?: AudioContext;
   private sound = false;
   private water: T.Mesh<T.PlaneGeometry, T.ShaderMaterial>;
+  private terrain?: T.Mesh;
   private lost = false;
   private sun: T.DirectionalLight;
   private lastFollow?: T.Vector3;
@@ -71,6 +87,7 @@ export class TacticalScene {
         #include <colorspace_fragment>
       }` }));
     this.water.rotation.x = -Math.PI / 2; this.water.position.y = -1; this.scene.add(this.water);
+    if (initial.physical?.environment) { this.terrain = terrainMesh(initial.physical.environment); this.scene.add(this.terrain); }
     this.controls = new OrbitControls(this.camera, this.renderer.domElement); this.controls.enableDamping = true;
     this.controls.minDistance = 35; this.controls.maxDistance = 25000; this.controls.maxPolarAngle = Math.PI * .485;
     this.camera.position.set(165, 95, 205); this.controls.target.set(0, 8, 0);
@@ -97,7 +114,7 @@ export class TacticalScene {
     this.previousTime = this.time; this.time = s.simTimeSec; this.playing = s.status === 'running';
     const records: Body[] = s.entities.filter(e => e.status !== 'destroyed').map(e => ({ id: e.id,
       position: s.physical?.actors.find(a => a.id === e.id)?.position ?? toENU([...e.lngLat, e.altitudeM], this.origin), heading: e.headingDeg,
-      kind: UNIT_BY_ID.get(e.typeId)?.domain === 'air' ? 'air' : s.physical || UNIT_BY_ID.get(e.typeId)?.domain === 'sea' ? 'ship' : 'platform',
+      kind: UNIT_BY_ID.get(e.typeId)?.domain === 'air' ? 'air' : UNIT_BY_ID.get(e.typeId)?.domain === 'sea' ? 'ship' : 'platform',
       color: e.iso === s.playerIso ? s.playerColor : s.enemyColor, speed: e.speedKmh / 3.6,
       health: s.physical?.actors.find(a => a.id === e.id)?.health }));
     const contacts = s.activeFaction === 'player' ? s.fogOfWarContacts.playerContacts : s.fogOfWarContacts.enemyContacts;
@@ -228,6 +245,7 @@ export class TacticalScene {
     if (Math.hypot(this.controls.target.x, this.controls.target.z) > 2000) {
       const shift = this.controls.target.clone(); shift.y = 0; this.offset.add(shift); this.camera.position.sub(shift); this.controls.target.sub(shift);
       this.bodies.forEach(b => b.mesh.position.sub(shift)); this.effects.forEach(e => e.mesh.position.sub(shift)); this.lastFollow?.sub(shift);
+      this.terrain?.position.sub(shift);
       this.trails.forEach(t => { t.line.geometry.dispose(); t.line.geometry = new T.BufferGeometry().setFromPoints(t.points.map(p => this.point(p))); });
       this.missionLines.forEach(m => { m.line.geometry.dispose(); m.line.geometry = new T.BufferGeometry().setFromPoints(m.points.map(p => this.point(p))); });
     }

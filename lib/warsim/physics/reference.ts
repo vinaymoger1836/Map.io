@@ -27,21 +27,36 @@ export function createPhysicalReference(): WarSimSession {
   syncPhysical(s); return s;
 }
 
-/** Small land/air/surface probe; shares the coastal physics clock, intel stores and resource ledger. */
+/** Five-domain observation probe sharing the coastal clock, knowledge scopes and reservations. */
 export function createLittoralReference(): WarSimSession {
   const s = createPhysicalReference(), p = s.physical!;
-  s.id = `littoral-${Date.now()}`; s.name = 'Glasswater / Littoral probe';
+  s.id = `littoral-${Date.now()}`; s.name = 'Glasswater / Joint probe';
   p.actors.push({ id: 'blue-ground-radar', iso: s.playerIso, domain: 'land', position: [7000, 0, 60], velocity: [0, 0, 0],
     heading: 270, course: 270, speed: 0, desiredSpeed: 0, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
     condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 1 });
   p.actors.push({ id: 'blue-air-recon', iso: s.playerIso, domain: 'air', position: [-3500, -1200, 1200], velocity: [80, 0, 0],
     heading: 90, course: 90, speed: 80, desiredSpeed: 80, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
     condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 0 });
+  p.actors.push({ id: 'blue-sonar', iso: s.playerIso, domain: 'subsurface', position: [500, 1000, -40], velocity: [2, 0, 0],
+    heading: 90, course: 90, speed: 2, desiredSpeed: 2, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
+    condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 1 });
+  p.actors.push({ id: 'red-sub', iso: s.enemyIso, domain: 'subsurface', position: [2200, 800, -40], velocity: [0, -2, 0],
+    heading: 180, course: 180, speed: 2, desiredSpeed: 2, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
+    condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 1 });
+  p.actors.push({ id: 'blue-orbital', iso: s.playerIso, domain: 'space', position: [0, 0, 80000], velocity: [0, 0, 0],
+    heading: 0, course: 0, speed: 0, desiredSpeed: 0, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
+    condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 0 });
   const template = s.entities[0];
   s.entities.push({ ...template, id: 'blue-ground-radar', name: 'Cape Glass radar', systemId: 'reference-radar', typeId: 'radar',
     personnel: 20, speedKmh: 0, magazines: {} });
   s.entities.push({ ...template, id: 'blue-air-recon', name: 'Kite reconnaissance UAV', systemId: 'reference-uav', typeId: 'uav',
     personnel: 2, speedKmh: 288, magazines: {} });
+  s.entities.push({ ...template, id: 'blue-sonar', name: 'FS Deepwatch', systemId: 'reference-sub', typeId: 'submarine',
+    personnel: 30, speedKmh: 7.2, magazines: {} });
+  s.entities.push({ ...template, id: 'red-sub', iso: s.enemyIso, name: 'RS Undertow', systemId: 'reference-sub', typeId: 'submarine',
+    personnel: 30, speedKmh: 7.2, magazines: {} });
+  s.entities.push({ ...template, id: 'blue-orbital', name: 'Glint orbital collector', systemId: 'reference-orbital', typeId: 'satellite',
+    personnel: 0, speedKmh: 0, magazines: {} });
   p.intel = createPhysicalIntel(s);
   syncPhysical(s);
   return s;

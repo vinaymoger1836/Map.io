@@ -94,6 +94,7 @@ export function launchPhysical(s: WarSimSession, shooterId: string, trackId: str
   const b = p.actors.find(b => b.id === track?.targetRef && b.iso !== iso);
   if (!a || !b || !track || effectiveConfidence(track, tick) < .3 || revision !== undefined && track.revision !== revision
     || length(sub(a.position, track.position)) > PROFILE.sensorRange) throw new Error('A current scoped contact within 9 km is required.');
+  if (b.domain === 'subsurface' || b.domain === 'space') throw new Error('This surface round cannot engage a submerged or orbital target.');
   const reserved = i.reservations.filter(r => r.assetId === shooterId && r.resource === 'strike-round').length;
   if (!operational(a, 'strikeLauncher')) throw new Error('Strike launcher is damaged and unavailable.');
   if (a.rounds - reserved < 1 || a.cooldown > s.simTimeSec) throw new Error('Launcher is reloading or its unreserved magazine is empty.');
@@ -104,7 +105,8 @@ export function launchPhysical(s: WarSimSession, shooterId: string, trackId: str
 export function setPhysicalCourse(s: WarSimSession, id: string, heading: number, speed: number) {
   const iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const a = s.physical?.actors.find(a => a.id === id && a.iso === iso && a.health > 0);
-  const maximum = a?.domain === 'air' ? 120 : a?.domain === 'land' ? 0 : 16;
+  const maximum = a?.domain === 'air' ? 120 : a?.domain === 'subsurface' ? 8
+    : a?.domain === 'land' || a?.domain === 'space' ? 0 : 16;
   if (!a || !Number.isFinite(heading) || !Number.isFinite(speed) || speed < 0 || speed > maximum)
     throw new Error(`Select an available platform; speed must be 0–${maximum} m/s.`);
   if (a.repairJob && speed > 0) throw new Error('Cancel or finish repairs before getting under way.');
@@ -170,8 +172,8 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
     for (const a of p.actors) {
       if (a.health <= 0) { a.velocity = [0, 0, 0]; continue; }
       const turn = ((a.course - a.heading + 540) % 360) - 180;
-      const air = a.domain === 'air', land = a.domain === 'land';
-      const maxSpeed = air ? 120 : land ? 0 : 16 * seaSpeedFactor(p.environment);
+      const air = a.domain === 'air', fixed = a.domain === 'land' || a.domain === 'space';
+      const maxSpeed = air ? 120 : fixed ? 0 : a.domain === 'subsurface' ? 8 : 16 * seaSpeedFactor(p.environment);
       a.heading += Math.max(-(air ? 8 : 2) * h, Math.min((air ? 8 : 2) * h, turn));
       const desired = a.fuel > 0 && operational(a, 'propulsion') ? Math.min(a.desiredSpeed, maxSpeed * condition(a, 'propulsion') / 100) : 0;
       a.speed += Math.max(-.8 * h, Math.min(.4 * h, desired - a.speed));
@@ -211,7 +213,8 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
     // Resolve interactions globally by time of first contact; an intercepted round cannot impact later in this substep.
     const hits: { fraction: number; round: PhysicalRound; target?: PhysicalActor | PhysicalRound; kind: PhysicalEvent['kind'] }[] = [];
     for (const r of p.rounds) {
-      const candidates = r.interceptor ? p.rounds.filter(t => t.id === r.targetId) : p.actors.filter(a => a.iso !== r.iso && a.health > 0);
+      const candidates = r.interceptor ? p.rounds.filter(t => t.id === r.targetId)
+        : p.actors.filter(a => a.iso !== r.iso && a.health > 0 && a.domain !== 'subsurface' && a.domain !== 'space');
       for (const t of candidates) {
         const fraction = sweptSphere(starts.get(r.id)!, r.position, starts.get(t.id)!, t.position, r.interceptor ? 14 : 32);
         if (fraction !== null) hits.push({ fraction, round: r, target: t, kind: r.interceptor ? 'intercept' : 'impact' });
@@ -275,7 +278,8 @@ export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
     ids.add(a.id);
   }
   for (const a of p.actors) if (!s.entities.some(e => e.id === a.id && e.iso === a.iso) || a.health < 0 || a.health > 100
-    || a.fuel < 0 || a.fuel > 100 || a.desiredSpeed < 0 || a.desiredSpeed > (a.domain === 'air' ? 120 : a.domain === 'land' ? 0 : 16)
+    || a.fuel < 0 || a.fuel > 100 || a.desiredSpeed < 0
+    || a.desiredSpeed > (a.domain === 'air' ? 120 : a.domain === 'subsurface' ? 8 : a.domain === 'land' || a.domain === 'space' ? 0 : 16)
     || !Number.isSafeInteger(a.rounds) || a.rounds < 0
     || !Number.isSafeInteger(a.interceptors) || a.interceptors < 0) throw new Error('Invalid physical platform.');
   for (const a of p.actors) {

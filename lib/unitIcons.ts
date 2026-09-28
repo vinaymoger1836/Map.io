@@ -153,6 +153,11 @@ const glyphText = (p: Pen, text: string, size = 11) => {
 /* ------------------------------------------------------------------ */
 
 const GLYPHS: Record<string, (p: Pen) => void> = {
+  satellite: (p) => {
+    oval(p, 0.5, 0.5, 0.14, 0.14);
+    line(p, 0.06, 0.5, 0.36, 0.5);
+    line(p, 0.64, 0.5, 0.94, 0.5);
+  },
   /* ground */
   infantry: (p) => {
     line(p, 0.1, 0.12, 0.9, 0.88);
@@ -373,6 +378,10 @@ function framePath(ctx: CanvasRenderingContext2D, domain: Domain) {
   const r = 3;
   ctx.beginPath();
   switch (domain) {
+    case 'space':
+      ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      ctx.closePath();
+      break;
     case 'air':
       // Arch: the classic "in the air" frame, rounded over the top.
       ctx.moveTo(x, y + h);

@@ -41,7 +41,7 @@ export default function TacticalViewport(p: Props) {
     <div className={styles.canvas} ref={host} />
     <div className={styles.vignette} />
     <header className={styles.header}>
-      <div><div className={styles.eyebrow}>TACTICAL / {s.activeFaction === 'player' ? 'BLUE' : 'RED'} FORCE</div><h1>{s.physical ? 'GLASSWATER' : s.name}</h1><p>{s.physical ? `${s.name.includes('Littoral') ? 'Littoral probe' : 'Coastal encounter'} · synthetic physical model` : 'Theater visualization · legacy simulation model'}</p></div>
+      <div><div className={styles.eyebrow}>TACTICAL / {s.activeFaction === 'player' ? 'BLUE' : 'RED'} FORCE</div><h1>{s.physical ? 'GLASSWATER' : s.name}</h1><p>{s.physical ? `${s.name.includes('Joint probe') ? 'Joint probe' : 'Coastal encounter'} · synthetic physical model` : 'Theater visualization · legacy simulation model'}</p></div>
       <div className={styles.toolbar}>
         <button onClick={() => scene.current?.overview()}>Overview</button>
         <button onClick={() => scene.current?.focus(selected?.id ?? null)}>Follow selected</button>
@@ -72,11 +72,11 @@ export default function TacticalViewport(p: Props) {
         {actor.repairJob && <div className={styles.intelEntry}>Repairing {actor.repairJob.capability} · {actor.repairJob.remainingSec.toFixed(1)} s remaining
           <button onClick={() => send({ type: 'cancelPhysicalRepair', args: [actor.id] })}>Cancel repair</button></div>}
         <label>Course <span>{heading.toFixed(0)}°</span><input aria-label="Course" type="range" min="0" max="359" value={heading} onChange={e => setHeading(+e.target.value)} /></label>
-        {actor.domain !== 'land' && <label>Speed <span>{speed} m/s</span><input aria-label="Vessel speed" type="range" min="0" max={actor.domain === 'air' ? 120 : 16} value={speed} onChange={e => setSpeed(+e.target.value)} /></label>}
-        <button disabled={actor.health <= 0 || actor.domain === 'land' || speed > 0 && (!!actor.repairJob || condition(actor, 'propulsion') < 30)} onClick={() => send({ type: 'setPhysicalCourse', args: [actor.id, heading, speed] })}>Apply course & speed</button>
-        <button className={styles.fire} disabled={!target || actor.rounds - reservedRounds < 1 || actor.health <= 0 || condition(actor, 'strikeLauncher') < 30 || actor.cooldown > s.simTimeSec || target.trackState === 'lost' || (target.confidence ?? 0) < .3} onClick={() => target && send({ type: 'launchPhysical', args: [actor.id, target.contactId, target.revision] })}>Launch guided round</button>
+        {actor.domain !== 'land' && actor.domain !== 'space' && <label>Speed <span>{speed} m/s</span><input aria-label="Vessel speed" type="range" min="0" max={actor.domain === 'air' ? 120 : actor.domain === 'subsurface' ? 8 : 16} value={speed} onChange={e => setSpeed(+e.target.value)} /></label>}
+        <button disabled={actor.health <= 0 || actor.domain === 'land' || actor.domain === 'space' || speed > 0 && (!!actor.repairJob || condition(actor, 'propulsion') < 30)} onClick={() => send({ type: 'setPhysicalCourse', args: [actor.id, heading, speed] })}>Apply course & speed</button>
+        <button className={styles.fire} disabled={!target || ['sub', 'space'].includes(target.domain) || actor.rounds - reservedRounds < 1 || actor.health <= 0 || condition(actor, 'strikeLauncher') < 30 || actor.cooldown > s.simTimeSec || target.trackState === 'lost' || (target.confidence ?? 0) < .3} onClick={() => target && send({ type: 'launchPhysical', args: [actor.id, target.contactId, target.revision] })}>Launch guided round</button>
         <p>Defensive fire is automatic inside 1.8 km. Start time to advance launched rounds.</p></>}
-      {target && <p>Track: {target.trackState ?? 'legacy'} · ±{Math.round(target.uncertaintyM ?? 0)} m · {((target.confidence ?? 0) * 100).toFixed(0)}% confidence</p>}
+      {target && <p>Track: {target.trackState ?? 'legacy'} · ±{Math.round(target.uncertaintyM ?? 0)} m · {((target.confidence ?? 0) * 100).toFixed(0)}% confidence{['sub', 'space'].includes(target.domain) ? ' · surface round incompatible' : ''}</p>}
       <div className={styles.eyebrow}>ENGAGEMENT LOG</div>
       <div className={styles.log} aria-live="polite">{s.eventLog.slice(-5).reverse().map(e => <div key={e.id}><time>{e.timeFormatted}</time> {e.title}</div>)}{!s.eventLog.length && <p>Awaiting orders.</p>}</div>
     </aside>
