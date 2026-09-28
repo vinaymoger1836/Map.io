@@ -80,10 +80,12 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
       let normal: Vec3 = [0, 0, 0];
       if (target && length(sub(target.position, r.position)) <= PROFILE.sensorRange) {
         const distance = length(sub(target.position, r.position));
-        const aim = add(target.position, scale(target.velocity, Math.min(4, distance / Math.max(100, speed))));
+        const closing = -dot(target.velocity, unit(sub(target.position, r.position)));
+        const aim = add(target.position, scale(target.velocity, Math.min(4, distance / Math.max(100, speed + closing))));
+        if (!r.interceptor) aim[2] = distance > 300 ? 40 : 10;
         // Terminal seeker: finite acceleration, finite range, perfect measurement in this reference only.
         const desired = scale(unit(sub(aim, r.position)), speed);
-        const error = scale(sub(desired, r.velocity), 3);
+        const error = add(scale(sub(desired, r.velocity), 3), [0, 0, 9.80665]);
         normal = sub(error, scale(forward, dot(error, forward)));
         normal = scale(normal, Math.min(1, PROFILE.maxNormalAcceleration / (length(normal) || 1)));
       }

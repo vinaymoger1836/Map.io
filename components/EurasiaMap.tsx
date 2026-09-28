@@ -29,6 +29,9 @@ import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview }
 import { type WarSimSession } from '@/lib/warSimTypes';
 import { readDoc } from '@/lib/store';
 import { measureWarSim } from '@/lib/warsim/diagnostics';
+import dynamic from 'next/dynamic';
+import { stopPresentation } from '@/lib/warsim/mapPresentation';
+const TacticalViewport = dynamic(() => import('./wargames/TacticalViewport'), { ssr: false });
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -108,6 +111,7 @@ export default function EurasiaMap() {
   const [mode, setModeState] = useState<Mode>('situation');
   const [configOpen, setConfigOpen] = useState(false);
   const [warSimLauncherOpen, setWarSimLauncherOpen] = useState(false);
+  const [tacticalOpen, setTacticalOpen] = useState(false);
   const [activeWarSimSession, setActiveWarSimSession] = useState<WarSimSession | null>(null);
   const [warSimAarOpen, setWarSimAarOpen] = useState(false);
 
@@ -170,6 +174,7 @@ export default function EurasiaMap() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || mode !== 'wargames') return;
+    if (tacticalOpen) { stopPresentation(map); return; }
     if (!warSim.session) {
       removeWarSimLayers(map);
       return;
@@ -186,6 +191,7 @@ export default function EurasiaMap() {
       warSim.selectedContactId
     ));
   }, [
+    tacticalOpen,
     ready,
     mode,
     warSim.session,
@@ -706,6 +712,7 @@ export default function EurasiaMap() {
               war.setSimulationNations(session.playerIso, session.playerColor, session.enemyIso, session.enemyColor);
               // 2. Launch the simulation session
               setActiveWarSimSession(session);
+              setTacticalOpen(Boolean(session.physical));
               setWarSimLauncherOpen(false);
             }}
             onOpenConfiguration={(sysId) => {
@@ -731,7 +738,15 @@ export default function EurasiaMap() {
             </span>}
           </div>
         )}
-        {mode === 'wargames' && warSim.session && (
+        {mode === 'wargames' && warSim.session && !tacticalOpen && (
+          <button style={{ position: 'absolute', top: 80, right: 20, zIndex: 1000 }} className="wg-btn" onClick={() => setTacticalOpen(true)}>Open 3D tactical view</button>
+        )}
+        {mode === 'wargames' && warSim.session && tacticalOpen && (
+          <TacticalViewport session={warSim.session} selectedId={warSim.selectedEntityId} selectedContactId={warSim.selectedContactId}
+            onSelect={warSim.setSelectedEntityId} onSelectContact={warSim.setSelectedContactId} dispatch={warSim.dispatchSimulation}
+            onClose={() => setTacticalOpen(false)} onExit={() => { setTacticalOpen(false); warSim.exitSim(); }} runtimeError={warSim.runtimeError} />
+        )}
+        {mode === 'wargames' && warSim.session && !tacticalOpen && (
           <WarSimConsole
             session={warSim.session}
             isPlaying={warSim.isPlaying}
