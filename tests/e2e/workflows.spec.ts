@@ -106,3 +106,28 @@ test('one worker survives play/pause and suspends hidden time without catching u
   await expect.poll(async () => (await workers()).length).toBe(0);
   expect(pageErrors).toEqual([]);
 });
+
+test('a worker failure can recover its last acknowledged checkpoint', async ({ page }) => {
+  const { pageErrors } = await preparePage(page, createFixture('transit'));
+  await page.goto('/');
+  await waitForMap(page);
+  await page.getByRole('button', { name: /RESUME/ }).click();
+  await expect.poll(async () => Number(await page.getByTestId('simulation-runtime').getAttribute('data-tick'))).toBeGreaterThan(3);
+  await page.getByRole('button', { name: /PAUSE/ }).click();
+  await expect(page.getByRole('button', { name: /RESUME/ })).toBeVisible();
+  const before = await storedSession(page);
+  for (const worker of page.workers()) {
+    if (await worker.evaluate(() => self.name) !== 'warsim-runtime') continue;
+    await worker.evaluate(() => { setTimeout(() => { throw new Error('Phase 1 fixture worker failure'); }, 0); });
+    break;
+  }
+  await expect(page.getByRole('alert').filter({ hasText: 'Simulation worker stopped:' })).toContainText('Phase 1 fixture worker failure');
+  await page.getByRole('button', { name: 'Reload checkpoint', exact: true }).click();
+  await expect(page.getByTestId('simulation-runtime')).toHaveText('Simulation paused');
+  const after = await storedSession(page);
+  expect(after.runtime).toEqual(before.runtime);
+  expect(after.entities).toEqual(before.entities);
+  await page.getByRole('button', { name: /RESUME/ }).click();
+  await expect.poll(async () => Number(await page.getByTestId('simulation-runtime').getAttribute('data-tick'))).toBeGreaterThan(before.runtime.tick);
+  expect(pageErrors.filter(error => !error.includes('Phase 1 fixture worker failure'))).toEqual([]);
+});

@@ -69,9 +69,9 @@ orderRtb: (prev: WarSimSession, systemsLibrary: SystemSpec[], entityId: string):
         if (!prev) return null;
         return orderEntityRtb(prev, entityId);
       },
-orderStrike: (prev: WarSimSession, systemsLibrary: SystemSpec[], attackerEntityId: string, targetEntityId: string, targetLngLat: [number, number], weaponIndex: number, salvoCount: number = 1, postStrikeAction: PostStrikeAction = 'rtb', customPostLngLat?: [number, number], sortieCount?: number, customWeapons?: import('../specs').WeaponFacet[], weaponsToFire?: import('../warSimTypes').WeaponSalvoItem[], attackWaypoints?: [number, number][]): WarSimSession | null => {
+orderStrike: (prev: WarSimSession, systemsLibrary: SystemSpec[], attackerEntityId: string, targetEntityId: string, targetLngLat: [number, number], weaponIndex: number, salvoCount: number = 1, postStrikeAction: PostStrikeAction = 'rtb', customPostLngLat?: [number, number], sortieCount?: number, customWeapons?: import('../specs').WeaponFacet[], weaponsToFire?: import('../warSimTypes').WeaponSalvoItem[], attackWaypoints?: [number, number][], resume = false): WarSimSession | null => {
         if (!prev) return null;
-        return orderStrikeMission(
+        const next = orderStrikeMission(
           prev,
           attackerEntityId,
           targetEntityId,
@@ -86,6 +86,8 @@ orderStrike: (prev: WarSimSession, systemsLibrary: SystemSpec[], attackerEntityI
           weaponsToFire,
           attackWaypoints
         );
+        if (next === prev) return prev;
+        return resume ? { ...next, status: 'running' } : next;
       },
 createBaseAtLocation: (prev: WarSimSession, systemsLibrary: SystemSpec[], name: string, type: BaseType, lngLat: [number, number]): WarSimSession | null => {
         if (!prev) return null;

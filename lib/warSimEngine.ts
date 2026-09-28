@@ -2369,6 +2369,10 @@ export function tickWarSim(
           continue;
         }
 
+        // Tier 2 is the highest possible tier. A farther scanner cannot replace
+        // an already selected Tier 2 scanner; terrain evaluation has no side effects.
+        if (bestTier === 2 && bestScanner && dist >= bestScannerDistKm) continue;
+
         // Sensor detection envelope
         let ratedEnvelopeKm = scanSpec?.sensor?.detectionKm ?? (
           isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : (scanner.typeId === 'uav' || scanner.typeId === 'recon') ? 180 : 250
@@ -2405,6 +2409,10 @@ export function tickWarSim(
           targetDomain,
           horizonLimited,
         });
+
+        // The current terrain model only reduces range (modifier <= 1). Avoid
+        // sampling terrain for targets already outside the unmasked envelope.
+        if (dist > detectionResult.detectionRangeKm) continue;
 
         // Topographic Line-of-Sight & Mountain Masking check
         const scanSensorEquip = defaultTerrainSensorFor(scanSpec, scanner.typeId);

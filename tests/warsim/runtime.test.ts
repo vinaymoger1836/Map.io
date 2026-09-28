@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import { SimulationRuntime } from '../../lib/warsim/runtime';
 import { FixedStepScheduler } from '../../lib/warsim/scheduler';
 import { simNow, simRandom, withSimulationContext } from '../../lib/warsim/context';
@@ -18,6 +19,13 @@ function command(host: SimulationRuntime, value: SimulationCommand, executeAtTic
 function runTo(host: SimulationRuntime, tick: number) { while (host.tick < tick) { if (!host.step()) throw new Error('Unexpected pause'); } }
 
 describe('authoritative fixed-step runtime', () => {
+  it('preserves the complete fleet result captured before sensor candidate pruning', () => {
+    const host = runtime('fleet');
+    runTo(host, 10);
+    // Captured from the unpruned Phase 1 adapter, fixture v1, seed 240925.
+    expect(createHash('sha256').update(JSON.stringify(host.checkpoint())).digest('hex'))
+      .toBe('27ebc52df3e7d6cb65aab35a94372f787883cda50b84f84ba90266f7ca9cf8e7');
+  });
   it('repeats seeded command outcomes and IDs without modifying the input fixture', () => {
     const a = runtime(), b = runtime();
     for (const host of [a, b]) {
@@ -103,6 +111,18 @@ describe('authoritative fixed-step runtime', () => {
     expect(host.checkpoint()).toEqual(paused);
   });
 
+  it('does not resume a paused simulation when a routed strike is rejected', () => {
+    const fixture = createFixture('engagement');
+    fixture.session.status = 'paused';
+    fixture.session.entities[0].status = 'in_repair';
+    const host = new SimulationRuntime(fixture.session, fixture.systems, fixture.seed);
+    host.submit(command(host, { type: 'orderStrike', args: ['blue-shooter', 'red-target', [-149.85, 0],
+      0, 2, 'rtb', undefined, undefined, undefined, undefined, [[-149.9, 0]], true] }));
+    expect(host.takeReceipts()[0].status).toBe('rejected');
+    expect(host.running).toBe(false);
+    expect(host.checkpoint().entities[0].strikePlan).toBeUndefined();
+  });
+
   it('projects one faction without enemy entities or the other observer’s cached contacts', () => {
     const host = runtime('sensor-contact');
     host.step();
@@ -125,6 +145,7 @@ describe('authoritative fixed-step runtime', () => {
     const original = structuredClone(saved);
     expect(() => new SimulationRuntime({ ...saved, runtime: { ...saved.runtime!, schemaVersion: 999 as 1 } }, [])).toThrow(/checkpoint/);
     expect(saved).toEqual(original);
+    expect(() => new SimulationRuntime({ ...saved, id: 42 as unknown as string }, [])).toThrow(/required simulation fields/);
     expect(() => new SimulationRuntime({ ...saved, entities: [{ ...saved.entities[0], lngLat: [0, NaN] }] }, [])).toThrow();
   });
 });

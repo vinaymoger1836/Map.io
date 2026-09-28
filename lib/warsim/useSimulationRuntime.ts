@@ -26,7 +26,7 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
   const persist = useCallback((value: WarSimSession | null) => {
     saveQueue.current = saveQueue.current.catch(() => {}).then(() => writeDoc('warsim-session', value));
   }, []);
-  const ready = Boolean(initial?.runtime?.definitions.length || catalogue.length);
+  const ready = Boolean(initial?.runtime?.definitions?.length || catalogue.length);
 
   useEffect(() => {
     setError(null);
@@ -67,7 +67,6 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
       previousTick = data.diagnostics.tick;
       const rejected = data.receipts.find(r => r.status === 'rejected');
       if (rejected) setError(rejected.reason ?? 'Order rejected.');
-      else if (data.receipts.length) setError(null);
       const now = performance.now();
       if (now - lastSave > 4000 || previousStatus !== data.session.status || data.receipts.length > 0) {
         persist(data.checkpoint);
@@ -82,7 +81,7 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
     setDefinitions(source.runtime?.definitions ?? catalogueRef.current);
     // Keep a separate legacy copy before writing the first versioned checkpoint.
     if (!source.runtime && source.status === 'paused') {
-      saveQueue.current = saveQueue.current.catch(() => {}).then(() => writeDoc(`warsim-legacy-${seedFromId(source.id).toString(16)}`, source));
+      saveQueue.current = saveQueue.current.catch(() => {}).then(() => writeDoc(`warsim-legacy-${seedFromId(String(source.id)).toString(16)}`, source));
     }
     send({ type: 'initialize', version: 1, session: source, definitions: catalogueRef.current, visible: !document.hidden });
     const visibility = () => send({ type: 'visibility', visible: !document.hidden });
@@ -105,6 +104,7 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
   }, [initial, ready, restartCount, persist]);
 
   const dispatch = useCallback((command: SimulationCommand) => {
+    setError(null);
     const view = viewRef.current;
     if (!workerRef.current || !view) { setError('Simulation is not ready. Reload the checkpoint to continue.'); return; }
     const request: WorkerRequest = { type: 'command', envelope: {

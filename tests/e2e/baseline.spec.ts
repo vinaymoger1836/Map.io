@@ -65,7 +65,8 @@ test('capture browser baseline on the 100-platform / 50-projectile fixture', asy
   await page.screenshot({ path: '.cache/warsim-baseline/fleet.png' });
   expect(metrics.metrics['engine.tick.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['render.sync.ms']?.count).toBeGreaterThan(0);
-  expect(metrics.metrics['map.setData.ms']?.count).toBeGreaterThan(0);
+  // Static sources may need no full submissions after warmup; moving sources use diffs.
+  expect(metrics.metrics['map.setData.ms']?.count ?? 0).toBeLessThan(metrics.metrics['map.updateData.ms']?.count ?? 0);
   expect(metrics.metrics['map.updateData.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['react.commit.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['frame.interval.ms']?.count).toBeGreaterThan(0);

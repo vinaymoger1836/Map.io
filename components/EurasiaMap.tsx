@@ -722,6 +722,7 @@ export default function EurasiaMap() {
               {warSim.runtimeError}
               <button onClick={warSim.dismissRuntimeError} style={{ marginLeft: 12 }}>Dismiss</button>
               <button onClick={warSim.restartRuntime} style={{ marginLeft: 12 }}>Reload checkpoint</button>
+              <button onClick={warSim.exitSim} style={{ marginLeft: 12 }}>Exit simulation</button>
             </div> : <span role="status" data-testid="simulation-runtime" data-tick={warSim.runtimeDiagnostics?.tick ?? 0}>
               {!warSim.session ? 'Preparing simulation…' : warSim.runtimeDiagnostics?.suspended ? 'Simulation suspended'
                 : warSim.isPlaying && (warSim.runtimeDiagnostics?.lastTickMs ?? 0) * warSim.speedMultiplier > 100

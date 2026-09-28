@@ -469,8 +469,7 @@ export function useWarSim({
       const p = targetPicking.strikeParams;
       dispatch({ type: 'orderStrike', args: [p.attackerEntityId, p.targetEntityId, p.targetLngLat,
         p.weaponIndex, p.salvoCount, p.postStrikeAction, p.customPostLngLat, p.sortieCount,
-        p.customWeapons, p.weaponsToFire, waypoints.length ? waypoints : undefined] });
-      dispatch({ type: 'setPlayback', args: ['running'] });
+        p.customWeapons, p.weaponsToFire, waypoints.length ? waypoints : undefined, true] });
       setTargetPicking(null);
       return;
     }

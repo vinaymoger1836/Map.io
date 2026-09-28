@@ -661,6 +661,8 @@ The simulation implements continuous, physics-based radar and optical reconnaiss
 
 ## WarSim development and verification
 
+Phase 1 moves live simulation into a worker with fixed steps, typed commands, reproducible checkpoints, faction projections and interpolated map updates. See [the Phase 1 architecture and results](docs/warsim/phase-1.md). The detailed tactical renderer and new weapon physics are the next phase.
+
 Phase 0 adds isolated simulation fixtures, migration checks, browser workflows and performance measurements. See [the baseline guide](docs/warsim/phase-0.md), [current model capabilities](docs/warsim/capabilities.md) and [save migration inventory](docs/warsim/migration-inventory.md) for verified scope and limitations of the feature descriptions above.
 
 ```sh
@@ -668,6 +670,7 @@ npm run test
 npm run typecheck
 npm run test:e2e
 npm run bench:warsim
+npm run bench:warsim:runtime
 npm run bench:warsim:browser
 ```
 

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-28T05:10:08.431Z",
+  "fixture": "fleet",
+  "fixtureVersion": 1,
+  "sourceHashes": {
+    "lib/warSimEngine.ts": "28e18f288552e7df382be5eb14938d6f04a79694cc5763de25d73c4f50b3f5d5",
+    "lib/warSimLayers.ts": "c346c2d1690db64840d5f88ec34e77c95acb6c8f996be4ab953281fa44bf1859",
+    "lib/useWarSim.ts": "ad8282f222d76b7ccbd5b8368d7f66ceb8376deaedd5927c9f213270b157b090",
+    "lib/warsim/diagnostics.ts": "aaeff11de2167b3c900e9b2e727771c6e5a69470b0db8b5aa7ec92e9cb9422b8",
+    "lib/warsim/runtime.ts": "14b61c29c44d2d11eaf294938ffff1660c73be80a471a6769c6d32d646d87216",
+    "lib/warsim/context.ts": "f548686e8cced8cd1992451e6e4777d0f2555ab2638244398d099dd3e9656030",
+    "lib/warsim/commands.ts": "29c9a939cc4ea6c723b5ef079591fe18f48ccc081de2b71da358ce60b0d9c87e",
+    "lib/warsim/simulation.worker.ts": "c1c2765a56ca6b275d80c3b6b1760dada9f7838e31d8dd963453f4d687c2d731",
+    "lib/warsim/useSimulationRuntime.ts": "cf272939e50f83db9b7e06c18b949457320bbbf418a5e638d0583199eaa0e4b2",
+    "lib/warsim/mapPresentation.ts": "53da73ec24c6e7de4da0ec9e0d8994812fdd1ba86bfa14d972133bb65bdfdaa2",
+    "components/MapShell.tsx": "f3da7a7d0fced0598572124e4c55e3ec99dbd78deb043ce809c8a37e14452a1d",
+    "components/EurasiaMap.tsx": "48898fbd4762e2fe604357485d8a2aae52e00a49a03d83cccfef41bd8ff668d1",
+    "tests/warsim/fixtures/v1/scenarios.ts": "ca6634272101f3239d62828e9319ae0e1702a3e0e74a0189cb7da7b4313c5155",
+    "tests/e2e/support.ts": "880eabcd239799a56feb781f3c7025fbbcf2dfc937ad3fc5e0573f9d52f7fae5",
+    "package-lock.json": "4970babae8c813cb2cad852287b278093ae55b6aa98774140b4c2a7880120ad2"
+  },
+  "environment": {
+    "os": "win32 10.0.26200",
+    "architecture": "x64",
+    "cpu": "AMD Ryzen 7 7445HS w/ Radeon 740M Graphics",
+    "logicalCores": 12,
+    "ramBytes": 16353656832,
+    "powerScheme": "Power Scheme GUID: 6fecc5ae-f350-48a5-b669-b472cb895ccf  (Turbo)",
+    "browser": "153.0.8010.12",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "gpu": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "mode": "Next.js development, React StrictMode, headless Chromium"
+  },
+  "caveats": [
+    "Offline blank basemap and fixture geography: no external tile/font cost.",
+    "setData cost is synchronous submission/serialization, not asynchronous worker or GPU completion.",
+    "React commit metric is Profiler actualDuration in development; frames are requestAnimationFrame intervals.",
+    "Phase 1: engine timing is measured in the fixed-step worker. Browser memory measures the page isolate, excluding worker heaps.",
+    "12-second heap deltas are an initial observation, not proof of a memory leak or leak freedom."
+  ],
+  "metrics": {
+    "schemaVersion": 1,
+    "durationMs": 12585.600000023842,
+    "percentileWindow": "Most recent 6000 samples per metric; count/mean/min/max cover the full capture.",
+    "metrics": {
+      "engine.tick.ms": {
+        "count": 30,
+        "mean": 377.88666667540866,
+        "min": 235,
+        "max": 450.5,
+        "p50": 383.2000000476837,
+        "p95": 433.39999997615814,
+        "p99": 450.5,
+        "first": 323.10000002384186,
+        "last": 421.2000000476837
+      },
+      "frame.interval.ms": {
+        "count": 113,
+        "mean": 111.20619469026548,
+        "min": 50,
+        "max": 266.7000000000007,
+        "p50": 116.59999999999854,
+        "p95": 133.29999999999927,
+        "p99": 133.40000000000146,
+        "first": 100.09999999999854,
+        "last": 100.09999999999854
+      },
+      "map.updateData.ms": {
+        "count": 198,
+        "mean": 0.04646464911374179,
+        "min": 0,
+        "max": 0.20000004768371582,
+        "p50": 0,
+        "p95": 0.10000002384185791,
+        "p99": 0.20000004768371582,
+        "first": 0,
+        "last": 0
+      },
+      "react.commit.ms": {
+        "count": 30,
+        "mean": 6.510000002384186,
+        "min": 5.600000023841858,
+        "max": 8.199999928474426,
+        "p50": 6.5,
+        "p95": 7.199999928474426,
+        "p99": 8.199999928474426,
+        "first": 6.199999928474426,
+        "last": 6.800000071525574
+      },
+      "render.sync.ms": {
+        "count": 30,
+        "mean": 1.2666666666666666,
+        "min": 0.7000000476837158,
+        "max": 4.199999928474426,
+        "p50": 1.1999999284744263,
+        "p95": 1.7999999523162842,
+        "p99": 4.199999928474426,
+        "first": 0.8999999761581421,
+        "last": 1.5999999046325684
+      },
+      "heap.used.bytes": {
+        "count": 13,
+        "mean": 109000000,
+        "min": 109000000,
+        "max": 109000000,
+        "p50": 109000000,
+        "p95": 109000000,
+        "p99": 109000000,
+        "first": 109000000,
+        "last": 109000000
+      }
+    }
+  },
+  "memory": {
+    "before": {
+      "usedSize": 31743120,
+      "totalSize": 36950016,
+      "embedderHeapUsedSize": 2499664,
+      "backingStorageSize": 62236538
+    },
+    "beforeGc": {
+      "usedSize": 69376024,
+      "totalSize": 111525888,
+      "embedderHeapUsedSize": 3512896,
+      "backingStorageSize": 82835319
+    },
+    "afterGc": {
+      "usedSize": 32428048,
+      "totalSize": 36950016,
+      "embedderHeapUsedSize": 2409360,
+      "backingStorageSize": 62184038
+    }
+  },
+  "initialSessionBytes": 74099,
+  "finalSessionBytes": 326233,
+  "finalPopulation": {
+    "platforms": 100,
+    "projectiles": 50
+  },
+  "runtime": {
+    "modelVersion": "legacy-fixed-v1",
+    "tick": 57,
+    "simTimeSec": 5.7
+  }
+}

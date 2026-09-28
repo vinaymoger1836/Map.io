@@ -1,5 +1,7 @@
 # Legacy WarSim capability baseline
 
+Historical Phase 0 reference. [Phase 1](phase-1.md) replaces clock/state ownership, command transport, checkpointing and map presentation; domain-model limitations below remain relevant unless noted there.
+
 Phase 0, 25 September 2026. This describes executable code at the start of the redesign. Equipment values and outcome probabilities have not been validated against real operations. A feature's presence in the UI or catalogue does not establish model fidelity.
 
 ## Architecture today

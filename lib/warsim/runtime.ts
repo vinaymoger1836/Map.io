@@ -32,8 +32,9 @@ export class SimulationRuntime {
   private world: WarSimSession;
   private state: RuntimeCheckpoint;
   private receipts: CommandReceipt[] = [];
-  constructor(input: WarSimSession, definitions: SystemSpec[], seed = seedFromId(input.id)) {
+  constructor(input: WarSimSession, definitions: SystemSpec[], seed?: number) {
     validateSession(input);
+    seed ??= seedFromId(input.id);
     finiteData(input);
     const saved = input.runtime;
     if (saved && (saved.schemaVersion !== 1 || saved.modelVersion !== MODEL_VERSION || saved.stepMs !== STEP_MS

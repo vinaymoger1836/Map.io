@@ -1,5 +1,7 @@
 # WarSim persistence and migration inventory
 
+Historical Phase 0 inventory. See [Phase 1 persistence and recovery](phase-1.md#persistence-and-recovery) for the implemented versioned runtime checkpoint and legacy adaptation path.
+
 Phase 0, 25 September 2026. This is an inventory and acceptance contract for future adapters. No new save schema or destructive migration is introduced in Phase 0.
 
 ## Stored documents
