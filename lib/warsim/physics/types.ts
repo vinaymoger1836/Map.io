@@ -12,6 +12,7 @@ export interface PhysicalRound {
 export interface PhysicalEvent {
   id: number; time: number; kind: 'launch' | 'impact' | 'intercept' | 'expired';
   position: Vec3; roundId: string; visibleTo: string[]; terminatedRoundIds: string[];
+  deliveries?: { scopeId: string; linkIds: string[]; deliveryTick: number }[];
 }
 export interface PhysicalEncounter {
   version: 1; model: 'coastal-pointmass-v1'; origin: Geo; sequence: number;

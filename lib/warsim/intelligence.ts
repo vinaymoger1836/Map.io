@@ -1,5 +1,5 @@
 import type { WarSimSession, DetectedContact } from '../warSimTypes';
-import { add, sub, scale, length, fromENU, type Vec3 } from './physics/coordinates';
+import { add, sub, scale, length, fromENU, toENU, type Vec3 } from './physics/coordinates';
 
 export type TrackState = 'fresh' | 'stale' | 'lost';
 export interface IntelObservation {
@@ -81,7 +81,33 @@ export function createPhysicalIntel(s: WarSimSession): PhysicalIntel {
 }
 export function ensurePhysicalIntel(s: WarSimSession): PhysicalIntel {
   const p = s.physical!;
-  p.intel ??= createPhysicalIntel(s);
+  if (!p.intel) {
+    p.intel = createPhysicalIntel(s);
+    // Phase 2 saves carried one faction contact array per side. Preserve those reported
+    // positions as imported evidence; do not seed a new report from hidden actor truth.
+    const i = p.intel;
+    i.observations = []; i.tracks = []; i.contacts = {}; i.sequence = 0;
+    const tick = Math.round(s.simTimeSec * 10);
+    for (const [iso, contacts] of [[s.playerIso, s.fogOfWarContacts.playerContacts],
+      [s.enemyIso, s.fogOfWarContacts.enemyContacts]] as const) {
+      for (const contact of contacts) {
+        const actor = p.actors.find(a => a.id === contact.targetEntityId && a.iso !== iso);
+        if (!actor) continue;
+        const heading = contact.headingDeg * Math.PI / 180, speed = contact.speedKmh / 3.6;
+        const reportedTick = Math.max(0, Math.min(tick, Math.round(contact.lastDetectedSimTimeSec * 10)));
+        const reportAgeSec = (tick - reportedTick) / 10;
+        const observation: IntelObservation = { id: nextId(i, 'import'), targetRef: actor.id, sourceId: 'legacy-contact-import',
+          scopeId: hq(iso), position: toENU([...contact.lastKnownLngLat, 0], p.origin),
+          velocity: [Math.sin(heading) * speed, Math.cos(heading) * speed, 0],
+          uncertaintyM: Math.max(250, contact.uncertaintyM ?? 250) + reportAgeSec * 25,
+          confidence: .6 * Math.exp(-reportAgeSec / 30),
+          collectedTick: tick, processedTick: tick, modality: 'briefing', processed: true };
+        i.observations.push(observation); fuse(i, observation, hq(iso), tick);
+      }
+    }
+    for (const event of p.events) event.visibleTo = event.visibleTo.map(scope =>
+      scope === s.playerIso || scope === s.enemyIso ? hq(scope) : scope);
+  }
   return p.intel;
 }
 export function currentTrack(i: PhysicalIntel, scopeId: string, id: string, tick: number): IntelTrack | undefined {
@@ -106,7 +132,8 @@ function fuse(i: PhysicalIntel, o: IntelObservation, scopeId: string, tick: numb
   t.uncertaintyM = Math.max(10, Math.sqrt(1 / (prior + sample)));
   t.confidence = Math.min(.98, 1 - (1 - t.confidence) * (1 - o.confidence));
   t.observedTick = o.collectedTick; t.receivedTick = tick; t.state = 'fresh'; t.revision++;
-  t.evidenceIds.push(o.id); if (!t.sourceIds.includes(o.sourceId)) t.sourceIds.push(o.sourceId);
+  t.evidenceIds.push(o.id); t.evidenceIds = t.evidenceIds.slice(-128);
+  if (!t.sourceIds.includes(o.sourceId)) t.sourceIds.push(o.sourceId);
   return t;
 }
 function noise(key: string, tick: number) {
@@ -159,7 +186,8 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     sensor.sensorTime = Math.max(0, sensor.sensorTime - .002);
     const tasks = i.tasks.filter(t => t.assetId === actor.id && ['requested', 'collecting'].includes(t.status));
     for (const task of tasks) task.status = 'collecting';
-    const spotted = [...p.actors, ...p.rounds].filter(target => target.iso !== actor.iso && length(sub(target.position, actor.position)) <= sensor.rangeM);
+    const spotted = [...p.actors.filter(target => target.health > 0), ...p.rounds]
+      .filter(target => target.iso !== actor.iso && length(sub(target.position, actor.position)) <= sensor.rangeM);
     for (const target of spotted) {
       const task = tasks.find(t => length(sub(target.position, t.center)) <= t.radiusM);
       const uncertainty = target.id.startsWith('round-') ? 25 + length(sub(target.position, actor.position)) * .015
@@ -208,7 +236,12 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     fuse(i, o, m.to, tick); m.status = 'delivered';
     for (const onward of i.links.filter(l => l.from === m.to && l.active)) queue(i, o, onward, tick);
     const task = i.tasks.find(t => t.id === o.taskId);
-    if (task && m.to === task.scopeId) { task.status = 'complete'; task.finishedTick = tick; }
+    if (task && m.to === task.scopeId) {
+      task.status = 'complete'; task.finishedTick = tick;
+      const coverage = i.coverage.find(c => c.id === task.coverageId);
+      if (coverage && !i.coverage.some(c => c.scopeId === task.scopeId && c.sensorId === coverage.sensorId && c.observedTick === coverage.observedTick))
+        i.coverage.push({ ...coverage, id: nextId(i, 'coverage'), scopeId: task.scopeId });
+    }
   }
   for (const task of i.tasks) if (task.status === 'disseminating' && !route(i, local(task.assetId), task.scopeId)) task.status = 'interrupted';
   i.coverage = i.coverage.slice(-128);
@@ -217,7 +250,7 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
 export function acquireSeeker(s: WarSimSession, roundId: string, tick: number): IntelTrack | undefined {
   const p = s.physical!, i = ensurePhysicalIntel(s), r = p.rounds.find(r => r.id === roundId);
   if (!r) return;
-  const target = [...p.actors, ...p.rounds].find(a => a.id === r.targetId);
+  const target = [...p.actors.filter(a => a.health > 0), ...p.rounds].find(a => a.id === r.targetId);
   if (!target || length(sub(target.position, r.position)) > 4000) return scopeTracks(i, local(r.id)).find(t => t.targetRef === r.targetId);
   const o = observe(s, r.id, target.id, local(r.id), tick, 18 + length(sub(target.position, r.position)) * .005, 'seeker', undefined, true);
   return i.tracks.find(t => t.scopeId === local(r.id) && t.evidenceIds.includes(o.id));
@@ -240,7 +273,11 @@ export function projectIntel(s: WarSimSession, scopeId: string, tick: number) {
   const i = ensurePhysicalIntel(s), iso = ownerIso(s, scopeId);
   return { scopeId, tracks: scopeTracks(i, scopeId).map(t => ({ id: t.id, state: t.state, uncertaintyM: t.uncertaintyM + (tick - t.observedTick) * 2.5,
     confidence: t.confidence * Math.exp(-(tick - t.observedTick) / 300), ageSec: (tick - t.observedTick) / 10,
-    revision: t.revision, evidenceIds: [...t.evidenceIds], sourceIds: [...t.sourceIds], domain: t.domain })),
+    revision: t.revision, evidenceIds: [...t.evidenceIds], sourceIds: [...t.sourceIds], domain: t.domain,
+    history: t.evidenceIds.slice(-8).map(id => i.observations.find(o => o.id === id)).filter((o): o is IntelObservation => Boolean(o))
+      .map(o => ({ id: o.id, sourceId: o.sourceId, modality: o.modality, collectedSec: o.collectedTick / 10,
+        receivedSec: (i.messages.find(m => m.observationId === o.id && m.to === scopeId && m.status === 'delivered')?.deliveryTick ?? o.processedTick) / 10,
+        location: fromENU(o.position, s.physical!.origin).slice(0, 2) as [number, number], uncertaintyM: o.uncertaintyM })) })),
     tasks: i.tasks.filter(t => actorIso(s, t.assetId) === iso).map(t => ({ ...t })),
     sensors: i.sensors.filter(sensor => actorIso(s, sensor.actorId) === iso).map(sensor => ({ ...sensor })),
     links: i.links.filter(link => ownerIso(s, link.from) === iso).map(link => ({ ...link })),
@@ -323,7 +360,9 @@ export function missionSupport(i: PhysicalIntel, m: IntelMission, tick: number) 
   const link = i.links.find(l => l.from === local(m.supportId));
   const sensor = i.sensors.find(x => x.actorId === m.supportId);
   const localTrack = i.tracks.find(t => t.scopeId === local(m.supportId) && t.targetRef === m.targetRef);
-  return Boolean(link?.active && sensor?.mode === 'active' && localTrack && tick - localTrack.observedTick <= 15);
+  const commandTrack = i.tracks.find(t => t.scopeId === m.scopeId && t.targetRef === m.targetRef);
+  return Boolean(link?.active && sensor?.mode === 'active' && localTrack && commandTrack
+    && tick - localTrack.observedTick <= 15 && localTrack.evidenceIds.some(id => commandTrack.evidenceIds.includes(id)));
 }
 export function expireReservations(i: PhysicalIntel, tick: number) {
   for (const m of i.missions) if (!['executed', 'aborted'].includes(m.status) && i.reservations.some(r => r.missionId === m.id && r.expiresTick <= tick)) {

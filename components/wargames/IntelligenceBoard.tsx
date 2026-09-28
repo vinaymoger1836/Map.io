@@ -53,10 +53,14 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
     {!contacts.length && <p>No contact in this scope. Select a sensor or request area collection.</p>}
     {target && <div className={styles.intelDetail}><strong>{target.knownName}</strong><div>Evidence: {target.evidenceIds?.slice(-4).join(', ') ?? 'none'}</div>
       <div>Sources: {targetEvidence?.sourceIds.join(', ') ?? target.sourceIds?.join(', ') ?? 'unknown'}</div>
-      <div>Position: {target.lastKnownLngLat.map(n => n.toFixed(4)).join(', ')}</div></div>}
+      <div>Position: {target.lastKnownLngLat.map(n => n.toFixed(4)).join(', ')}</div>
+      <div className={styles.eyebrow}>REPORT HISTORY</div>
+      {targetEvidence?.history.map(report => <div className={styles.intelEntry} key={report.id}>{report.sourceId} / {report.modality}
+        <small>Observed T+{report.collectedSec.toFixed(1)} / received T+{report.receivedSec.toFixed(1)} / uncertainty {Math.round(report.uncertaintyM)} m</small></div>)}</div>}
     <div className={styles.eyebrow}>COLLECTION PLANNER</div>
     <label>Sensor asset<select aria-label="Collection asset" value={asset} onChange={e => setAsset(e.target.value)}>{friendly.map(e => <option value={e.id} key={e.id}>{e.name}</option>)}</select></label>
     <div className={styles.intelStats}><span>Emission: {selectedSensor?.mode ?? '—'}</span><span>Link: {selectedLink?.active ? 'online' : 'offline'}</span><span>Time: {selectedSensor?.sensorTime.toFixed(1) ?? '—'}%</span></div>
+    <p>Data link latency: {((selectedLink?.latencyTicks ?? 0) / 10).toFixed(1)} s; queued reports: {intel?.messages.filter(m => m.from === `${asset}:local` && m.status === 'queued').length ?? 0}.</p>
     <div className={styles.intelActions}>
       <button disabled={!asset} onClick={() => dispatch({ type: 'setPhysicalEmission', args: [asset, selectedSensor?.mode === 'active' ? 'passive' : 'active'] })}>{selectedSensor?.mode === 'active' ? 'Go passive' : 'Activate sensor'}</button>
       <button disabled={!asset} onClick={() => dispatch({ type: 'setPhysicalLink', args: [asset, !selectedLink?.active] })}>{selectedLink?.active ? 'Disconnect link' : 'Reconnect link'}</button>

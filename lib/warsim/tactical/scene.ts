@@ -19,6 +19,7 @@ export class TacticalScene {
   private bodies = new Map<string, Display>();
   private effects: { mesh: T.Mesh; position: Vec3; time: number; launch: boolean }[] = [];
   private trails = new Map<string, { points: Vec3[]; line: T.Line }>();
+  private missionLines = new Map<string, { points: Vec3[]; line: T.LineSegments }>();
   private seen = new Set<number>();
   private frame = 0;
   private resize: ResizeObserver;
@@ -115,6 +116,28 @@ export class TacticalScene {
         mesh.userData.id = r.id; this.scene.add(mesh); this.bodies.set(r.id, { from: r, to: r, mesh });
       }
     }
+    const missions = s.intelView?.missions.filter(m => !['executed', 'aborted'].includes(m.status)) ?? [];
+    const missionIds = new Set(missions.map(m => m.id));
+    for (const [id, entry] of this.missionLines) if (!missionIds.has(id)) {
+      this.scene.remove(entry.line); disposeObject(entry.line); this.missionLines.delete(id);
+    }
+    for (const mission of missions) {
+      const shooter = s.physical?.actors.find(a => a.id === mission.shooterId);
+      const support = s.physical?.actors.find(a => a.id === mission.supportId);
+      if (!shooter || !support) continue;
+      const elevated = (position: Vec3): Vec3 => [position[0], position[1], 35];
+      const points = [elevated(shooter.position), elevated(support.position)];
+      const contact = contacts.find(c => c.contactId === mission.trackId);
+      if (contact) { const estimate = toENU([...contact.lastKnownLngLat, 0], this.origin); points.push(elevated(support.position), elevated(estimate)); }
+      let entry = this.missionLines.get(mission.id);
+      if (!entry) {
+        const line = new T.LineSegments(new T.BufferGeometry(), new T.LineBasicMaterial({ color: '#70dce9', transparent: true, opacity: .75, depthTest: false }));
+        line.renderOrder = 4; this.scene.add(line); entry = { line, points }; this.missionLines.set(mission.id, entry);
+      }
+      entry.points = points;
+      (entry.line.material as T.LineBasicMaterial).color.set(mission.status === 'held' ? '#ffb86a' : '#70dce9');
+      entry.line.geometry.dispose(); entry.line.geometry = new T.BufferGeometry().setFromPoints(points.map(point => this.point(point)));
+    }
     for (const e of s.physical?.events ?? []) {
       if (this.seen.has(e.id)) continue; this.seen.add(e.id);
       if (e.kind === 'expired') continue;
@@ -194,6 +217,7 @@ export class TacticalScene {
       const shift = this.controls.target.clone(); shift.y = 0; this.offset.add(shift); this.camera.position.sub(shift); this.controls.target.sub(shift);
       this.bodies.forEach(b => b.mesh.position.sub(shift)); this.effects.forEach(e => e.mesh.position.sub(shift)); this.lastFollow?.sub(shift);
       this.trails.forEach(t => { t.line.geometry.dispose(); t.line.geometry = new T.BufferGeometry().setFromPoints(t.points.map(p => this.point(p))); });
+      this.missionLines.forEach(m => { m.line.geometry.dispose(); m.line.geometry = new T.BufferGeometry().setFromPoints(m.points.map(p => this.point(p))); });
     }
     this.water.position.x = this.camera.position.x; this.water.position.z = this.camera.position.z;
     this.water.material.uniforms.time.value = time; this.water.material.uniforms.shift.value.set(this.offset.x, this.offset.z);

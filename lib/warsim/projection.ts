@@ -9,7 +9,11 @@ export function projectObserver(world: WarSimSession): WarSimSession {
   const other = faction === 'player' ? 'enemy' : 'player';
   const iso = faction === 'player' ? world.playerIso : world.enemyIso;
   if (view.physical) {
-    const intel = ensurePhysicalIntel(world), scopeId = world.observerScope ?? hq(iso), tick = Math.round(world.simTimeSec * 10);
+    const intel = ensurePhysicalIntel(world);
+    const requested = world.observerScope ?? hq(iso);
+    const scopeId = [hq(iso), `${iso}:faction`, `${iso}:coalition`, ...view.physical.actors.filter(a => a.iso === iso).map(a => `${a.id}:local`)].includes(requested)
+      ? requested : hq(iso);
+    const tick = Math.round(world.simTimeSec * 10);
     view.observerScope = scopeId;
     view.intelView = projectIntel(world, scopeId, tick);
     const scopedContacts = observedContacts(world, scopeId, tick);
@@ -22,7 +26,7 @@ export function projectObserver(world: WarSimSession): WarSimSession {
       shooterId: r.iso === iso ? r.shooterId : '', targetId: r.iso === iso ? intel.contacts[r.targetId] ?? '' : '',
       launchPosition: r.iso === iso ? r.launchPosition : [...r.position], age: r.iso === iso ? r.age : 0,
       aimPosition: undefined, aimVelocity: undefined, trackRevision: undefined, sourceScope: undefined, seekerLocked: undefined }));
-    view.physical.events = view.physical.events.filter(e => e.visibleTo.includes(scopeId)).map(e => ({ ...e, visibleTo: [scopeId] }));
+    view.physical.events = view.physical.events.filter(e => e.visibleTo.includes(scopeId)).map(e => ({ ...e, visibleTo: [scopeId], deliveries: undefined }));
     view.physical.sequence = 0;
     delete view.physical.intel;
     const allowedEvents = new Set(view.physical.events.map(e => e.id));

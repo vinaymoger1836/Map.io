@@ -6,7 +6,7 @@ import { SimulationRuntime } from '../lib/warsim/runtime';
 
 async function main() {
   const s = createPhysicalReference(); s.physical!.actors[1].interceptors = 0;
-  launchPhysical(s, 'blue-frigate', 'red-frigate');
+  launchPhysical(s, 'blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId);
   const trajectory: { time: number; east: number; north: number; altitude: number; speed: number }[] = [];
   for (let i = 0; i < 450 && s.physical!.rounds.length; i++) {
     const r = s.physical!.rounds[0]; trajectory.push({ time: s.simTimeSec, east: r.position[0], north: r.position[1], altitude: r.position[2], speed: Math.hypot(...r.velocity) });

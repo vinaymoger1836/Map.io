@@ -6,7 +6,7 @@ import { seedFromId, withSimulationContext } from './context';
 import { MODEL_VERSION, STEP_MS, type CommandEnvelope, type CommandReceipt, type RuntimeCheckpoint } from './contracts';
 import { projectObserver } from './projection';
 import { stepPhysical, validatePhysical } from './physics/model';
-import { ensurePhysicalIntel } from './intelligence';
+import { coalitionScope, ensurePhysicalIntel, factionScope, hq, local } from './intelligence';
 
 function finiteData(value: unknown): void {
   if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Non-finite numeric input.');
@@ -20,7 +20,14 @@ function validateSession(session: WarSimSession) {
     throw new Error('This save is missing required simulation fields. The original save has been retained.');
   }
   const ids = new Set<string>();
-  if (session.physical) validatePhysical(session.physical, session);
+  if (session.physical) {
+    validatePhysical(session.physical, session);
+    const iso = session.activeFaction === 'player' ? session.playerIso : session.enemyIso;
+    if (session.observerScope && ![hq(iso), factionScope(iso), coalitionScope(iso)].includes(session.observerScope)
+      && !session.physical.actors.some(a => a.iso === iso && local(a.id) === session.observerScope)) {
+      throw new Error('The saved observer scope does not belong to the active faction.');
+    }
+  }
   for (const e of [...session.entities, ...session.bases]) {
     if (!e.id || ids.has(e.id) || !Array.isArray(e.lngLat) || e.lngLat.length !== 2
       || !e.lngLat.every(Number.isFinite) || Math.abs(e.lngLat[0]) > 180 || Math.abs(e.lngLat[1]) > 90) {

@@ -44,6 +44,9 @@ describe('physical reference / intelligence and coordination', () => {
       expect(view.physical!.intel).toBeUndefined();
     }
     expect(() => launchPhysical(s, 'blue-frigate', 'red-frigate')).toThrow(/contact/);
+    s.observerScope = hq(s.enemyIso);
+    expect(projectObserver(s).observerScope).toBe(hq(s.playerIso));
+    expect(() => new SimulationRuntime(s, [])).toThrow(/observer scope/);
   });
 
   it('records negative area coverage after sensor processing and reporting delay', () => {
@@ -58,22 +61,76 @@ describe('physical reference / intelligence and coordination', () => {
     expect(intel(s).sensors.find(x => x.actorId === 'blue-scout')!.sensorTime).toBeLessThan(100);
   });
 
+  it('reports positive collection and interrupts an undelivered report when its link fails', () => {
+    const s = createPhysicalReference();
+    requestPhysicalCollection(s, 'blue-scout', [3000, 1800, 0], 500, 0);
+    advance(s, 4);
+    expect(intel(s).tasks[0].evidenceIds.length).toBeGreaterThan(0);
+    expect(intel(s).tasks[0].status).toBe('disseminating');
+    setPhysicalLink(s, 'blue-scout', false);
+    advance(s, 10);
+    expect(intel(s).tasks[0].status).toBe('interrupted');
+    expect(intel(s).messages.some(m => m.observationId === intel(s).tasks[0].evidenceIds[0] && m.status === 'expired')).toBe(true);
+    expect(projectObserver(s).intelView!.coverage).toEqual([]);
+    const connected = createPhysicalReference();
+    requestPhysicalCollection(connected, 'blue-scout', [3000, 1800, 0], 500, 0);
+    advance(connected, 14);
+    expect(intel(connected).tasks[0].status).toBe('complete');
+    expect(projectObserver(connected).intelView!.coverage.at(-1)?.result).toBe('contact');
+  });
+
+  it('ages contacts without following hidden truth and removes lost tracks', () => {
+    const s = createPhysicalReference(); advance(s, 24);
+    const first = observedContacts(s, hq(s.playerIso), 24)[0];
+    setPhysicalEmission(s, 'blue-scout', 'passive');
+    setPhysicalEmission(s, 'blue-frigate', 'passive');
+    s.physical!.actors.find(a => a.id === 'red-frigate')!.position = [20000, 0, 0];
+    advance(s, 20);
+    const stale = observedContacts(s, hq(s.playerIso), 44)[0];
+    expect(stale.trackState).toBe('stale');
+    expect(stale.confidence).toBeLessThan(first.confidence!);
+    expect(Math.abs(stale.lastKnownLngLat[0] - first.lastKnownLngLat[0])).toBeLessThan(.01);
+    advance(s, 40);
+    expect(observedContacts(s, hq(s.playerIso), 84)).toEqual([]);
+  });
+
   it('interrupts sharing and holds a reserved strike when the support link is lost', () => {
     const s = createPhysicalReference(); advance(s, 14);
     s.physical!.actors[0].rounds = 1;
     const track = observedContacts(s, hq(s.playerIso), 14)[0];
     reservePhysicalMission(s, 'blue-frigate', track.contactId, 'blue-scout', track.revision!, 'hold', 14);
     expect(intel(s).reservations).toHaveLength(2);
+    expect(() => reservePhysicalMission(s, 'blue-frigate', track.contactId, 'blue-scout', track.revision!, 'hold', 14)).toThrow(/committed/);
     expect(() => launchPhysical(s, 'blue-frigate', track.contactId, track.revision)).toThrow(/magazine/);
     setPhysicalLink(s, 'blue-scout', false);
     advance(s, 1);
     expect(intel(s).missions[0].status).toBe('held');
     expect(s.physical!.rounds).toHaveLength(0);
     setPhysicalLink(s, 'blue-scout', true);
-    advance(s, 4);
+    advance(s, 10);
     expect(intel(s).missions[0].status).toBe('executed');
     expect(intel(s).reservations).toHaveLength(0);
     expect(s.physical!.actors[0].rounds).toBe(0);
+  });
+
+  it('aborts on lost support or continues only when the shooter has its own current track', () => {
+    const abort = createPhysicalReference(); advance(abort, 14);
+    const aTrack = observedContacts(abort, hq(abort.playerIso), 14)[0];
+    reservePhysicalMission(abort, 'blue-frigate', aTrack.contactId, 'blue-scout', aTrack.revision!, 'abort', 14);
+    setPhysicalLink(abort, 'blue-scout', false); advance(abort, 1);
+    expect(intel(abort).missions[0].status).toBe('aborted');
+    expect(intel(abort).reservations).toEqual([]);
+    expect(abort.physical!.rounds).toEqual([]);
+
+    const localShooter = createPhysicalReference();
+    intel(localShooter).sensors.find(x => x.actorId === 'blue-frigate')!.rangeM = 9000;
+    advance(localShooter, 14);
+    const lTrack = observedContacts(localShooter, hq(localShooter.playerIso), 14)[0];
+    reservePhysicalMission(localShooter, 'blue-frigate', lTrack.contactId, 'blue-scout', lTrack.revision!, 'continue-local', 14);
+    setPhysicalLink(localShooter, 'blue-scout', false); advance(localShooter, 1);
+    expect(intel(localShooter).missions[0].status).toBe('executed');
+    expect(intel(localShooter).missions[0].reason).toMatch(/local track/);
+    expect(localShooter.physical!.actors[0].rounds).toBe(7);
   });
 
   it('does not treat forwarding the same evidence twice as independent confirmation', () => {
@@ -103,5 +160,36 @@ describe('physical reference / intelligence and coordination', () => {
     for (let tick = 0; tick < 50; tick++) { first.step(); restored.step(); }
     expect(restored.checkpoint()).toEqual(first.checkpoint());
     expect(first.observer().intelView!.missions[0].status).toBe('held');
+  });
+
+  it('delays locally observed weapon effects until the command link delivers them', () => {
+    const s = createPhysicalReference();
+    s.physical!.actors.find(a => a.id === 'blue-frigate')!.interceptors = 0;
+    s.activeFaction = 'enemy'; s.observerScope = hq(s.enemyIso);
+    launchPhysical(s, 'red-frigate', observedContacts(s, hq(s.enemyIso), 0)[0].contactId);
+    s.activeFaction = 'player'; s.observerScope = hq(s.playerIso);
+    let impact = s.physical!.events.find(e => e.kind === 'impact');
+    for (let tick = 0; tick < 350 && !impact; tick++) { advance(s, 1); impact = s.physical!.events.find(e => e.kind === 'impact'); }
+    expect(impact).toBeDefined();
+    expect(impact!.visibleTo).toContain(local('blue-frigate'));
+    expect(projectObserver(s).physical!.events.some(e => e.id === impact!.id)).toBe(false);
+    advance(s, 11);
+    expect(projectObserver(s).physical!.events.some(e => e.id === impact!.id)).toBe(true);
+    expect(projectObserver(s).eventLog.some(e => e.type === 'impact')).toBe(true);
+  });
+
+  it('imports old physical contacts from reported positions without creating hidden contacts', () => {
+    const s = createPhysicalReference();
+    const reported = s.fogOfWarContacts.playerContacts[0].lastKnownLngLat;
+    s.fogOfWarContacts.playerContacts[0].targetEntityId = 'red-frigate';
+    s.simTimeSec = 5; delete s.physical!.intel;
+    s.fogOfWarContacts.enemyContacts = [];
+    const runtime = new SimulationRuntime(s, []);
+    const restored = runtime.observer();
+    expect(restored.fogOfWarContacts.playerContacts).toHaveLength(1);
+    expect(restored.fogOfWarContacts.playerContacts[0].lastKnownLngLat[0]).toBeCloseTo(reported[0], 5);
+    expect(runtime.checkpoint().physical!.intel!.observations[0].sourceId).toBe('legacy-contact-import');
+    const enemy = runtime.checkpoint(); enemy.activeFaction = 'enemy'; enemy.observerScope = hq(enemy.enemyIso);
+    expect(projectObserver(enemy).fogOfWarContacts.enemyContacts).toEqual([]);
   });
 });

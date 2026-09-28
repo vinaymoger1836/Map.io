@@ -14,24 +14,55 @@ function event(s: WarSimSession, kind: PhysicalEvent['kind'], round: PhysicalRou
   const p = s.physical!;
   const i = ensurePhysicalIntel(s);
   const visibleTo = new Set<string>();
+  const deliveries = new Map<string, NonNullable<PhysicalEvent['deliveries']>[number]>();
+  const schedule = (scopeId: string, path: string[], tick: number) => {
+    for (const link of i.links.filter(l => l.from === scopeId && l.active)) {
+      const nextPath = [...path, link.id], due = tick + link.latencyTicks;
+      const prior = deliveries.get(link.to);
+      if (visibleTo.has(link.to) || prior && prior.deliveryTick <= due) continue;
+      deliveries.set(link.to, { scopeId: link.to, linkIds: nextPath, deliveryTick: due });
+      schedule(link.to, nextPath, due);
+    }
+  };
   for (const a of p.actors) {
     if (a.health <= 0) continue;
     const direct = length(sub(a.position, round.position)) <= 1200;
     const sensed = scopeTracks(i, local(a.id)).some(t => t.targetRef === round.id && t.state === 'fresh');
     if (a.iso === round.iso && a.id === round.shooterId || direct || sensed) {
       visibleTo.add(local(a.id));
-      if (i.links.some(l => l.from === local(a.id) && l.active)) visibleTo.add(hq(a.iso));
     }
   }
   if (round.sourceScope) visibleTo.add(round.sourceScope);
+  const tick = Math.round(time * 10);
+  for (const scopeId of visibleTo) schedule(scopeId, [], tick);
   p.events.push({ id: ++p.sequence, time, kind, roundId: round.id, position: [...round.position], visibleTo: [...visibleTo],
-    terminatedRoundIds: kind === 'launch' ? [] : interceptedId ? [round.id, interceptedId] : [round.id] });
+    terminatedRoundIds: kind === 'launch' ? [] : interceptedId ? [round.id, interceptedId] : [round.id], deliveries: [...deliveries.values()] });
   p.events = p.events.slice(-256);
-  for (const iso of [s.playerIso, s.enemyIso]) if (visibleTo.has(hq(iso))) s.eventLog.push({ id: `physical-${p.sequence}-${iso}`, simTimeSec: time,
-    timeFormatted: `T+${time.toFixed(1)}`, faction: iso === s.playerIso ? 'player' : 'enemy',
-    type: kind === 'expired' ? 'alert' : kind, title: `Reference weapon ${kind}`, detail: 'Synthetic point-mass encounter',
-    lngLat: fromENU(round.position, p.origin).slice(0, 2) as [number, number] });
+  publishPhysicalEvent(s, p.events.at(-1)!);
+}
+function publishPhysicalEvent(s: WarSimSession, event: PhysicalEvent) {
+  for (const iso of [s.playerIso, s.enemyIso]) {
+    if (!event.visibleTo.includes(hq(iso)) || s.eventLog.some(e => e.id === `physical-${event.id}-${iso}`)) continue;
+    s.eventLog.push({ id: `physical-${event.id}-${iso}`, simTimeSec: event.time,
+      timeFormatted: `T+${event.time.toFixed(1)}`, faction: iso === s.playerIso ? 'player' : 'enemy',
+      type: event.kind === 'expired' ? 'alert' : event.kind, title: `Reference weapon ${event.kind}`,
+      detail: 'Synthetic point-mass encounter', lngLat: fromENU(event.position, s.physical!.origin).slice(0, 2) as [number, number] });
+  }
   s.eventLog = s.eventLog.slice(-512);
+}
+function deliverPhysicalEvents(s: WarSimSession, tick: number) {
+  const i = ensurePhysicalIntel(s);
+  for (const event of s.physical!.events) {
+    for (const delivery of event.deliveries ?? []) {
+      if (delivery.deliveryTick > tick) continue;
+      if (!delivery.linkIds.every(id => i.links.some(link => link.id === id && link.active))) continue;
+      const finalLink = i.links.find(link => link.id === delivery.linkIds.at(-1));
+      if (finalLink && !event.visibleTo.includes(finalLink.from)) continue;
+      if (!event.visibleTo.includes(delivery.scopeId)) event.visibleTo.push(delivery.scopeId);
+    }
+    event.deliveries = event.deliveries?.filter(d => d.deliveryTick > tick);
+    publishPhysicalEvent(s, event);
+  }
 }
 function launch(s: WarSimSession, shooter: PhysicalActor, target: PhysicalActor | PhysicalRound, interceptor: boolean, time: number,
   track: IntelTrack, scopeId: string) {
@@ -54,7 +85,7 @@ export function launchPhysical(s: WarSimSession, shooterId: string, trackId: str
   const scopeId = s.observerScope ?? hq(iso);
   const a = p.actors.find(a => a.id === shooterId && a.iso === iso && a.health > 0);
   const track = currentTrack(i, scopeId, trackId, tick);
-  const b = p.actors.find(b => b.id === track?.targetRef && b.iso !== iso && b.health > 0);
+  const b = p.actors.find(b => b.id === track?.targetRef && b.iso !== iso);
   if (!a || !b || !track || effectiveConfidence(track, tick) < .3 || revision !== undefined && track.revision !== revision
     || length(sub(a.position, track.position)) > PROFILE.sensorRange) throw new Error('A current scoped contact within 9 km is required.');
   const reserved = i.reservations.filter(r => r.assetId === shooterId && r.resource === 'strike-round').length;
@@ -75,14 +106,16 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
   const p = s.physical!;
   const i = ensurePhysicalIntel(s), tick = Math.round(s.simTimeSec * 10);
   runPhysicalIntelligence(s, tick);
+  deliverPhysicalEvents(s, tick);
   expireReservations(i, tick);
   for (const m of i.missions) {
     if (['executed', 'aborted'].includes(m.status)) continue;
     const a = p.actors.find(a => a.id === m.shooterId && a.health > 0);
-    const b = p.actors.find(b => b.id === m.targetRef && b.health > 0);
+    const b = p.actors.find(b => b.id === m.targetRef);
     const support = p.actors.find(a => a.id === m.supportId && a.health > 0);
     const track = currentTrack(i, m.scopeId, m.trackId, tick);
-    const available = Boolean(a && b && support && track && missionSupport(i, m, tick));
+    const available = Boolean(a && a.rounds > 0 && b && support && track && tick - track.observedTick <= 15
+      && effectiveConfidence(track, tick) >= .5 && missionSupport(i, m, tick));
     if (!available) {
       const ownTrack = i.tracks.find(t => t.scopeId === local(m.shooterId) && t.targetRef === m.targetRef && t.state === 'fresh');
       if (m.onLoss === 'continue-local' && a && b && ownTrack && a.cooldown <= s.simTimeSec) {
