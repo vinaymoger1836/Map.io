@@ -30,7 +30,7 @@ describe('physical reference / coordinates and integration', () => {
 describe('physical reference / authoritative encounter', () => {
   it('delivers a guided impact, consumes exactly one round, and records termination once', () => {
     const s = createPhysicalReference(); s.physical!.actors[1].interceptors = 0;
-    launchPhysical(s, 'blue-frigate', 'red-frigate');
+    launchPhysical(s, 'blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId);
     expect(s.physical!.actors[0].rounds).toBe(7);
     for (let i = 0; i < 450; i++) { stepPhysical(s, .1); s.simTimeSec += .1; }
     expect(s.physical!.actors[1].health).toBe(45);
@@ -39,7 +39,7 @@ describe('physical reference / authoritative encounter', () => {
     expect(s.physical!.events.filter(e => e.kind === 'impact')).toHaveLength(1);
   });
   it('intercepts an incoming round and never gives a destroyed round a later impact', () => {
-    const s = createPhysicalReference(); launchPhysical(s, 'blue-frigate', 'red-frigate');
+    const s = createPhysicalReference(); launchPhysical(s, 'blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId);
     for (let i = 0; i < 450; i++) { stepPhysical(s, .1); s.simTimeSec += .1; }
     expect(s.physical!.events.some(e => e.kind === 'intercept')).toBe(true);
     expect(s.physical!.actors[1].health).toBe(100);
@@ -56,7 +56,7 @@ describe('physical reference / authoritative encounter', () => {
   });
   it('replays exactly after a checkpoint in flight, with commands applied atomically', () => {
     const s = createPhysicalReference(); s.status = 'running'; const r = new SimulationRuntime(s, [], 123);
-    const command = { version: 1 as const, sequence: 1, executeAtTick: 0, scope: { faction: 'player' as const, commandGroupId: 'player:hq' }, command: { type: 'launchPhysical' as const, args: ['blue-frigate', 'red-frigate'] as [string, string] } };
+    const command = { version: 1 as const, sequence: 1, executeAtTick: 0, scope: { faction: 'player' as const, commandGroupId: '840:hq' }, command: { type: 'launchPhysical' as const, args: ['blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId] as [string, string] } };
     r.submit(command); expect(r.takeReceipts()[0].status).toBe('accepted');
     r.submit({ ...command, sequence: 2 }); expect(r.takeReceipts()[0].status).toBe('rejected');
     expect(r.checkpoint().physical!.actors[0].rounds).toBe(7);
@@ -66,10 +66,11 @@ describe('physical reference / authoritative encounter', () => {
     expect(restored.checkpoint()).toEqual(r.checkpoint());
   });
   it('filters hidden physical truth, magazines, intentions, events and contacts', () => {
-    const s = createPhysicalReference(); const enemy = s.physical!.actors[1]; enemy.position = [20000, 0, 0]; syncPhysical(s);
+    const s = createPhysicalReference(); const enemy = s.physical!.actors[1]; enemy.position = [20000, 0, 0];
+    s.physical!.intel!.tracks = []; s.physical!.intel!.observations = []; s.physical!.intel!.contacts = {}; syncPhysical(s);
     s.physical!.events.push({ id: 100, kind: 'launch', time: 0, position: enemy.position, roundId: 'hidden', visibleTo: [s.enemyIso], terminatedRoundIds: [] });
     const view = projectObserver(s);
-    expect(view.physical!.actors.map(a => a.id)).toEqual(['blue-frigate']); expect(view.physical!.events).toEqual([]);
+    expect(view.physical!.actors.map(a => a.id)).toEqual(['blue-frigate', 'blue-scout']); expect(view.physical!.events).toEqual([]);
     expect(view.fogOfWarContacts.playerContacts).toEqual([]);
     expect(() => launchPhysical(s, 'blue-frigate', 'red-frigate')).toThrow(/contact/);
     expect(() => launchPhysical(s, 'red-frigate', 'blue-frigate')).toThrow();

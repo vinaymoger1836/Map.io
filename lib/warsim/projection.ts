@@ -1,7 +1,5 @@
 import type { WarSimSession } from '../warSimTypes';
-import { length, sub } from './physics/coordinates';
-import { PROFILE } from './physics/model';
-import { ensurePhysicalIntel, observedContacts, projectIntel, scopeTracks, hq, local } from './intelligence';
+import { ensurePhysicalIntel, observedContacts, projectIntel, scopeTracks, hq } from './intelligence';
 
 /** Faction boundary. Physical contacts are scoped estimates; legacy tracks retain their prior fidelity. */
 export function projectObserver(world: WarSimSession): WarSimSession {
@@ -20,7 +18,10 @@ export function projectObserver(world: WarSimSession): WarSimSession {
     view.physical.actors = own;
     view.physical.rounds = view.physical.rounds.filter(r => r.iso === iso || scopeTracks(intel, scopeId).some(t => t.targetRef === r.id && t.state !== 'lost'));
     // Hostile weapon identities/intent are not part of the observed kinematics.
-    view.physical.rounds = view.physical.rounds.map(r => r.iso === iso ? r : { ...r, shooterId: '', targetId: '', launchPosition: [...r.position], age: 0 });
+    view.physical.rounds = view.physical.rounds.map(r => ({ ...r,
+      shooterId: r.iso === iso ? r.shooterId : '', targetId: r.iso === iso ? intel.contacts[r.targetId] ?? '' : '',
+      launchPosition: r.iso === iso ? r.launchPosition : [...r.position], age: r.iso === iso ? r.age : 0,
+      aimPosition: undefined, aimVelocity: undefined, trackRevision: undefined, sourceScope: undefined, seekerLocked: undefined }));
     view.physical.events = view.physical.events.filter(e => e.visibleTo.includes(scopeId)).map(e => ({ ...e, visibleTo: [scopeId] }));
     view.physical.sequence = 0;
     delete view.physical.intel;
@@ -28,6 +29,12 @@ export function projectObserver(world: WarSimSession): WarSimSession {
     view.eventLog = view.eventLog.filter(e => {
       const sequence = /^physical-(\d+)-/.exec(e.id);
       return !sequence || allowedEvents.has(Number(sequence[1]));
+    });
+    const visibleRounds = new Set(view.physical.rounds.map(r => r.id));
+    view.activeMissiles = view.activeMissiles.filter(m => visibleRounds.has(m.id)).map(m => {
+      const contactId = intel.contacts[m.targetEntityId] ?? '';
+      const estimate = scopedContacts.find(c => c.contactId === contactId);
+      return { ...m, targetEntityId: contactId, targetIso: 'unknown', targetLngLat: estimate?.lastKnownLngLat ?? m.currentLngLat };
     });
   }
   view.entities = view.entities.filter(e => e.iso === iso);
