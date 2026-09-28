@@ -34,6 +34,10 @@ export function createLittoralReference(): WarSimSession {
   p.actors.push({ id: 'blue-ground-radar', iso: s.playerIso, domain: 'land', position: [7000, 0, 60], velocity: [0, 0, 0],
     heading: 270, course: 270, speed: 0, desiredSpeed: 0, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
     condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 1 });
+  p.actors.push({ id: 'blue-ground-patrol', iso: s.playerIso, domain: 'land', groundMobility: 'tracked',
+    position: [7000, -2000, 32], velocity: [-6, 0, 0], heading: 270, course: 270, speed: 6, desiredSpeed: 6,
+    fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
+    condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 1 });
   p.actors.push({ id: 'blue-air-recon', iso: s.playerIso, domain: 'air', position: [-3500, -1200, 1200], velocity: [80, 0, 0],
     heading: 90, course: 90, speed: 80, desiredSpeed: 80, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
     condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 0 });
@@ -49,6 +53,8 @@ export function createLittoralReference(): WarSimSession {
   const template = s.entities[0];
   s.entities.push({ ...template, id: 'blue-ground-radar', name: 'Cape Glass radar', systemId: 'reference-radar', typeId: 'radar',
     personnel: 20, speedKmh: 0, magazines: {} });
+  s.entities.push({ ...template, id: 'blue-ground-patrol', name: 'Cape Glass patrol', systemId: 'reference-recon', typeId: 'recon',
+    personnel: 6, speedKmh: 21.6, magazines: {} });
   s.entities.push({ ...template, id: 'blue-air-recon', name: 'Kite reconnaissance UAV', systemId: 'reference-uav', typeId: 'uav',
     personnel: 2, speedKmh: 288, magazines: {} });
   s.entities.push({ ...template, id: 'blue-sonar', name: 'FS Deepwatch', systemId: 'reference-sub', typeId: 'submarine',

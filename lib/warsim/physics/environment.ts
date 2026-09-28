@@ -4,6 +4,7 @@ import type { Vec3 } from './coordinates';
 export interface EnvironmentSnapshot {
   version: 1; id: string; provenance: string; confidence: 'synthetic' | 'surveyed';
   terrain: { westM: number; southM: number; cellM: number; columns: number; rows: number; heightsM: (number | null)[] };
+  boundary: { landAtOrAboveM: number };
   weather: { visibilityKm: number; rain: number; seaState: number; windEastMps: number; windNorthMps: number };
 }
 
@@ -15,6 +16,7 @@ export function referenceEnvironment(): EnvironmentSnapshot {
   });
   return { version: 1, id: 'glasswater-synthetic-terrain-v1', provenance: 'authored fictional grid, 2 km spacing', confidence: 'synthetic',
     terrain: { westM: -10000, southM: -10000, cellM: 2000, columns, rows, heightsM },
+    boundary: { landAtOrAboveM: 5 },
     weather: { visibilityKm: 20, rain: 0, seaState: 0, windEastMps: 0, windNorthMps: 0 } };
 }
 
@@ -25,6 +27,7 @@ export function validateEnvironment(env: EnvironmentSnapshot) {
     || t.columns * t.rows > 4096 || !Number.isFinite(t.westM) || !Number.isFinite(t.southM)
     || !Number.isFinite(t.cellM) || t.cellM <= 0 || t.cellM > 10000 || t.heightsM.length !== t.columns * t.rows
     || t.heightsM.some(h => h !== null && (!Number.isFinite(h) || h < -11000 || h > 9000))
+    || !Number.isFinite(env.boundary?.landAtOrAboveM) || env.boundary.landAtOrAboveM < -100 || env.boundary.landAtOrAboveM > 500
     || !Number.isFinite(w.visibilityKm) || w.visibilityKm < .1 || w.visibilityKm > 100
     || !Number.isFinite(w.rain) || w.rain < 0 || w.rain > 1
     || !Number.isFinite(w.seaState) || w.seaState < 0 || w.seaState > 9
@@ -43,6 +46,13 @@ export function sampleElevation(env: EnvironmentSnapshot, eastM: number, northM:
   if ([h00, h10, h01, h11].some(h => h === null)) return { status: 'unavailable' };
   return { status: 'known', elevationM: h00! * (1 - fx) * (1 - fy) + h10! * fx * (1 - fy)
     + h01! * (1 - fx) * fy + h11! * fx * fy };
+}
+
+export type SurfaceSample = { status: 'land' | 'sea'; elevationM: number } | { status: 'unavailable' };
+export function sampleSurface(env: EnvironmentSnapshot, eastM: number, northM: number): SurfaceSample {
+  const elevation = sampleElevation(env, eastM, northM);
+  if (elevation.status === 'unavailable') return elevation;
+  return { status: elevation.elevationM >= env.boundary.landAtOrAboveM ? 'land' : 'sea', elevationM: elevation.elevationM };
 }
 
 export type SightResult = 'clear' | 'blocked' | 'unavailable';

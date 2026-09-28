@@ -47,6 +47,9 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
       {scopeOptions.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
     </select></label>
     <p>Observations reach local sensors first. Links deliver reports to headquarters and faction views after simulated delay.</p>
+    {s.physical?.environment && <><div className={styles.eyebrow}>ENVIRONMENT / {s.physical.environment.confidence.toUpperCase()}</div>
+      <p>{s.physical.environment.provenance}. Visibility {s.physical.environment.weather.visibilityKm} km, rain {(s.physical.environment.weather.rain * 100).toFixed(0)}%, sea state {s.physical.environment.weather.seaState}, wind {s.physical.environment.weather.windEastMps}/{s.physical.environment.weather.windNorthMps} m/s E/N.</p>
+      <p>Terrain covers a {(s.physical.environment.terrain.columns - 1) * s.physical.environment.terrain.cellM / 1000} × {(s.physical.environment.terrain.rows - 1) * s.physical.environment.terrain.cellM / 1000} km local grid. Searches outside coverage are reported as unavailable.</p></>}
     <div className={styles.eyebrow}>CONTACT ASSESSMENTS / {contacts.length}</div>
     {contacts.map(c => <button key={c.contactId} className={styles.intelRow} onClick={() => onSelectContact(c.contactId)}>
       <strong>{c.knownName ?? 'Unknown contact'}</strong><span>{c.trackState?.toUpperCase() ?? 'TRACK'} · {(c.confidence! * 100).toFixed(0)}% confidence · ±{Math.round(c.uncertaintyM ?? 0)} m</span>
@@ -64,6 +67,7 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
     <div className={styles.intelStats}><span>Emission: {selectedSensor?.mode ?? '—'}</span><span>Link: {selectedLink?.active ? 'online' : 'offline'}</span><span>Time: {selectedSensor?.sensorTime.toFixed(1) ?? '—'}%</span></div>
     {sensorCondition < 30 && <p>Sensor damaged: collection and active emission are blocked until repaired.</p>}
     <p>Data link latency: {((selectedLink?.latencyTicks ?? 0) / 10).toFixed(1)} s; queued reports: {intel?.messages.filter(m => m.from === `${asset}:local` && m.status === 'queued').length ?? 0}.</p>
+    {s.physical?.actors.find(a => a.id === asset)?.domain === 'space' && <p>Orbital collection window: next scan T+{((selectedSensor?.nextScanTick ?? 0) / 10).toFixed(1)}; processing and downlink delay apply.</p>}
     <div className={styles.intelActions}>
       <button disabled={!asset || selectedSensor?.mode !== 'active' && sensorCondition < 30} onClick={() => dispatch({ type: 'setPhysicalEmission', args: [asset, selectedSensor?.mode === 'active' ? 'passive' : 'active'] })}>{selectedSensor?.mode === 'active' ? 'Go passive' : 'Activate sensor'}</button>
       <button disabled={!asset} onClick={() => dispatch({ type: 'setPhysicalLink', args: [asset, !selectedLink?.active] })}>{selectedLink?.active ? 'Disconnect link' : 'Reconnect link'}</button>
@@ -74,7 +78,7 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
     <label>Area radius <span>{radius} m</span><input aria-label="Search radius" type="range" min="100" max="9000" step="100" value={radius} onChange={e => setRadius(+e.target.value)} /></label>
     <button onClick={collection} disabled={!asset || sensorCondition < 30}>Request collection</button>
     {intel?.tasks.slice(-4).reverse().map(task => <div className={styles.intelEntry} key={task.id}>{task.id} · {task.status}
-      <small>{task.assetId} · {task.evidenceIds.length} observation(s)</small></div>)}
+      <small>{task.assetId} · {task.evidenceIds.length} observation(s){task.reason ? ` · ${task.reason}` : ''}</small></div>)}
     <div className={styles.eyebrow}>RECENT COVERAGE</div>
     {coverage.length ? coverage.map(c => <div className={styles.intelEntry} key={c.id}>{c.result} · {c.sensorId}<small>T+{(c.observedTick / 10).toFixed(1)} · area radius {c.radiusM.toFixed(0)} m</small></div>) : <p>No area report has reached this scope.</p>}
     <div className={styles.eyebrow}>COORDINATED STRIKE</div>

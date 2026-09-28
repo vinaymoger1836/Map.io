@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { referenceEnvironment, sampleElevation, terrainSight, validateEnvironment } from '../../lib/warsim/physics/environment';
+import { referenceEnvironment, sampleElevation, sampleSurface, terrainSight, validateEnvironment } from '../../lib/warsim/physics/environment';
 import { createLittoralReference } from '../../lib/warsim/physics/reference';
 import { stepPhysical } from '../../lib/warsim/physics/model';
-import { hq, local, observedContacts, reservePhysicalMission, setPhysicalLink } from '../../lib/warsim/intelligence';
+import { hq, local, observedContacts, requestPhysicalCollection, reservePhysicalMission, setPhysicalLink } from '../../lib/warsim/intelligence';
 import { SimulationRuntime } from '../../lib/warsim/runtime';
 import { launchPhysical } from '../../lib/warsim/physics/model';
 
@@ -24,6 +24,16 @@ describe('Phase 5 environment and littoral probe', () => {
     expect(terrainSight(env, [9000, 0, 50], [30000, 0, 0])).toBe('unavailable');
     ridge.terrain.heightsM = new Array(5000).fill(0);
     expect(() => validateEnvironment(ridge)).toThrow(/environment/);
+    const s = createLittoralReference();
+    requestPhysicalCollection(s, 'blue-ground-radar', [11000, 0, 100], 500, 0);
+    advance(s, 1);
+    expect(s.physical!.intel!.tasks[0].status).toBe('interrupted');
+    expect(s.physical!.intel!.tasks[0].reason).toMatch(/Terrain grid unavailable/);
+    expect(s.physical!.intel!.coverage[0].result).toBe('terrain-unavailable');
+    const blocked = createLittoralReference();
+    requestPhysicalCollection(blocked, 'blue-ground-radar', [9000, 0, 0], 500, 0);
+    advance(blocked, 1);
+    expect(blocked.physical!.intel!.coverage[0].result).toBe('terrain-blocked');
   });
 
   it('ground radar evidence reaches HQ and supports a sea strike only while its link is available', () => {
@@ -61,6 +71,15 @@ describe('Phase 5 environment and littoral probe', () => {
     const runtime = new SimulationRuntime(poor, [], 17), restored = new SimulationRuntime(runtime.checkpoint(), []);
     for (let n = 0; n < 10; n++) { runtime.step(); restored.step(); }
     expect(restored.checkpoint()).toEqual(runtime.checkpoint());
+  });
+
+  it('keeps a tracked patrol on authored land and stops at the coastal boundary', () => {
+    const s = createLittoralReference(), actor = s.physical!.actors.find(a => a.id === 'blue-ground-patrol')!;
+    actor.position = [4050, -2000, 7.625]; actor.heading = actor.course = 270; actor.speed = actor.desiredSpeed = 6;
+    advance(s, 110);
+    expect(actor.position[0]).toBeGreaterThanOrEqual(4000);
+    expect(actor.speed).toBe(0);
+    expect(sampleSurface(s.physical!.environment!, actor.position[0], actor.position[1]).status).toBe('land');
   });
 
   it('sonar detects a submerged contact while radar cannot and surface weapons reject it', () => {

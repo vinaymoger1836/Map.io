@@ -31,9 +31,9 @@ export interface IntelSensor {
 export interface IntelTask {
   id: string; assetId: string; scopeId: string; center: Vec3; radiusM: number;
   requestedTick: number; status: 'requested' | 'collecting' | 'processing' | 'disseminating' | 'complete' | 'interrupted' | 'cancelled';
-  evidenceIds: string[]; finishedTick?: number; coverageId?: string;
+  evidenceIds: string[]; finishedTick?: number; coverageId?: string; reason?: string;
 }
-export interface CoverageRecord { id: string; scopeId: string; center: Vec3; radiusM: number; observedTick: number; sensorId: string; result: 'contact' | 'no-contact'; }
+export interface CoverageRecord { id: string; scopeId: string; center: Vec3; radiusM: number; observedTick: number; sensorId: string; result: 'contact' | 'no-contact' | 'terrain-unavailable' | 'terrain-blocked'; }
 export interface IntelReservation { id: string; missionId: string; assetId: string; resource: 'strike-round' | 'sensor-channel'; quantity: number; expiresTick: number; }
 export interface IntelMission {
   id: string; shooterId: string; supportId: string; trackId: string; trackRevision: number; scopeId: string;
@@ -207,7 +207,8 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
           && (actor.domain !== 'land' || !p.environment || terrainSight(p.environment, actor.position, target.position) === 'clear');
       });
     for (const target of spotted) {
-      const task = tasks.find(t => (actor.domain === 'space'
+      const task = tasks.find(t => !(actor.domain === 'land' && p.environment
+        && terrainSight(p.environment, actor.position, t.center) !== 'clear') && (actor.domain === 'space'
         ? Math.hypot(target.position[0] - t.center[0], target.position[1] - t.center[1])
         : length(sub(target.position, t.center))) <= t.radiusM);
       const uncertainty = actor.domain === 'space' ? 300 : actor.domain === 'subsurface' ? 100
@@ -219,10 +220,15 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
       if (task) task.evidenceIds.push(o.id);
     }
     for (const task of tasks) {
+      const sight = actor.domain === 'land' && p.environment
+        ? terrainSight(p.environment, actor.position, task.center) : 'clear';
       task.coverageId = nextId(i, 'coverage');
       i.coverage.push({ id: task.coverageId, scopeId: local(actor.id), center: task.center, radiusM: task.radiusM,
-        observedTick: tick, sensorId: actor.id, result: task.evidenceIds.length ? 'contact' : 'no-contact' });
-      task.status = 'processing';
+        observedTick: tick, sensorId: actor.id, result: sight === 'unavailable' ? 'terrain-unavailable'
+          : sight === 'blocked' ? 'terrain-blocked' : task.evidenceIds.length ? 'contact' : 'no-contact' });
+      task.status = sight === 'clear' ? 'processing' : 'interrupted';
+      if (sight === 'unavailable') task.reason = 'Terrain grid unavailable for this search area';
+      if (sight === 'blocked') task.reason = 'Terrain obstructs this search area';
     }
   }
   for (const o of i.observations) {

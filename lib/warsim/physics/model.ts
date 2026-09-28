@@ -4,7 +4,7 @@ import { add, sub, scale, length, unit, dot, fromENU, sweptSphere, type Vec3 } f
 import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
 import { CAPABILITIES, condition, damageActor, operational, stepPhysicalRepairs } from './readiness';
-import { seaSpeedFactor, validateEnvironment } from './environment';
+import { sampleSurface, seaSpeedFactor, validateEnvironment } from './environment';
 
 // Fictional reference profile; SI units. No calibration to real equipment.
 export const PROFILE = Object.freeze({ mass: 180, thrust: 7800, burnSec: 12, dragArea: .035,
@@ -106,7 +106,7 @@ export function setPhysicalCourse(s: WarSimSession, id: string, heading: number,
   const iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const a = s.physical?.actors.find(a => a.id === id && a.iso === iso && a.health > 0);
   const maximum = a?.domain === 'air' ? 120 : a?.domain === 'subsurface' ? 8
-    : a?.domain === 'land' || a?.domain === 'space' ? 0 : 16;
+    : a?.domain === 'land' ? a.groundMobility === 'tracked' ? 12 : 0 : a?.domain === 'space' ? 0 : 16;
   if (!a || !Number.isFinite(heading) || !Number.isFinite(speed) || speed < 0 || speed > maximum)
     throw new Error(`Select an available platform; speed must be 0–${maximum} m/s.`);
   if (a.repairJob && speed > 0) throw new Error('Cancel or finish repairs before getting under way.');
@@ -172,15 +172,22 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
     for (const a of p.actors) {
       if (a.health <= 0) { a.velocity = [0, 0, 0]; continue; }
       const turn = ((a.course - a.heading + 540) % 360) - 180;
-      const air = a.domain === 'air', fixed = a.domain === 'land' || a.domain === 'space';
-      const maxSpeed = air ? 120 : fixed ? 0 : a.domain === 'subsurface' ? 8 : 16 * seaSpeedFactor(p.environment);
+      const air = a.domain === 'air', ground = a.domain === 'land';
+      const fixed = a.domain === 'space' || ground && a.groundMobility !== 'tracked';
+      const maxSpeed = air ? 120 : fixed ? 0 : ground ? 12 : a.domain === 'subsurface' ? 8 : 16 * seaSpeedFactor(p.environment);
       a.heading += Math.max(-(air ? 8 : 2) * h, Math.min((air ? 8 : 2) * h, turn));
       const desired = a.fuel > 0 && operational(a, 'propulsion') ? Math.min(a.desiredSpeed, maxSpeed * condition(a, 'propulsion') / 100) : 0;
       a.speed += Math.max(-.8 * h, Math.min(.4 * h, desired - a.speed));
       const wind = air ? p.environment?.weather : undefined;
       a.velocity = [Math.sin(a.heading * Math.PI / 180) * a.speed + (wind?.windEastMps ?? 0),
         Math.cos(a.heading * Math.PI / 180) * a.speed + (wind?.windNorthMps ?? 0), 0];
-      a.position = add(a.position, scale(a.velocity, h));
+      const candidate = add(a.position, scale(a.velocity, h));
+      if (ground && p.environment) {
+        const surface = sampleSurface(p.environment, candidate[0], candidate[1]);
+        if (surface.status === 'land' && Math.abs(surface.elevationM + 2 - a.position[2]) <= Math.max(1, a.speed * h * .2)) {
+          candidate[2] = surface.elevationM + 2; a.position = candidate;
+        } else { a.speed = 0; a.desiredSpeed = 0; a.velocity = [0, 0, 0]; }
+      } else a.position = candidate;
       a.fuel = Math.max(0, a.fuel - a.speed * h / 10000);
     }
     for (const r of p.rounds) {
@@ -279,11 +286,14 @@ export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
   }
   for (const a of p.actors) if (!s.entities.some(e => e.id === a.id && e.iso === a.iso) || a.health < 0 || a.health > 100
     || a.fuel < 0 || a.fuel > 100 || a.desiredSpeed < 0
-    || a.desiredSpeed > (a.domain === 'air' ? 120 : a.domain === 'subsurface' ? 8 : a.domain === 'land' || a.domain === 'space' ? 0 : 16)
+    || a.desiredSpeed > (a.domain === 'air' ? 120 : a.domain === 'subsurface' ? 8
+      : a.domain === 'land' ? a.groundMobility === 'tracked' ? 12 : 0 : a.domain === 'space' ? 0 : 16)
     || !Number.isSafeInteger(a.rounds) || a.rounds < 0
     || !Number.isSafeInteger(a.interceptors) || a.interceptors < 0) throw new Error('Invalid physical platform.');
   for (const a of p.actors) {
-    if (a.condition && CAPABILITIES.some(key => !Number.isFinite(a.condition![key]) || a.condition![key] < 0 || a.condition![key] > 100)
+    if (a.domain && !['sea', 'air', 'land', 'subsurface', 'space'].includes(a.domain)
+      || a.groundMobility && (a.domain !== 'land' || !['fixed', 'tracked'].includes(a.groundMobility))
+      || a.condition && CAPABILITIES.some(key => !Number.isFinite(a.condition![key]) || a.condition![key] < 0 || a.condition![key] > 100)
       || a.repairKits !== undefined && (!Number.isSafeInteger(a.repairKits) || a.repairKits < 0)
       || a.repairJob && (!CAPABILITIES.includes(a.repairJob.capability) || !Number.isFinite(a.repairJob.remainingSec)
         || a.repairJob.remainingSec <= 0 || a.repairJob.remainingSec > 30 || a.health <= 0)) throw new Error('Invalid physical repair state.');
