@@ -19,7 +19,7 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
   const [shooter, setShooter] = useState('');
   const friendly = s.entities.filter(e => e.status !== 'destroyed');
   useEffect(() => {
-    setAsset(friendly[0]?.id ?? ''); setSupport(friendly.find(e => e.id.includes('scout'))?.id ?? friendly[0]?.id ?? '');
+    setAsset(friendly.find(e => e.id.includes('scout'))?.id ?? friendly[0]?.id ?? ''); setSupport(friendly.find(e => e.id.includes('scout'))?.id ?? friendly[0]?.id ?? '');
     setShooter(friendly.find(e => (e.magazines[0] ?? 0) > 0)?.id ?? '');
   }, [s.id, s.activeFaction]);
   const scopeOptions = useMemo(() => [
