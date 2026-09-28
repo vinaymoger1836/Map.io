@@ -26,7 +26,7 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
   const persist = useCallback((value: WarSimSession | null) => {
     saveQueue.current = saveQueue.current.catch(() => {}).then(() => writeDoc('warsim-session', value));
   }, []);
-  const ready = Boolean(initial?.runtime?.definitions?.length || catalogue.length);
+  const ready = Boolean(initial?.physical || initial?.runtime?.definitions?.length || catalogue.length);
 
   useEffect(() => {
     setError(null);

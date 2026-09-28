@@ -684,6 +684,7 @@ export function useWarSim({
 
   return {
     session,
+    dispatchSimulation: runtime.dispatch,
     systemsLibrary,
     runtimeError: runtime.error,
     runtimeDiagnostics: runtime.diagnostics,

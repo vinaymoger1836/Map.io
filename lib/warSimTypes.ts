@@ -729,6 +729,7 @@ export interface CombatReport {
 /* ------------------------------------------------------------------ */
 
 export interface WarSimSession {
+  physical?: import('./warsim/physics/types').PhysicalEncounter;
   /** Versioned runtime checkpoint. Absent on legacy saves and observer projections. */
   runtime?: import('./warsim/contracts').RuntimeCheckpoint;
   id: string;

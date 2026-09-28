@@ -2,6 +2,7 @@
 import type { WarSimSession, BaseType, PostStrikeAction, BattleOpsPlan, BattleOpsPhase, BattleOpsTask, AirspaceRoeDoctrine, SystemThreatLevel } from '../warSimTypes';
 import type { SystemSpec } from '../specs';
 import { simNow, simRandom } from './context';
+import { launchPhysical, setPhysicalCourse } from './physics/model';
 import {
   deployEntityToBase,
   deployAutonomousEntity,
@@ -24,6 +25,8 @@ import {
   CARRIER_LOADOUT_PRESETS,
 } from '../warSimEngine';
 export const commandHandlers = {
+launchPhysical: (s: WarSimSession, _d: SystemSpec[], shooter: string, target: string) => launchPhysical(s, shooter, target),
+setPhysicalCourse: (s: WarSimSession, _d: SystemSpec[], id: string, heading: number, speed: number) => setPhysicalCourse(s, id, heading, speed),
 setPlayback: (prev: WarSimSession, _systems: SystemSpec[], status: 'running' | 'paused'): WarSimSession => ({ ...prev, status }),
 orderWaypointPatrol: (prev: WarSimSession, _systems: SystemSpec[], entityId: string,
   waypoints: [number, number][], altitudeM: number, emcon: 'active' | 'passive',

@@ -5,6 +5,7 @@ import { commandHandlers } from './commands';
 import { seedFromId, withSimulationContext } from './context';
 import { MODEL_VERSION, STEP_MS, type CommandEnvelope, type CommandReceipt, type RuntimeCheckpoint } from './contracts';
 import { projectObserver } from './projection';
+import { stepPhysical, validatePhysical } from './physics/model';
 
 function finiteData(value: unknown): void {
   if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Non-finite numeric input.');
@@ -18,6 +19,7 @@ function validateSession(session: WarSimSession) {
     throw new Error('This save is missing required simulation fields. The original save has been retained.');
   }
   const ids = new Set<string>();
+  if (session.physical) validatePhysical(session.physical, session);
   for (const e of [...session.entities, ...session.bases]) {
     if (!e.id || ids.has(e.id) || !Array.isArray(e.lngLat) || e.lngLat.length !== 2
       || !e.lngLat.every(Number.isFinite) || Math.abs(e.lngLat[0]) > 180 || Math.abs(e.lngLat[1]) > 90) {
@@ -96,6 +98,9 @@ export class SimulationRuntime {
     }
     if (!Object.hasOwn(commandHandlers, command.type) || !Array.isArray(command.args)) throw new Error('Unknown command.');
     const args = command.args as unknown[];
+    if (this.world.physical && !['setPlayback', 'togglePlay', 'setSpeedMultiplier', 'switchActiveFaction', 'launchPhysical', 'setPhysicalCourse'].includes(command.type)) {
+      throw new Error('This reference encounter supports fire, course, speed and playback orders.');
+    }
     const iso = scope.faction === 'player' ? this.world.playerIso : this.world.enemyIso;
     const entityCommands = ['orderSortieToPoint', 'orderWaypointPatrol', 'orderRtb', 'orderStrike', 'orderRefuelAtTanker',
       'setEntityRcs', 'assignEntityToNetwork', 'removeEntityFromNetwork', 'orderAsatStrike', 'orderSeadStrike',
@@ -145,7 +150,9 @@ export class SimulationRuntime {
     this.applyDueCommands();
     if (!this.running) return false;
     const speed = this.world.timeMultiplier;
-    const next = withSimulationContext(this.state.random, () => tickWarSim({ ...this.world, timeMultiplier: 1 }, STEP_MS / 1000, this.state.definitions));
+    const next = withSimulationContext(this.state.random, () => this.world.physical
+      ? stepPhysical(this.world, STEP_MS / 1000)
+      : tickWarSim({ ...this.world, timeMultiplier: 1 }, STEP_MS / 1000, this.state.definitions));
     this.state.tick++;
     this.world = { ...next, timeMultiplier: speed, simTimeSec: this.state.originSimTimeSec + this.tick * STEP_MS / 1000 };
     this.applyDueCommands();
