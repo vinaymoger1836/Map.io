@@ -7,6 +7,9 @@ import { createFixture, FIXTURE_IDS, FIXTURE_VERSION } from '../tests/warsim/fix
 import { withLegacyRuntime } from '../tests/warsim/helpers/legacyRuntime';
 import { machineEnvironment } from '../tests/warsim/helpers/machine';
 import { tickWarSim, launchSimStrikeSalvoDirectly } from '../lib/warSimEngine';
+import { SimulationRuntime } from '../lib/warsim/runtime';
+
+const useRuntime = process.argv.includes('--runtime');
 
 const warmupTicks = 20;
 const measuredTicks = 200;
@@ -32,13 +35,17 @@ const results = FIXTURE_IDS.map((id) => {
       if (id === 'engagement') {
         state = launchSimStrikeSalvoDirectly(state, 'blue-shooter', 'red-target', [-149.85, 0], 0, 2, 'loiter_target', fixture.systems).session;
       }
-      for (let i = 0; i < warmupTicks; i++) state = tickWarSim(state, dtRealSec, fixture.systems);
+      const runtime = useRuntime ? new SimulationRuntime(state, fixture.systems, fixture.seed) : null;
+      const step = () => { if (runtime) runtime.step(); else state = tickWarSim(state, dtRealSec, fixture.systems); };
+      for (let i = 0; i < warmupTicks; i++) step();
+      if (runtime) state = runtime.checkpoint();
       const initialPopulation = { platforms: state.entities.length, projectiles: state.activeMissiles.length };
       for (let i = 0; i < measuredTicks; i++) {
         const start = performance.now();
-        state = tickWarSim(state, dtRealSec, fixture.systems);
+        step();
         timing.push(performance.now() - start);
       }
+      if (runtime) state = runtime.checkpoint();
       return { initialPopulation, state };
     });
     const heapBeforeGc = process.memoryUsage().heapUsed;
@@ -56,20 +63,22 @@ const results = FIXTURE_IDS.map((id) => {
 
 const sourcePaths = ['lib/warSimEngine.ts', 'lib/warSimRules.ts', 'lib/specs.ts', 'lib/terrainLOS.ts',
   'lib/spaceLayer.ts', 'lib/electronicWarfare.ts', 'lib/carrierOps.ts', 'lib/aerialRefueling.ts',
-  'lib/airspaceSovereignty.ts', 'lib/threatLevelEngagements.ts', 'tests/warsim/fixtures/v1/scenarios.ts', 'package-lock.json'];
+  'lib/airspaceSovereignty.ts', 'lib/threatLevelEngagements.ts', 'tests/warsim/fixtures/v1/scenarios.ts', 'package-lock.json',
+  ...(useRuntime ? ['lib/warsim/runtime.ts', 'lib/warsim/context.ts', 'lib/warsim/commands.ts', 'lib/warsim/contracts.ts'] : [])];
 const hashes = Object.fromEntries(sourcePaths.map((file) => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]));
 let revision = 'unavailable';
 try { revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { /* source hashes still identify the run */ }
 const report = {
   schemaVersion: 1, capturedAt: new Date().toISOString(), revision, sourceHashes: hashes,
+  runtime: useRuntime ? 'legacy-fixed-v1 headless runtime' : 'legacy engine harness',
   environment: { ...machineEnvironment(), node: process.version, gcAvailable: Boolean(global.gc) },
   method: { warmupTicks, measuredTicks, repetitions, dtRealSec, timeMultiplier: 1,
-    caveats: ['Legacy randomness/Date.now controlled only by the synchronous harness; production has no replay seed.',
+    caveats: [useRuntime ? 'Runtime uses checkpointed RNG and fixed steps; timing excludes checkpoint cloning and worker transport.' : 'Standalone legacy calls use the synchronous test RNG harness.',
       'CPU simulation only; no renderer/React cost. Short-run heap deltas are not a leak test.',
       'Measurements report this machine and fixture version; they are not universal performance guarantees.'] },
   results,
 };
-const destination = path.resolve('.cache/warsim-baseline/core.json');
+const destination = path.resolve(`.cache/warsim-baseline/${useRuntime ? 'phase-1-core' : 'core'}.json`);
 mkdirSync(path.dirname(destination), { recursive: true });
 writeFileSync(destination, `${JSON.stringify(report, null, 2)}\n`);
 console.log(`Report written to ${destination}`);

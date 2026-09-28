@@ -41,7 +41,9 @@ test('capture browser baseline on the 100-platform / 50-projectile fixture', asy
   });
   const report = { schemaVersion: 1, capturedAt: new Date().toISOString(), fixture: fixture.id, fixtureVersion: fixture.schemaVersion,
     sourceHashes: Object.fromEntries(['lib/warSimEngine.ts', 'lib/warSimLayers.ts', 'lib/useWarSim.ts',
-      'lib/warsim/diagnostics.ts', 'components/MapShell.tsx', 'components/EurasiaMap.tsx',
+      'lib/warsim/diagnostics.ts', 'lib/warsim/runtime.ts', 'lib/warsim/context.ts', 'lib/warsim/commands.ts',
+      'lib/warsim/simulation.worker.ts', 'lib/warsim/useSimulationRuntime.ts', 'lib/warsim/mapPresentation.ts',
+      'components/MapShell.tsx', 'components/EurasiaMap.tsx',
       'tests/warsim/fixtures/v1/scenarios.ts', 'tests/e2e/support.ts', 'package-lock.json']
       .map((file) => [file, createHash('sha256').update(readFileSync(file)).digest('hex')])),
     environment: { ...machineEnvironment(), browser: browser.version(), viewport: testInfo.project.use.viewport, gpu,
@@ -49,11 +51,12 @@ test('capture browser baseline on the 100-platform / 50-projectile fixture', asy
     caveats: ['Offline blank basemap and fixture geography: no external tile/font cost.',
       'setData cost is synchronous submission/serialization, not asynchronous worker or GPU completion.',
       'React commit metric is Profiler actualDuration in development; frames are requestAnimationFrame intervals.',
-      'Browser execution uses the legacy wall clock and RNG; only the initial fixture is seeded.',
+      'Phase 1: engine timing is measured in the fixed-step worker. Browser memory measures the page isolate, excluding worker heaps.',
       '12-second heap deltas are an initial observation, not proof of a memory leak or leak freedom.'],
     metrics, memory: { before: memoryBefore, beforeGc: memoryBeforeGc, afterGc: memoryAfterGc },
     initialSessionBytes: Buffer.byteLength(JSON.stringify(fixture.session)), finalSessionBytes: Buffer.byteLength(JSON.stringify(final)),
     finalPopulation: { platforms: final.entities.length, projectiles: final.activeMissiles.length },
+    runtime: { modelVersion: final.runtime?.modelVersion, tick: final.runtime?.tick, simTimeSec: final.simTimeSec },
   };
   const destination = path.resolve('.cache/warsim-baseline/browser.json');
   mkdirSync(path.dirname(destination), { recursive: true });
@@ -63,6 +66,7 @@ test('capture browser baseline on the 100-platform / 50-projectile fixture', asy
   expect(metrics.metrics['engine.tick.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['render.sync.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['map.setData.ms']?.count).toBeGreaterThan(0);
+  expect(metrics.metrics['map.updateData.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['react.commit.ms']?.count).toBeGreaterThan(0);
   expect(metrics.metrics['frame.interval.ms']?.count).toBeGreaterThan(0);
   expect(pageErrors).toEqual([]);
