@@ -5,8 +5,9 @@ import type { WarSimSession } from '../../warSimTypes';
 import { toENU, type Geo, type Vec3 } from '../physics/coordinates';
 import { aircraft, contactMarker, disposeObject, vessel } from './assets';
 import { recordWarSimMetric } from '../diagnostics';
+import { UNIT_BY_ID } from '../../warGames';
 
-interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'contact' | 'round'; color: string; speed: number }
+interface Body { id: string; position: Vec3; heading: number; kind: 'ship' | 'air' | 'platform' | 'contact' | 'round'; color: string; speed: number }
 type Display = { from: Body; to: Body; mesh: T.Object3D };
 export class TacticalScene {
   private renderer: T.WebGLRenderer;
@@ -95,7 +96,8 @@ export class TacticalScene {
     this.previousTime = this.time; this.time = s.simTimeSec; this.playing = s.status === 'running';
     const records: Body[] = s.entities.filter(e => e.status !== 'destroyed').map(e => ({ id: e.id,
       position: s.physical?.actors.find(a => a.id === e.id)?.position ?? toENU([...e.lngLat, e.altitudeM], this.origin), heading: e.headingDeg,
-      kind: e.altitudeM > 100 ? 'air' : 'ship', color: e.iso === s.playerIso ? s.playerColor : s.enemyColor, speed: e.speedKmh / 3.6 }));
+      kind: UNIT_BY_ID.get(e.typeId)?.domain === 'air' ? 'air' : s.physical || UNIT_BY_ID.get(e.typeId)?.domain === 'sea' ? 'ship' : 'platform',
+      color: e.iso === s.playerIso ? s.playerColor : s.enemyColor, speed: e.speedKmh / 3.6 }));
     const contacts = s.activeFaction === 'player' ? s.fogOfWarContacts.playerContacts : s.fogOfWarContacts.enemyContacts;
     records.push(...contacts.map(c => ({ id: c.contactId, position: toENU([...c.lastKnownLngLat, 0], this.origin), heading: c.headingDeg,
       kind: 'contact' as const, color: '#ff8f74', speed: c.speedKmh / 3.6 })));
@@ -108,7 +110,7 @@ export class TacticalScene {
       const b = this.bodies.get(r.id);
       if (b) { b.from = b.to; b.to = r; }
       else {
-        const mesh = r.kind === 'ship' ? vessel(r.color) : r.kind === 'air' ? aircraft(r.color) : r.kind === 'contact' ? contactMarker(r.color)
+        const mesh = r.kind === 'ship' ? vessel(r.color) : r.kind === 'air' ? aircraft(r.color) : r.kind === 'contact' || r.kind === 'platform' ? contactMarker(r.color)
           : new T.Mesh(new T.SphereGeometry(2.2, 8, 6), new T.MeshBasicMaterial({ color: r.color }));
         mesh.userData.id = r.id; this.scene.add(mesh); this.bodies.set(r.id, { from: r, to: r, mesh });
       }

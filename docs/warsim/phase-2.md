@@ -75,7 +75,7 @@ npm run validate:warsim:physics
 - Node two-ship transit, including observer projection and checkpoint cloning: **0.050 ms median / 0.116 ms p95**, 900 measured ticks after 100 warm-up ticks. This small case is not comparable to the prior 100-platform fleet workload.
 - Browser capture: headless Chromium 153, Next development, 1920×1080, SwiftShader software GPU, offline basemap. Balanced settled at **0.5 pixel ratio**; tactical callback intervals were **35.9 ms median / 41.2 ms p95** (about 28 FPS average), compared with roughly 10 FPS at full resolution. Synchronous render submission was **0.8 / 1.3 ms**, which excludes asynchronous GPU work. Worker steps were **0.2 / 0.4 ms**. There were **zero map moving-source submissions** during the measured 3D window.
 
-The software-GPU result supports a playable reference on the adaptive preset. It does not establish 60 FPS or discrete-GPU performance. High-preset performance, long-session memory behavior, large 3D populations and production art fidelity remain unverified. Screenshot and raw captures are in `.cache/warsim-baselines/`; a checked-in measurement summary accompanies this guide.
+The software-GPU result supports a playable reference on the adaptive preset. It does not establish 60 FPS or discrete-GPU performance. High-preset performance, long-session memory behavior, large 3D populations and production art fidelity remain unverified. Screenshot and raw captures are in `.cache/warsim-baselines/`; checked-in [browser measurements](baselines/phase-2-browser.json), [physics measurements](baselines/phase-2-physics.json) and the [trajectory plot](baselines/phase-2-trajectory.svg) accompany this guide.
 
 ## Next: Phase 3
 

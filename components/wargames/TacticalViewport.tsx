@@ -29,8 +29,8 @@ export default function TacticalViewport(p: Props) {
     return () => { scene.current?.dispose(); scene.current = null; };
   }, [s.id, s.activeFaction]);
   useEffect(() => { scene.current?.update(s); }, [s]);
-  useEffect(() => { scene.current?.focus(p.selectedId); }, [p.selectedId]);
-  useEffect(() => { scene.current?.quality(quality === 'high'); }, [quality, s.activeFaction]);
+  useEffect(() => { scene.current?.focus(selected?.id ?? null); }, [selected?.id, s.id, s.activeFaction]);
+  useEffect(() => { scene.current?.quality(quality === 'high'); }, [quality, s.id, s.activeFaction]);
   useEffect(() => { if (actor) { setHeading(actor.course); setSpeed(actor.desiredSpeed); } }, [actor?.id]); // local order drafts survive new snapshots
   const send = (command: SimulationCommand) => p.dispatch(command);
   return <section className={styles.viewport} aria-label="Tactical view">
