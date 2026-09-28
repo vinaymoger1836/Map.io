@@ -44,6 +44,9 @@ describe('physical reference / authoritative encounter', () => {
     expect(s.physical!.events.some(e => e.kind === 'intercept')).toBe(true);
     expect(s.physical!.actors[1].health).toBe(100);
     expect(s.physical!.actors[1].interceptors).toBeLessThan(2);
+    const terminated = s.physical!.events.flatMap(e => e.terminatedRoundIds);
+    expect(new Set(terminated).size).toBe(terminated.length);
+    expect(terminated).toHaveLength(s.physical!.events.filter(e => e.kind === 'launch').length);
     expect(s.physical!.rounds).toHaveLength(0);
   });
   it('enforces turn, acceleration and fuel bounds', () => {
@@ -64,7 +67,7 @@ describe('physical reference / authoritative encounter', () => {
   });
   it('filters hidden physical truth, magazines, intentions, events and contacts', () => {
     const s = createPhysicalReference(); const enemy = s.physical!.actors[1]; enemy.position = [20000, 0, 0]; syncPhysical(s);
-    s.physical!.events.push({ id: 100, kind: 'launch', time: 0, position: enemy.position, roundId: 'hidden', visibleTo: [s.enemyIso] });
+    s.physical!.events.push({ id: 100, kind: 'launch', time: 0, position: enemy.position, roundId: 'hidden', visibleTo: [s.enemyIso], terminatedRoundIds: [] });
     const view = projectObserver(s);
     expect(view.physical!.actors.map(a => a.id)).toEqual(['blue-frigate']); expect(view.physical!.events).toEqual([]);
     expect(view.fogOfWarContacts.playerContacts).toEqual([]);

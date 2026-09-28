@@ -6,11 +6,11 @@ export interface PhysicalActor {
 }
 export interface PhysicalRound {
   id: string; shooterId: string; iso: string; targetId: string; interceptor: boolean;
-  position: Vec3; velocity: Vec3; age: number;
+  position: Vec3; launchPosition: Vec3; velocity: Vec3; age: number;
 }
 export interface PhysicalEvent {
   id: number; time: number; kind: 'launch' | 'impact' | 'intercept' | 'expired';
-  position: Vec3; roundId: string; visibleTo: string[];
+  position: Vec3; roundId: string; visibleTo: string[]; terminatedRoundIds: string[];
 }
 export interface PhysicalEncounter {
   version: 1; model: 'coastal-pointmass-v1'; origin: Geo; sequence: number;

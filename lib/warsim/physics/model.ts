@@ -8,11 +8,12 @@ export const PROFILE = Object.freeze({ mass: 180, thrust: 7800, burnSec: 12, dra
 export function integrate(position: Vec3, velocity: Vec3, acceleration: Vec3, dt: number) {
   return { position: add(position, add(scale(velocity, dt), scale(acceleration, .5 * dt * dt))), velocity: add(velocity, scale(acceleration, dt)) };
 }
-function event(s: WarSimSession, kind: PhysicalEvent['kind'], round: PhysicalRound, time: number) {
+function event(s: WarSimSession, kind: PhysicalEvent['kind'], round: PhysicalRound, time: number, interceptedId?: string) {
   const p = s.physical!;
   const visibleTo = [...new Set(p.actors.filter(a => a.health > 0 && length(sub(a.position, round.position)) <= PROFILE.sensorRange).map(a => a.iso))];
   if (!visibleTo.includes(round.iso)) visibleTo.push(round.iso);
-  p.events.push({ id: ++p.sequence, time, kind, roundId: round.id, position: [...round.position], visibleTo });
+  p.events.push({ id: ++p.sequence, time, kind, roundId: round.id, position: [...round.position], visibleTo,
+    terminatedRoundIds: kind === 'launch' ? [] : interceptedId ? [round.id, interceptedId] : [round.id] });
   p.events = p.events.slice(-256);
   for (const iso of visibleTo) s.eventLog.push({ id: `physical-${p.sequence}-${iso}`, simTimeSec: time,
     timeFormatted: `T+${time.toFixed(1)}`, faction: iso === s.playerIso ? 'player' : 'enemy',
@@ -24,7 +25,7 @@ function launch(s: WarSimSession, shooter: PhysicalActor, target: PhysicalActor 
   const p = s.physical!;
   const direction = unit(sub(target.position, shooter.position));
   const round: PhysicalRound = { id: `round-${++p.sequence}`, shooterId: shooter.id, iso: shooter.iso,
-    targetId: target.id, interceptor, position: add(shooter.position, [0, 0, 18]),
+    targetId: target.id, interceptor, position: add(shooter.position, [0, 0, 18]), launchPosition: add(shooter.position, [0, 0, 18]),
     velocity: add(scale(direction, interceptor ? 260 : 160), [0, 0, 45]), age: 0 };
   if (interceptor) shooter.interceptors--; else shooter.rounds--;
   shooter.cooldown = time + 1.5;
@@ -118,7 +119,7 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
         if ('health' in hit.target) hit.target.health = Math.max(0, hit.target.health - PROFILE.damage);
         else dead.add(hit.target.id);
       }
-      event(s, hit.kind, r, time + hit.fraction * h);
+      event(s, hit.kind, r, time + hit.fraction * h, hit.kind === 'intercept' ? hit.target?.id : undefined);
     }
     p.rounds = p.rounds.filter(r => !dead.has(r.id));
   }
@@ -147,7 +148,7 @@ export function syncPhysical(s: WarSimSession, time = s.simTimeSec) {
     const shooter = p.actors.find(a => a.id === r.shooterId)!;
     const target = [...p.actors, ...p.rounds].find(a => a.id === r.targetId);
     const point = (v: Vec3) => fromENU(v, p.origin).slice(0, 2) as [number, number];
-    return { id: r.id, originLngLat: point(shooter.position), targetLngLat: point(target?.position ?? r.position), currentLngLat: point(r.position),
+    return { id: r.id, originLngLat: point(r.launchPosition), targetLngLat: point(target?.position ?? r.position), currentLngLat: point(r.position),
       attackerEntityId: shooter.id, targetEntityId: r.targetId, attackerIso: r.iso, targetIso: target?.iso ?? '',
       weaponName: 'Reference guided round', weaponCategory: r.interceptor ? 'sam' : 'cruise', speedKmh: length(r.velocity) * 3.6,
       startSimTimeSec: time - r.age, etaSimTimeSec: time + 10, isIntercepted: false, progress: Math.min(.99, r.age / PROFILE.lifetimeSec), threatAltitudeM: r.position[2] };

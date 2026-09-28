@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:watch": "vitest",
+    "validate:warsim:physics": "node --import tsx scripts/validate-warsim-physics.ts",
     "test:e2e": "playwright test --project=chromium",
     "bench:warsim": "node --expose-gc --import tsx scripts/benchmark-warsim.ts",
     "bench:warsim:browser": "playwright test --project=baseline",
