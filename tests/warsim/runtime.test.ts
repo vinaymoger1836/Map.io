@@ -23,11 +23,25 @@ describe('authoritative fixed-step runtime', () => {
     for (const host of [a, b]) {
       host.submit(command(host, { type: 'createNetwork', args: ['Test group'] }));
       host.submit(command(host, { type: 'orderStrike', args: ['blue-shooter', 'red-target', [-149.85, 0], 0, 2, 'loiter_target'] }));
-      runTo(host, 200);
+      runTo(host, 800);
     }
     expect(a.checkpoint()).toEqual(b.checkpoint());
     expect(a.checkpoint().runtime!.acceptedCommands).toHaveLength(2);
+    expect(a.checkpoint().reports?.some(report => report.category === 'offensive_strike')).toBe(true);
     expect(createFixture('engagement').session.simTimeSec).toBe(0);
+  });
+
+  it('resumes an in-flight engagement to the same probabilistic outcome and subsequent ID', () => {
+    const host = runtime();
+    host.submit(command(host, { type: 'orderStrike', args: ['blue-shooter', 'red-target', [-149.85, 0], 0, 2, 'loiter_target'] }));
+    runTo(host, 80);
+    expect(host.checkpoint().activeMissiles.length).toBeGreaterThan(0);
+    const resumed = new SimulationRuntime(JSON.parse(JSON.stringify(host.checkpoint())), []);
+    for (const item of [host, resumed]) {
+      runTo(item, 800);
+      item.submit(command(item, { type: 'createNetwork', args: ['After impact'] }));
+    }
+    expect(resumed.checkpoint()).toEqual(host.checkpoint());
   });
 
   it('produces the same model state at a fixed tick for 1x and 30x pacing', () => {
