@@ -29,6 +29,12 @@ export function vessel(color: string) {
   }
   const pad = new T.Mesh(new T.RingGeometry(4, 4.2, 32), accent); pad.rotation.x = -Math.PI / 2; pad.position.set(0, 6.7, 36); root.add(pad);
   box(.25, .1, 5, -1.5, 6.8, 36, accent); box(.25, .1, 5, 1.5, 6.8, 36, accent); box(3, .1, .3, 0, 6.8, 36, accent);
+  const wake = new T.Mesh(new T.PlaneGeometry(38, 170), new T.ShaderMaterial({ transparent: true, depthWrite: false,
+    uniforms: { time: { value: 0 } }, vertexShader: 'varying vec2 uvW; void main(){uvW=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader: `varying vec2 uvW; uniform float time; void main(){float x=abs(uvW.x-.5)*2.; float spread=.2+(1.-uvW.y)*.8;
+      float edge=1.-smoothstep(0.,.18,abs(x-spread*.8)); float fade=uvW.y*(1.-uvW.y)*4.; float foam=.5+.5*sin(uvW.y*120.-time*4.+x*20.);
+      gl_FragColor=vec4(.65,.85,.88,(edge*.4+max(0.,1.-x/spread)*.12)*fade*foam);}` }));
+  wake.rotation.x = -Math.PI / 2; wake.position.set(0, .1, 132); wake.userData.wake = true; root.add(wake);
   return root;
 }
 export function aircraft(color: string) {

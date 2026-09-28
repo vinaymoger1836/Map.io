@@ -33,7 +33,6 @@ export class TacticalScene {
   private sun: T.DirectionalLight;
   private lastFollow?: T.Vector3;
   private lastTrail = -1;
-  private wake: T.Mesh[] = [];
   private onLost = (e: Event) => { e.preventDefault(); this.lost = true; this.onError('Graphics context lost. Reopen the tactical view to recover.'); };
   constructor(private host: HTMLElement, initial: WarSimSession, private onSelect: (id: string, contact: boolean) => void, private onError: (message: string) => void) {
     this.origin = initial.physical?.origin ?? [...(initial.entities[0]?.lngLat ?? [0, 0]), 0] as Geo;
@@ -144,7 +143,10 @@ export class TacticalScene {
       const p = b.from.position.map((n, i) => T.MathUtils.lerp(n, b.to.position[i], alpha)) as Vec3;
       b.mesh.position.copy(this.point(p)); const delta = ((b.to.heading - b.from.heading + 540) % 360) - 180;
       b.mesh.rotation.y = -(b.from.heading + delta * alpha) * Math.PI / 180;
-      if (b.to.kind === 'ship') { b.mesh.rotation.z = Math.sin(time * .6) * .008; b.mesh.rotation.x = Math.sin(time * .9) * .003; }
+      if (b.to.kind === 'ship') { b.mesh.rotation.z = Math.sin(time * .6) * .008; b.mesh.rotation.x = Math.sin(time * .9) * .003;
+        const wake = b.mesh.children.find(c => c.userData.wake) as T.Mesh<T.PlaneGeometry, T.ShaderMaterial> | undefined;
+        if (wake) { wake.visible = b.to.speed > 1; wake.material.uniforms.time.value = time; }
+      }
       if (b.to.id === this.followId) { if (this.lastFollow) { const d = b.mesh.position.clone().sub(this.lastFollow); this.controls.target.add(d); this.camera.position.add(d); } this.lastFollow = b.mesh.position.clone(); }
       if (b.to.kind === 'round' && time - this.lastTrail > .04) {
         let trail = this.trails.get(b.to.id);
@@ -161,7 +163,7 @@ export class TacticalScene {
     }
     this.effects = this.effects.filter(e => { if (time - e.time < (e.launch ? .7 : 3)) return true; this.scene.remove(e.mesh); disposeObject(e.mesh); return false; });
     this.controls.update();
-    if (this.controls.target.length() > 2000) {
+    if (Math.hypot(this.controls.target.x, this.controls.target.z) > 2000) {
       const shift = this.controls.target.clone(); shift.y = 0; this.offset.add(shift); this.camera.position.sub(shift); this.controls.target.sub(shift);
       this.bodies.forEach(b => b.mesh.position.sub(shift)); this.effects.forEach(e => e.mesh.position.sub(shift)); this.lastFollow?.sub(shift);
       this.trails.forEach(t => { t.line.geometry.dispose(); t.line.geometry = new T.BufferGeometry().setFromPoints(t.points.map(p => this.point(p))); });
