@@ -134,6 +134,16 @@ function queue(i: PhysicalIntel, o: IntelObservation, link: IntelLink, tick: num
     linkId: link.id, sentTick: tick, deliveryTick: tick + link.latencyTicks, status: 'queued' });
   i.messages = i.messages.slice(-512);
 }
+function route(i: PhysicalIntel, from: string, to: string): IntelLink[] | undefined {
+  const path: IntelLink[] = [];
+  let scope = from;
+  while (scope !== to && path.length < 3) {
+    const link = i.links.find(l => l.from === scope && l.active);
+    if (!link) return;
+    path.push(link); scope = link.to;
+  }
+  return scope === to ? path : undefined;
+}
 export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
   const i = ensurePhysicalIntel(s), p = s.physical!;
   for (const t of i.tracks) {
@@ -168,23 +178,25 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     if (o.processed || o.processedTick > tick) continue;
     o.processed = true; fuse(i, o, o.scopeId, tick);
     for (const link of i.links.filter(l => l.from === o.scopeId)) queue(i, o, link, tick);
-    const task = i.tasks.find(t => t.id === o.taskId); if (task) task.status = 'disseminating';
+    const task = i.tasks.find(t => t.id === o.taskId);
+    if (task) {
+      task.status = task.scopeId === o.scopeId ? 'complete' : 'disseminating';
+      if (task.status === 'complete') task.finishedTick = tick;
+    }
   }
   for (const task of i.tasks) {
     if (task.status === 'processing' && !task.evidenceIds.length && tick >= (i.coverage.find(c => c.id === task.coverageId)?.observedTick ?? tick) + 3) {
-      task.status = 'disseminating';
-      const link = i.links.find(l => l.from === local(task.assetId) && l.to === hq(actorIso(s, task.assetId)!));
-      if (link?.active) task.finishedTick = tick + link.latencyTicks;
+      const path = route(i, local(task.assetId), task.scopeId);
+      task.status = path ? 'disseminating' : 'interrupted';
+      if (path) task.finishedTick = tick + path.reduce((latency, link) => latency + link.latencyTicks, 0);
     }
     if (task.status === 'disseminating' && task.finishedTick !== undefined && tick >= task.finishedTick) {
-      const link = i.links.find(l => l.from === local(task.assetId) && l.to === hq(actorIso(s, task.assetId)!));
-      if (!link?.active) task.status = 'interrupted';
+      if (!route(i, local(task.assetId), task.scopeId)) task.status = 'interrupted';
       else {
         const coverage = i.coverage.find(c => c.id === task.coverageId)!;
-        i.coverage.push({ ...coverage, id: nextId(i, 'coverage'), scopeId: link.to });
+        if (coverage.scopeId !== task.scopeId) i.coverage.push({ ...coverage, id: nextId(i, 'coverage'), scopeId: task.scopeId });
         task.status = 'complete';
       }
-      task.finishedTick = undefined;
     }
   }
   for (const m of i.messages) {
@@ -198,7 +210,7 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     const task = i.tasks.find(t => t.id === o.taskId);
     if (task && m.to === task.scopeId) { task.status = 'complete'; task.finishedTick = tick; }
   }
-  for (const task of i.tasks) if (task.status === 'disseminating' && !i.links.some(l => l.from === local(task.assetId) && l.active)) task.status = 'interrupted';
+  for (const task of i.tasks) if (task.status === 'disseminating' && !route(i, local(task.assetId), task.scopeId)) task.status = 'interrupted';
   i.coverage = i.coverage.slice(-128);
 }
 
