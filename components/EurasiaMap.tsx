@@ -738,15 +738,26 @@ export default function EurasiaMap() {
             </span>}
           </div>
         )}
+        {mode === 'wargames' && warSim.session?.physical && !tacticalOpen && (
+          <div style={{ position: 'absolute', left: 20, bottom: 100, zIndex: 1000, padding: 18, background: '#0b1b28ed', color: '#dcecf0' }}>
+            <strong>Glasswater · T+{warSim.session.simTimeSec.toFixed(1)}</strong>
+            <p>Open the 3D tactical view to issue fire and maneuver orders.</p>
+            <button className="wg-btn" onClick={warSim.togglePlay}>{warSim.isPlaying ? 'Pause time' : 'Start time'}</button>
+            <button className="wg-btn" onClick={warSim.switchActiveFaction}>Switch faction</button>
+            <button className="wg-btn" onClick={warSim.exitSim}>Exit simulation</button>
+          </div>
+        )}
         {mode === 'wargames' && warSim.session && !tacticalOpen && (
           <button style={{ position: 'absolute', top: 80, right: 20, zIndex: 1000 }} className="wg-btn" onClick={() => setTacticalOpen(true)}>Open 3D tactical view</button>
         )}
         {mode === 'wargames' && warSim.session && tacticalOpen && (
           <TacticalViewport session={warSim.session} selectedId={warSim.selectedEntityId} selectedContactId={warSim.selectedContactId}
             onSelect={warSim.setSelectedEntityId} onSelectContact={warSim.setSelectedContactId} dispatch={warSim.dispatchSimulation}
-            onClose={() => setTacticalOpen(false)} onExit={() => { setTacticalOpen(false); warSim.exitSim(); }} runtimeError={warSim.runtimeError} />
+            onClose={() => { setTacticalOpen(false); const e = warSim.selectedEntity ?? warSim.session?.entities[0];
+              if (e) mapRef.current?.jumpTo({ center: e.lngLat, zoom: 11 });
+            }} onExit={() => { setTacticalOpen(false); warSim.exitSim(); }} runtimeError={warSim.runtimeError} />
         )}
-        {mode === 'wargames' && warSim.session && !tacticalOpen && (
+        {mode === 'wargames' && warSim.session && !warSim.session.physical && !tacticalOpen && (
           <WarSimConsole
             session={warSim.session}
             isPlaying={warSim.isPlaying}

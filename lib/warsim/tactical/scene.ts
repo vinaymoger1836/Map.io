@@ -35,6 +35,8 @@ export class TacticalScene {
   private lastFollow?: T.Vector3;
   private lastTrail = -1;
   private lastFrame = 0;
+  private adaptive = true;
+  private frameBudget = { count: 0, total: 0 };
   private onLost = (e: Event) => { e.preventDefault(); this.lost = true; this.onError('Graphics context lost. Reopen the tactical view to recover.'); };
   constructor(private host: HTMLElement, initial: WarSimSession, private onSelect: (id: string, contact: boolean) => void, private onError: (message: string) => void) {
     this.origin = initial.physical?.origin ?? [...(initial.entities[0]?.lngLat ?? [0, 0]), 0] as Geo;
@@ -55,10 +57,10 @@ export class TacticalScene {
     this.water = new T.Mesh(new T.PlaneGeometry(100000, 100000), new T.ShaderMaterial({ uniforms: { time: { value: 0 }, shift: { value: new T.Vector2() } },
       vertexShader: `varying vec3 world; void main(){ vec4 p=modelMatrix*vec4(position,1.); world=p.xyz; gl_Position=projectionMatrix*viewMatrix*p; }`,
       fragmentShader: `varying vec3 world; uniform float time; uniform vec2 shift;
-        void main(){vec2 p=world.xz+shift; float a=p.x*.087+p.y*.031+time*1.2; float b=p.y*.12-p.x*.046-time*.8; float c=p.x*.33+p.y*.21+time*2.;
-        float fa=1.-smoothstep(.4,3.,fwidth(a)); float fb=1.-smoothstep(.4,3.,fwidth(b)); float fc=1.-smoothstep(.4,3.,fwidth(c));
-        float w=sin(a)*fa*.6+sin(b)*fb*.35+sin(c)*fc*.12;
-        vec3 n=normalize(vec3(cos(a)*fa*.07+cos(c)*fc*.035,1.,cos(b)*fb*.055)); vec3 v=normalize(cameraPosition-world);
+        void main(){vec2 p=world.xz+shift; float a=p.x*.087+p.y*.031+time*1.2; float b=p.y*.12-p.x*.046-time*.8; float q=p.x*.33+p.y*.21+time*2.;
+        float fa=1.-smoothstep(.4,3.,fwidth(a)); float fb=1.-smoothstep(.4,3.,fwidth(b)); float fc=1.-smoothstep(.4,3.,fwidth(q));
+        float w=sin(a)*fa*.6+sin(b)*fb*.35+sin(q)*fc*.12;
+        vec3 n=normalize(vec3(cos(a)*fa*.07+cos(q)*fc*.035,1.,cos(b)*fb*.055)); vec3 v=normalize(cameraPosition-world);
         float fres=pow(1.-max(dot(n,v),0.),4.); float spec=pow(max(dot(reflect(normalize(vec3(-.6,-.15,.6)),n),v),0.),140.);
         vec3 c=mix(vec3(.017,.075,.10),vec3(.29,.43,.50),fres)+spec*vec3(1.7,1.1,.6);
         c+=pow(max(w*.5+.2,0.),8.)*.08; float fog=1.-exp(-length(cameraPosition-world)*.000028); c=mix(c,vec3(.36,.46,.52),fog);
@@ -128,7 +130,7 @@ export class TacticalScene {
     if (b) { const p = this.point(b.to.position); this.controls.target.copy(p).add(new T.Vector3(0, 10, 0)); this.camera.position.copy(p).add(new T.Vector3(165, 95, 205)); }
   }
   overview() { this.followId = null; this.lastFollow = undefined; const center = new T.Vector3(); this.bodies.forEach(b => center.add(this.point(b.to.position))); center.divideScalar(this.bodies.size || 1); this.controls.target.copy(center); this.camera.position.copy(center).add(new T.Vector3(2200, 3000, 3800)); }
-  quality(high: boolean) { this.renderer.setPixelRatio(Math.min(devicePixelRatio, high ? 2 : 1)); this.renderer.shadowMap.enabled = high; this.renderer.setSize(this.host.clientWidth, this.host.clientHeight); }
+  quality(high: boolean) { this.adaptive = !high; this.frameBudget = { count: 0, total: 0 }; this.renderer.setPixelRatio(Math.min(devicePixelRatio, high ? 2 : 1)); this.renderer.shadowMap.enabled = high; this.renderer.setSize(this.host.clientWidth, this.host.clientHeight); }
   async audioEnabled(enabled: boolean) { this.sound = enabled; if (enabled) { this.audio ??= new AudioContext(); await this.audio.resume(); } else await this.audio?.suspend(); }
   private cue(position: Vec3, launch: boolean) {
     if (!this.sound || !this.audio || this.audio.state !== 'running') return;
@@ -142,7 +144,19 @@ export class TacticalScene {
   private animate = () => {
     this.frame = requestAnimationFrame(this.animate); if (this.lost || document.hidden) { this.lastFrame = 0; return; }
     const frameStart = performance.now();
-    if (this.lastFrame) recordWarSimMetric('tactical.frame.interval.ms', frameStart - this.lastFrame);
+    if (this.lastFrame) {
+      const interval = frameStart - this.lastFrame; recordWarSimMetric('tactical.frame.interval.ms', interval);
+      if (this.adaptive && interval < 500) {
+        this.frameBudget.total += interval; this.frameBudget.count++;
+        if (this.frameBudget.count >= 30) {
+          if (this.frameBudget.total / this.frameBudget.count > 38 && this.renderer.getPixelRatio() > .5) {
+            this.renderer.setPixelRatio(Math.max(.5, this.renderer.getPixelRatio() * .8));
+          }
+          this.frameBudget = { count: 0, total: 0 };
+        }
+      }
+    }
+    recordWarSimMetric('tactical.pixelRatio', this.renderer.getPixelRatio());
     this.lastFrame = frameStart;
     const alpha = this.playing ? Math.min(1, (performance.now() - this.updated) / this.interval) : 1;
     const time = T.MathUtils.lerp(this.previousTime, this.time, alpha);

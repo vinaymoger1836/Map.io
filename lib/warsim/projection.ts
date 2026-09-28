@@ -14,7 +14,7 @@ export function projectObserver(world: WarSimSession): WarSimSession {
     view.physical.actors = own;
     view.physical.rounds = view.physical.rounds.filter(r => r.iso === iso || own.some(a => a.health > 0 && length(sub(a.position, r.position)) <= PROFILE.sensorRange));
     // Hostile weapon identities/intent are not part of the observed kinematics.
-    view.physical.rounds = view.physical.rounds.map(r => r.iso === iso ? r : { ...r, shooterId: '', targetId: '' });
+    view.physical.rounds = view.physical.rounds.map(r => r.iso === iso ? r : { ...r, shooterId: '', targetId: '', launchPosition: [...r.position], age: 0 });
     view.physical.events = view.physical.events.filter(e => e.visibleTo.includes(iso)).map(e => ({ ...e, visibleTo: [iso] }));
     view.physical.sequence = 0;
   }

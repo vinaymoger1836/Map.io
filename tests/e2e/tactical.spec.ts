@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { createFixture } from '../warsim/fixtures/v1/scenarios';
 import { preparePage, waitForMap, storedSession } from './support';
 
-test('coastal encounter launches, renders, fires, pauses, changes observer and recovers graphics', async ({ page }) => {
+test('coastal encounter launches, renders, fires, pauses, changes observer and recovers graphics', async ({ page, browser }) => {
   test.setTimeout(120_000);
   const { pageErrors } = await preparePage(page, createFixture('transit'), false);
   const graphicsErrors: string[] = [];
@@ -21,6 +21,20 @@ test('coastal encounter launches, renders, fires, pauses, changes observer and r
   await page.getByRole('button', { name: 'Launch guided round' }).click();
   await expect.poll(async () => (await storedSession(page))?.physical?.actors[0]?.rounds).toBe(7);
   await page.getByRole('button', { name: 'Start time' }).click();
+  await page.waitForFunction(() => (window.__warSimDiagnostics?.snapshot().metrics['tactical.frame.interval.ms']?.count ?? 0) >= 140);
+  await page.evaluate(() => window.__warSimDiagnostics!.reset());
+  // Fixed measurement window at 1x, including a guided round in flight.
+  await page.waitForTimeout(6000);
+  const metrics = await page.evaluate(() => window.__warSimDiagnostics!.snapshot());
+  const gpu = await page.getByTestId('tactical-canvas').evaluate(canvas => {
+    const gl = (canvas as HTMLCanvasElement).getContext('webgl2')!;
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    return String(gl.getParameter(ext?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER));
+  });
+  await writeFile('.cache/warsim-baselines/phase-2-browser.json', JSON.stringify({ capturedAt: new Date().toISOString(), browser: browser.version(), gpu,
+    viewport: page.viewportSize(), preset: 'balanced / adaptive 0.5–1 pixel ratio / shadows off', mode: 'Next dev / headless / offline basemap', metrics }, null, 2));
+  expect(metrics.metrics['tactical.render.ms']?.count).toBeGreaterThan(0);
+  expect(metrics.metrics['map.updateData.ms']?.count ?? 0).toBe(0);
   await page.getByLabel('Tactical time multiplier').selectOption('3');
   await expect.poll(async () => (await storedSession(page))?.physical?.events.some((e: any) => e.kind === 'intercept'), { timeout: 40_000 }).toBe(true);
   await page.getByRole('button', { name: 'Pause time' }).click();
