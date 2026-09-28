@@ -2,6 +2,8 @@
 import type { WarSimSession, BaseType, PostStrikeAction, BattleOpsPlan, BattleOpsPhase, BattleOpsTask, AirspaceRoeDoctrine, SystemThreatLevel } from '../warSimTypes';
 import type { SystemSpec } from '../specs';
 import { simNow, simRandom } from './context';
+import { cancelPhysicalMission, forwardPhysicalReport, hq, requestPhysicalCollection, reservePhysicalMission,
+  setCoalitionSharing, setPhysicalEmission, setPhysicalLink } from './intelligence';
 import { launchPhysical, setPhysicalCourse } from './physics/model';
 import {
   deployEntityToBase,
@@ -25,8 +27,23 @@ import {
   CARRIER_LOADOUT_PRESETS,
 } from '../warSimEngine';
 export const commandHandlers = {
-launchPhysical: (s: WarSimSession, _d: SystemSpec[], shooter: string, target: string) => launchPhysical(s, shooter, target),
+launchPhysical: (s: WarSimSession, _d: SystemSpec[], shooter: string, track: string, revision?: number) => launchPhysical(s, shooter, track, revision),
 setPhysicalCourse: (s: WarSimSession, _d: SystemSpec[], id: string, heading: number, speed: number) => setPhysicalCourse(s, id, heading, speed),
+setObserverScope: (s: WarSimSession, _d: SystemSpec[], scopeId: string) => {
+  const iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
+  if (!s.physical || scopeId !== hq(iso) && !s.physical.actors.some(a => a.iso === iso && `${a.id}:local` === scopeId)) throw new Error('Observer scope is unavailable.');
+  s.observerScope = scopeId; return s;
+},
+requestPhysicalCollection: (s: WarSimSession, _d: SystemSpec[], assetId: string, center: [number, number, number], radiusM: number) =>
+  requestPhysicalCollection(s, assetId, center, radiusM, Math.round(s.simTimeSec * 10)),
+setPhysicalEmission: (s: WarSimSession, _d: SystemSpec[], assetId: string, mode: 'active' | 'passive') => setPhysicalEmission(s, assetId, mode),
+setPhysicalLink: (s: WarSimSession, _d: SystemSpec[], assetId: string, active: boolean) => setPhysicalLink(s, assetId, active),
+forwardPhysicalReport: (s: WarSimSession, _d: SystemSpec[], evidenceId: string, to: 'faction' | 'coalition') =>
+  forwardPhysicalReport(s, evidenceId, to, Math.round(s.simTimeSec * 10)),
+setCoalitionSharing: (s: WarSimSession, _d: SystemSpec[], active: boolean) => setCoalitionSharing(s, active),
+planPhysicalStrike: (s: WarSimSession, _d: SystemSpec[], shooter: string, trackId: string, supportId: string, revision: number,
+  onLoss: 'hold' | 'abort' | 'continue-local') => reservePhysicalMission(s, shooter, trackId, supportId, revision, onLoss, Math.round(s.simTimeSec * 10)),
+cancelPhysicalMission: (s: WarSimSession, _d: SystemSpec[], missionId: string) => cancelPhysicalMission(s, missionId),
 setPlayback: (prev: WarSimSession, _systems: SystemSpec[], status: 'running' | 'paused'): WarSimSession => ({ ...prev, status }),
 orderWaypointPatrol: (prev: WarSimSession, _systems: SystemSpec[], entityId: string,
   waypoints: [number, number][], altitudeM: number, emcon: 'active' | 'passive',
@@ -54,6 +71,7 @@ switchActiveFaction: (prev: WarSimSession, systemsLibrary: SystemSpec[]): WarSim
       return {
         ...prev,
         activeFaction: nextFaction,
+        ...(prev.physical ? { observerScope: `${nextFaction === 'player' ? prev.playerIso : prev.enemyIso}:hq` } : {}),
       };
     },
 deployUnitToBase: (prev: WarSimSession, systemsLibrary: SystemSpec[], baseId: string, systemId: string, count: number): WarSimSession | null => {

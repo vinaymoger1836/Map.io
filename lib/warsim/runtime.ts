@@ -6,6 +6,7 @@ import { seedFromId, withSimulationContext } from './context';
 import { MODEL_VERSION, STEP_MS, type CommandEnvelope, type CommandReceipt, type RuntimeCheckpoint } from './contracts';
 import { projectObserver } from './projection';
 import { stepPhysical, validatePhysical } from './physics/model';
+import { ensurePhysicalIntel } from './intelligence';
 
 function finiteData(value: unknown): void {
   if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Non-finite numeric input.');
@@ -63,6 +64,13 @@ export class SimulationRuntime {
     const coordination = this.state.coordination;
     if (![coordination.observations, coordination.collectionTasks, coordination.messages, coordination.dependencies,
       coordination.reservations].every(Array.isArray)) throw new Error('Invalid coordination checkpoint.');
+    if (this.world.physical) {
+      const intel = ensurePhysicalIntel(this.world);
+      if (coordination.physical && JSON.stringify(coordination.physical) !== JSON.stringify(intel)) throw new Error('Conflicting intelligence checkpoint.');
+      coordination.physical ??= intel;
+      this.world.physical.intel = coordination.physical;
+      this.world.observerScope ??= `${this.world.activeFaction === 'player' ? this.world.playerIso : this.world.enemyIso}:hq`;
+    }
     if (this.state.pendingCommands.some(c => c.version !== 1 || !Number.isSafeInteger(c.sequence) || c.sequence >= this.state.nextSequence
       || c.sequence < 1 || !Number.isSafeInteger(c.executeAtTick) || c.executeAtTick < this.tick
       || !c.scope || !c.command || !Object.hasOwn(commandHandlers, c.command.type))) throw new Error('Invalid queued command checkpoint.');
@@ -94,13 +102,16 @@ export class SimulationRuntime {
 
   private validateCommand(envelope: CommandEnvelope) {
     const { command, scope } = envelope;
-    if (!scope || scope.faction !== this.world.activeFaction || scope.commandGroupId !== `${scope.faction}:hq`) {
+    const expectedScope = this.world.physical ? this.world.observerScope : `${this.world.activeFaction}:hq`;
+    if (!scope || scope.faction !== this.world.activeFaction || scope.commandGroupId !== expectedScope) {
       throw new Error('The command belongs to a different observer. Select the faction again.');
     }
     if (!Object.hasOwn(commandHandlers, command.type) || !Array.isArray(command.args)) throw new Error('Unknown command.');
     const args = command.args as unknown[];
-    if (this.world.physical && !['setPlayback', 'togglePlay', 'setSpeedMultiplier', 'switchActiveFaction', 'launchPhysical', 'setPhysicalCourse'].includes(command.type)) {
-      throw new Error('This reference encounter supports fire, course, speed and playback orders.');
+    if (this.world.physical && !['setPlayback', 'togglePlay', 'setSpeedMultiplier', 'switchActiveFaction', 'launchPhysical', 'setPhysicalCourse',
+      'setObserverScope', 'requestPhysicalCollection', 'setPhysicalEmission', 'setPhysicalLink', 'forwardPhysicalReport',
+      'setCoalitionSharing', 'planPhysicalStrike', 'cancelPhysicalMission'].includes(command.type)) {
+      throw new Error('This reference encounter does not support that order.');
     }
     const iso = scope.faction === 'player' ? this.world.playerIso : this.world.enemyIso;
     const entityCommands = ['orderSortieToPoint', 'orderWaypointPatrol', 'orderRtb', 'orderStrike', 'orderRefuelAtTanker',
@@ -139,6 +150,7 @@ export class SimulationRuntime {
         validateSession(next);
         finiteData(next);
         this.world = next;
+        if (next.physical?.intel) this.state.coordination.physical = next.physical.intel;
         this.state.acceptedCommands.push({ ...envelope, appliedAtTick: this.tick });
         this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'accepted' });
       } catch (error) {

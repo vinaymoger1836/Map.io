@@ -109,7 +109,7 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
     if (!workerRef.current || !view) { setError('Simulation is not ready. Reload the checkpoint to continue.'); return; }
     const request: WorkerRequest = { type: 'command', envelope: {
       version: 1, sequence: nextSequence.current++, executeAtTick: -1,
-      scope: { faction: view.activeFaction, commandGroupId: `${view.activeFaction}:hq` }, command,
+      scope: { faction: view.activeFaction, commandGroupId: view.physical ? view.observerScope ?? `${view.activeFaction === 'player' ? view.playerIso : view.enemyIso}:hq` : `${view.activeFaction}:hq` }, command,
     } };
     workerRef.current.postMessage(request);
   }, []);
