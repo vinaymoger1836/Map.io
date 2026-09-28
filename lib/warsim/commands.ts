@@ -2,7 +2,7 @@
 import type { WarSimSession, BaseType, PostStrikeAction, BattleOpsPlan, BattleOpsPhase, BattleOpsTask, AirspaceRoeDoctrine, SystemThreatLevel } from '../warSimTypes';
 import type { SystemSpec } from '../specs';
 import { simNow, simRandom } from './context';
-import { cancelPhysicalMission, forwardPhysicalReport, hq, requestPhysicalCollection, reservePhysicalMission,
+import { cancelPhysicalMission, coalitionScope, factionScope, forwardPhysicalReport, hq, requestPhysicalCollection, reservePhysicalMission,
   setCoalitionSharing, setPhysicalEmission, setPhysicalLink } from './intelligence';
 import { launchPhysical, setPhysicalCourse } from './physics/model';
 import {
@@ -31,7 +31,8 @@ launchPhysical: (s: WarSimSession, _d: SystemSpec[], shooter: string, track: str
 setPhysicalCourse: (s: WarSimSession, _d: SystemSpec[], id: string, heading: number, speed: number) => setPhysicalCourse(s, id, heading, speed),
 setObserverScope: (s: WarSimSession, _d: SystemSpec[], scopeId: string) => {
   const iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
-  if (!s.physical || scopeId !== hq(iso) && !s.physical.actors.some(a => a.iso === iso && `${a.id}:local` === scopeId)) throw new Error('Observer scope is unavailable.');
+  if (!s.physical || ![hq(iso), factionScope(iso), coalitionScope(iso)].includes(scopeId)
+    && !s.physical.actors.some(a => a.iso === iso && `${a.id}:local` === scopeId)) throw new Error('Observer scope is unavailable.');
   s.observerScope = scopeId; return s;
 },
 requestPhysicalCollection: (s: WarSimSession, _d: SystemSpec[], assetId: string, center: [number, number, number], radiusM: number) =>

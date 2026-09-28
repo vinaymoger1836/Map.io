@@ -60,7 +60,7 @@ export function createPhysicalIntel(s: WarSimSession): PhysicalIntel {
   const i: PhysicalIntel = { version: 1, sequence: 0, contacts: {}, observations: [], tracks: [], links: [], messages: [],
     sensors: [], tasks: [], coverage: [], missions: [], reservations: [], coalitionSharing: { [s.playerIso]: false, [s.enemyIso]: false } };
   for (const a of p.actors) {
-    i.sensors.push({ actorId: a.id, mode: 'active', rangeM: a.id.includes('scout') ? 9000 : 9000,
+    i.sensors.push({ actorId: a.id, mode: 'active', rangeM: a.id === 'blue-frigate' ? 2500 : 9000,
       intervalTicks: a.id.includes('scout') ? 5 : 10, nextScanTick: 0, sensorTime: 100 });
     i.links.push({ id: `link-${a.id}`, from: local(a.id), to: hq(a.iso), active: true, latencyTicks: 10, capacity: 2 });
   }
@@ -88,6 +88,7 @@ export function currentTrack(i: PhysicalIntel, scopeId: string, id: string, tick
   const t = i.tracks.find(t => t.scopeId === scopeId && t.id === id);
   return t && tick - t.observedTick <= 45 && t.state !== 'lost' ? t : undefined;
 }
+export const effectiveConfidence = (track: IntelTrack, tick: number) => track.confidence * Math.exp(-Math.max(0, tick - track.observedTick) / 300);
 export function scopeTracks(i: PhysicalIntel, scopeId: string): IntelTrack[] { return i.tracks.filter(t => t.scopeId === scopeId && t.state !== 'lost'); }
 function fuse(i: PhysicalIntel, o: IntelObservation, scopeId: string, tick: number) {
   let t = i.tracks.find(t => t.scopeId === scopeId && t.targetRef === o.targetRef);
@@ -173,13 +174,18 @@ export function runPhysicalIntelligence(s: WarSimSession, tick: number) {
     if (task.status === 'processing' && !task.evidenceIds.length && tick >= (i.coverage.find(c => c.id === task.coverageId)?.observedTick ?? tick) + 3) {
       task.status = 'disseminating';
       const link = i.links.find(l => l.from === local(task.assetId) && l.to === hq(actorIso(s, task.assetId)!));
-      if (link?.active) {
-        const coverage = i.coverage.find(c => c.id === task.coverageId)!;
-        i.coverage.push({ ...coverage, id: nextId(i, 'coverage'), scopeId: link.to, observedTick: tick + link.latencyTicks });
-        task.finishedTick = tick + link.latencyTicks;
-      }
+      if (link?.active) task.finishedTick = tick + link.latencyTicks;
     }
-    if (task.status === 'disseminating' && task.finishedTick !== undefined && tick >= task.finishedTick) task.status = 'complete';
+    if (task.status === 'disseminating' && task.finishedTick !== undefined && tick >= task.finishedTick) {
+      const link = i.links.find(l => l.from === local(task.assetId) && l.to === hq(actorIso(s, task.assetId)!));
+      if (!link?.active) task.status = 'interrupted';
+      else {
+        const coverage = i.coverage.find(c => c.id === task.coverageId)!;
+        i.coverage.push({ ...coverage, id: nextId(i, 'coverage'), scopeId: link.to });
+        task.status = 'complete';
+      }
+      task.finishedTick = undefined;
+    }
   }
   for (const m of i.messages) {
     if (m.status !== 'queued' || m.deliveryTick > tick) continue;
@@ -226,7 +232,7 @@ export function projectIntel(s: WarSimSession, scopeId: string, tick: number) {
     tasks: i.tasks.filter(t => actorIso(s, t.assetId) === iso).map(t => ({ ...t })),
     sensors: i.sensors.filter(sensor => actorIso(s, sensor.actorId) === iso).map(sensor => ({ ...sensor })),
     links: i.links.filter(link => ownerIso(s, link.from) === iso).map(link => ({ ...link })),
-    coverage: i.coverage.filter(c => c.scopeId === scopeId).map(c => ({ ...c })),
+    coverage: i.coverage.filter(c => c.scopeId === scopeId && c.observedTick <= tick).map(c => ({ ...c })),
     messages: i.messages.filter(m => ownerIso(s, m.from) === iso && (m.from === scopeId || m.to === scopeId)).map(m => ({ id: m.id, status: m.status, sentTick: m.sentTick, deliveryTick: m.deliveryTick, from: m.from, to: m.to })),
     missions: i.missions.filter(m => actorIso(s, m.shooterId) === iso).map(m => ({ ...m, targetRef: undefined })),
     reservations: i.reservations.filter(r => actorIso(s, r.assetId) === iso).map(r => ({ ...r })),
@@ -279,7 +285,8 @@ export function reservePhysicalMission(s: WarSimSession, shooterId: string, trac
   const scopeId = s.observerScope ?? hq(iso), shooter = s.physical!.actors.find(a => a.id === shooterId && a.iso === iso && a.health > 0);
   const support = s.physical!.actors.find(a => a.id === supportId && a.iso === iso && a.health > 0);
   const track = currentTrack(i, scopeId, trackId, tick);
-  if (!shooter || !support || !track || track.revision !== revision || track.confidence < .5 || !['hold', 'abort', 'continue-local'].includes(onLoss))
+  if (!shooter || !support || shooter.id === support.id || !track || track.revision !== revision || effectiveConfidence(track, tick) < .5
+    || tick - track.observedTick > 15 || !['hold', 'abort', 'continue-local'].includes(onLoss))
     throw new Error('Mission requires an owned shooter, support sensor and current track revision.');
   if (!i.sensors.some(x => x.actorId === supportId && x.mode === 'active') || !i.links.some(l => l.from === local(supportId) && l.active))
     throw new Error('Support sensor or its data link is unavailable.');

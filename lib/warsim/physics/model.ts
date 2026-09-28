@@ -1,7 +1,7 @@
 import type { WarSimSession } from '../../warSimTypes';
 import type { PhysicalActor, PhysicalEncounter, PhysicalRound, PhysicalEvent } from './types';
 import { add, sub, scale, length, unit, dot, fromENU, sweptSphere, type Vec3 } from './coordinates';
-import { acquireSeeker, currentTrack, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
+import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
 
 // Fictional reference profile; SI units. No calibration to real equipment.
@@ -55,7 +55,7 @@ export function launchPhysical(s: WarSimSession, shooterId: string, trackId: str
   const a = p.actors.find(a => a.id === shooterId && a.iso === iso && a.health > 0);
   const track = currentTrack(i, scopeId, trackId, tick);
   const b = p.actors.find(b => b.id === track?.targetRef && b.iso !== iso && b.health > 0);
-  if (!a || !b || !track || track.confidence < .3 || revision !== undefined && track.revision !== revision
+  if (!a || !b || !track || effectiveConfidence(track, tick) < .3 || revision !== undefined && track.revision !== revision
     || length(sub(a.position, track.position)) > PROFILE.sensorRange) throw new Error('A current scoped contact within 9 km is required.');
   const reserved = i.reservations.filter(r => r.assetId === shooterId && r.resource === 'strike-round').length;
   if (a.rounds - reserved < 1 || a.cooldown > s.simTimeSec) throw new Error('Launcher is reloading or its unreserved magazine is empty.');
@@ -84,6 +84,14 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
     const track = currentTrack(i, m.scopeId, m.trackId, tick);
     const available = Boolean(a && b && support && track && missionSupport(i, m, tick));
     if (!available) {
+      const ownTrack = i.tracks.find(t => t.scopeId === local(m.shooterId) && t.targetRef === m.targetRef && t.state === 'fresh');
+      if (m.onLoss === 'continue-local' && a && b && ownTrack && a.cooldown <= s.simTimeSec) {
+        const before = p.rounds.length;
+        launch(s, a, b, false, s.simTimeSec, ownTrack, local(a.id));
+        m.firedRoundId = p.rounds[before]?.id; m.status = 'executed'; m.reason = 'Fired on the shooter’s local track after support loss';
+        i.reservations = i.reservations.filter(r => r.missionId !== m.id);
+        continue;
+      }
       if (m.onLoss === 'abort') { m.status = 'aborted'; m.reason = 'Required support lost'; i.reservations = i.reservations.filter(r => r.missionId !== m.id); }
       else { m.status = 'held'; m.reason = 'Required support or current track unavailable'; }
       continue;
