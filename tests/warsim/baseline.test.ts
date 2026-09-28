@@ -100,9 +100,7 @@ describe('joint operations migration contract', () => {
     expect(state.fogOfWarContacts.enemyContacts).toHaveLength(0);
   });
 
-  it.todo('Phase 3: hold collected evidence locally until the report delivery tick');
-  it.todo('Phase 3: interrupted datalink prevents new sharing and degrades dependent missions');
-  it.todo('Phase 3: duplicate evidence cannot increase confidence as independent confirmation');
+  // Phase 3 physical-reference versions of these contracts run in intelligence.test.ts.
 });
 
 describe('harness isolation', () => {
