@@ -41,7 +41,7 @@ test('restored session runs, switches faction, persists, opens AAR, and exits cl
   await expect.poll(async () => (await storedSession(page))?.simTimeSec ?? 0).toBeGreaterThan(0);
   const savedTime = (await storedSession(page)).simTimeSec;
   await page.getByRole('button', { name: /\(Red\)/ }).click();
-  // Same paused state does not trigger an immediate legacy autosave; wait for its documented 4 s interval.
+  // Commands save their acknowledged checkpoint; wait for that durable view before reload.
   await expect.poll(async () => (await storedSession(page))?.activeFaction, { timeout: 10_000 }).toBe('enemy');
   await page.reload();
   await waitForMap(page);
@@ -54,5 +54,55 @@ test('restored session runs, switches faction, persists, opens AAR, and exits cl
   await page.getByRole('button', { name: /Exit Sim/ }).click();
   await expect(page.getByRole('button', { name: /RESUME/ })).toHaveCount(0);
   await expect.poll(() => documents.get('warsim-session')).toBeNull();
+  expect(pageErrors).toEqual([]);
+});
+
+test('one worker survives play/pause and suspends hidden time without catching up', async ({ page }) => {
+  const { pageErrors } = await preparePage(page, createFixture('transit'));
+  await page.goto('/');
+  await waitForMap(page);
+  const state = page.getByTestId('simulation-runtime');
+  await expect(page.getByRole('button', { name: /RESUME/ })).toBeVisible();
+  const workers = async () => {
+    const named = await Promise.all(page.workers().map(async worker => {
+      try { return await worker.evaluate(() => self.name) === 'warsim-runtime' ? worker : null; }
+      catch { return null; } // A worker can finish while Playwright enumerates it.
+    }));
+    return named.filter(worker => worker !== null);
+  };
+  expect(await workers()).toHaveLength(1);
+  const originalWorker = (await workers())[0];
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole('button', { name: /RESUME/ }).click();
+    await expect(page.getByRole('button', { name: /PAUSE/ })).toBeVisible();
+    await page.getByRole('button', { name: /PAUSE/ }).click();
+    await expect(page.getByRole('button', { name: /RESUME/ })).toBeVisible();
+  }
+  expect(await workers()).toEqual([originalWorker]);
+  await page.getByRole('button', { name: /RESUME/ }).click();
+  await expect.poll(async () => Number(await state.getAttribute('data-tick'))).toBeGreaterThan(3);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(state).toHaveText('Simulation suspended');
+  const hiddenTick = Number(await state.getAttribute('data-tick'));
+  // Deliberate elapsed hidden time: the assertion checks absence of model steps.
+  await page.waitForTimeout(650);
+  expect(Number(await state.getAttribute('data-tick'))).toBe(hiddenTick);
+  await page.evaluate(() => {
+    delete (document as unknown as { hidden?: boolean }).hidden;
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(state).toHaveText('Simulation running');
+  await page.getByRole('button', { name: /PAUSE/ }).click();
+  await expect(page.getByRole('button', { name: /RESUME/ })).toBeVisible();
+  const pausedTick = Number(await state.getAttribute('data-tick'));
+  expect(pausedTick - hiddenTick).toBeLessThan(4);
+  const saved = await storedSession(page);
+  expect(saved.runtime.tick).toBe(pausedTick);
+  expect(saved.runtime.acceptedCommands.length).toBeGreaterThanOrEqual(8);
+  await page.getByRole('button', { name: /Exit Sim/ }).click();
+  await expect.poll(async () => (await workers()).length).toBe(0);
   expect(pageErrors).toEqual([]);
 });

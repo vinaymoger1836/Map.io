@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Per-System Threat Level (DEFCON ROE) & Automated Intelligent Firing Solution Engine
  *
@@ -238,7 +239,7 @@ export function stepThreatLevelEngagements(
           );
 
           engagementEvents.push({
-            id: `evt-lock-${Date.now()}-${friendly.id.slice(-4)}-${hostile.id.slice(-4)}`,
+            id: `evt-lock-${simNow()}-${friendly.id.slice(-4)}-${hostile.id.slice(-4)}`,
             simTimeSec: simTime,
             timeFormatted: `${Math.floor(simTime / 60)}m`,
             faction: 'player',
@@ -345,7 +346,7 @@ export function stepThreatLevelEngagements(
       const missileCategory = isHostileAir ? 'sam' : isHostileNaval ? 'cruise' : 'bomb';
 
       const newMissile: MissileFlyoutTrack = {
-        id: `msl-roe-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `msl-roe-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         originLngLat: defender.lngLat,
         targetLngLat: hostile.lngLat,
         currentLngLat: defender.lngLat,
@@ -372,7 +373,7 @@ export function stepThreatLevelEngagements(
       const levelLabel = (defender.threatLevel || 'defcon_2').toUpperCase().replace('_', ' ');
 
       engagementEvents.push({
-        id: `evt-fire-roe-${Date.now()}-${defender.id.slice(-4)}`,
+        id: `evt-fire-roe-${simNow()}-${defender.id.slice(-4)}`,
         simTimeSec: simTime,
         timeFormatted: `${Math.floor(simTime / 60)}m`,
         faction: 'player',

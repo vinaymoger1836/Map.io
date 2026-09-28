@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Carrier Strike Group (CSG) & Moving Airbase Operations Engine
  *
@@ -283,7 +284,7 @@ export function syncMovingCarrierBases(
         // Within 3 km of carrier: Trap on arresting gear wire!
         if (distToCarrier <= 3.5) {
           csgEvents.push({
-            id: `evt-trap-${Date.now()}-${e.id.slice(-4)}`,
+            id: `evt-trap-${simNow()}-${e.id.slice(-4)}`,
             simTimeSec: simTime,
             timeFormatted: `${Math.floor(simTime / 60)}m`,
             faction: e.iso === session.playerIso ? 'player' : 'enemy',
@@ -462,7 +463,7 @@ export function launchCarrierAirStrike(
   const strikeMissiles: MissileFlyoutTrack[] = [];
   for (let i = 0; i < salvoCount; i++) {
     strikeMissiles.push({
-      id: `msl-cvw-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `msl-cvw-${simNow()}-${i}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       originLngLat: carrier.lngLat,
       targetLngLat: targetLngLat,
       currentLngLat: carrier.lngLat,
@@ -485,7 +486,7 @@ export function launchCarrierAirStrike(
   const newEvents: SimBattleEvent[] = [
     ...session.eventLog,
     {
-      id: `evt-cvw-launch-${Date.now()}`,
+      id: `evt-cvw-launch-${simNow()}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: `${Math.floor(session.simTimeSec / 60)}m`,
       faction: isPlayer ? 'player' : 'enemy',

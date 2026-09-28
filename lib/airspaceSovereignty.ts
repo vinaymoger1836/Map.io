@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Airspace Sovereignty, Border Incursion Detection & Rules of Engagement (ROE) Engine
  *
@@ -378,7 +379,7 @@ export function evaluateBorderIncursion(
   }
 
   return {
-    id: `inc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `inc-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     simTimeSec: 0, // Injected by caller
     entityId: entity.id,
     entityName: entity.name,

@@ -32,11 +32,10 @@ import {
   type SAMThreatZone,
 } from './threatAvoidance';
 import { generateAarRacetrackCoordinates } from './aerialRefueling';
-import { measureWarSim } from './warsim/diagnostics';
+import { beginPresentation, presentSource, stopPresentation } from './warsim/mapPresentation';
 
 function setMeasuredSourceData(map: MLMap, id: string, data: GeoJSON.FeatureCollection) {
-  const source = map.getSource(id) as GeoJSONSource | undefined;
-  if (source) measureWarSim('map.setData.ms', () => source.setData(data));
+  presentSource(map, id, data);
 }
 
 
@@ -787,6 +786,7 @@ export function renderWarSimStateToMap(
   showAllEnvelopes: boolean = false,
   selectedContactId?: string | null
 ) {
+  beginPresentation(map, `${session.id}:${activeFaction}`, session.status === 'running');
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
   } else {
@@ -1072,6 +1072,7 @@ export function renderWarSimStateToMap(
 
     return {
       type: 'Feature' as const,
+      id: e.id,
       geometry: { type: 'Point' as const, coordinates: e.lngLat },
       properties: {
         id: e.id,
@@ -1232,6 +1233,7 @@ export function renderWarSimStateToMap(
 
     return {
       type: 'Feature' as const,
+      id: c.contactId,
       geometry: { type: 'Point' as const, coordinates: c.lastKnownLngLat },
       properties: {
         id: c.contactId,
@@ -1267,6 +1269,7 @@ export function renderWarSimStateToMap(
     // Missile line trajectory
     missileFeatures.push({
       type: 'Feature',
+      id: `${m.id}:trail`,
       geometry: { type: 'LineString', coordinates: [m.originLngLat, m.currentLngLat] },
       properties: {
         color: trackColor,
@@ -1275,6 +1278,7 @@ export function renderWarSimStateToMap(
     // Missile warhead tip with rotating playback vector icon & label
     missileFeatures.push({
       type: 'Feature',
+      id: `${m.id}:head`,
       geometry: { type: 'Point', coordinates: m.currentLngLat },
       properties: {
         icon,
@@ -1658,6 +1662,7 @@ export function updateWarSimPatrolPreview(
 }
 
 export function removeWarSimLayers(map: MLMap) {
+  stopPresentation(map);
   const layerIds = [
     LYR_MISSILES_LABEL,
     LYR_MISSILES_SYMBOL,

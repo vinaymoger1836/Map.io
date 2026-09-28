@@ -27,7 +27,7 @@ import { WarSimAarModal } from './wargames/WarSimAarModal';
 import { useWarSim } from '@/lib/useWarSim';
 import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
-import { readDoc, writeDoc } from '@/lib/store';
+import { readDoc } from '@/lib/store';
 import { measureWarSim } from '@/lib/warsim/diagnostics';
 
 /**
@@ -162,7 +162,6 @@ export default function EurasiaMap() {
     systemsLibrary: war.systems,
     mapRef,
     onClose: () => {
-      writeDoc('warsim-session', null);
       setActiveWarSimSession(null);
     },
   });
@@ -181,7 +180,7 @@ export default function EurasiaMap() {
       warSim.session!.activeFaction,
       warSim.targetPicking,
       warSim.selectedEntityId,
-      war.systems,
+      warSim.systemsLibrary,
       warSim.activeWeaponIndex,
       warSim.showAllEnvelopes,
       warSim.selectedContactId
@@ -192,7 +191,7 @@ export default function EurasiaMap() {
     warSim.session,
     warSim.targetPicking,
     warSim.selectedEntityId,
-    war.systems,
+    warSim.systemsLibrary,
     warSim.activeWeaponIndex,
     warSim.showAllEnvelopes,
     warSim.selectedContactId,
@@ -716,6 +715,21 @@ export default function EurasiaMap() {
           />
         )}
 
+        {mode === 'wargames' && activeWarSimSession && (
+          <div style={{ position: 'absolute', bottom: 44, left: 480, zIndex: 900, maxWidth: 560,
+            padding: '8px 12px', borderRadius: 6, background: 'rgba(7,12,20,.92)', color: '#dbe5ed', fontSize: 12 }}>
+            {warSim.runtimeError ? <div role="alert">
+              {warSim.runtimeError}
+              <button onClick={warSim.dismissRuntimeError} style={{ marginLeft: 12 }}>Dismiss</button>
+              <button onClick={warSim.restartRuntime} style={{ marginLeft: 12 }}>Reload checkpoint</button>
+            </div> : <span role="status" data-testid="simulation-runtime" data-tick={warSim.runtimeDiagnostics?.tick ?? 0}>
+              {!warSim.session ? 'Preparing simulation…' : warSim.runtimeDiagnostics?.suspended ? 'Simulation suspended'
+                : warSim.isPlaying && (warSim.runtimeDiagnostics?.lastTickMs ?? 0) * warSim.speedMultiplier > 100
+                  ? 'Large scenario: simulation is running below the requested speed.'
+                  : warSim.isPlaying ? 'Simulation running' : 'Simulation paused'}
+            </span>}
+          </div>
+        )}
         {mode === 'wargames' && warSim.session && (
           <WarSimConsole
             session={warSim.session}
@@ -793,7 +807,7 @@ export default function EurasiaMap() {
             onStartCorridorPicking={warSim.startCorridorPicking}
             onOpenAar={() => setWarSimAarOpen(true)}
             onExitSim={warSim.exitSim}
-            systemsLibrary={war.systems}
+            systemsLibrary={warSim.systemsLibrary}
             countries={war.countries}
             onSetAirspaceRoe={warSim.setAirspaceRoe}
             onLaunchAsat={warSim.orderAsatStrike}

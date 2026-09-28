@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Space Layer: Low Earth Orbit (LEO) Reconnaissance & Direct-Ascent ASAT Warfare
  *
@@ -124,7 +125,7 @@ export function createDefaultSatellites(
 
   const blueSats: Omit<SimSatellite, 'faction'>[] = [
     {
-      id: `sat-usa-kh11-${Date.now()}`,
+      id: `sat-usa-kh11-${simNow()}`,
       systemId: 'kh-11-keyhole',
       name: 'USA KH-11 Block IV Keyhole',
       iso: 'US',
@@ -142,7 +143,7 @@ export function createDefaultSatellites(
       orbitPhaseOffsetSec: 0,
     },
     {
-      id: `sat-usa-topaz-${Date.now() + 1}`,
+      id: `sat-usa-topaz-${simNow() + 1}`,
       systemId: 'topaz-sar',
       name: 'USA Topaz SAR-5 (FIA Radar)',
       iso: 'US',
@@ -160,7 +161,7 @@ export function createDefaultSatellites(
       orbitPhaseOffsetSec: 2800,
     },
     {
-      id: `sat-usa-orion-${Date.now() + 2}`,
+      id: `sat-usa-orion-${simNow() + 2}`,
       systemId: 'orion-elint',
       name: 'USA Mentor/Orion Space SIGINT',
       iso: 'US',
@@ -181,7 +182,7 @@ export function createDefaultSatellites(
 
   const redSats: Omit<SimSatellite, 'faction'>[] = [
     {
-      id: `sat-ru-persona-${Date.now() + 3}`,
+      id: `sat-ru-persona-${simNow() + 3}`,
       systemId: 'persona-recon',
       name: 'Persona-3 Optical Recon',
       iso: 'RU',
@@ -199,7 +200,7 @@ export function createDefaultSatellites(
       orbitPhaseOffsetSec: 1500,
     },
     {
-      id: `sat-ru-cosmos-${Date.now() + 4}`,
+      id: `sat-ru-cosmos-${simNow() + 4}`,
       systemId: 'cosmos-sar',
       name: 'Cosmos-2544 Spaceborne SAR',
       iso: 'RU',
@@ -217,7 +218,7 @@ export function createDefaultSatellites(
       orbitPhaseOffsetSec: 3600,
     },
     {
-      id: `sat-cn-yaogan-${Date.now() + 5}`,
+      id: `sat-cn-yaogan-${simNow() + 5}`,
       systemId: 'yaogan-optical',
       name: 'Yaogan-33 SAR/Optical Constellation',
       iso: 'CN',
@@ -324,7 +325,7 @@ export function stepSpaceLayer(
         if (wasPreviouslyUnidentified) {
           newlyDiscoveredCount++;
           spaceEvents.push({
-            id: `evt-sat-${Date.now()}-${sat.id.slice(-4)}-${target.id.slice(-4)}`,
+            id: `evt-sat-${simNow()}-${sat.id.slice(-4)}-${target.id.slice(-4)}`,
             simTimeSec: simTime,
             timeFormatted: `${Math.floor(simTime / 60)}m`,
             faction: sat.faction,
@@ -394,7 +395,7 @@ export function orderAsatStrike(
   const tFlySec = Math.max(30, Math.round((Math.sqrt(distKm ** 2 + targetSat.altitudeKm ** 2) / asatSpeedKmh) * 3600));
 
   const asatMissile: MissileFlyoutTrack = {
-    id: `asat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `asat-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     originLngLat: launcher.lngLat,
     targetLngLat: targetSat.currentLngLat,
     currentLngLat: launcher.lngLat,
@@ -417,7 +418,7 @@ export function orderAsatStrike(
   const newEvents: SimBattleEvent[] = [
     ...session.eventLog,
     {
-      id: `evt-asat-launch-${Date.now()}`,
+      id: `evt-asat-launch-${simNow()}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: `${Math.floor(session.simTimeSec / 60)}m`,
       faction: isPlayer ? 'player' : 'enemy',

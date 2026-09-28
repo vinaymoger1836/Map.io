@@ -729,6 +729,8 @@ export interface CombatReport {
 /* ------------------------------------------------------------------ */
 
 export interface WarSimSession {
+  /** Versioned runtime checkpoint. Absent on legacy saves and observer projections. */
+  runtime?: import('./warsim/contracts').RuntimeCheckpoint;
   id: string;
   name: string;
   createdAt: string;

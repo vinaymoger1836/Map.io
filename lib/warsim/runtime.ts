@@ -1,0 +1,153 @@
+import type { WarSimSession } from '../warSimTypes';
+import type { SystemSpec } from '../specs';
+import { tickWarSim } from '../warSimEngine';
+import { commandHandlers } from './commands';
+import { seedFromId, withSimulationContext } from './context';
+import { MODEL_VERSION, STEP_MS, type CommandEnvelope, type CommandReceipt, type RuntimeCheckpoint } from './contracts';
+import { projectObserver } from './projection';
+
+function finiteData(value: unknown): void {
+  if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Non-finite numeric input.');
+  if (value && typeof value === 'object') for (const item of Object.values(value)) finiteData(item);
+}
+function validateSession(session: WarSimSession) {
+  if (!session || typeof session.id !== 'string' || !session.id || !Number.isFinite(session.simTimeSec) || session.simTimeSec < 0
+    || !Array.isArray(session.entities) || !Array.isArray(session.bases) || !Array.isArray(session.activeMissiles)
+    || !Array.isArray(session.eventLog) || !session.fogOfWarContacts || !session.personnel || !session.quotas
+    || !['player', 'enemy'].includes(session.activeFaction) || !['running', 'paused', 'setup', 'concluded'].includes(session.status)) {
+    throw new Error('This save is missing required simulation fields. The original save has been retained.');
+  }
+  const ids = new Set<string>();
+  for (const e of [...session.entities, ...session.bases]) {
+    if (!e.id || ids.has(e.id) || !Array.isArray(e.lngLat) || e.lngLat.length !== 2
+      || !e.lngLat.every(Number.isFinite) || Math.abs(e.lngLat[0]) > 180 || Math.abs(e.lngLat[1]) > 90) {
+      throw new Error('The save contains an invalid or duplicate platform/base.');
+    }
+    ids.add(e.id);
+  }
+}
+
+/** Environment-independent authoritative host, also used by headless tests. */
+export class SimulationRuntime {
+  private world: WarSimSession;
+  private state: RuntimeCheckpoint;
+  private receipts: CommandReceipt[] = [];
+  constructor(input: WarSimSession, definitions: SystemSpec[], seed = seedFromId(input.id)) {
+    validateSession(input);
+    finiteData(input);
+    const saved = input.runtime;
+    if (saved && (saved.schemaVersion !== 1 || saved.modelVersion !== MODEL_VERSION || saved.stepMs !== STEP_MS
+      || !Number.isSafeInteger(saved.tick) || saved.tick < 0 || !Number.isSafeInteger(saved.nextSequence) || saved.nextSequence < 1
+      || !Number.isFinite(saved.originSimTimeSec) || saved.originSimTimeSec < 0
+      || Math.abs(input.simTimeSec - (saved.originSimTimeSec + saved.tick * STEP_MS / 1000)) > 1e-6
+      || !saved.random || !Number.isSafeInteger(saved.random.idCounter) || saved.random.idCounter < 0
+      || !Number.isFinite(saved.random.epochMs)
+      || ![saved.random.combat, saved.random.identifiers].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 0xffffffff)
+      || !Array.isArray(saved.definitions)
+      || !Array.isArray(saved.pendingCommands) || !Array.isArray(saved.acceptedCommands) || !saved.coordination)) {
+      throw new Error('Unsupported or damaged runtime checkpoint. The original save has been retained.');
+    }
+    this.world = structuredClone(input);
+    delete this.world.runtime;
+    this.state = saved ? structuredClone(saved) : {
+      schemaVersion: 1, modelVersion: MODEL_VERSION, stepMs: STEP_MS,
+      tick: 0, originSimTimeSec: input.simTimeSec,
+      random: { combat: seed >>> 0, identifiers: (seed ^ 0x9e3779b9) >>> 0, idCounter: 0, epochMs: 1_800_000_000_000 },
+      nextSequence: 1, definitions: structuredClone(definitions), pendingCommands: [], acceptedCommands: [],
+      coordination: { observations: [], collectionTasks: [], messages: [], dependencies: [], reservations: [] },
+    };
+    const coordination = this.state.coordination;
+    if (![coordination.observations, coordination.collectionTasks, coordination.messages, coordination.dependencies,
+      coordination.reservations].every(Array.isArray)) throw new Error('Invalid coordination checkpoint.');
+    if (this.state.pendingCommands.some(c => c.version !== 1 || !Number.isSafeInteger(c.sequence) || c.sequence >= this.state.nextSequence
+      || c.sequence < 1 || !Number.isSafeInteger(c.executeAtTick) || c.executeAtTick < this.tick
+      || !c.scope || !c.command || !Object.hasOwn(commandHandlers, c.command.type))) throw new Error('Invalid queued command checkpoint.');
+    if (![1, 3, 5, 10, 30].includes(this.world.timeMultiplier)) this.world.timeMultiplier = 1;
+  }
+  get tick() { return this.state.tick; }
+  get running() { return this.world.status === 'running'; }
+  get speed() { return this.world.timeMultiplier; }
+  get pendingCount() { return this.state.pendingCommands.length; }
+  checkpoint(): WarSimSession { return structuredClone({ ...this.world, runtime: this.state }); }
+  observer(): WarSimSession { return projectObserver(this.world); }
+  takeReceipts() { return this.receipts.splice(0); }
+
+  submit(envelope: CommandEnvelope) {
+    const reject = (reason: string) => this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'rejected', reason });
+    if (envelope.version !== 1 || envelope.sequence !== this.state.nextSequence) {
+      reject('Command version or sequence does not match the current session.'); return;
+    }
+    this.state.nextSequence++;
+    if (!Number.isSafeInteger(envelope.executeAtTick) || envelope.executeAtTick < this.tick) {
+      reject('Command refers to a tick that has already passed.'); return;
+    }
+    try { finiteData(envelope); }
+    catch (error) { reject(String(error)); return; }
+    this.state.pendingCommands.push(structuredClone(envelope));
+    this.state.pendingCommands.sort((a, b) => a.executeAtTick - b.executeAtTick || a.sequence - b.sequence);
+    this.applyDueCommands();
+  }
+
+  private validateCommand(envelope: CommandEnvelope) {
+    const { command, scope } = envelope;
+    if (!scope || scope.faction !== this.world.activeFaction || scope.commandGroupId !== `${scope.faction}:hq`) {
+      throw new Error('The command belongs to a different observer. Select the faction again.');
+    }
+    if (!Object.hasOwn(commandHandlers, command.type) || !Array.isArray(command.args)) throw new Error('Unknown command.');
+    const args = command.args as unknown[];
+    const iso = scope.faction === 'player' ? this.world.playerIso : this.world.enemyIso;
+    const entityCommands = ['orderSortieToPoint', 'orderWaypointPatrol', 'orderRtb', 'orderStrike', 'orderRefuelAtTanker',
+      'setEntityRcs', 'assignEntityToNetwork', 'removeEntityFromNetwork', 'orderAsatStrike', 'orderSeadStrike',
+      'updateEntityEwMode', 'setEntityThreatLevel', 'orderRearmCarrierAirWing', 'orderLaunchCarrierStrike'];
+    if (entityCommands.includes(command.type) && !this.world.entities.some(e => e.id === args[0] && e.iso === iso && e.status !== 'destroyed')) {
+      throw new Error('Select an available platform belonging to this faction.');
+    }
+    if (['renameBase', 'deployUnitToBase'].includes(command.type) && !this.world.bases.some(b => b.id === args[0] && b.iso === iso)) {
+      throw new Error('The selected base is unavailable to this faction.');
+    }
+    if (command.type === 'setSpeedMultiplier' && ![1, 3, 5, 10, 30].includes(args[0] as number)) throw new Error('Unsupported simulation speed.');
+    if (command.type === 'setPlayback' && !['running', 'paused'].includes(args[0] as string)) throw new Error('Invalid playback state.');
+    if (command.type === 'setEntityRcs' && (typeof args[1] !== 'number' || args[1] < 0)) throw new Error('RCS must be a nonnegative number.');
+    if (command.type === 'setGlobalThreatLevel' && args[0] !== iso) throw new Error('Cannot change the other faction’s orders.');
+    const netId = command.type === 'assignEntityToNetwork' ? args[1]
+      : ['toggleNetworkOth', 'setNetworkDoctrine'].includes(command.type) ? args[0] : undefined;
+    if (netId !== undefined && !this.world.networks?.some(n => n.id === netId && n.iso === iso)) throw new Error('Network is unavailable to this faction.');
+    const count = command.type === 'deployUnitToBase' ? args[2] : command.type === 'deployAutonomousBattery' ? args[1] : undefined;
+    if (count !== undefined && (!Number.isSafeInteger(count) || (count as number) <= 0)) throw new Error('Deploy a positive whole number of platforms.');
+  }
+  private applyDueCommands() {
+    while (this.state.pendingCommands[0]?.executeAtTick <= this.tick) {
+      const envelope = this.state.pendingCommands.shift()!;
+      const randomBefore = { ...this.state.random };
+      try {
+        this.validateCommand(envelope);
+        // Legacy actions can mutate nested arrays. Rejected commands are atomic.
+        const draft = structuredClone(this.world);
+        const handler = commandHandlers[envelope.command.type] as (s: WarSimSession, d: SystemSpec[], ...args: unknown[]) => WarSimSession | null;
+        const next = withSimulationContext(this.state.random, () => handler(draft, this.state.definitions, ...envelope.command.args));
+        const idempotent = ['setPlayback', 'setSpeedMultiplier', 'setEntityRcs', 'setAirspaceRoe', 'setEntityThreatLevel', 'setGlobalThreatLevel', 'updateEntityEwMode'];
+        if (!next || (!idempotent.includes(envelope.command.type) && JSON.stringify(next) === JSON.stringify(this.world))) {
+          throw new Error('Order could not be applied; check readiness, inventory and task parameters.');
+        }
+        validateSession(next);
+        finiteData(next);
+        this.world = next;
+        this.state.acceptedCommands.push({ ...envelope, appliedAtTick: this.tick });
+        this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'accepted' });
+      } catch (error) {
+        this.state.random = randomBefore;
+        this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'rejected', reason: error instanceof Error ? error.message : String(error) });
+      }
+    }
+  }
+  step(): boolean {
+    this.applyDueCommands();
+    if (!this.running) return false;
+    const speed = this.world.timeMultiplier;
+    const next = withSimulationContext(this.state.random, () => tickWarSim({ ...this.world, timeMultiplier: 1 }, STEP_MS / 1000, this.state.definitions));
+    this.state.tick++;
+    this.world = { ...next, timeMultiplier: speed, simTimeSec: this.state.originSimTimeSec + this.tick * STEP_MS / 1000 };
+    this.applyDueCommands();
+    return true;
+  }
+}

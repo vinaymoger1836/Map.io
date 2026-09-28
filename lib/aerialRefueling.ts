@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Combat Air Refueling (AAR) & Strategic Tanker Tracks Engine
  *
@@ -386,7 +387,7 @@ export function createAarCombatReport(
     : `${tanker.name} completed scheduled in-flight refueling with ${receiver.name}. Offloaded ${fuelTransferredKg.toFixed(0)} kg of fuel via ${tankerSpecs.refuelingMethod.toUpperCase()} transfer, extending operational combat radius by +${extensionKm} km.`;
 
   return {
-    id: `rpt-aar-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `rpt-aar-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     simTimeSec: session.simTimeSec,
     timeFormatted: new Date(session.simTimeSec * 1000).toISOString().slice(11, 19),
     category: 'aar_logistics',

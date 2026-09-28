@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * War Simulation Execution & Kinematics Engine
  *
@@ -293,7 +294,7 @@ export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwor
 
   if (!networks.some((n) => n.faction === 'player')) {
     networks.push({
-      id: `net-player-${Date.now().toString(36)}`,
+      id: `net-player-${simNow().toString(36)}`,
       name: `${session.playerIso} Theater Datalink Grid (CEC)`,
       faction: 'player',
       iso: session.playerIso,
@@ -306,7 +307,7 @@ export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwor
 
   if (!networks.some((n) => n.faction === 'enemy')) {
     networks.push({
-      id: `net-enemy-${Date.now().toString(36)}`,
+      id: `net-enemy-${simNow().toString(36)}`,
       name: `${session.enemyIso} Integrated Air Defense Net`,
       faction: 'enemy',
       iso: session.enemyIso,
@@ -431,7 +432,7 @@ export function tickWarSim(
     lngLat?: [number, number]
   ) => {
     newEvents.push({
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: newSimTimeSec,
       timeFormatted,
       faction,
@@ -444,7 +445,7 @@ export function tickWarSim(
 
   const logReport = (report: Omit<CombatReport, 'id' | 'simTimeSec' | 'timeFormatted'>) => {
     newReports.push({
-      id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: `rep-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`,
       simTimeSec: newSimTimeSec,
       timeFormatted,
       ...report,
@@ -1239,7 +1240,7 @@ export function tickWarSim(
             };
           });
 
-          const salvoId = `salvo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const salvoId = `salvo-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`;
 
           // Spawn salvoCount missiles in activeMissiles with sequential ripple launch times
           for (let s = 0; s < salvoCount; s++) {
@@ -1248,7 +1249,7 @@ export function tickWarSim(
 
             const munitionProfile = resolveMunitionPhysicalProfile(wName, missileCategory, missileSpeed);
             const newMissile: MissileFlyoutTrack = {
-              id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+              id: `msl-${simNow()}-${wIdx}-${s}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
               originLngLat: entity.lngLat,
               targetLngLat: targetPos,
               currentLngLat: entity.lngLat,
@@ -1284,7 +1285,7 @@ export function tickWarSim(
           : `Hostile ${targetDomain.toUpperCase()} Track (Tier 1 Sensor Track)`;
 
         const totalSalvoSize = itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0);
-        const activeSalvoId = session.activeMissiles[session.activeMissiles.length - 1]?.salvoId ?? `salvo-${Date.now()}`;
+        const activeSalvoId = session.activeMissiles[session.activeMissiles.length - 1]?.salvoId ?? `salvo-${simNow()}`;
 
         // Register Salvo in Tracker to consolidate into a single comprehensive After-Action Report
         session.salvoTrackers = session.salvoTrackers || [];
@@ -1504,7 +1505,7 @@ export function tickWarSim(
         threat.currentLngLat = collisionLngLat;
 
         const effectivePk = sam.interceptorPk ?? 0.82;
-        if (Math.random() < effectivePk) {
+        if (simRandom() < effectivePk) {
           // Both missiles collide and are neutralized simultaneously
           threat.isIntercepted = true;
           sam.isIntercepted = true;
@@ -1578,7 +1579,7 @@ export function tickWarSim(
       if (distToSat <= 35 || asat.progress >= 0.95) {
         asat.isIntercepted = true;
         const pk = asat.interceptorPk ?? 0.88;
-        if (Math.random() < pk) {
+        if (simRandom() < pk) {
           targetSat.status = 'destroyed';
           logEvent(
             asat.attackerIso === session.playerIso ? 'player' : 'enemy',
@@ -1765,7 +1766,7 @@ export function tickWarSim(
 
           // Spawn interceptor directly tracking target threat
           const interceptorTrack: MissileFlyoutTrack = {
-            id: `msl-int-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+            id: `msl-int-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
             originLngLat: def.lngLat,
             targetLngLat: m.currentLngLat,
             currentLngLat: def.lngLat,
@@ -1911,7 +1912,7 @@ export function tickWarSim(
           ciwsPk *= 0.30; // Optical fallback tracking only
         }
 
-        if (ciwsPk > 0 && Math.random() < ciwsPk) {
+        if (ciwsPk > 0 && simRandom() < ciwsPk) {
           m.isIntercepted = true;
 
           if (m.salvoId) {
@@ -2828,14 +2829,14 @@ export function tickWarSim(
 
 export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string): BattleOpsPlan {
   return {
-    id: `bop-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `bop-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     title: `Operation ${playerIso} Thunder: Multi-Phase Theater Strike`,
     description: `Synchronized multi-axis theater strike and ISR offensive against ${enemyIso} military complexes.`,
     status: 'draft',
     activePhaseIndex: 0,
     phases: [
       {
-        id: `phase-1-${Date.now()}`,
+        id: `phase-1-${simNow()}`,
         phaseNumber: 1,
         name: 'Phase 1: SEAD & Air Defense Suppression',
         triggerDelaySec: 0, // T+00:00
@@ -2843,7 +2844,7 @@ export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string):
         tasks: [],
       },
       {
-        id: `phase-2-${Date.now() + 1}`,
+        id: `phase-2-${simNow() + 1}`,
         phaseNumber: 2,
         name: 'Phase 2: Deep ISR Ingress & Escort Sorties',
         triggerDelaySec: 900, // T+00:15 (15 mins)
@@ -2851,7 +2852,7 @@ export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string):
         tasks: [],
       },
       {
-        id: `phase-3-${Date.now() + 2}`,
+        id: `phase-3-${simNow() + 2}`,
         phaseNumber: 3,
         name: 'Phase 3: Main Strategic Strike Package',
         triggerDelaySec: 1800, // T+00:30 (30 mins)
@@ -2928,7 +2929,7 @@ export function generateConsolidatedBattleOpsReport(
         : 'Inconclusive / Heavy Defense Interception';
 
   return {
-    id: `rpt-bop-${plan.id}-${Date.now().toString(36)}`,
+    id: `rpt-bop-${plan.id}-${simNow().toString(36)}`,
     simTimeSec: session.simTimeSec,
     timeFormatted: formatSimTime(session.simTimeSec),
     category: 'battle_ops',
@@ -3088,7 +3089,7 @@ export function launchSimStrikeSalvoDirectly(
       ? 'torpedo'
       : 'cruise';
 
-  const salvoId = `salvo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const salvoId = `salvo-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`;
   const isAttackerPlayer = attacker.iso === session.playerIso;
   const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
   const targetPID = getContactPID(targetEntityId, attackerFaction, session.fogOfWarContacts);
@@ -3101,7 +3102,7 @@ export function launchSimStrikeSalvoDirectly(
     const launchStaggerSec = s * 1.2;
     const munitionProfile = resolveMunitionPhysicalProfile(weaponName, missileCategory, missileSpeed);
     const msl: MissileFlyoutTrack = {
-      id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `msl-${simNow()}-${wIdx}-${s}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       originLngLat: attacker.lngLat,
       targetLngLat: targetPos,
       currentLngLat: attacker.lngLat,
@@ -3176,7 +3177,7 @@ export function launchSimStrikeSalvoDirectly(
   });
 
   const newEvent: SimBattleEvent = {
-    id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     simTimeSec: session.simTimeSec,
     timeFormatted: formatSimTime(session.simTimeSec),
     faction: attackerFaction,
@@ -3234,7 +3235,7 @@ export function processBattleOpsPlanTick(
       currentSession.eventLog = [
         ...currentSession.eventLog,
         {
-          id: `evt-${Date.now()}-bop-${phase.phaseNumber}`,
+          id: `evt-${simNow()}-bop-${phase.phaseNumber}`,
           simTimeSec: currentSession.simTimeSec,
           timeFormatted: formatSimTime(currentSession.simTimeSec),
           faction: currentSession.activeFaction,
@@ -3380,7 +3381,7 @@ export function processBattleOpsPlanTick(
       currentSession.eventLog = [
         ...currentSession.eventLog,
         {
-          id: `evt-${Date.now()}-bop-done-${phase.phaseNumber}`,
+          id: `evt-${simNow()}-bop-done-${phase.phaseNumber}`,
           simTimeSec: currentSession.simTimeSec,
           timeFormatted: formatSimTime(currentSession.simTimeSec),
           faction: currentSession.activeFaction,
@@ -3420,7 +3421,7 @@ export function processBattleOpsPlanTick(
       currentSession.eventLog = [
         ...currentSession.eventLog,
         {
-          id: `evt-${Date.now()}-bop-final`,
+          id: `evt-${simNow()}-bop-final`,
           simTimeSec: currentSession.simTimeSec,
           timeFormatted: formatSimTime(currentSession.simTimeSec),
           faction: currentSession.activeFaction,
@@ -3571,7 +3572,7 @@ export function deployEntityToBase(
   const entityName = getUniqueSystemEntityName(rawName, systemId, base.iso, session.entities, count);
 
   const newEntity: SimEntity = {
-    id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    id: `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`,
     iso: base.iso,
     name: entityName,
     typeId,
@@ -3641,7 +3642,7 @@ export function deployAutonomousEntity(
     : (spec?.rcs ?? (spec ? getSystemRcs(spec, domain) : 5.0));
 
   const newEntity: SimEntity = {
-    id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    id: `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`,
     iso,
     name: entityName,
     typeId,
@@ -3672,7 +3673,7 @@ export function deployAutonomousEntity(
   const newEvents = [
     ...session.eventLog,
     {
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: formatSimTime(session.simTimeSec),
       faction,
@@ -3744,7 +3745,7 @@ export function orderPatrol(
   if (isPartialSplit) {
     const remainingCount = targetEntity.count - effectiveCount;
     const personnelPerUnit = Math.max(1, Math.round(targetEntity.personnel / targetEntity.count));
-    const sortieEntityId = `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+    const sortieEntityId = `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`;
 
     const sortieName = ensureUniqueEntityName(
       targetEntity.name,
@@ -3800,7 +3801,7 @@ export function orderPatrol(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -3855,7 +3856,7 @@ export function orderPatrol(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -3910,7 +3911,7 @@ export function addSimBase(
   lngLat: [number, number]
 ): WarSimSession {
   const newBase: SimBase = {
-    id: `base-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    id: `base-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`,
     name: name || `${iso} ${type.replace('_', ' ').toUpperCase()}`,
     iso,
     type,
@@ -3998,7 +3999,7 @@ export function orderEntityRtb(session: WarSimSession, entityId: string): WarSim
     ? [
         ...session.eventLog,
         {
-          id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
           simTimeSec: session.simTimeSec,
           timeFormatted: formatSimTime(session.simTimeSec),
           faction,
@@ -4086,7 +4087,7 @@ export function orderStrikeMission(
   if (isPartialSplit) {
     const remainingCount = attacker.count - effectiveCount;
     const personnelPerUnit = Math.max(1, Math.round(attacker.personnel / attacker.count));
-    const sortieEntityId = `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+    const sortieEntityId = `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`;
 
     const sortieName = ensureUniqueEntityName(
       attacker.name,
@@ -4145,7 +4146,7 @@ export function orderStrikeMission(
     const newReports: CombatReport[] = [
       ...(session.reports || []),
       {
-        id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: `rep-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         category: 'offensive_strike',
@@ -4199,7 +4200,7 @@ export function orderStrikeMission(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -4243,7 +4244,7 @@ export function orderStrikeMission(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -4314,7 +4315,7 @@ export function orderAerialRefueling(
   const newEvents = [
     ...session.eventLog,
     {
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: formatSimTime(session.simTimeSec),
       faction,
@@ -4348,7 +4349,7 @@ export function setSessionAirspaceRoe(
   const newEvents = [
     ...session.eventLog,
     {
-      id: `evt-${Date.now()}-roe-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-roe-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: formatSimTime(session.simTimeSec),
       faction: session.activeFaction,

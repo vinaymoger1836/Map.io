@@ -1,7 +1,7 @@
 /** Opt-in Phase 0 measurements. No simulation behavior depends on this module. */
 import type { ProfilerOnRenderCallback } from 'react';
 
-type Metric = 'engine.tick.ms' | 'render.sync.ms' | 'map.setData.ms' | 'react.commit.ms' | 'frame.interval.ms' | 'heap.used.bytes';
+type Metric = 'engine.tick.ms' | 'render.sync.ms' | 'map.setData.ms' | 'map.updateData.ms' | 'react.commit.ms' | 'frame.interval.ms' | 'heap.used.bytes';
 type Series = { count: number; total: number; min: number; max: number; samples: number[] };
 const LIMIT = 6000;
 let active = false;
