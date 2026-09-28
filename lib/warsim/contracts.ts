@@ -39,6 +39,7 @@ export interface CoordinationState {
   observations: Observation[]; collectionTasks: CollectionTask[];
   messages: CommunicationMessage[]; dependencies: MissionDependency[];
   reservations: ResourceReservation[];
+  physical?: import('./intelligence').PhysicalIntel;
 }
 type HandlerArgs<T> = T extends (state: WarSimSession, systems: SystemSpec[], ...args: infer A) => unknown ? A : never;
 export type SimulationCommand = { [K in keyof typeof commandHandlers]: {

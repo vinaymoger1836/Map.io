@@ -7,6 +7,7 @@ export interface PhysicalActor {
 export interface PhysicalRound {
   id: string; shooterId: string; iso: string; targetId: string; interceptor: boolean;
   position: Vec3; launchPosition: Vec3; velocity: Vec3; age: number;
+  sourceScope?: string; aimPosition?: Vec3; aimVelocity?: Vec3; trackRevision?: number; seekerLocked?: boolean;
 }
 export interface PhysicalEvent {
   id: number; time: number; kind: 'launch' | 'impact' | 'intercept' | 'expired';
@@ -15,4 +16,5 @@ export interface PhysicalEvent {
 export interface PhysicalEncounter {
   version: 1; model: 'coastal-pointmass-v1'; origin: Geo; sequence: number;
   actors: PhysicalActor[]; rounds: PhysicalRound[]; events: PhysicalEvent[];
+  intel?: import('../intelligence').PhysicalIntel;
 }

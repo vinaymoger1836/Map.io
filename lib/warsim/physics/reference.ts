@@ -1,5 +1,6 @@
 import type { WarSimSession } from '../../warSimTypes';
 import { syncPhysical } from './model';
+import { createPhysicalIntel } from '../intelligence';
 /** Authored fictional encounter. Creating it never reads or edits the user's board. */
 export function createPhysicalReference(): WarSimSession {
   const personnel = { army: 0, navy: 200, airForce: 0, strategicForces: 0, specialOps: 0, total: 200 };
@@ -11,10 +12,12 @@ export function createPhysicalReference(): WarSimSession {
     physical: { version: 1, model: 'coastal-pointmass-v1', origin: [-150, 20, 0], sequence: 0, rounds: [], events: [], actors: [
       { id: 'blue-frigate', iso: '840', position: [0, 0, 0], velocity: [0, 8, 0], heading: 0, course: 0, speed: 8, desiredSpeed: 8, fuel: 100, health: 100, rounds: 8, interceptors: 4, cooldown: 0 },
       { id: 'red-frigate', iso: '156', position: [3000, 1800, 0], velocity: [0, -6, 0], heading: 180, course: 180, speed: 6, desiredSpeed: 6, fuel: 100, health: 100, rounds: 8, interceptors: 2, cooldown: 0 },
+      { id: 'blue-scout', iso: '840', position: [-1400, 2700, 0], velocity: [0, 4, 0], heading: 0, course: 0, speed: 4, desiredSpeed: 4, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0 },
     ] },
   };
-  s.entities = s.physical!.actors.map(a => ({ id: a.id, systemId: 'reference-frigate', iso: a.iso, name: a.iso === '840' ? 'FS Resolute' : 'FS Meridian',
+  s.entities = s.physical!.actors.map(a => ({ id: a.id, systemId: 'reference-frigate', iso: a.iso, name: a.id === 'blue-scout' ? 'FS Surveyor' : a.iso === '840' ? 'FS Resolute' : 'FS Meridian',
     typeId: 'destroyer', count: 1, lngLat: [-150, 20], altitudeM: 0, headingDeg: a.heading, speedKmh: a.speed * 3.6,
-    currentFuelPct: 100, status: 'on_station', damage: 'intact', turnaroundTimerSec: 0, repairTimerSec: 0, personnel: 100, magazines: { 0: 8, 1: a.interceptors }, rcs: 100 }));
+    currentFuelPct: 100, status: 'on_station', damage: 'intact', turnaroundTimerSec: 0, repairTimerSec: 0, personnel: 100, magazines: { 0: a.rounds, 1: a.interceptors }, rcs: 100 }));
+  s.physical!.intel = createPhysicalIntel(s);
   syncPhysical(s); return s;
 }
