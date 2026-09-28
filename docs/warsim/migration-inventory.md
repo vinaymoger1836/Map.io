@@ -1,5 +1,7 @@
 # WarSim persistence and migration inventory
 
+[Phase 2](phase-2.md#knowledge-and-persistence) adds an optional versioned physical encounter to worker checkpoints. Legacy sessions retain their adapter and saved data. Physical sessions restore their projectiles/resources and reject unsupported model versions.
+
 Historical Phase 0 inventory. See [Phase 1 persistence and recovery](phase-1.md#persistence-and-recovery) for the implemented versioned runtime checkpoint and legacy adaptation path.
 
 Phase 0, 25 September 2026. This is an inventory and acceptance contract for future adapters. No new save schema or destructive migration is introduced in Phase 0.

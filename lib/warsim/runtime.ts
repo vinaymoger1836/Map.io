@@ -39,7 +39,8 @@ export class SimulationRuntime {
     seed ??= seedFromId(input.id);
     finiteData(input);
     const saved = input.runtime;
-    if (saved && (saved.schemaVersion !== 1 || saved.modelVersion !== MODEL_VERSION || saved.stepMs !== STEP_MS
+    const modelVersion = input.physical?.model ?? MODEL_VERSION;
+    if (saved && (saved.schemaVersion !== 1 || saved.modelVersion !== modelVersion || saved.stepMs !== STEP_MS
       || !Number.isSafeInteger(saved.tick) || saved.tick < 0 || !Number.isSafeInteger(saved.nextSequence) || saved.nextSequence < 1
       || !Number.isFinite(saved.originSimTimeSec) || saved.originSimTimeSec < 0
       || Math.abs(input.simTimeSec - (saved.originSimTimeSec + saved.tick * STEP_MS / 1000)) > 1e-6
@@ -53,7 +54,7 @@ export class SimulationRuntime {
     this.world = structuredClone(input);
     delete this.world.runtime;
     this.state = saved ? structuredClone(saved) : {
-      schemaVersion: 1, modelVersion: MODEL_VERSION, stepMs: STEP_MS,
+      schemaVersion: 1, modelVersion, stepMs: STEP_MS,
       tick: 0, originSimTimeSec: input.simTimeSec,
       random: { combat: seed >>> 0, identifiers: (seed ^ 0x9e3779b9) >>> 0, idCounter: 0, epochMs: 1_800_000_000_000 },
       nextSequence: 1, definitions: structuredClone(definitions), pendingCommands: [], acceptedCommands: [],

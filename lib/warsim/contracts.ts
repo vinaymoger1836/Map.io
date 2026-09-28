@@ -5,6 +5,7 @@ import type { RandomState } from './context';
 
 export const RUNTIME_VERSION = 1 as const;
 export const MODEL_VERSION = 'legacy-fixed-v1' as const;
+export const PHYSICAL_MODEL_VERSION = 'coastal-pointmass-v1' as const;
 export const STEP_MS = 100;
 export type Faction = 'player' | 'enemy';
 export interface KnowledgeScope { faction: Faction; commandGroupId: string }
@@ -50,7 +51,7 @@ export interface CommandReceipt {
   sequence: number; tick: number; status: 'accepted' | 'rejected'; reason?: string;
 }
 export interface RuntimeCheckpoint {
-  schemaVersion: 1; modelVersion: typeof MODEL_VERSION; stepMs: 100;
+  schemaVersion: 1; modelVersion: typeof MODEL_VERSION | typeof PHYSICAL_MODEL_VERSION; stepMs: 100;
   tick: number; originSimTimeSec: number; random: RandomState; nextSequence: number;
   definitions: SystemSpec[]; pendingCommands: CommandEnvelope[];
   acceptedCommands: Array<CommandEnvelope & { appliedAtTick: number }>;
