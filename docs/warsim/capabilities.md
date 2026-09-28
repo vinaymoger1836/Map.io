@@ -1,6 +1,6 @@
 # Legacy WarSim capability baseline
 
-The optional [Phase 2 physical encounter and tactical renderer](phase-2.md) now provide a separately versioned point-mass model, continuous collisions and an observer-scoped 3D scene. The table below remains the historical legacy baseline.
+The optional [Phase 3 intelligence and coordination reference](phase-3.md) adds scoped evidence, delayed sharing, collection, uncertainty, and supported missions to the [Phase 2 physical encounter](phase-2.md). The table below remains the historical legacy baseline; Phase 3 does not replace its multidomain rules.
 
 Historical Phase 0 reference. [Phase 1](phase-1.md) replaces clock/state ownership, command transport, checkpointing and map presentation; domain-model limitations below remain relevant unless noted there.
 

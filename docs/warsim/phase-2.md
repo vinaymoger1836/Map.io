@@ -1,6 +1,6 @@
 # Phase 2: physical encounter and tactical renderer
 
-Delivered 28 September 2026. This phase adds an opt-in, fictional surface engagement and a Three.js tactical viewport. The broader multidomain engine continues through the Phase 1 adapter. This is the first playable 3D foundation; production AAA assets, terrain, destruction, weather, and validated equipment models remain future work.
+Delivered 28 September 2026. This phase adds an opt-in, fictional surface engagement and a Three.js tactical viewport. The broader multidomain engine continues through the Phase 1 adapter. This is the first playable 3D foundation; production AAA assets, terrain, destruction, weather, and validated equipment models remain future work. The later [Phase 3 reference](phase-3.md) replaces the exact-sensing behavior described below.
 
 ## Try it
 

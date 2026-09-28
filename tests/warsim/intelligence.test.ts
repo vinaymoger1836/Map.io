@@ -94,6 +94,18 @@ describe('physical reference / intelligence and coordination', () => {
     expect(observedContacts(s, hq(s.playerIso), 84)).toEqual([]);
   });
 
+  it('keeps a guided round on its last estimate until its seeker can acquire a plausible contact', () => {
+    const s = createPhysicalReference(), track = s.fogOfWarContacts.playerContacts[0];
+    launchPhysical(s, 'blue-frigate', track.contactId);
+    const round = s.physical!.rounds[0], firstAim = [...round.aimPosition!];
+    s.physical!.actors.find(a => a.id === 'red-frigate')!.position = [8000, 0, 0];
+    setPhysicalEmission(s, 'blue-scout', 'passive'); setPhysicalEmission(s, 'blue-frigate', 'passive');
+    advance(s, 4);
+    expect(round.seekerLocked).toBeUndefined();
+    expect(round.aimPosition).toEqual(firstAim);
+    expect(intel(s).tracks.filter(t => t.scopeId === local(round.id))).toEqual([]);
+  });
+
   it('interrupts sharing and holds a reserved strike when the support link is lost', () => {
     const s = createPhysicalReference(); advance(s, 14);
     s.physical!.actors[0].rounds = 1;

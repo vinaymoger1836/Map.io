@@ -71,7 +71,8 @@ function launch(s: WarSimSession, shooter: PhysicalActor, target: PhysicalActor 
   const round: PhysicalRound = { id: `round-${++p.sequence}`, shooterId: shooter.id, iso: shooter.iso,
     targetId: target.id, interceptor, position: add(shooter.position, [0, 0, 18]), launchPosition: add(shooter.position, [0, 0, 18]),
     velocity: add(scale(direction, interceptor ? 260 : 160), [0, 0, 45]), age: 0,
-    sourceScope: scopeId, aimPosition: [...track.position], aimVelocity: [...track.velocity], trackRevision: track.revision };
+    sourceScope: scopeId, aimPosition: [...track.position], aimVelocity: [...track.velocity], aimObservedTick: track.observedTick,
+    trackRevision: track.revision };
   if (interceptor) shooter.interceptors--; else shooter.rounds--;
   shooter.cooldown = time + 1.5;
   p.rounds.push(round);
@@ -166,14 +167,15 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
       const ownTrack = seeker.get(r.id);
       const remote = r.sourceScope ? i.tracks.find(t => t.scopeId === r.sourceScope && t.targetRef === r.targetId && t.state !== 'lost') : undefined;
       const remoteLink = r.sourceScope?.endsWith(':hq') ? i.links.some(l => l.from === local(r.shooterId) && l.active) : true;
-      if (ownTrack) { r.seekerLocked = true; r.aimPosition = [...ownTrack.position]; r.aimVelocity = [...ownTrack.velocity]; }
+      if (ownTrack) { r.seekerLocked = true; r.aimPosition = [...ownTrack.position]; r.aimVelocity = [...ownTrack.velocity]; r.aimObservedTick = ownTrack.observedTick; }
       else if (remote && remoteLink && remote.revision !== r.trackRevision) {
-        r.aimPosition = [...remote.position]; r.aimVelocity = [...remote.velocity]; r.trackRevision = remote.revision;
+        r.aimPosition = [...remote.position]; r.aimVelocity = [...remote.velocity]; r.aimObservedTick = remote.observedTick; r.trackRevision = remote.revision;
       }
       if (r.aimPosition) {
-        const distance = length(sub(r.aimPosition, r.position));
-        const closing = -dot(r.aimVelocity ?? [0, 0, 0], unit(sub(r.aimPosition, r.position)));
-        const aim = add(r.aimPosition, scale(r.aimVelocity ?? [0, 0, 0], Math.min(4, distance / Math.max(100, speed + closing))));
+        const estimate = add(r.aimPosition, scale(r.aimVelocity ?? [0, 0, 0], Math.max(0, tick - (r.aimObservedTick ?? tick)) / 10));
+        const distance = length(sub(estimate, r.position));
+        const closing = -dot(r.aimVelocity ?? [0, 0, 0], unit(sub(estimate, r.position)));
+        const aim = add(estimate, scale(r.aimVelocity ?? [0, 0, 0], Math.min(4, distance / Math.max(100, speed + closing))));
         if (!r.interceptor) aim[2] = distance > 300 ? 40 : 10;
         // Steering uses only a received track or the round's own seeker estimate.
         const desired = scale(unit(sub(aim, r.position)), speed);

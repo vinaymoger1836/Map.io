@@ -25,7 +25,7 @@ export function projectObserver(world: WarSimSession): WarSimSession {
     view.physical.rounds = view.physical.rounds.map(r => ({ ...r,
       shooterId: r.iso === iso ? r.shooterId : '', targetId: r.iso === iso ? intel.contacts[r.targetId] ?? '' : '',
       launchPosition: r.iso === iso ? r.launchPosition : [...r.position], age: r.iso === iso ? r.age : 0,
-      aimPosition: undefined, aimVelocity: undefined, trackRevision: undefined, sourceScope: undefined, seekerLocked: undefined }));
+      aimPosition: undefined, aimVelocity: undefined, aimObservedTick: undefined, trackRevision: undefined, sourceScope: undefined, seekerLocked: undefined }));
     view.physical.events = view.physical.events.filter(e => e.visibleTo.includes(scopeId)).map(e => ({ ...e, visibleTo: [scopeId], deliveries: undefined }));
     view.physical.sequence = 0;
     delete view.physical.intel;

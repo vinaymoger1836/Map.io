@@ -661,7 +661,7 @@ The simulation implements continuous, physics-based radar and optical reconnaiss
 
 ## WarSim development and verification
 
-Phase 2 adds an opt-in physical surface encounter and a lazy-loaded 3D tactical view. Open **War games → War Sim → Coastal encounter · 3D physics**. See [the Phase 2 guide and limits](docs/warsim/phase-2.md).
+Phase 3 adds scoped fog of war, collection, delayed reports, and coordinated strikes to the opt-in physical surface encounter. Open **War games → War Sim → Coastal encounter · 3D physics → Intel & coordination**. See [the Phase 3 guide and limits](docs/warsim/phase-3.md). The [Phase 2 guide](docs/warsim/phase-2.md) covers the underlying physical model and tactical renderer.
 
 Phase 1 moves live simulation into a worker with fixed steps, typed commands, reproducible checkpoints, faction projections and interpolated map updates. See [the Phase 1 architecture and results](docs/warsim/phase-1.md).
 
