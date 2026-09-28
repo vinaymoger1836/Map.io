@@ -344,6 +344,23 @@ button {
   line-height: 1.5;
 }
 
+.map-alert.warning {
+  background: color-mix(in srgb, #5f4415 82%, var(--ink-panel));
+  border-color: #bb9143;
+}
+
+.map-alert button {
+  display: block;
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .actions {
   position: absolute;
   top: 14px;

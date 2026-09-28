@@ -3,7 +3,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import maplibregl, { type Map as MLMap } from 'maplibre-gl';
+import maplibregl, { type Map as MLMap, type StyleSpecification } from 'maplibre-gl';
 
 import ControlPanel from './ControlPanel';
 import DetailPanel, { type Selection } from './DetailPanel';
@@ -48,13 +48,31 @@ type Mode = 'situation' | 'wargames';
  */
 const WARGAMES_VISIBILITY: Record<string, boolean> = { 'wt-ocean': true, 'wt-sea': true };
 
+const OFFLINE_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {},
+  layers: [{ id: 'offline-background', type: 'background', paint: { 'background-color': '#0c1722' } }],
+};
+
 const BASEMAPS = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   light: 'https://tiles.openfreemap.org/styles/positron',
   detail: 'https://tiles.openfreemap.org/styles/liberty',
-} as const;
+  offline: OFFLINE_STYLE,
+} satisfies Record<string, string | StyleSpecification>;
 
 type BasemapId = keyof typeof BASEMAPS;
+
+function isBasemapFetchFailure(message: string): boolean {
+  if (!/AJAXError|Failed to fetch|NetworkError|HTTP error/i.test(message)) return false;
+  const url = message.match(/https?:\/\/[^\s\]]+/)?.[0];
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return host === 'basemaps.cartocdn.com' || host.endsWith('.basemaps.cartocdn.com')
+      || host === 'tiles.openfreemap.org' || host.endsWith('.tiles.openfreemap.org');
+  } catch { return false; }
+}
 
 type Projection = 'mercator' | 'globe';
 
@@ -99,6 +117,7 @@ export default function EurasiaMap() {
   const [dataWarning, setDataWarning] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY);
   const [basemap, setBasemap] = useState<BasemapId>('dark');
+  const basemapRef = useRef<BasemapId>('dark');
   const [projection, setProjection] = useState<'mercator' | 'globe'>('mercator');
   const [projectionNote, setProjectionNote] = useState<string | null>(null);
   const [globeSupported, setGlobeSupported] = useState(true);
@@ -157,7 +176,7 @@ export default function EurasiaMap() {
     mapReady: ready,
     active: mode === 'wargames',
     simulationActive: Boolean(activeWarSimSession),
-    darkBasemap: basemap === 'dark',
+    darkBasemap: basemap === 'dark' || basemap === 'offline',
   });
   warHydrateRef.current = war.hydrate;
 
@@ -335,8 +354,26 @@ export default function EurasiaMap() {
     // hardest part of the last outage to diagnose — tile, source and WebGL
     // failures used to be swallowed here.
     const recentErrors: number[] = [];
+    const recentTileErrors: number[] = [];
     map.on('error', (e) => {
       const message = e?.error?.message ?? String(e?.error ?? 'unknown map error');
+      if (isBasemapFetchFailure(message)) {
+        if (basemapRef.current === 'offline') return;
+        const now = Date.now();
+        recentTileErrors.push(now);
+        while (recentTileErrors.length && now - recentTileErrors[0] > 5000) recentTileErrors.shift();
+        if (recentTileErrors.length === 1) console.warn('[map] Basemap request failed:', message);
+        if (recentTileErrors.length >= 3 || /style\.json|\/styles\//.test(message)) {
+          basemapRef.current = 'offline';
+          setBasemap('offline');
+          setBootError(null);
+          setErrorBurst('Basemap tiles unavailable. Offline map active.');
+          map.once('styledata', () => hydrate(map));
+          map.setStyle(OFFLINE_STYLE);
+          recentTileErrors.length = 0;
+        }
+        return;
+      }
       console.error('[map]', message, e?.error ?? e);
 
       if (message.includes('style')) setBootError(message);
@@ -497,9 +534,12 @@ export default function EurasiaMap() {
     (id: BasemapId) => {
       const map = mapRef.current;
       if (!map || id === basemap) return;
+      basemapRef.current = id;
       setBasemap(id);
-      map.setStyle(BASEMAPS[id]);
+      setErrorBurst(null);
+      setBootError(null);
       map.once('styledata', () => hydrate(map));
+      map.setStyle(BASEMAPS[id]);
     },
     [basemap, hydrate]
   );
@@ -568,10 +608,13 @@ export default function EurasiaMap() {
         )}
 
         {errorBurst && (
-          <div className="map-alert" role="alert">
+          <div className={`map-alert${basemap === 'offline' ? ' warning' : ''}`} role="alert">
             {errorBurst}
-            <br />
-            See the console for the full list.
+            {basemap === 'offline' ? (
+              <button type="button" onClick={() => changeBasemap('dark')}>Retry online map</button>
+            ) : (
+              <><br />See the console for the full list.</>
+            )}
           </div>
         )}
 
