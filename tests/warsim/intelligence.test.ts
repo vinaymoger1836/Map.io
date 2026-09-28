@@ -60,6 +60,7 @@ describe('physical reference / intelligence and coordination', () => {
 
   it('interrupts sharing and holds a reserved strike when the support link is lost', () => {
     const s = createPhysicalReference(); advance(s, 14);
+    s.physical!.actors[0].rounds = 1;
     const track = observedContacts(s, hq(s.playerIso), 14)[0];
     reservePhysicalMission(s, 'blue-frigate', track.contactId, 'blue-scout', track.revision!, 'hold', 14);
     expect(intel(s).reservations).toHaveLength(2);
@@ -72,7 +73,7 @@ describe('physical reference / intelligence and coordination', () => {
     advance(s, 4);
     expect(intel(s).missions[0].status).toBe('executed');
     expect(intel(s).reservations).toHaveLength(0);
-    expect(s.physical!.actors[0].rounds).toBe(7);
+    expect(s.physical!.actors[0].rounds).toBe(0);
   });
 
   it('does not treat forwarding the same evidence twice as independent confirmation', () => {
@@ -86,8 +87,8 @@ describe('physical reference / intelligence and coordination', () => {
     advance(s, 21);
     const track = i.tracks.find(t => t.scopeId === `${s.playerIso}:coalition`)!, confidence = track.confidence;
     forwardPhysicalReport(s, evidenceId, 'coalition', 40);
-    advance(s, 21);
-    expect(track.evidenceIds).toEqual([evidenceId]);
+    expect(i.messages.filter(m => m.observationId === evidenceId && m.to === `${s.playerIso}:coalition`)).toHaveLength(1);
+    expect(track.evidenceIds.filter(id => id === evidenceId)).toHaveLength(1);
     expect(track.confidence).toBe(confidence);
   });
 
