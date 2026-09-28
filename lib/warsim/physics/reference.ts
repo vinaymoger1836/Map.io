@@ -1,6 +1,7 @@
 import type { WarSimSession } from '../../warSimTypes';
 import { syncPhysical } from './model';
 import { createPhysicalIntel } from '../intelligence';
+import { referenceEnvironment } from './environment';
 /** Authored fictional encounter. Creating it never reads or edits the user's board. */
 export function createPhysicalReference(): WarSimSession {
   const personnel = { army: 0, navy: 200, airForce: 0, strategicForces: 0, specialOps: 0, total: 200 };
@@ -9,10 +10,10 @@ export function createPhysicalReference(): WarSimSession {
     status: 'paused', simTimeSec: 0, timeMultiplier: 1, playerIso: '840', enemyIso: '156', playerColor: '#61d8ed', enemyColor: '#ff826e',
     activeFaction: 'player', personnel: { player: { ...personnel }, enemy: { ...personnel } }, quotas: { player: {}, enemy: {} },
     bases: [], entities: [], activeMissiles: [], eventLog: [], fogOfWarContacts: { playerContacts: [], enemyContacts: [] },
-    physical: { version: 1, model: 'coastal-pointmass-v1', origin: [-150, 20, 0], sequence: 0, rounds: [], events: [], actors: [
-      { id: 'blue-frigate', iso: '840', position: [0, 0, 0], velocity: [0, 8, 0], heading: 0, course: 0, speed: 8, desiredSpeed: 8, fuel: 100, health: 100, rounds: 8, interceptors: 4, cooldown: 0 },
-      { id: 'red-frigate', iso: '156', position: [3000, 1800, 0], velocity: [0, -6, 0], heading: 180, course: 180, speed: 6, desiredSpeed: 6, fuel: 100, health: 100, rounds: 8, interceptors: 2, cooldown: 0 },
-      { id: 'blue-scout', iso: '840', position: [-1400, 2700, 0], velocity: [0, 4, 0], heading: 0, course: 0, speed: 4, desiredSpeed: 4, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0 },
+    physical: { version: 1, model: 'coastal-pointmass-v1', origin: [-150, 20, 0], sequence: 0, rounds: [], events: [], environment: referenceEnvironment(), actors: [
+      { id: 'blue-frigate', iso: '840', domain: 'sea', position: [0, 0, 0], velocity: [0, 8, 0], heading: 0, course: 0, speed: 8, desiredSpeed: 8, fuel: 100, health: 100, rounds: 8, interceptors: 4, cooldown: 0 },
+      { id: 'red-frigate', iso: '156', domain: 'sea', position: [3000, 1800, 0], velocity: [0, -6, 0], heading: 180, course: 180, speed: 6, desiredSpeed: 6, fuel: 100, health: 100, rounds: 8, interceptors: 2, cooldown: 0 },
+      { id: 'blue-scout', iso: '840', domain: 'sea', position: [-1400, 2700, 0], velocity: [0, 4, 0], heading: 0, course: 0, speed: 4, desiredSpeed: 4, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0 },
     ] },
   };
   s.entities = s.physical!.actors.map(a => ({ id: a.id, systemId: 'reference-frigate', iso: a.iso, name: a.id === 'blue-scout' ? 'FS Surveyor' : a.iso === '840' ? 'FS Resolute' : 'FS Meridian',
@@ -24,4 +25,24 @@ export function createPhysicalReference(): WarSimSession {
   }
   s.physical!.intel = createPhysicalIntel(s);
   syncPhysical(s); return s;
+}
+
+/** Small land/air/surface probe; shares the coastal physics clock, intel stores and resource ledger. */
+export function createLittoralReference(): WarSimSession {
+  const s = createPhysicalReference(), p = s.physical!;
+  s.id = `littoral-${Date.now()}`; s.name = 'Glasswater / Littoral probe';
+  p.actors.push({ id: 'blue-ground-radar', iso: s.playerIso, domain: 'land', position: [7000, 0, 60], velocity: [0, 0, 0],
+    heading: 270, course: 270, speed: 0, desiredSpeed: 0, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
+    condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 1 });
+  p.actors.push({ id: 'blue-air-recon', iso: s.playerIso, domain: 'air', position: [-3500, -1200, 1200], velocity: [80, 0, 0],
+    heading: 90, course: 90, speed: 80, desiredSpeed: 80, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0,
+    condition: { propulsion: 100, sensor: 100, strikeLauncher: 100, pointDefense: 100 }, repairKits: 0 });
+  const template = s.entities[0];
+  s.entities.push({ ...template, id: 'blue-ground-radar', name: 'Cape Glass radar', systemId: 'reference-radar', typeId: 'radar',
+    personnel: 20, speedKmh: 0, magazines: {} });
+  s.entities.push({ ...template, id: 'blue-air-recon', name: 'Kite reconnaissance UAV', systemId: 'reference-uav', typeId: 'uav',
+    personnel: 2, speedKmh: 288, magazines: {} });
+  p.intel = createPhysicalIntel(s);
+  syncPhysical(s);
+  return s;
 }

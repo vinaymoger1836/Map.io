@@ -4,6 +4,7 @@ import { add, sub, scale, length, unit, dot, fromENU, sweptSphere, type Vec3 } f
 import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
 import { CAPABILITIES, condition, damageActor, operational, stepPhysicalRepairs } from './readiness';
+import { seaSpeedFactor, validateEnvironment } from './environment';
 
 // Fictional reference profile; SI units. No calibration to real equipment.
 export const PROFILE = Object.freeze({ mass: 180, thrust: 7800, burnSec: 12, dragArea: .035,
@@ -103,7 +104,9 @@ export function launchPhysical(s: WarSimSession, shooterId: string, trackId: str
 export function setPhysicalCourse(s: WarSimSession, id: string, heading: number, speed: number) {
   const iso = s.activeFaction === 'player' ? s.playerIso : s.enemyIso;
   const a = s.physical?.actors.find(a => a.id === id && a.iso === iso && a.health > 0);
-  if (!a || !Number.isFinite(heading) || !Number.isFinite(speed) || speed < 0 || speed > 16) throw new Error('Select an available vessel; speed must be 0–16 m/s.');
+  const maximum = a?.domain === 'air' ? 120 : a?.domain === 'land' ? 0 : 16;
+  if (!a || !Number.isFinite(heading) || !Number.isFinite(speed) || speed < 0 || speed > maximum)
+    throw new Error(`Select an available platform; speed must be 0–${maximum} m/s.`);
   if (a.repairJob && speed > 0) throw new Error('Cancel or finish repairs before getting under way.');
   if (speed > 0 && !operational(a, 'propulsion')) throw new Error('Propulsion is damaged and unavailable.');
   a.course = ((heading % 360) + 360) % 360; a.desiredSpeed = speed;
@@ -167,10 +170,14 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
     for (const a of p.actors) {
       if (a.health <= 0) { a.velocity = [0, 0, 0]; continue; }
       const turn = ((a.course - a.heading + 540) % 360) - 180;
-      a.heading += Math.max(-2 * h, Math.min(2 * h, turn));
-      const desired = a.fuel > 0 && operational(a, 'propulsion') ? Math.min(a.desiredSpeed, 16 * condition(a, 'propulsion') / 100) : 0;
+      const air = a.domain === 'air', land = a.domain === 'land';
+      const maxSpeed = air ? 120 : land ? 0 : 16 * seaSpeedFactor(p.environment);
+      a.heading += Math.max(-(air ? 8 : 2) * h, Math.min((air ? 8 : 2) * h, turn));
+      const desired = a.fuel > 0 && operational(a, 'propulsion') ? Math.min(a.desiredSpeed, maxSpeed * condition(a, 'propulsion') / 100) : 0;
       a.speed += Math.max(-.8 * h, Math.min(.4 * h, desired - a.speed));
-      a.velocity = [Math.sin(a.heading * Math.PI / 180) * a.speed, Math.cos(a.heading * Math.PI / 180) * a.speed, 0];
+      const wind = air ? p.environment?.weather : undefined;
+      a.velocity = [Math.sin(a.heading * Math.PI / 180) * a.speed + (wind?.windEastMps ?? 0),
+        Math.cos(a.heading * Math.PI / 180) * a.speed + (wind?.windNorthMps ?? 0), 0];
       a.position = add(a.position, scale(a.velocity, h));
       a.fuel = Math.max(0, a.fuel - a.speed * h / 10000);
     }
@@ -268,7 +275,8 @@ export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
     ids.add(a.id);
   }
   for (const a of p.actors) if (!s.entities.some(e => e.id === a.id && e.iso === a.iso) || a.health < 0 || a.health > 100
-    || a.fuel < 0 || a.fuel > 100 || a.desiredSpeed < 0 || a.desiredSpeed > 16 || !Number.isSafeInteger(a.rounds) || a.rounds < 0
+    || a.fuel < 0 || a.fuel > 100 || a.desiredSpeed < 0 || a.desiredSpeed > (a.domain === 'air' ? 120 : a.domain === 'land' ? 0 : 16)
+    || !Number.isSafeInteger(a.rounds) || a.rounds < 0
     || !Number.isSafeInteger(a.interceptors) || a.interceptors < 0) throw new Error('Invalid physical platform.');
   for (const a of p.actors) {
     if (a.condition && CAPABILITIES.some(key => !Number.isFinite(a.condition![key]) || a.condition![key] < 0 || a.condition![key] > 100)
@@ -277,5 +285,6 @@ export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
         || a.repairJob.remainingSec <= 0 || a.repairJob.remainingSec > 30 || a.health <= 0)) throw new Error('Invalid physical repair state.');
   }
   for (const r of p.rounds) if (!p.actors.some(a => a.id === r.shooterId && a.iso === r.iso) || r.age < 0) throw new Error('Invalid physical round.');
+  if (p.environment) validateEnvironment(p.environment);
   if (p.intel) validatePhysicalIntel(p.intel, s);
 }

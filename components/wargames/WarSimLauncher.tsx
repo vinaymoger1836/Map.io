@@ -28,7 +28,7 @@ import { getPreAssignedQuotasForCountry, keyOf } from '@/lib/forces';
 import { readDoc, writeDoc } from '@/lib/store';
 import { PreFlightValidationModal } from './PreFlightValidationModal';
 import { createDefaultSatellites } from '@/lib/spaceLayer';
-import { createPhysicalReference } from '@/lib/warsim/physics/reference';
+import { createPhysicalReference, createLittoralReference } from '@/lib/warsim/physics/reference';
 
 export interface WarSimLauncherProps {
   wg: WarGames;
@@ -373,6 +373,9 @@ export function WarSimLauncher({
           </button>
           <button className="wg-btn" onClick={() => onLaunchSimulation(createPhysicalReference())}>
             Coastal encounter · 3D physics
+          </button>
+          <button className="wg-btn" onClick={() => onLaunchSimulation(createLittoralReference())}>
+            Littoral probe · air / ground / sea
           </button>
           <button
             className="wg-btn"
