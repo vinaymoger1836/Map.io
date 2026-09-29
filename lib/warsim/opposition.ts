@@ -1,6 +1,6 @@
 import type { WarSimSession } from '../warSimTypes';
 import type { SimulationCommand } from './contracts';
-import { hq } from './intelligence';
+import { hq, SUPPORT_FRESH_TICKS } from './intelligence';
 import { length, sub, toENU } from './physics/coordinates';
 import { operational } from './physics/readiness';
 
@@ -52,10 +52,14 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
       || (b.confidence ?? 0) - (a.confidence ?? 0) || a.contactId.localeCompare(b.contactId));
   const contact = contacts.find(c => !shooter || length(sub(toENU([...c.lastKnownLngLat, 0], p.origin), shooter.position)) <= 9000);
   const confidence = contact?.confidence ?? 0, age = contact?.decayTimerSec ?? Infinity;
+  const track = contact && intel.tracks.find(t => t.id === contact.contactId);
+  const freshSupportEvidence = Boolean(support && track?.history.some(report => report.sourceId === support.id
+    && view.simTimeSec - report.collectedSec <= SUPPORT_FRESH_TICKS / 10));
   const threshold = requiredConfidence(opponent.difficulty);
   const activeTask = support && intel.tasks.some(t => t.assetId === support.id
     && !['complete', 'interrupted', 'cancelled'].includes(t.status));
-  if ((!contact || confidence < threshold || age > 1.5) && support && !activeTask) {
+  if ((!contact || confidence < threshold || age > 1.5 || opponent.doctrine === 'cautious' && !freshSupportEvidence)
+    && support && !activeTask) {
     const estimated = contact ? toENU([...contact.lastKnownLngLat, 0], p.origin) : [...support.position] as [number, number, number];
     const center: [number, number, number] = support.domain === 'subsurface'
       ? [estimated[0], estimated[1], support.position[2]] : estimated;
@@ -69,8 +73,7 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
   const reservedRounds = shooter ? intel.reservations.filter(r => r.assetId === shooter.id && r.resource === 'strike-round').length : 0;
   const minimumRounds = opponent.doctrine === 'cautious' ? 2 : 0;
   if (shooter && contact && !missionBusy && shooter.rounds - reservedRounds > minimumRounds && shooter.cooldown <= view.simTimeSec) {
-    const track = intel.tracks.find(t => t.id === contact.contactId);
-    if (support && track && confidence >= Math.max(.5, threshold) && age <= 1.5 && track.sourceIds.includes(support.id)
+    if (support && track && confidence >= Math.max(.5, threshold) && age <= SUPPORT_FRESH_TICKS / 10 && freshSupportEvidence
       && !intel.reservations.some(r => r.assetId === support.id && r.resource === 'sensor-channel')) {
       return { priority: 'coordinated-strike', utility: 100 + confidence * 20,
         reason: `Fresh ${support.id} evidence supports ${contact.contactId}; reserve one ${shooter.id} round and one sensor channel.`,

@@ -122,6 +122,7 @@ export function currentTrack(i: PhysicalIntel, scopeId: string, id: string, tick
   return t && tick - t.observedTick <= 45 && t.state !== 'lost' ? t : undefined;
 }
 export const effectiveConfidence = (track: IntelTrack, tick: number) => track.confidence * Math.exp(-Math.max(0, tick - track.observedTick) / 300);
+export const SUPPORT_FRESH_TICKS = 20;
 export function scopeTracks(i: PhysicalIntel, scopeId: string): IntelTrack[] { return i.tracks.filter(t => t.scopeId === scopeId && t.state !== 'lost'); }
 function fuse(i: PhysicalIntel, o: IntelObservation, scopeId: string, tick: number) {
   let t = i.tracks.find(t => t.scopeId === scopeId && t.targetRef === o.targetRef);
@@ -385,7 +386,7 @@ export function reservePhysicalMission(s: WarSimSession, shooterId: string, trac
   const support = s.physical!.actors.find(a => a.id === supportId && a.iso === iso && a.health > 0);
   const track = currentTrack(i, scopeId, trackId, tick);
   if (!shooter || !support || shooter.id === support.id || !track || track.revision !== revision || effectiveConfidence(track, tick) < .5
-    || tick - track.observedTick > 15 || !['hold', 'abort', 'continue-local'].includes(onLoss))
+    || tick - track.observedTick > SUPPORT_FRESH_TICKS || !['hold', 'abort', 'continue-local'].includes(onLoss))
     throw new Error('Mission requires an owned shooter, support sensor and current track revision.');
   if (track.domain === 'subsurface' || track.domain === 'space') throw new Error('This surface strike cannot engage that contact domain.');
   if (!operational(shooter, 'strikeLauncher') || !operational(support, 'sensor'))
@@ -395,7 +396,8 @@ export function reservePhysicalMission(s: WarSimSession, shooterId: string, trac
     throw new Error('Support sensor or its data link is unavailable.');
   if (shooter.rounds - i.reservations.filter(r => r.assetId === shooterId && r.resource === 'strike-round').length < 1
     || i.reservations.some(r => r.assetId === supportId && r.resource === 'sensor-channel')) throw new Error('Strike round or sensor channel is already committed.');
-  if (!i.tracks.some(t => t.scopeId === local(supportId) && t.targetRef === track.targetRef && t.state === 'fresh'))
+  if (!i.tracks.some(t => t.scopeId === local(supportId) && t.targetRef === track.targetRef && t.state === 'fresh'
+    && tick - t.observedTick <= SUPPORT_FRESH_TICKS && t.evidenceIds.some(id => track.evidenceIds.includes(id))))
     throw new Error('The support sensor has not produced a fresh local observation.');
   const id = nextId(i, 'mission');
   i.missions.push({ id, shooterId, supportId, trackId, trackRevision: revision, scopeId, targetRef: track.targetRef,
@@ -417,7 +419,7 @@ export function missionSupport(i: PhysicalIntel, m: IntelMission, tick: number) 
   const localTrack = i.tracks.find(t => t.scopeId === local(m.supportId) && t.targetRef === m.targetRef);
   const commandTrack = i.tracks.find(t => t.scopeId === m.scopeId && t.targetRef === m.targetRef);
   return Boolean(link?.active && sensor?.mode === 'active' && localTrack && commandTrack
-    && tick - localTrack.observedTick <= 15 && localTrack.evidenceIds.some(id => commandTrack.evidenceIds.includes(id)));
+    && tick - localTrack.observedTick <= SUPPORT_FRESH_TICKS && localTrack.evidenceIds.some(id => commandTrack.evidenceIds.includes(id)));
 }
 export function expireReservations(i: PhysicalIntel, tick: number) {
   for (const m of i.missions) if (!['executed', 'aborted'].includes(m.status) && i.reservations.some(r => r.missionId === m.id && r.expiresTick <= tick)) {

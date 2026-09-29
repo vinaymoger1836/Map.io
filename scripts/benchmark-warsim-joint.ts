@@ -31,12 +31,18 @@ const runs = variants.flatMap(variant => seeds.map(seed => {
     const terminal = physical.events.find(event => event.terminatedRoundIds.includes(launch.roundId));
     return { roundId: launch.roundId, kind: terminal?.kind ?? 'in-flight', position: terminal?.position };
   });
+  const missionReasons = Object.entries(physical.intel!.missions.reduce<Record<string, number>>((counts, mission) => {
+    const label = `${mission.status}: ${mission.reason}`;
+    counts[label] = (counts[label] ?? 0) + 1;
+    return counts;
+  }, {}));
   return { variant, seed, ticks: runtime.tick, result: physical.objectives!.status,
     redHealth: red.health, blueHealth: blue.health, redPosition: red.position, bluePosition: blue.position,
     redRoundsSpent: 8 - red.rounds,
     acceptedRedStrikes: physical.opposition!.decisions.filter(d => d.result === 'accepted'
       && ['coordinated-strike', 'local-strike'].includes(d.priority)).length,
     redTerminalOutcomes,
+    missionReasons,
     replayFrames: archive.frames.length, replayRecords: archive.records.length,
     replayBytes: Buffer.byteLength(JSON.stringify(archive)),
     ...(variant === 'disabled' && seed === 7 ? { replayComponents: {

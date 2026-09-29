@@ -3,6 +3,7 @@ import type { PhysicalActor, PhysicalEncounter, PhysicalRound, PhysicalEvent } f
 import { add, sub, scale, length, unit, dot, fromENU, sweptSphere, type Vec3 } from './coordinates';
 import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
+import { SUPPORT_FRESH_TICKS } from '../intelligence';
 import { CAPABILITIES, condition, damageActor, operational, stepPhysicalRepairs } from './readiness';
 import { sampleSurface, seaSpeedFactor, validateEnvironment } from './environment';
 import { validateOpposition } from '../opposition';
@@ -133,7 +134,7 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
       m.status = 'aborted'; m.reason = !a ? 'Shooter unavailable' : 'Target no longer available';
       i.reservations = i.reservations.filter(r => r.missionId !== m.id); continue;
     }
-    const available = Boolean(operational(a, 'strikeLauncher') && a.rounds > 0 && support && operational(support, 'sensor') && track && tick - track.observedTick <= 15
+    const available = Boolean(operational(a, 'strikeLauncher') && a.rounds > 0 && support && operational(support, 'sensor') && track && tick - track.observedTick <= SUPPORT_FRESH_TICKS
       && effectiveConfidence(track, tick) >= .5 && missionSupport(i, m, tick));
     if (!available) {
       const ownTrack = i.tracks.find(t => t.scopeId === local(m.shooterId) && t.targetRef === m.targetRef && t.state === 'fresh');
