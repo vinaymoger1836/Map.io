@@ -14,7 +14,8 @@
     "test:e2e": "playwright test --project=chromium",
     "bench:warsim": "node --expose-gc --import tsx scripts/benchmark-warsim.ts",
     "bench:warsim:browser": "playwright test --project=baseline",
-    "bench:warsim:runtime": "node --expose-gc --import tsx scripts/benchmark-warsim.ts --runtime"
+    "bench:warsim:runtime": "node --expose-gc --import tsx scripts/benchmark-warsim.ts --runtime",
+    "bench:warsim:joint": "node scripts/benchmark-warsim-joint-runner.cjs"
   },
   "dependencies": {
     "maplibre-gl": "^5.6.0",
