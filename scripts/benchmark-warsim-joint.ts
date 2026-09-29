@@ -4,7 +4,6 @@ import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { createLittoralReference } from '../lib/warsim/physics/reference';
 import { SimulationRuntime } from '../lib/warsim/runtime';
-import { toENU } from '../lib/warsim/physics/coordinates';
 import { machineEnvironment } from '../tests/warsim/helpers/machine';
 
 const seeds = [7, 19, 29, 43, 61];
@@ -18,16 +17,10 @@ const runs = variants.flatMap(variant => seeds.map(seed => {
   if (variant !== 'disabled') scenario.physical!.opposition!.doctrine = variant;
   const runtime = new SimulationRuntime(scenario, [], seed);
   const timings: number[] = [];
-  const diagnosticSnapshots: unknown[] = [];
   while (runtime.running && runtime.tick < 900) {
     const start = performance.now();
     runtime.step();
     timings.push(performance.now() - start);
-    if (variant === 'balanced' && seed === 7 && [50, 60, 100, 140].includes(runtime.tick)) {
-      const state = runtime.checkpoint();
-      diagnosticSnapshots.push({ tick: runtime.tick,
-        round: state.physical!.rounds.find(r => r.id === 'round-3') });
-    }
   }
   const saved = runtime.checkpoint(), physical = saved.physical!, archive = saved.runtime!.replay!;
   const red = physical.actors.find(a => a.id === 'red-frigate')!;
@@ -44,14 +37,6 @@ const runs = variants.flatMap(variant => seeds.map(seed => {
     acceptedRedStrikes: physical.opposition!.decisions.filter(d => d.result === 'accepted'
       && ['coordinated-strike', 'local-strike'].includes(d.priority)).length,
     redTerminalOutcomes,
-    ...(variant === 'balanced' && seed === 7 ? { diagnosticSnapshots, sampleTrajectory: archive.frames.map(frame => {
-      const round = frame.enemy.physical.rounds.find(r => r.id === 'round-3');
-      if (!round) return null;
-      const contact = frame.enemy.fogOfWarContacts.enemyContacts.find(c => c.domain === 'sea');
-      return { tick: frame.tick, round: round.position,
-        blue: frame.player.physical.actors.find(a => a.id === 'blue-frigate')?.position,
-        estimate: contact ? toENU([...contact.lastKnownLngLat, 0], physical.origin) : undefined };
-    }).filter(Boolean) } : {}),
     replayFrames: archive.frames.length, replayRecords: archive.records.length,
     replayBytes: Buffer.byteLength(JSON.stringify(archive)),
     ...(variant === 'disabled' && seed === 7 ? { replayComponents: {

@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-09-29T05:14:56.172Z",
-  "revision": "06c753d6ef2eeddf1fe354cf5f79c5b599ee6eee",
+  "capturedAt": "2026-09-29T05:29:56.628Z",
+  "revision": "a170f762a31dc5b60babfbbfac0356196c2af4ab",
   "sourceHashes": {
     "lib/warsim/runtime.ts": "2147c09ef3247013b58f6b7a24590dfb4e083559e3406842419ae57419c4d11f",
     "lib/warsim/replay.ts": "7ec7fcda56da0358c6bad53d783965fe023ece7a22eaa141b621176c8a8019cc",
-    "lib/warsim/opposition.ts": "fda33cb5ede25d525e5be3fed005a5b0093cc2dd384f20ac6f10988e4fc9250e",
-    "lib/warsim/physics/model.ts": "5273c2e8e76d92b17b203ca348e1f775d52f15bebcf3191806611a3c37b32fec",
-    "lib/warsim/physics/reference.ts": "c05cb8a98bda68736827499f583ce7448fbcbfb4772c2449798867d83c4d41be",
+    "lib/warsim/opposition.ts": "b9bad742d4cbe9930153bf68cdd711424e1a8a8d12d45f705b9ca97646530a27",
+    "lib/warsim/intelligence.ts": "76c2ca7519b7dd2659d694bee07d0b8f9ae849cf511c3ddcc3acb0a181aaaa90",
+    "lib/warsim/physics/model.ts": "daac504f05917ca4ee2bb7461539945b847c63d96c68919e478fed91ed2c0dfd",
+    "lib/warsim/physics/reference.ts": "b9d02232ab685146d1c866b785d119a6ac7b9bb4e78b4720a3442fb348f24071",
     "package-lock.json": "22ecd1882a1f0c10718be4a120c4229feab144ec2994ed9c70a1068a707677e7"
   },
   "method": {
@@ -49,35 +50,35 @@
       "redVictories": 0,
       "meanRedRoundsSpent": 0,
       "meanAcceptedRedStrikes": 0,
-      "maxReplayBytes": 1580311,
-      "tickP95Ms": 5.38799999999992
+      "maxReplayBytes": 1583163,
+      "tickP95Ms": 5.6825999999999794
     },
     {
       "variant": "cautious",
       "trials": 5,
       "redVictories": 0,
       "meanRedRoundsSpent": 0,
-      "meanAcceptedRedStrikes": 3,
-      "maxReplayBytes": 1772167,
-      "tickP95Ms": 5.33389999999963
+      "meanAcceptedRedStrikes": 89,
+      "maxReplayBytes": 5372673,
+      "tickP95Ms": 7.2138999999997395
     },
     {
       "variant": "balanced",
       "trials": 5,
-      "redVictories": 0,
+      "redVictories": 5,
       "meanRedRoundsSpent": 8,
       "meanAcceptedRedStrikes": 8,
-      "maxReplayBytes": 2420813,
-      "tickP95Ms": 7.0020000000004075
+      "maxReplayBytes": 725203,
+      "tickP95Ms": 5.923500000000786
     },
     {
       "variant": "aggressive",
       "trials": 5,
-      "redVictories": 0,
+      "redVictories": 5,
       "meanRedRoundsSpent": 8,
       "meanAcceptedRedStrikes": 8,
-      "maxReplayBytes": 2502452,
-      "tickP95Ms": 7.757600000000821
+      "maxReplayBytes": 588924,
+      "tickP95Ms": 6.313100000001214
     }
   ],
   "runs": [
@@ -88,13 +89,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1580311,
+      "replayBytes": 1583163,
       "replayComponents": {
-        "basisBytes": 14682,
+        "basisBytes": 14713,
         "finalPlayer": {
           "simTimeSec": 2,
           "status": 11,
@@ -115,11 +127,11 @@
           "activeMissiles": 2,
           "eventLog": 205,
           "intelView": 127,
-          "physical": 1424
+          "physical": 1455
         }
       },
-      "tickP50Ms": 0.10919999999998709,
-      "tickP95Ms": 5.38799999999992
+      "tickP50Ms": 0.11549999999999727,
+      "tickP95Ms": 5.6825999999999794
     },
     {
       "variant": "disabled",
@@ -128,13 +140,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1580311,
-      "tickP50Ms": 0.08809999999994034,
-      "tickP95Ms": 5.00200000000018
+      "replayBytes": 1583163,
+      "tickP50Ms": 0.0829999999998563,
+      "tickP95Ms": 5.059500000000071
     },
     {
       "variant": "disabled",
@@ -143,13 +166,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1580311,
-      "tickP50Ms": 0.06749999999988177,
-      "tickP95Ms": 4.503500000000031
+      "replayBytes": 1583163,
+      "tickP50Ms": 0.07099999999991269,
+      "tickP95Ms": 4.714199999999892
     },
     {
       "variant": "disabled",
@@ -158,13 +192,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1580311,
-      "tickP50Ms": 0.05330000000003565,
-      "tickP95Ms": 4.387400000000071
+      "replayBytes": 1583163,
+      "tickP50Ms": 0.06359999999995125,
+      "tickP95Ms": 4.475100000000111
     },
     {
       "variant": "disabled",
@@ -173,13 +218,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1580311,
-      "tickP50Ms": 0.06179999999994834,
-      "tickP95Ms": 4.347299999999905
+      "replayBytes": 1583163,
+      "tickP50Ms": 0.05539999999973588,
+      "tickP95Ms": 4.541099999999915
     },
     {
       "variant": "cautious",
@@ -188,13 +244,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
-      "acceptedRedStrikes": 3,
+      "acceptedRedStrikes": 89,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 92,
-      "replayBytes": 1772167,
-      "tickP50Ms": 0.09719999999970241,
-      "tickP95Ms": 5.21309999999994
+      "replayBytes": 5372673,
+      "tickP50Ms": 0.11259999999992942,
+      "tickP95Ms": 6.880700000000161
     },
     {
       "variant": "cautious",
@@ -203,13 +270,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
-      "acceptedRedStrikes": 3,
+      "acceptedRedStrikes": 89,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 92,
-      "replayBytes": 1772167,
-      "tickP50Ms": 0.09749999999985448,
-      "tickP95Ms": 5.000299999999697
+      "replayBytes": 5372673,
+      "tickP50Ms": 0.09490000000005239,
+      "tickP95Ms": 6.80580000000009
     },
     {
       "variant": "cautious",
@@ -218,13 +296,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
-      "acceptedRedStrikes": 3,
+      "acceptedRedStrikes": 89,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 92,
-      "replayBytes": 1772167,
-      "tickP50Ms": 0.08700000000044383,
-      "tickP95Ms": 5.062600000000202
+      "replayBytes": 5372673,
+      "tickP50Ms": 0.10670000000027358,
+      "tickP95Ms": 7.2138999999997395
     },
     {
       "variant": "cautious",
@@ -233,13 +322,24 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
-      "acceptedRedStrikes": 3,
+      "acceptedRedStrikes": 89,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 92,
-      "replayBytes": 1772167,
-      "tickP50Ms": 0.09420000000045547,
-      "tickP95Ms": 5.33389999999963
+      "replayBytes": 5372673,
+      "tickP50Ms": 0.09169999999994616,
+      "tickP95Ms": 6.3906000000006316
     },
     {
       "variant": "cautious",
@@ -248,163 +348,914 @@
       "result": "blue-victory",
       "redHealth": 100,
       "blueHealth": 100,
+      "redPosition": [
+        3000,
+        1260.0000000004911,
+        0
+      ],
+      "bluePosition": [
+        0,
+        719.9999999999939,
+        0
+      ],
       "redRoundsSpent": 0,
-      "acceptedRedStrikes": 3,
+      "acceptedRedStrikes": 89,
+      "redTerminalOutcomes": [],
       "replayFrames": 91,
       "replayRecords": 92,
-      "replayBytes": 1772167,
-      "tickP50Ms": 0.08950000000004366,
-      "tickP95Ms": 5.330500000000029
+      "replayBytes": 5372673,
+      "tickP50Ms": 0.09329999999954453,
+      "tickP95Ms": 6.544599999999264
     },
     {
       "variant": "balanced",
       "seed": 7,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 276,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1634.4000000001506,
+        0
+      ],
+      "bluePosition": [
+        0,
+        220.15999999999602,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 117,
-      "replayBytes": 2420813,
-      "tickP50Ms": 0.3436999999994441,
-      "tickP95Ms": 6.955200000000332
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            531.4182782586228,
+            404.6234420716599,
+            39.31871119051596
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            530.3808220658765,
+            411.7857529663183,
+            39.37813477519022
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            524.3988649359519,
+            428.72163708150845,
+            39.35434287673667
+          ]
+        },
+        {
+          "roundId": "round-10",
+          "kind": "intercept",
+          "position": [
+            527.8839383708257,
+            431.47785420081675,
+            39.37910789085909
+          ]
+        },
+        {
+          "roundId": "round-15",
+          "kind": "impact",
+          "position": [
+            24.223750744624354,
+            196.746201544033,
+            20.907998716278893
+          ]
+        },
+        {
+          "roundId": "round-20",
+          "kind": "impact",
+          "position": [
+            23.204933031005602,
+            226.25229312910952,
+            21.16906043805904
+          ]
+        },
+        {
+          "roundId": "round-25",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-27",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 29,
+      "replayRecords": 52,
+      "replayBytes": 725203,
+      "tickP50Ms": 0.33839999999872816,
+      "tickP95Ms": 5.915500000000975
     },
     {
       "variant": "balanced",
       "seed": 19,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 276,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1634.4000000001506,
+        0
+      ],
+      "bluePosition": [
+        0,
+        220.15999999999602,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 117,
-      "replayBytes": 2420813,
-      "tickP50Ms": 0.30199999999967986,
-      "tickP95Ms": 7.0020000000004075
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            531.4182782586228,
+            404.6234420716599,
+            39.31871119051596
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            530.3808220658765,
+            411.7857529663183,
+            39.37813477519022
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            524.3988649359519,
+            428.72163708150845,
+            39.35434287673667
+          ]
+        },
+        {
+          "roundId": "round-10",
+          "kind": "intercept",
+          "position": [
+            527.8839383708257,
+            431.47785420081675,
+            39.37910789085909
+          ]
+        },
+        {
+          "roundId": "round-15",
+          "kind": "impact",
+          "position": [
+            24.223750744624354,
+            196.746201544033,
+            20.907998716278893
+          ]
+        },
+        {
+          "roundId": "round-20",
+          "kind": "impact",
+          "position": [
+            23.204933031005602,
+            226.25229312910952,
+            21.16906043805904
+          ]
+        },
+        {
+          "roundId": "round-25",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-27",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 29,
+      "replayRecords": 52,
+      "replayBytes": 725203,
+      "tickP50Ms": 0.22730000000046857,
+      "tickP95Ms": 5.923500000000786
     },
     {
       "variant": "balanced",
       "seed": 29,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 276,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1634.4000000001506,
+        0
+      ],
+      "bluePosition": [
+        0,
+        220.15999999999602,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 117,
-      "replayBytes": 2420813,
-      "tickP50Ms": 0.17469999999957508,
-      "tickP95Ms": 5.641799999999421
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            531.4182782586228,
+            404.6234420716599,
+            39.31871119051596
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            530.3808220658765,
+            411.7857529663183,
+            39.37813477519022
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            524.3988649359519,
+            428.72163708150845,
+            39.35434287673667
+          ]
+        },
+        {
+          "roundId": "round-10",
+          "kind": "intercept",
+          "position": [
+            527.8839383708257,
+            431.47785420081675,
+            39.37910789085909
+          ]
+        },
+        {
+          "roundId": "round-15",
+          "kind": "impact",
+          "position": [
+            24.223750744624354,
+            196.746201544033,
+            20.907998716278893
+          ]
+        },
+        {
+          "roundId": "round-20",
+          "kind": "impact",
+          "position": [
+            23.204933031005602,
+            226.25229312910952,
+            21.16906043805904
+          ]
+        },
+        {
+          "roundId": "round-25",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-27",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 29,
+      "replayRecords": 52,
+      "replayBytes": 725203,
+      "tickP50Ms": 0.2147000000004482,
+      "tickP95Ms": 5.693999999999505
     },
     {
       "variant": "balanced",
       "seed": 43,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 276,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1634.4000000001506,
+        0
+      ],
+      "bluePosition": [
+        0,
+        220.15999999999602,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 117,
-      "replayBytes": 2420813,
-      "tickP50Ms": 0.16270000000076834,
-      "tickP95Ms": 5.414700000001176
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            531.4182782586228,
+            404.6234420716599,
+            39.31871119051596
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            530.3808220658765,
+            411.7857529663183,
+            39.37813477519022
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            524.3988649359519,
+            428.72163708150845,
+            39.35434287673667
+          ]
+        },
+        {
+          "roundId": "round-10",
+          "kind": "intercept",
+          "position": [
+            527.8839383708257,
+            431.47785420081675,
+            39.37910789085909
+          ]
+        },
+        {
+          "roundId": "round-15",
+          "kind": "impact",
+          "position": [
+            24.223750744624354,
+            196.746201544033,
+            20.907998716278893
+          ]
+        },
+        {
+          "roundId": "round-20",
+          "kind": "impact",
+          "position": [
+            23.204933031005602,
+            226.25229312910952,
+            21.16906043805904
+          ]
+        },
+        {
+          "roundId": "round-25",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-27",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 29,
+      "replayRecords": 52,
+      "replayBytes": 725203,
+      "tickP50Ms": 0.2162000000007538,
+      "tickP95Ms": 5.807900000001609
     },
     {
       "variant": "balanced",
       "seed": 61,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 276,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1634.4000000001506,
+        0
+      ],
+      "bluePosition": [
+        0,
+        220.15999999999602,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 117,
-      "replayBytes": 2420813,
-      "tickP50Ms": 0.16200000000026193,
-      "tickP95Ms": 5.452199999999721
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            531.4182782586228,
+            404.6234420716599,
+            39.31871119051596
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            530.3808220658765,
+            411.7857529663183,
+            39.37813477519022
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            524.3988649359519,
+            428.72163708150845,
+            39.35434287673667
+          ]
+        },
+        {
+          "roundId": "round-10",
+          "kind": "intercept",
+          "position": [
+            527.8839383708257,
+            431.47785420081675,
+            39.37910789085909
+          ]
+        },
+        {
+          "roundId": "round-15",
+          "kind": "impact",
+          "position": [
+            24.223750744624354,
+            196.746201544033,
+            20.907998716278893
+          ]
+        },
+        {
+          "roundId": "round-20",
+          "kind": "impact",
+          "position": [
+            23.204933031005602,
+            226.25229312910952,
+            21.16906043805904
+          ]
+        },
+        {
+          "roundId": "round-25",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-27",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 29,
+      "replayRecords": 52,
+      "replayBytes": 725203,
+      "tickP50Ms": 0.23440000000118744,
+      "tickP95Ms": 5.388899999999921
     },
     {
       "variant": "aggressive",
       "seed": 7,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 218,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1669.200000000119,
+        0
+      ],
+      "bluePosition": [
+        0,
+        173.759999999997,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 118,
-      "replayBytes": 2502452,
-      "tickP50Ms": 0.25829999999950815,
-      "tickP95Ms": 6.144400000001042
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            549.4189345597662,
+            409.1596189501447,
+            39.24103522335208
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            548.5193843849072,
+            413.5841695410211,
+            39.2805297134103
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            549.9373456882432,
+            416.92741449765646,
+            39.269659915303265
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            546.3645633693155,
+            426.8137267282736,
+            39.33186858214571
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            24.380518363963915,
+            160.40371593127801,
+            20.564240007476396
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            19.608719637947683,
+            183.1926427125982,
+            23.400399217318043
+          ]
+        },
+        {
+          "roundId": "round-21",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-26",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 588924,
+      "tickP50Ms": 0.2616999999991094,
+      "tickP95Ms": 6.040100000000166
     },
     {
       "variant": "aggressive",
       "seed": 19,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 218,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1669.200000000119,
+        0
+      ],
+      "bluePosition": [
+        0,
+        173.759999999997,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 118,
-      "replayBytes": 2502452,
-      "tickP50Ms": 0.16759999999885622,
-      "tickP95Ms": 5.594900000000052
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            549.4189345597662,
+            409.1596189501447,
+            39.24103522335208
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            548.5193843849072,
+            413.5841695410211,
+            39.2805297134103
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            549.9373456882432,
+            416.92741449765646,
+            39.269659915303265
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            546.3645633693155,
+            426.8137267282736,
+            39.33186858214571
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            24.380518363963915,
+            160.40371593127801,
+            20.564240007476396
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            19.608719637947683,
+            183.1926427125982,
+            23.400399217318043
+          ]
+        },
+        {
+          "roundId": "round-21",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-26",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 588924,
+      "tickP50Ms": 0.23070000000006985,
+      "tickP95Ms": 5.741199999998571
     },
     {
       "variant": "aggressive",
       "seed": 29,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 218,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1669.200000000119,
+        0
+      ],
+      "bluePosition": [
+        0,
+        173.759999999997,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 118,
-      "replayBytes": 2502452,
-      "tickP50Ms": 0.1592000000000553,
-      "tickP95Ms": 5.498799999999392
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            549.4189345597662,
+            409.1596189501447,
+            39.24103522335208
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            548.5193843849072,
+            413.5841695410211,
+            39.2805297134103
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            549.9373456882432,
+            416.92741449765646,
+            39.269659915303265
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            546.3645633693155,
+            426.8137267282736,
+            39.33186858214571
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            24.380518363963915,
+            160.40371593127801,
+            20.564240007476396
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            19.608719637947683,
+            183.1926427125982,
+            23.400399217318043
+          ]
+        },
+        {
+          "roundId": "round-21",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-26",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 588924,
+      "tickP50Ms": 0.30650000000059663,
+      "tickP95Ms": 6.137500000000728
     },
     {
       "variant": "aggressive",
       "seed": 43,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 218,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1669.200000000119,
+        0
+      ],
+      "bluePosition": [
+        0,
+        173.759999999997,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 118,
-      "replayBytes": 2502452,
-      "tickP50Ms": 0.3275999999968917,
-      "tickP95Ms": 7.757600000000821
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            549.4189345597662,
+            409.1596189501447,
+            39.24103522335208
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            548.5193843849072,
+            413.5841695410211,
+            39.2805297134103
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            549.9373456882432,
+            416.92741449765646,
+            39.269659915303265
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            546.3645633693155,
+            426.8137267282736,
+            39.33186858214571
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            24.380518363963915,
+            160.40371593127801,
+            20.564240007476396
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            19.608719637947683,
+            183.1926427125982,
+            23.400399217318043
+          ]
+        },
+        {
+          "roundId": "round-21",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-26",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 588924,
+      "tickP50Ms": 0.2547999999987951,
+      "tickP95Ms": 5.615200000000186
     },
     {
       "variant": "aggressive",
       "seed": 61,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 218,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
+      "redPosition": [
+        3000,
+        1669.200000000119,
+        0
+      ],
+      "bluePosition": [
+        0,
+        173.759999999997,
+        0
+      ],
       "redRoundsSpent": 8,
       "acceptedRedStrikes": 8,
-      "replayFrames": 91,
-      "replayRecords": 118,
-      "replayBytes": 2502452,
-      "tickP50Ms": 0.2757999999994354,
-      "tickP95Ms": 6.971899999996822
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            549.4189345597662,
+            409.1596189501447,
+            39.24103522335208
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            548.5193843849072,
+            413.5841695410211,
+            39.2805297134103
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            549.9373456882432,
+            416.92741449765646,
+            39.269659915303265
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            546.3645633693155,
+            426.8137267282736,
+            39.33186858214571
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            24.380518363963915,
+            160.40371593127801,
+            20.564240007476396
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            19.608719637947683,
+            183.1926427125982,
+            23.400399217318043
+          ]
+        },
+        {
+          "roundId": "round-21",
+          "kind": "in-flight"
+        },
+        {
+          "roundId": "round-26",
+          "kind": "in-flight"
+        }
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 588924,
+      "tickP50Ms": 0.274199999999837,
+      "tickP95Ms": 6.313100000001214
     }
   ]
 }
