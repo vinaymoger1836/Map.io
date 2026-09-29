@@ -45,9 +45,11 @@ function recordedView(world: WarSimSession, faction: Faction): WarSimSession {
 }
 function packView(view: WarSimSession): RecordedView {
   const p = view.physical!;
+  const intel = view.intelView;
   return { simTimeSec: view.simTimeSec, status: view.status, timeMultiplier: view.timeMultiplier,
     entities: view.entities, fogOfWarContacts: view.fogOfWarContacts, activeMissiles: view.activeMissiles,
-    eventLog: view.eventLog, intelView: view.intelView,
+    eventLog: view.eventLog, intelView: intel ? { scopeId: intel.scopeId, tracks: [], tasks: [], sensors: [],
+      links: [], coverage: [], messages: [], missions: intel.missions, reservations: intel.reservations } : undefined,
     physical: { actors: p.actors, rounds: p.rounds, events: p.events,
       opposition: p.opposition, objectives: p.objectives } };
 }

@@ -29,6 +29,13 @@ const runs = variants.flatMap(variant => seeds.map(seed => {
       && ['coordinated-strike', 'local-strike'].includes(d.priority)).length,
     replayFrames: archive.frames.length, replayRecords: archive.records.length,
     replayBytes: Buffer.byteLength(JSON.stringify(archive)),
+    ...(variant === 'disabled' && seed === 7 ? { replayComponents: {
+      basisBytes: Buffer.byteLength(JSON.stringify(archive.basis)),
+      finalPlayer: Object.fromEntries(Object.entries(archive.frames.at(-1)!.player)
+        .map(([key, value]) => [key, Buffer.byteLength(JSON.stringify(value))])),
+      finalEnemy: Object.fromEntries(Object.entries(archive.frames.at(-1)!.enemy)
+        .map(([key, value]) => [key, Buffer.byteLength(JSON.stringify(value))])),
+    } } : {}),
     tickP50Ms: quantile(timings, .5), tickP95Ms: quantile(timings, .95) };
 }));
 const summary = variants.map(variant => {
