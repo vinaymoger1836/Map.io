@@ -44,3 +44,27 @@ test('joint probe applies opposition settings and records red HQ decisions', asy
   await expect(board.getByText(/T\+\d+\.\d · .+ · (accepted|rejected|wait)/).first()).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
+
+test('joint probe scrubs recorded faction views', async ({ page }) => {
+  test.setTimeout(90_000);
+  const { pageErrors } = await preparePage(page, createFixture('transit'), false);
+  await page.goto('/'); await waitForMap(page);
+  await page.getByRole('button', { name: 'War games', exact: true }).click();
+  await page.getByRole('button', { name: /War Sim/ }).first().click();
+  await page.getByRole('button', { name: 'Joint probe · five domains' }).click();
+  await page.getByRole('button', { name: 'Start time' }).click();
+  await expect.poll(async () => (await storedSession(page))?.runtime?.replay?.frames?.length,
+    { timeout: 15_000 }).toBeGreaterThan(2);
+  await page.getByRole('button', { name: 'Pause time' }).click();
+  await page.getByRole('button', { name: 'Replay & AAR' }).click();
+  const replay = page.getByRole('dialog', { name: 'Recorded replay' });
+  await expect(replay).toBeVisible();
+  const slider = replay.getByLabel('Replay time');
+  await slider.focus(); await slider.press('Home');
+  await expect(page.getByTestId('tactical-time')).toHaveText('T+0000.0');
+  await slider.press('End');
+  await expect(page.getByTestId('tactical-time')).not.toHaveText('T+0000.0');
+  await replay.getByRole('button', { name: 'Close replay' }).click();
+  await expect(replay).not.toBeVisible();
+  expect(pageErrors).toEqual([]);
+});

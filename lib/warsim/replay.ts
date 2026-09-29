@@ -28,7 +28,10 @@ function recordedView(world: WarSimSession, faction: Faction): WarSimSession {
   const view = projectObserver({ ...world, activeFaction: faction, observerScope: hq(iso) });
   // These are presentation frames; the complete timeline is in records.
   view.eventLog = view.eventLog.slice(-12);
-  if (view.physical) view.physical.events = view.physical.events.slice(-12);
+  if (view.physical) {
+    view.physical.events = view.physical.events.slice(-12);
+    if (view.physical.opposition) view.physical.opposition.decisions = view.physical.opposition.decisions.slice(-8);
+  }
   return view;
 }
 
