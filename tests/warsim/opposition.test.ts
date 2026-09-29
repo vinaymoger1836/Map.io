@@ -45,8 +45,6 @@ describe('Phase 6 scoped opposition', () => {
     const runtime = new SimulationRuntime(s, [], 19);
     for (let n = 0; n < 901 && runtime.running; n++) runtime.step();
     const saved = runtime.checkpoint(), red = saved.physical!.actors.find(a => a.id === 'red-frigate')!;
-    console.log('benchmark', saved.physical!.objectives, red.rounds, saved.physical!.opposition!.decisions.slice(0, 8),
-      [...new Set(saved.physical!.opposition!.decisions.map(d => `${d.priority}:${d.result}`))]);
     expect(saved.physical!.objectives!.status).not.toBe('ongoing');
     expect(saved.status).toBe('concluded');
     expect(red.rounds).toBeGreaterThanOrEqual(0);

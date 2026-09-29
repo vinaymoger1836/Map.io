@@ -44,7 +44,7 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
   const support = p.actors.find(a => a.iso === view.enemyIso && a.id !== shooter?.id && operational(a, 'sensor')
     && intel.sensors.some(s => s.actorId === a.id && s.mode === 'active' && s.sensorTime > 0)
     && intel.links.some(l => l.from === `${a.id}:local` && l.active));
-  const contacts = view.fogOfWarContacts.enemyContacts.filter(c => c.trackState !== 'lost' && !['sub', 'space'].includes(c.domain))
+  const contacts = view.fogOfWarContacts.enemyContacts.filter(c => c.trackState !== 'lost' && c.domain === 'sea')
     .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0) || a.contactId.localeCompare(b.contactId));
   const contact = contacts.find(c => !shooter || length(sub(toENU([...c.lastKnownLngLat, 0], p.origin), shooter.position)) <= 9000);
   const confidence = contact?.confidence ?? 0, age = contact?.decayTimerSec ?? Infinity;
