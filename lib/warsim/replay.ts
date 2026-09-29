@@ -25,6 +25,7 @@ export interface RecordedView {
 export interface ReplayArchive {
   version: 1; modelVersion: string; intervalTicks: number; sequence: number;
   basis: { player: WarSimSession; enemy: WarSimSession };
+  priorEventIds?: string[];
   records: ReplayRecord[]; frames: ReplayFrame[];
 }
 export interface FactionReplay {
@@ -114,6 +115,8 @@ export function validateReplay(archive: ReplayArchive) {
     || !archive.basis || archive.basis.player?.activeFaction !== 'player'
     || archive.basis.enemy?.activeFaction !== 'enemy'
     || archive.basis.player.runtime !== undefined || archive.basis.enemy.runtime !== undefined
+    || archive.priorEventIds !== undefined && (!Array.isArray(archive.priorEventIds)
+      || archive.priorEventIds.some(id => typeof id !== 'string'))
     || !Array.isArray(archive.records) || !Array.isArray(archive.frames) || !archive.frames.length) {
     throw new Error('Invalid replay archive.');
   }

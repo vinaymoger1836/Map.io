@@ -81,10 +81,13 @@ export class SimulationRuntime {
       coordination.physical ??= intel;
       this.world.physical.intel = coordination.physical;
       this.world.observerScope ??= `${this.world.activeFaction === 'player' ? this.world.playerIso : this.world.enemyIso}:hq`;
+      const upgradingOldCheckpoint = !this.state.replay && this.tick > 0;
       if (this.state.replay) validateReplay(this.state.replay);
       else this.state.replay = createReplay(this.world, this.tick, modelVersion);
-      this.replaySeen = new Set(this.state.replay.records.filter(r => r.kind === 'event').map(r => r.sourceId!));
-      recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
+      if (upgradingOldCheckpoint) this.state.replay.priorEventIds = this.world.eventLog.map(e => `${e.faction}:${e.id}`);
+      this.replaySeen = new Set([...this.state.replay.records.filter(r => r.kind === 'event').map(r => r.sourceId!),
+        ...this.state.replay.priorEventIds ?? []]);
+      else recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
     }
     if (this.state.pendingCommands.some(c => c.version !== 1 || !Number.isSafeInteger(c.sequence) || c.sequence >= this.state.nextSequence
       || c.sequence < 1 || !Number.isSafeInteger(c.executeAtTick) || c.executeAtTick < this.tick
