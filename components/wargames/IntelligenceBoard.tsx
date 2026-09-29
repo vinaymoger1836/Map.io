@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { WarSimSession } from '@/lib/warSimTypes';
 import type { SimulationCommand } from '@/lib/warsim/contracts';
 import { toENU } from '@/lib/warsim/physics/coordinates';
+import type { OpponentDoctrine, OpponentDifficulty } from '@/lib/warsim/opposition';
 import styles from './TacticalViewport.module.css';
 
 interface Props { session: WarSimSession; dispatch: (c: SimulationCommand) => void;
@@ -18,11 +19,20 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
   const [onLoss, setOnLoss] = useState<'hold' | 'abort' | 'continue-local'>('hold');
   const [delaySec, setDelaySec] = useState(0);
   const [shooter, setShooter] = useState('');
+  const [doctrine, setDoctrine] = useState<OpponentDoctrine>('balanced');
+  const [difficulty, setDifficulty] = useState<OpponentDifficulty>('standard');
+  const [opponentEnabled, setOpponentEnabled] = useState(true);
   const friendly = s.entities.filter(e => e.status !== 'destroyed');
   useEffect(() => {
     setAsset(friendly.find(e => e.id.includes('scout'))?.id ?? friendly[0]?.id ?? ''); setSupport(friendly.find(e => e.id.includes('scout'))?.id ?? friendly[0]?.id ?? '');
     setShooter(friendly.find(e => (e.magazines[0] ?? 0) > 0)?.id ?? '');
   }, [s.id, s.activeFaction]);
+  useEffect(() => {
+    if (s.physical?.opposition) {
+      setDoctrine(s.physical.opposition.doctrine); setDifficulty(s.physical.opposition.difficulty);
+      setOpponentEnabled(s.physical.opposition.enabled);
+    }
+  }, [s.id]);
   const scopeOptions = useMemo(() => [
     { id: `${iso}:hq`, label: 'Command group / HQ' }, { id: `${iso}:faction`, label: 'Faction picture' },
     { id: `${iso}:coalition`, label: 'Coalition picture' }, ...friendly.map(e => ({ id: `${e.id}:local`, label: `${e.name} / local` }))
@@ -99,5 +109,21 @@ export function IntelligenceBoard({ session: s, dispatch, selectedContactId, onS
     <button onClick={() => dispatch({ type: 'setCoalitionSharing', args: [!intel?.links.some(l => l.to === `${iso}:coalition` && l.active)] })}>
       {intel?.links.some(l => l.to === `${iso}:coalition` && l.active) ? 'Disable coalition sharing' : 'Enable coalition sharing'}
     </button>
+    {s.physical?.opposition && <><div className={styles.eyebrow}>OPPOSITION / SCENARIO</div>
+      {s.activeFaction === 'player' && s.simTimeSec === 0 && s.status === 'paused' && <>
+        <label>Red doctrine<select aria-label="Opponent doctrine" value={doctrine} onChange={e => setDoctrine(e.target.value as OpponentDoctrine)}>
+          <option value="cautious">Cautious</option><option value="balanced">Balanced</option><option value="aggressive">Aggressive</option>
+        </select></label>
+        <label>Decision tempo<select aria-label="Opponent difficulty" value={difficulty} onChange={e => setDifficulty(e.target.value as OpponentDifficulty)}>
+          <option value="cadet">Cadet</option><option value="standard">Standard</option><option value="veteran">Veteran</option>
+        </select></label>
+        <label><input type="checkbox" checked={opponentEnabled} onChange={e => setOpponentEnabled(e.target.checked)} /> Autonomous red force</label>
+        <button onClick={() => dispatch({ type: 'configureOpponent', args: [doctrine, difficulty, opponentEnabled] })}>Apply opposition settings</button>
+      </>}
+      <p>Red decisions use reports available at red HQ. Tempo changes how often orders are considered; doctrine changes evidence and reserve preferences.</p>
+      {s.activeFaction === 'enemy' && s.physical.opposition.decisions.slice(-6).reverse().map(decision =>
+        <div className={styles.intelEntry} key={decision.id}><strong>T+{(decision.tick / 10).toFixed(1)} · {decision.priority} · {decision.result}</strong>
+          <small>{decision.reason}{decision.rejection ? ` · ${decision.rejection}` : ''}</small></div>)}
+    </>}
   </aside>;
 }

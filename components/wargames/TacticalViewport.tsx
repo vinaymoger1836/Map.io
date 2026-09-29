@@ -61,6 +61,13 @@ export default function TacticalViewport(p: Props) {
     {intelOpen && s.physical && <IntelligenceBoard session={s} dispatch={send} selectedContactId={p.selectedContactId}
       onSelectContact={p.onSelectContact} onClearSelection={() => { p.onSelect(null); p.onSelectContact(null); }} onClose={() => setIntelOpen(false)} />}
     <aside className={styles.orders}>
+      {s.physical?.objectives && <div className={styles.intelEntry}>
+        <div className={styles.eyebrow}>SCENARIO OBJECTIVE · {s.physical.objectives.status.toUpperCase()}</div>
+        <strong>{s.activeFaction === 'player' ? s.physical.objectives.blueBrief : s.physical.objectives.redBrief}</strong>
+        <small>{s.physical.objectives.status === 'ongoing' ? `${Math.max(0, s.physical.objectives.deadlineTick / 10 - s.simTimeSec).toFixed(1)} s remaining`
+          : `Concluded T+${((s.physical.objectives.concludedTick ?? 0) / 10).toFixed(1)}`}</small>
+        {s.physical.objectives.status === 'ongoing' && <small>Tip: {s.physical.objectives.trainingPrompts[contacts.length ? s.intelView?.reservations.length ? 2 : 1 : 0]}</small>}
+      </div>}
       <div className={styles.eyebrow}>SELECTED PLATFORM</div><h2>{selected?.name ?? 'No platform selected'}</h2>
       {actor && <><div className={styles.stats}><div><strong>{actor.rounds}</strong><small>STRIKE ROUNDS</small></div><div><strong>{actor.interceptors}</strong><small>DEFENSIVE ROUNDS</small></div><div><strong>{actor.health.toFixed(0)}%</strong><small>INTEGRITY</small></div></div>
         <div className={styles.eyebrow}>READINESS / {actor.repairKits ?? 0} REPAIR KITS</div>
