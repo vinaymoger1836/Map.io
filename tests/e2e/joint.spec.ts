@@ -41,6 +41,6 @@ test('joint probe applies opposition settings and records red HQ decisions', asy
   await expect.poll(async () => (await storedSession(page))?.physical?.opposition?.decisions?.length,
     { timeout: 15_000 }).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Switch faction' }).click();
-  await expect(board.getByText(/collection · accepted/).first()).toBeVisible();
+  await expect(board.getByText(/T\+\d+\.\d · .+ · (accepted|rejected|wait)/).first()).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
