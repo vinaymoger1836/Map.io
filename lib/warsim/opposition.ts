@@ -16,17 +16,18 @@ export interface OppositionState {
 }
 export interface ScenarioObjectives {
   version: 1; deadlineTick: number; status: 'ongoing' | 'red-victory' | 'blue-victory'; concludedTick?: number;
-  blueBrief: string; redBrief: string; trainingPrompts: string[];
+  blueBrief: string; redBrief: string; redTargetContactId?: string; trainingPrompts: string[];
 }
 export interface OpponentChoice { priority: string; utility: number; reason: string; command?: SimulationCommand }
 
 export function createOpposition(): OppositionState {
   return { version: 1, enabled: true, doctrine: 'balanced', difficulty: 'standard', nextDecisionTick: 0, sequence: 0, decisions: [] };
 }
-export function createObjectives(): ScenarioObjectives {
+export function createObjectives(redTargetContactId?: string): ScenarioObjectives {
   return { version: 1, deadlineTick: 900, status: 'ongoing',
     blueBrief: 'Protect FS Resolute until T+90 or disable the opposing frigate.',
     redBrief: 'Disable FS Resolute before T+90 using reports that reach red headquarters.',
+    redTargetContactId,
     trainingPrompts: ['Use local sensor views to find observations before they reach HQ.',
       'A coordinated strike needs a fresh report from its supporting sensor and two free reservations.',
       'A broken support link holds or aborts a mission according to its declared fallback.'] };
@@ -46,7 +47,9 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
     && intel.sensors.some(s => s.actorId === a.id && s.mode === 'active' && s.sensorTime > 0)
     && intel.links.some(l => l.from === `${a.id}:local` && l.active));
   const contacts = view.fogOfWarContacts.enemyContacts.filter(c => c.trackState !== 'lost' && c.domain === 'sea')
-    .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0) || a.contactId.localeCompare(b.contactId));
+    .sort((a, b) => Number(b.contactId === p.objectives?.redTargetContactId) - Number(a.contactId === p.objectives?.redTargetContactId)
+      || Number(b.sourceIds?.includes('scenario-briefing')) - Number(a.sourceIds?.includes('scenario-briefing'))
+      || (b.confidence ?? 0) - (a.confidence ?? 0) || a.contactId.localeCompare(b.contactId));
   const contact = contacts.find(c => !shooter || length(sub(toENU([...c.lastKnownLngLat, 0], p.origin), shooter.position)) <= 9000);
   const confidence = contact?.confidence ?? 0, age = contact?.decayTimerSec ?? Infinity;
   const threshold = requiredConfidence(opponent.difficulty);
@@ -135,6 +138,7 @@ export function validateOpposition(s: WarSimSession) {
     || !Number.isSafeInteger(objective.deadlineTick) || objective.deadlineTick <= 0
     || !['ongoing', 'red-victory', 'blue-victory'].includes(objective.status)
     || typeof objective.blueBrief !== 'string' || typeof objective.redBrief !== 'string'
+    || objective.redTargetContactId !== undefined && (typeof objective.redTargetContactId !== 'string' || !objective.redTargetContactId)
     || !Array.isArray(objective.trainingPrompts) || objective.trainingPrompts.some(x => typeof x !== 'string')
     || objective.concludedTick !== undefined && (!Number.isSafeInteger(objective.concludedTick) || objective.concludedTick < 0)
     || objective.status === 'ongoing' && objective.concludedTick !== undefined

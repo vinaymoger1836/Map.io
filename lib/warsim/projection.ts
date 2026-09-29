@@ -34,6 +34,7 @@ export function projectObserver(world: WarSimSession): WarSimSession {
       view.physical.opposition.nextDecisionTick = 0;
       view.physical.opposition.sequence = 0;
     }
+    if (view.physical.objectives && faction === 'player') view.physical.objectives.redTargetContactId = undefined;
     const allowedEvents = new Set(view.physical.events.map(e => e.id));
     view.eventLog = view.eventLog.filter(e => {
       const sequence = /^physical-(\d+)-/.exec(e.id);

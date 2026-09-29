@@ -4,6 +4,7 @@ import { hq } from '../../lib/warsim/intelligence';
 import { projectObserver } from '../../lib/warsim/projection';
 import { decideOpponent } from '../../lib/warsim/opposition';
 import { SimulationRuntime } from '../../lib/warsim/runtime';
+import { fromENU } from '../../lib/warsim/physics/coordinates';
 
 const redView = (s: ReturnType<typeof createLittoralReference>) =>
   projectObserver({ ...s, activeFaction: 'enemy', observerScope: hq(s.enemyIso) });
@@ -41,6 +42,18 @@ describe('Phase 6 scoped opposition', () => {
     const noMagazine = decideOpponent(redView(s));
     expect(noMagazine.priority).toBe('wait');
     expect(noMagazine.command).toBeUndefined();
+  });
+
+  it('keeps the briefed objective contact ahead of a higher confidence escort report', () => {
+    const s = createLittoralReference(), view = redView(s);
+    const first = decideOpponent(view);
+    const escort = fromENU([-1400, 2700, 0], s.physical!.origin);
+    view.fogOfWarContacts.enemyContacts.push({ ...view.fogOfWarContacts.enemyContacts[0],
+      contactId: 'escort-report', confidence: .99, sourceIds: ['red-frigate'],
+      lastKnownLngLat: [escort[0], escort[1]] });
+    expect(decideOpponent(view)).toEqual(first);
+    expect(first.priority).toBe('collection');
+    expect(projectObserver(s).physical!.objectives!.redTargetContactId).toBeUndefined();
   });
 
   it('accepts pre-start doctrine settings and saves the same autonomous sequence through restore', () => {

@@ -66,7 +66,7 @@ export function createLittoralReference(): WarSimSession {
     personnel: 0, speedKmh: 0, magazines: {} });
   p.intel = createPhysicalIntel(s);
   p.opposition = createOpposition();
-  p.objectives = createObjectives();
+  p.objectives = createObjectives(p.intel.contacts['blue-frigate']);
   syncPhysical(s);
   return s;
 }

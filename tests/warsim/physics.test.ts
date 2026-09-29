@@ -4,6 +4,7 @@ import { integrate, launchPhysical, stepPhysical, syncPhysical, PROFILE } from '
 import { createLittoralReference, createPhysicalReference } from '../../lib/warsim/physics/reference';
 import { SimulationRuntime } from '../../lib/warsim/runtime';
 import { projectObserver } from '../../lib/warsim/projection';
+import { acquireSeeker } from '../../lib/warsim/intelligence';
 
 describe('physical reference / coordinates and integration', () => {
   it('round-trips WGS84 at equator, date line, altitude and high latitude within a millimetre', () => {
@@ -45,6 +46,16 @@ describe('physical reference / authoritative encounter', () => {
     launchPhysical(s, 'red-frigate', s.fogOfWarContacts.enemyContacts.find(c => c.domain === 'sea')!.contactId);
     for (let n = 0; n < 450 && s.physical!.rounds.length; n++) { stepPhysical(s, .1); s.simTimeSec += .1; }
     expect(s.physical!.actors.find(a => a.id === 'blue-frigate')!.health).toBeLessThan(100);
+  });
+  it('keeps surface strike seekers on eligible platforms when an interceptor is nearby', () => {
+    const s = createLittoralReference();
+    s.activeFaction = 'enemy'; s.observerScope = `${s.enemyIso}:hq`;
+    launchPhysical(s, 'red-frigate', s.fogOfWarContacts.enemyContacts.find(c => c.domain === 'sea')!.contactId);
+    const strike = s.physical!.rounds[0];
+    s.physical!.rounds.push({ ...structuredClone(strike), id: 'defensive-decoy', shooterId: 'blue-frigate',
+      iso: s.playerIso, targetId: strike.id, interceptor: true, position: [240, -160, 0] });
+    expect(acquireSeeker(s, strike.id, 0)?.targetRef).toBe('blue-frigate');
+    expect(strike.targetId).toBe('blue-frigate');
   });
   it('intercepts an incoming round and never gives a destroyed round a later impact', () => {
     const s = createPhysicalReference(); launchPhysical(s, 'blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId);

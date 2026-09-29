@@ -283,11 +283,13 @@ export function acquireSeeker(s: WarSimSession, roundId: string, tick: number): 
   const aim = r.aimPosition
     ? add(r.aimPosition, scale(r.aimVelocity ?? [0, 0, 0], Math.max(0, tick - (r.aimObservedTick ?? tick)) / 10))
     : add(r.position, scale(r.velocity, 4));
-  const target = [...p.actors.filter(a => a.health > 0 && a.domain !== 'subsurface' && a.domain !== 'space'), ...p.rounds.filter(candidate => candidate.id !== r.id)]
+  const candidates = r.interceptor ? p.rounds.filter(candidate => candidate.id !== r.id)
+    : p.actors.filter(a => a.health > 0 && a.domain !== 'subsurface' && a.domain !== 'space');
+  const target = candidates
     .filter(candidate => candidate.iso !== r.iso && length(sub(candidate.position, r.position)) <= 4000)
     .sort((a, b) => length(sub(a.position, aim)) - length(sub(b.position, aim)) || a.id.localeCompare(b.id))[0];
   if (!target || length(sub(target.position, aim)) > (r.interceptor ? 350 : Math.max(300, r.age * 15 + 250)))
-    return scopeTracks(i, local(r.id)).find(t => t.targetRef === r.targetId);
+    return scopeTracks(i, local(r.id)).find(t => t.targetRef === r.targetId && candidates.some(candidate => candidate.id === t.targetRef));
   r.targetId = target.id;
   const o = observe(s, r.id, target.id, local(r.id), tick, 18 + length(sub(target.position, r.position)) * .005, 'seeker', undefined, true);
   return i.tracks.find(t => t.scopeId === local(r.id) && t.evidenceIds.includes(o.id));
