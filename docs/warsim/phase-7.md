@@ -15,15 +15,15 @@ Windows 10.0.26200, AMD Ryzen 7 7445HS, 12 logical cores, Node 24.15.0, Turbo po
 
 | Red variant | Red wins / 5 | Mean red rounds spent | Largest replay archive | Highest per-trial tick p95 |
 | --- | ---: | ---: | ---: | ---: |
-| Disabled | 0 | 0 | 1.58 MB | 5.27 ms |
-| Cautious | 0 | 0 | 1.77 MB | 5.01 ms |
-| Balanced | 0 | 8 | 2.42 MB | 5.39 ms |
-| Aggressive | 0 | 8 | 2.50 MB | 5.31 ms |
+| Disabled | 0 | 0 | 1.58 MB | 5.39 ms |
+| Cautious | 0 | 0 | 1.77 MB | 5.33 ms |
+| Balanced | 0 | 8 | 2.42 MB | 7.00 ms |
+| Aggressive | 0 | 8 | 2.50 MB | 7.76 ms |
 
 All five seeds gave the same outcome in each variant. Cautious red reserved three strikes but fired none; balanced and aggressive exhausted eight rounds without damaging the blue frigate. The benchmark therefore demonstrates repeatability and resource limits, not effective opposition or a calibrated win probability. The synthetic equipment, sensor, interception, and damage model need sensitivity and outcome tuning before claims about difficulty or realism. Five seeds do not supply a meaningful uncertainty interval.
 
 ## Verification and remaining gates
 
-69 unit/integration tests pass. New tests cover scoped frames, deterministic archive continuation after checkpoint restore, event history beyond the live log limit, reading old recorded model versions, and save failure/newer-copy behavior. TypeScript and production build pass. The isolated Chromium replay scrub workflow passed its assertions; Playwright remained open after reporting the passing test and was stopped.
+70 unit/integration tests pass. New tests cover scoped frames, deterministic archive continuation after checkpoint restore, event history beyond the live log limit, older checkpoint upgrades, reading old recorded model versions, and save failure/newer-copy behavior. TypeScript and production build pass. The isolated Chromium replay scrub workflow passed its assertions; Playwright remained open after reporting the passing test and was stopped.
 
 The replay captures one-second states, so motion between frames is not preserved. AAR JSON is faction-scoped and machine-readable; a complete human-readable AAR and event-by-event camera playback remain open. Recording starts when a new runtime first sees the scenario; earlier events in old saves cannot be recovered. Persistence still sends full checkpoints through the worker and uses the existing document store. Full visual presets, streaming, context recovery, long-session transactional persistence, large-force benchmarks, and measured 1080p frame-time targets remain Phase 7 work.

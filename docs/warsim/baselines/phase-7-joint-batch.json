@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-09-29T05:09:35.566Z",
-  "revision": "2887192097d426b688b36fdfcc69885d76ad11f9",
+  "capturedAt": "2026-09-29T05:14:56.172Z",
+  "revision": "06c753d6ef2eeddf1fe354cf5f79c5b599ee6eee",
   "sourceHashes": {
-    "lib/warsim/runtime.ts": "829dd5bcbd1f1dbbcb832b275f78d4b635923f5e7fcb860ae105f81cadc30d02",
-    "lib/warsim/replay.ts": "2d64025a25dc281dc2380bcb4ba3484ac109367c5f055a89803cdb032f075401",
+    "lib/warsim/runtime.ts": "2147c09ef3247013b58f6b7a24590dfb4e083559e3406842419ae57419c4d11f",
+    "lib/warsim/replay.ts": "7ec7fcda56da0358c6bad53d783965fe023ece7a22eaa141b621176c8a8019cc",
     "lib/warsim/opposition.ts": "fda33cb5ede25d525e5be3fed005a5b0093cc2dd384f20ac6f10988e4fc9250e",
     "lib/warsim/physics/model.ts": "5273c2e8e76d92b17b203ca348e1f775d52f15bebcf3191806611a3c37b32fec",
     "lib/warsim/physics/reference.ts": "c05cb8a98bda68736827499f583ce7448fbcbfb4772c2449798867d83c4d41be",
@@ -50,7 +50,7 @@
       "meanRedRoundsSpent": 0,
       "meanAcceptedRedStrikes": 0,
       "maxReplayBytes": 1580311,
-      "tickP95Ms": 5.274099999999862
+      "tickP95Ms": 5.38799999999992
     },
     {
       "variant": "cautious",
@@ -59,7 +59,7 @@
       "meanRedRoundsSpent": 0,
       "meanAcceptedRedStrikes": 3,
       "maxReplayBytes": 1772167,
-      "tickP95Ms": 5.007099999999809
+      "tickP95Ms": 5.33389999999963
     },
     {
       "variant": "balanced",
@@ -68,7 +68,7 @@
       "meanRedRoundsSpent": 8,
       "meanAcceptedRedStrikes": 8,
       "maxReplayBytes": 2420813,
-      "tickP95Ms": 5.388600000000224
+      "tickP95Ms": 7.0020000000004075
     },
     {
       "variant": "aggressive",
@@ -77,7 +77,7 @@
       "meanRedRoundsSpent": 8,
       "meanAcceptedRedStrikes": 8,
       "maxReplayBytes": 2502452,
-      "tickP95Ms": 5.308100000000195
+      "tickP95Ms": 7.757600000000821
     }
   ],
   "runs": [
@@ -118,8 +118,8 @@
           "physical": 1424
         }
       },
-      "tickP50Ms": 0.10580000000004475,
-      "tickP95Ms": 5.133500000000026
+      "tickP50Ms": 0.10919999999998709,
+      "tickP95Ms": 5.38799999999992
     },
     {
       "variant": "disabled",
@@ -133,8 +133,8 @@
       "replayFrames": 91,
       "replayRecords": 2,
       "replayBytes": 1580311,
-      "tickP50Ms": 0.08529999999996107,
-      "tickP95Ms": 5.274099999999862
+      "tickP50Ms": 0.08809999999994034,
+      "tickP95Ms": 5.00200000000018
     },
     {
       "variant": "disabled",
@@ -148,8 +148,8 @@
       "replayFrames": 91,
       "replayRecords": 2,
       "replayBytes": 1580311,
-      "tickP50Ms": 0.07839999999987413,
-      "tickP95Ms": 4.852300000000014
+      "tickP50Ms": 0.06749999999988177,
+      "tickP95Ms": 4.503500000000031
     },
     {
       "variant": "disabled",
@@ -163,8 +163,8 @@
       "replayFrames": 91,
       "replayRecords": 2,
       "replayBytes": 1580311,
-      "tickP50Ms": 0.0522000000000844,
-      "tickP95Ms": 4.511799999999766
+      "tickP50Ms": 0.05330000000003565,
+      "tickP95Ms": 4.387400000000071
     },
     {
       "variant": "disabled",
@@ -178,8 +178,8 @@
       "replayFrames": 91,
       "replayRecords": 2,
       "replayBytes": 1580311,
-      "tickP50Ms": 0.0500000000001819,
-      "tickP95Ms": 4.391899999999623
+      "tickP50Ms": 0.06179999999994834,
+      "tickP95Ms": 4.347299999999905
     },
     {
       "variant": "cautious",
@@ -193,8 +193,8 @@
       "replayFrames": 91,
       "replayRecords": 92,
       "replayBytes": 1772167,
-      "tickP50Ms": 0.09550000000035652,
-      "tickP95Ms": 5.007099999999809
+      "tickP50Ms": 0.09719999999970241,
+      "tickP95Ms": 5.21309999999994
     },
     {
       "variant": "cautious",
@@ -208,8 +208,8 @@
       "replayFrames": 91,
       "replayRecords": 92,
       "replayBytes": 1772167,
-      "tickP50Ms": 0.09970000000021173,
-      "tickP95Ms": 4.873599999999897
+      "tickP50Ms": 0.09749999999985448,
+      "tickP95Ms": 5.000299999999697
     },
     {
       "variant": "cautious",
@@ -223,8 +223,8 @@
       "replayFrames": 91,
       "replayRecords": 92,
       "replayBytes": 1772167,
-      "tickP50Ms": 0.08460000000013679,
-      "tickP95Ms": 4.876599999999598
+      "tickP50Ms": 0.08700000000044383,
+      "tickP95Ms": 5.062600000000202
     },
     {
       "variant": "cautious",
@@ -238,8 +238,8 @@
       "replayFrames": 91,
       "replayRecords": 92,
       "replayBytes": 1772167,
-      "tickP50Ms": 0.08579999999983556,
-      "tickP95Ms": 4.750699999999597
+      "tickP50Ms": 0.09420000000045547,
+      "tickP95Ms": 5.33389999999963
     },
     {
       "variant": "cautious",
@@ -253,8 +253,8 @@
       "replayFrames": 91,
       "replayRecords": 92,
       "replayBytes": 1772167,
-      "tickP50Ms": 0.07829999999921711,
-      "tickP95Ms": 4.9713999999994485
+      "tickP50Ms": 0.08950000000004366,
+      "tickP95Ms": 5.330500000000029
     },
     {
       "variant": "balanced",
@@ -268,8 +268,8 @@
       "replayFrames": 91,
       "replayRecords": 117,
       "replayBytes": 2420813,
-      "tickP50Ms": 0.20010000000002037,
-      "tickP95Ms": 5.388600000000224
+      "tickP50Ms": 0.3436999999994441,
+      "tickP95Ms": 6.955200000000332
     },
     {
       "variant": "balanced",
@@ -283,8 +283,8 @@
       "replayFrames": 91,
       "replayRecords": 117,
       "replayBytes": 2420813,
-      "tickP50Ms": 0.17730000000028667,
-      "tickP95Ms": 5.2841000000007625
+      "tickP50Ms": 0.30199999999967986,
+      "tickP95Ms": 7.0020000000004075
     },
     {
       "variant": "balanced",
@@ -298,8 +298,8 @@
       "replayFrames": 91,
       "replayRecords": 117,
       "replayBytes": 2420813,
-      "tickP50Ms": 0.183100000000195,
-      "tickP95Ms": 5.3223999999991065
+      "tickP50Ms": 0.17469999999957508,
+      "tickP95Ms": 5.641799999999421
     },
     {
       "variant": "balanced",
@@ -313,8 +313,8 @@
       "replayFrames": 91,
       "replayRecords": 117,
       "replayBytes": 2420813,
-      "tickP50Ms": 0.1653999999998632,
-      "tickP95Ms": 5.278600000001461
+      "tickP50Ms": 0.16270000000076834,
+      "tickP95Ms": 5.414700000001176
     },
     {
       "variant": "balanced",
@@ -328,8 +328,8 @@
       "replayFrames": 91,
       "replayRecords": 117,
       "replayBytes": 2420813,
-      "tickP50Ms": 0.15099999999983993,
-      "tickP95Ms": 5.187900000000809
+      "tickP50Ms": 0.16200000000026193,
+      "tickP95Ms": 5.452199999999721
     },
     {
       "variant": "aggressive",
@@ -343,8 +343,8 @@
       "replayFrames": 91,
       "replayRecords": 118,
       "replayBytes": 2502452,
-      "tickP50Ms": 0.16480000000046857,
-      "tickP95Ms": 5.1406000000006316
+      "tickP50Ms": 0.25829999999950815,
+      "tickP95Ms": 6.144400000001042
     },
     {
       "variant": "aggressive",
@@ -358,8 +358,8 @@
       "replayFrames": 91,
       "replayRecords": 118,
       "replayBytes": 2502452,
-      "tickP50Ms": 0.15419999999903666,
-      "tickP95Ms": 5.1974000000009255
+      "tickP50Ms": 0.16759999999885622,
+      "tickP95Ms": 5.594900000000052
     },
     {
       "variant": "aggressive",
@@ -373,8 +373,8 @@
       "replayFrames": 91,
       "replayRecords": 118,
       "replayBytes": 2502452,
-      "tickP50Ms": 0.1610000000000582,
-      "tickP95Ms": 5.308100000000195
+      "tickP50Ms": 0.1592000000000553,
+      "tickP95Ms": 5.498799999999392
     },
     {
       "variant": "aggressive",
@@ -388,8 +388,8 @@
       "replayFrames": 91,
       "replayRecords": 118,
       "replayBytes": 2502452,
-      "tickP50Ms": 0.15689999999995052,
-      "tickP95Ms": 5.21310000000085
+      "tickP50Ms": 0.3275999999968917,
+      "tickP95Ms": 7.757600000000821
     },
     {
       "variant": "aggressive",
@@ -403,8 +403,8 @@
       "replayFrames": 91,
       "replayRecords": 118,
       "replayBytes": 2502452,
-      "tickP50Ms": 0.14580000000023574,
-      "tickP95Ms": 5.227199999999357
+      "tickP50Ms": 0.2757999999994354,
+      "tickP95Ms": 6.971899999996822
     }
   ]
 }
