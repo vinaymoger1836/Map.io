@@ -29,7 +29,11 @@ export function projectObserver(world: WarSimSession): WarSimSession {
     view.physical.events = view.physical.events.filter(e => e.visibleTo.includes(scopeId)).map(e => ({ ...e, visibleTo: [scopeId], deliveries: undefined }));
     view.physical.sequence = 0;
     delete view.physical.intel;
-    if (view.physical.opposition && faction === 'player') view.physical.opposition.decisions = [];
+    if (view.physical.opposition && faction === 'player') {
+      view.physical.opposition.decisions = [];
+      view.physical.opposition.nextDecisionTick = 0;
+      view.physical.opposition.sequence = 0;
+    }
     const allowedEvents = new Set(view.physical.events.map(e => e.id));
     view.eventLog = view.eventLog.filter(e => {
       const sequence = /^physical-(\d+)-/.exec(e.id);

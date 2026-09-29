@@ -134,6 +134,10 @@ export class SimulationRuntime {
     }
     if (command.type === 'setSpeedMultiplier' && ![1, 3, 5, 10, 30].includes(args[0] as number)) throw new Error('Unsupported simulation speed.');
     if (command.type === 'setPlayback' && !['running', 'paused'].includes(args[0] as string)) throw new Error('Invalid playback state.');
+    if (world.physical?.objectives?.status !== undefined && world.physical.objectives.status !== 'ongoing'
+      && (command.type === 'togglePlay' || command.type === 'setPlayback' && args[0] === 'running')) {
+      throw new Error('The scenario has concluded. Start a new probe to play again.');
+    }
     if (command.type === 'setEntityRcs' && (typeof args[1] !== 'number' || args[1] < 0)) throw new Error('RCS must be a nonnegative number.');
     if (command.type === 'setGlobalThreatLevel' && args[0] !== iso) throw new Error('Cannot change the other faction’s orders.');
     const netId = command.type === 'assignEntityToNetwork' ? args[1]

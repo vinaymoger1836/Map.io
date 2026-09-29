@@ -9,16 +9,33 @@ const redView = (s: ReturnType<typeof createLittoralReference>) =>
   projectObserver({ ...s, activeFaction: 'enemy', observerScope: hq(s.enemyIso) });
 
 describe('Phase 6 scoped opposition', () => {
-  it('makes the same decision when hidden blue truth changes but red reports do not', () => {
+  it('makes the same decision at every difficulty when hidden blue truth changes but red reports do not', () => {
     const s = createLittoralReference(), view = redView(s);
     expect(view.physical!.actors.every(a => a.iso === s.enemyIso)).toBe(true);
-    const first = decideOpponent(view);
     const changed = structuredClone(s);
     changed.physical!.actors.find(a => a.id === 'blue-frigate')!.position = [9000, -7000, 0];
     changed.physical!.actors.find(a => a.id === 'blue-frigate')!.health = 1;
-    expect(decideOpponent(redView(changed))).toEqual(first);
-    expect(first.priority).toBe('collection');
-    expect(JSON.stringify(first)).not.toContain('blue-frigate');
+    for (const difficulty of ['cadet', 'standard', 'veteran'] as const) {
+      s.physical!.opposition!.difficulty = difficulty;
+      changed.physical!.opposition!.difficulty = difficulty;
+      const first = decideOpponent(redView(s));
+      expect(decideOpponent(redView(changed))).toEqual(first);
+      expect(first.priority).toBe('collection');
+      expect(JSON.stringify(first)).not.toContain('blue-frigate');
+    }
+  });
+
+  it('uses readiness and the shared course command for formation, and waits when ammunition is empty', () => {
+    const s = createLittoralReference(), sub = s.physical!.actors.find(a => a.id === 'red-sub')!;
+    sub.condition!.sensor = 0;
+    sub.position = [7000, 7000, -40];
+    const formation = decideOpponent(redView(s));
+    expect(formation.priority).toBe('formation');
+    expect(formation.command?.type).toBe('setPhysicalCourse');
+    s.physical!.actors.find(a => a.id === 'red-frigate')!.rounds = 0;
+    const noMagazine = decideOpponent(redView(s));
+    expect(noMagazine.priority).toBe('wait');
+    expect(noMagazine.command).toBeUndefined();
   });
 
   it('accepts pre-start doctrine settings and saves the same autonomous sequence through restore', () => {
@@ -38,6 +55,10 @@ describe('Phase 6 scoped opposition', () => {
     expect(decisions.some(d => d.priority === 'collection' && d.result === 'accepted')).toBe(true);
     expect(decisions.some(d => d.priority === 'coordinated-strike' && d.result === 'accepted')).toBe(true);
     expect(first.observer().physical!.opposition!.decisions).toEqual([]);
+    expect(first.observer().physical!.opposition!.nextDecisionTick).toBe(0);
+    const damaged = first.checkpoint();
+    damaged.physical!.opposition!.decisions[0].utility = Number.NaN;
+    expect(() => new SimulationRuntime(damaged, [])).toThrow('Invalid opposition or objective checkpoint');
   });
 
   it('finishes the benchmark without red user orders and never overdraws ammunition', () => {
@@ -51,5 +72,9 @@ describe('Phase 6 scoped opposition', () => {
     expect(saved.physical!.intel!.reservations.filter(r => r.assetId === red.id && r.resource === 'strike-round').length)
       .toBeLessThanOrEqual(red.rounds);
     expect(saved.physical!.opposition!.decisions.some(d => d.priority === 'coordinated-strike')).toBe(true);
+    runtime.submit({ version: 1, sequence: saved.runtime!.nextSequence, executeAtTick: runtime.tick,
+      scope: { faction: saved.activeFaction, commandGroupId: saved.observerScope! }, command: { type: 'togglePlay', args: [] } });
+    expect(runtime.takeReceipts()[0].status).toBe('rejected');
+    expect(runtime.checkpoint().status).toBe('concluded');
   });
 });

@@ -41,6 +41,7 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
     throw new Error('Opponent decisions require the red HQ observer snapshot.');
   if (p.objectives?.status !== 'ongoing') return { priority: 'objective', utility: 0, reason: 'Scenario objective has concluded.' };
   const shooter = p.actors.find(a => a.iso === view.enemyIso && a.rounds > 0 && operational(a, 'strikeLauncher'));
+  if (!shooter) return { priority: 'wait', utility: 0, reason: 'No ready red launcher or strike rounds remain.' };
   const support = p.actors.find(a => a.iso === view.enemyIso && a.id !== shooter?.id && operational(a, 'sensor')
     && intel.sensors.some(s => s.actorId === a.id && s.mode === 'active' && s.sensorTime > 0)
     && intel.links.some(l => l.from === `${a.id}:local` && l.active));
@@ -88,7 +89,7 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
       command: { type: 'setPhysicalCourse', args: [escort.id, course, 6] } };
   }
   return { priority: 'wait', utility: 0,
-    reason: !shooter ? 'No ready red launcher or strike rounds remain.' : missionBusy ? 'A strike already owns the shooter or support resources.'
+    reason: missionBusy ? 'A strike already owns the shooter or support resources.'
       : activeTask ? 'Collection is processing or awaiting delivery.' : 'No current HQ track and eligible support combination.' };
 }
 
@@ -125,6 +126,17 @@ export function validateOpposition(s: WarSimSession) {
     || !['cadet', 'standard', 'veteran'].includes(opposition.difficulty)
     || !Number.isSafeInteger(opposition.nextDecisionTick) || opposition.nextDecisionTick < 0
     || !Number.isSafeInteger(opposition.sequence) || opposition.sequence < 0 || !Array.isArray(opposition.decisions)
-    || opposition.decisions.length > 256 || !Number.isSafeInteger(objective.deadlineTick) || objective.deadlineTick <= 0
-    || !['ongoing', 'red-victory', 'blue-victory'].includes(objective.status)) throw new Error('Invalid opposition or objective checkpoint.');
+    || opposition.decisions.length > 256 || opposition.decisions.some((d, i) => !d || !Number.isSafeInteger(d.id)
+      || d.id <= 0 || i > 0 && d.id <= opposition.decisions[i - 1].id || d.id > opposition.sequence
+      || !Number.isSafeInteger(d.tick) || d.tick < 0 || typeof d.priority !== 'string' || typeof d.reason !== 'string'
+      || !Number.isFinite(d.utility) || !['accepted', 'rejected', 'wait'].includes(d.result)
+      || d.command !== undefined && (typeof d.command.type !== 'string' || !Array.isArray(d.command.args))
+      || d.rejection !== undefined && typeof d.rejection !== 'string')
+    || !Number.isSafeInteger(objective.deadlineTick) || objective.deadlineTick <= 0
+    || !['ongoing', 'red-victory', 'blue-victory'].includes(objective.status)
+    || typeof objective.blueBrief !== 'string' || typeof objective.redBrief !== 'string'
+    || !Array.isArray(objective.trainingPrompts) || objective.trainingPrompts.some(x => typeof x !== 'string')
+    || objective.concludedTick !== undefined && (!Number.isSafeInteger(objective.concludedTick) || objective.concludedTick < 0)
+    || objective.status === 'ongoing' && objective.concludedTick !== undefined
+    || objective.status !== 'ongoing' && objective.concludedTick === undefined) throw new Error('Invalid opposition or objective checkpoint.');
 }
