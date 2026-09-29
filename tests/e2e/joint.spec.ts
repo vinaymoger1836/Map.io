@@ -34,7 +34,7 @@ test('joint probe applies opposition settings and records red HQ decisions', asy
   await page.getByRole('button', { name: 'Intel & coordination' }).click();
   const board = page.getByRole('complementary', { name: 'Intelligence and coordination board' });
   await board.getByLabel('Opponent doctrine').selectOption('aggressive');
-  await board.getByLabel('Decision tempo').selectOption('veteran');
+  await board.getByLabel('Opponent difficulty').selectOption('veteran');
   await board.getByRole('button', { name: 'Apply opposition settings' }).click();
   await expect.poll(async () => (await storedSession(page))?.physical?.opposition?.doctrine).toBe('aggressive');
   await page.getByRole('button', { name: 'Start time' }).click();
