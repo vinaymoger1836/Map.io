@@ -796,6 +796,7 @@ export default function EurasiaMap() {
         {mode === 'wargames' && warSim.session && tacticalOpen && (
           <TacticalViewport session={warSim.session} selectedId={warSim.selectedEntityId} selectedContactId={warSim.selectedContactId}
             onSelect={warSim.setSelectedEntityId} onSelectContact={warSim.setSelectedContactId} dispatch={warSim.dispatchSimulation}
+            getReplay={warSim.getReplay}
             onClose={() => { setTacticalOpen(false); const e = warSim.selectedEntity ?? warSim.session?.entities[0];
               if (e) mapRef.current?.jumpTo({ center: e.lngLat, zoom: 11 });
             }} onExit={() => { setTacticalOpen(false); warSim.exitSim(); }} runtimeError={warSim.runtimeError} onDismissRuntimeError={warSim.dismissRuntimeError} />

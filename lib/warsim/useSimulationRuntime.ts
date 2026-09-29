@@ -7,6 +7,7 @@ import { writeDoc } from '../store';
 import { recordWarSimMetric } from './diagnostics';
 import { seedFromId } from './context';
 import type { SimulationCommand, WorkerRequest, WorkerResponse, RuntimeDiagnostics } from './contracts';
+import { factionReplay } from './replay';
 
 /** Owns transport/lifecycle only. Commands and model steps execute in the worker. */
 export function useSimulationRuntime(initial: WarSimSession | null, catalogue: SystemSpec[]) {
@@ -121,6 +122,10 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
     setView(null);
     persist(null);
   }, [persist]);
+  const getReplay = useCallback(() => {
+    const archive = checkpoint.current?.runtime?.replay, faction = viewRef.current?.activeFaction;
+    return archive && faction ? factionReplay(archive, faction) : null;
+  }, []);
   return { session, definitions, dispatch, close, error, diagnostics,
-    dismissError: () => setError(null), restart: () => setRestartCount(n => n + 1) };
+    getReplay, dismissError: () => setError(null), restart: () => setRestartCount(n => n + 1) };
 }
