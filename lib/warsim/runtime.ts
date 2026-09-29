@@ -86,8 +86,8 @@ export class SimulationRuntime {
       else this.state.replay = createReplay(this.world, this.tick, modelVersion);
       if (upgradingOldCheckpoint) this.state.replay.priorEventIds = this.world.eventLog.map(e => `${e.faction}:${e.id}`);
       this.replaySeen = new Set([...this.state.replay.records.filter(r => r.kind === 'event').map(r => r.sourceId!),
-        ...this.state.replay.priorEventIds ?? []]);
-      else recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
+        ...(this.state.replay.priorEventIds ?? [])]);
+      if (!upgradingOldCheckpoint) recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
     }
     if (this.state.pendingCommands.some(c => c.version !== 1 || !Number.isSafeInteger(c.sequence) || c.sequence >= this.state.nextSequence
       || c.sequence < 1 || !Number.isSafeInteger(c.executeAtTick) || c.executeAtTick < this.tick
