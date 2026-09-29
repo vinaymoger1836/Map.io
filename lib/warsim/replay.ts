@@ -2,6 +2,7 @@ import type { WarSimSession } from '../warSimTypes';
 import type { CommandEnvelope, Faction, SimulationCommand } from './contracts';
 import { hq } from './intelligence';
 import { projectObserver } from './projection';
+import type { PhysicalEncounter } from './physics/types';
 
 export const REPLAY_FRAME_TICKS = 10;
 export interface ReplayRecord {
@@ -11,11 +12,19 @@ export interface ReplayRecord {
 }
 export interface ReplayFrame {
   tick: number;
-  player: WarSimSession;
-  enemy: WarSimSession;
+  player: RecordedView;
+  enemy: RecordedView;
+}
+export interface RecordedView {
+  simTimeSec: WarSimSession['simTimeSec']; status: WarSimSession['status'];
+  timeMultiplier: WarSimSession['timeMultiplier']; entities: WarSimSession['entities'];
+  fogOfWarContacts: WarSimSession['fogOfWarContacts']; activeMissiles: WarSimSession['activeMissiles'];
+  eventLog: WarSimSession['eventLog']; intelView: WarSimSession['intelView'];
+  physical: Pick<PhysicalEncounter, 'actors' | 'rounds' | 'events' | 'opposition' | 'objectives'>;
 }
 export interface ReplayArchive {
   version: 1; modelVersion: string; intervalTicks: number; sequence: number;
+  basis: { player: WarSimSession; enemy: WarSimSession };
   records: ReplayRecord[]; frames: ReplayFrame[];
 }
 export interface FactionReplay {
@@ -34,17 +43,31 @@ function recordedView(world: WarSimSession, faction: Faction): WarSimSession {
   }
   return view;
 }
+function packView(view: WarSimSession): RecordedView {
+  const p = view.physical!;
+  return { simTimeSec: view.simTimeSec, status: view.status, timeMultiplier: view.timeMultiplier,
+    entities: view.entities, fogOfWarContacts: view.fogOfWarContacts, activeMissiles: view.activeMissiles,
+    eventLog: view.eventLog, intelView: view.intelView,
+    physical: { actors: p.actors, rounds: p.rounds, events: p.events,
+      opposition: p.opposition, objectives: p.objectives } };
+}
+function unpackView(archive: ReplayArchive, view: RecordedView, faction: Faction): WarSimSession {
+  const basis = archive.basis[faction];
+  return structuredClone({ ...basis, ...view, physical: { ...basis.physical!, ...view.physical } });
+}
 
 export function createReplay(world: WarSimSession, tick: number, modelVersion: string): ReplayArchive {
+  const player = recordedView(world, 'player'), enemy = recordedView(world, 'enemy');
   const archive: ReplayArchive = { version: 1, modelVersion, intervalTicks: REPLAY_FRAME_TICKS,
-    sequence: 0, records: [], frames: [] };
-  captureReplayFrame(archive, world, tick);
+    sequence: 0, basis: { player, enemy }, records: [], frames: [] };
+  archive.frames.push({ tick, player: packView(player), enemy: packView(enemy) });
   return archive;
 }
 
 export function captureReplayFrame(archive: ReplayArchive, world: WarSimSession, tick: number, force = false) {
   if (!force && tick % archive.intervalTicks !== 0) return;
-  const frame: ReplayFrame = { tick, player: recordedView(world, 'player'), enemy: recordedView(world, 'enemy') };
+  const frame: ReplayFrame = { tick, player: packView(recordedView(world, 'player')),
+    enemy: packView(recordedView(world, 'enemy')) };
   if (archive.frames.at(-1)?.tick === tick) archive.frames[archive.frames.length - 1] = frame;
   else archive.frames.push(frame);
 }
@@ -79,13 +102,16 @@ export function factionReplay(archive: ReplayArchive, faction: Faction): Faction
   validateReplay(archive);
   return { version: 1, modelVersion: archive.modelVersion, intervalTicks: archive.intervalTicks, faction,
     records: archive.records.filter(r => r.faction === faction).map(r => structuredClone(r)),
-    frames: archive.frames.map(frame => ({ tick: frame.tick, session: structuredClone(frame[faction]) })) };
+    frames: archive.frames.map(frame => ({ tick: frame.tick, session: unpackView(archive, frame[faction], faction) })) };
 }
 
 export function validateReplay(archive: ReplayArchive) {
   if (!archive || archive.version !== 1 || typeof archive.modelVersion !== 'string'
     || !Number.isSafeInteger(archive.intervalTicks) || archive.intervalTicks < 1
     || !Number.isSafeInteger(archive.sequence) || archive.sequence < 0
+    || !archive.basis || archive.basis.player?.activeFaction !== 'player'
+    || archive.basis.enemy?.activeFaction !== 'enemy'
+    || archive.basis.player.runtime !== undefined || archive.basis.enemy.runtime !== undefined
     || !Array.isArray(archive.records) || !Array.isArray(archive.frames) || !archive.frames.length) {
     throw new Error('Invalid replay archive.');
   }
@@ -95,8 +121,8 @@ export function validateReplay(archive: ReplayArchive) {
     || typeof r.title !== 'string' || typeof r.detail !== 'string')) throw new Error('Invalid replay record.');
   if (archive.frames.some((frame, i) => !frame || !Number.isSafeInteger(frame.tick) || frame.tick < 0
     || i > 0 && frame.tick <= archive.frames[i - 1].tick
-    || frame.player?.activeFaction !== 'player' || frame.enemy?.activeFaction !== 'enemy'
-    || frame.player.runtime !== undefined || frame.enemy.runtime !== undefined
-    || frame.player.physical?.actors.some(a => a.iso !== frame.player.playerIso)
-    || frame.enemy.physical?.actors.some(a => a.iso !== frame.enemy.enemyIso))) throw new Error('Invalid replay frame.');
+    || !Number.isFinite(frame.player?.simTimeSec) || !Number.isFinite(frame.enemy?.simTimeSec)
+    || !Array.isArray(frame.player?.physical?.actors) || !Array.isArray(frame.enemy?.physical?.actors)
+    || frame.player.physical.actors.some(a => a.iso !== archive.basis.player.playerIso)
+    || frame.enemy.physical.actors.some(a => a.iso !== archive.basis.enemy.enemyIso))) throw new Error('Invalid replay frame.');
 }
