@@ -25,7 +25,8 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
   const previousInitial = useRef(initial);
   const saveQueue = useRef(Promise.resolve());
   const persist = useCallback((value: WarSimSession | null) => {
-    saveQueue.current = saveQueue.current.catch(() => {}).then(() => writeDoc('warsim-session', value));
+    saveQueue.current = saveQueue.current.then(() => writeDoc('warsim-session', value))
+      .catch(error => { setError(`Checkpoint save failed: ${String(error)}`); });
   }, []);
   const ready = Boolean(initial?.physical || initial?.runtime?.definitions?.length || catalogue.length);
 
@@ -89,7 +90,8 @@ export function useSimulationRuntime(initial: WarSimSession | null, catalogue: S
     const unload = () => {
       // The latest acknowledged checkpoint is synchronously mirrored by writeDoc
       // to localStorage. Unacknowledged commands are never claimed as saved.
-      if (checkpoint.current) void writeDoc('warsim-session', { ...checkpoint.current, status: 'paused' });
+      if (checkpoint.current) void writeDoc('warsim-session', { ...checkpoint.current, status: 'paused' })
+        .catch(error => console.error('[warsim] unload checkpoint save failed', error));
     };
     document.addEventListener('visibilitychange', visibility);
     window.addEventListener('pagehide', unload);

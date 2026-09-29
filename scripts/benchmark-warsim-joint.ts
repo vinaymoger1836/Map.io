@@ -1,4 +1,6 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { createLittoralReference } from '../lib/warsim/physics/reference';
 import { SimulationRuntime } from '../lib/warsim/runtime';
@@ -46,7 +48,15 @@ const summary = variants.map(variant => {
     maxReplayBytes: Math.max(...group.map(run => run.replayBytes)),
     tickP95Ms: quantile(group.map(run => run.tickP95Ms), .95) };
 });
+const sources = ['lib/warsim/runtime.ts', 'lib/warsim/replay.ts', 'lib/warsim/opposition.ts',
+  'lib/warsim/physics/model.ts', 'lib/warsim/physics/reference.ts', 'package-lock.json'];
+const sourceHashes = Object.fromEntries(sources.map(file =>
+  [file, createHash('sha256').update(readFileSync(file)).digest('hex')]));
+let revision = 'unavailable';
+try { revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
+catch { /* Source hashes still identify the run. */ }
 const report = { schemaVersion: 1, capturedAt: new Date().toISOString(),
+  revision, sourceHashes,
   method: { scenario: 'Glasswater / Joint probe', seeds, variants, stepMs: 100, maxTicks: 900,
     caveats: ['Synthetic equipment and weather; outcomes are not calibrated combat predictions.',
       'CPU step timing includes replay capture but excludes worker transfer, persistence, rendering and React.',
