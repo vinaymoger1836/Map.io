@@ -25,10 +25,18 @@ const runs = variants.flatMap(variant => seeds.map(seed => {
   const saved = runtime.checkpoint(), physical = saved.physical!, archive = saved.runtime!.replay!;
   const red = physical.actors.find(a => a.id === 'red-frigate')!;
   const blue = physical.actors.find(a => a.id === 'blue-frigate')!;
+  const redLaunches = physical.events.filter(event => event.kind === 'launch' && event.position[0] > 1500
+    && event.position[2] < 100);
+  const redTerminalOutcomes = redLaunches.map(launch => {
+    const terminal = physical.events.find(event => event.terminatedRoundIds.includes(launch.roundId));
+    return { roundId: launch.roundId, kind: terminal?.kind ?? 'in-flight', position: terminal?.position };
+  });
   return { variant, seed, ticks: runtime.tick, result: physical.objectives!.status,
-    redHealth: red.health, blueHealth: blue.health, redRoundsSpent: 8 - red.rounds,
+    redHealth: red.health, blueHealth: blue.health, redPosition: red.position, bluePosition: blue.position,
+    redRoundsSpent: 8 - red.rounds,
     acceptedRedStrikes: physical.opposition!.decisions.filter(d => d.result === 'accepted'
       && ['coordinated-strike', 'local-strike'].includes(d.priority)).length,
+    redTerminalOutcomes,
     replayFrames: archive.frames.length, replayRecords: archive.records.length,
     replayBytes: Buffer.byteLength(JSON.stringify(archive)),
     ...(variant === 'disabled' && seed === 7 ? { replayComponents: {
