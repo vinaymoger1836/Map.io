@@ -6,19 +6,23 @@ import { TacticalScene } from '@/lib/warsim/tactical/scene';
 import styles from './TacticalViewport.module.css';
 import { IntelligenceBoard } from './IntelligenceBoard';
 import { CAPABILITIES, condition } from '@/lib/warsim/physics/readiness';
+import type { FactionReplay } from '@/lib/warsim/replay';
 
 interface Props {
   session: WarSimSession; selectedId: string | null; selectedContactId: string | null;
   onSelect: (id: string | null) => void; onSelectContact: (id: string | null) => void;
   dispatch: (command: SimulationCommand) => void; onClose: () => void; onExit: () => void;
+  getReplay: () => FactionReplay | null;
   runtimeError: string | null; onDismissRuntimeError: () => void;
 }
 export default function TacticalViewport(p: Props) {
   const host = useRef<HTMLDivElement>(null), scene = useRef<TacticalScene | null>(null), latest = useRef(p); latest.current = p;
   const [error, setError] = useState(''), [sound, setSound] = useState(false), [quality, setQuality] = useState('balanced');
   const [intelOpen, setIntelOpen] = useState(false);
+  const [replay, setReplay] = useState<FactionReplay | null>(null), [replayIndex, setReplayIndex] = useState(0);
   const [heading, setHeading] = useState(0), [speed, setSpeed] = useState(8);
-  const s = p.session;
+  const frame = replay?.frames[replayIndex];
+  const s = frame?.session ?? p.session;
   const contacts = s.activeFaction === 'player' ? s.fogOfWarContacts.playerContacts : s.fogOfWarContacts.enemyContacts;
   const selected = s.entities.find(e => e.id === p.selectedId) ?? s.entities[0];
   const target = contacts.find(c => c.contactId === p.selectedContactId) ?? contacts[0];
@@ -32,11 +36,24 @@ export default function TacticalViewport(p: Props) {
     catch (e) { setError(`Unable to start 3D graphics: ${String(e)}`); }
     return () => { scene.current?.dispose(); scene.current = null; };
   }, [s.id, s.activeFaction]);
-  useEffect(() => { scene.current?.update(s); }, [s]);
+  useEffect(() => { scene.current?.update(frame ? { ...s, status: 'paused' } : s); }, [s, frame]);
+  useEffect(() => { setReplay(null); }, [p.session.id, p.session.activeFaction]);
   useEffect(() => { scene.current?.focus(selected?.id ?? null); }, [selected?.id, s.id, s.activeFaction]);
   useEffect(() => { scene.current?.quality(quality === 'high'); }, [quality, s.id, s.activeFaction]);
   useEffect(() => { if (actor) { setHeading(actor.course); setSpeed(actor.desiredSpeed); } }, [actor?.id]); // local order drafts survive new snapshots
   const send = (command: SimulationCommand) => p.dispatch(command);
+  const openReplay = () => {
+    const archive = p.getReplay();
+    if (!archive?.frames.length) return;
+    setReplay(archive); setReplayIndex(archive.frames.length - 1);
+  };
+  const exportReplay = () => {
+    if (!replay) return;
+    const blob = new Blob([JSON.stringify(replay, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = `warsim-aar-${p.session.id}-${replay.faction}.json`;
+    link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   return <section className={styles.viewport} aria-label="Tactical view">
     <div className={styles.canvas} ref={host} />
     <div className={styles.vignette} />
@@ -45,22 +62,23 @@ export default function TacticalViewport(p: Props) {
       <div className={styles.toolbar}>
         <button onClick={() => scene.current?.overview()}>Overview</button>
         <button onClick={() => scene.current?.focus(selected?.id ?? null)}>Follow selected</button>
-        {s.physical && <button onClick={() => setIntelOpen(open => !open)}>Intel & coordination</button>}
+        {s.physical && <button disabled={Boolean(replay)} onClick={() => setIntelOpen(open => !open)}>Intel & coordination</button>}
+        {s.physical?.objectives && <button disabled={p.session.status === 'running'} onClick={openReplay}>Replay & AAR</button>}
         <select aria-label="Graphics quality" value={quality} onChange={e => setQuality(e.target.value)}><option value="balanced">Balanced graphics</option><option value="high">High graphics</option></select>
         <button aria-pressed={sound} onClick={async () => { try { await scene.current?.audioEnabled(!sound); setSound(!sound); } catch { setError('Audio could not start.'); } }}>Sound {sound ? 'on' : 'off'}</button>
         <button onClick={p.onClose}>Command map</button>
       </div>
     </header>
-    {!intelOpen && <aside className={styles.assets}>
+    {!replay && !intelOpen && <aside className={styles.assets}>
       <div className={styles.eyebrow}>FRIENDLY PLATFORMS</div>
       {s.entities.map(e => <button key={e.id} className={e.id === selected?.id ? styles.selected : ''} onClick={() => { p.onSelect(e.id); scene.current?.focus(e.id); }}><span>{e.name}</span><small>{e.status === 'destroyed' ? 'LOST' : `${e.speedKmh.toFixed(0)} km/h · ${e.currentFuelPct.toFixed(0)}% fuel · ${e.status === 'in_repair' ? 'REPAIRING' : e.damage === 'damaged' ? 'DAMAGED' : 'READY'}`}</small></button>)}
       <div className={styles.eyebrow}>OBSERVED CONTACTS / {contacts.length}</div>
       {contacts.map(c => <button key={c.contactId} className={c.contactId === target?.contactId ? styles.hostile : ''} onClick={() => p.onSelectContact(c.contactId)}><span>{c.knownName ?? 'Unclassified track'}</span><small>{c.domain.toUpperCase()} · updated T+{c.lastDetectedSimTimeSec.toFixed(1)}</small></button>)}
       <p>Contact markers show reported positions. Drag to orbit, right-drag to pan, scroll to zoom.</p>
     </aside>}
-    {intelOpen && s.physical && <IntelligenceBoard session={s} dispatch={send} selectedContactId={p.selectedContactId}
+    {!replay && intelOpen && s.physical && <IntelligenceBoard session={s} dispatch={send} selectedContactId={p.selectedContactId}
       onSelectContact={p.onSelectContact} onClearSelection={() => { p.onSelect(null); p.onSelectContact(null); }} onClose={() => setIntelOpen(false)} />}
-    <aside className={styles.orders}>
+    {!replay && <aside className={styles.orders}>
       {s.physical?.objectives && <div className={styles.intelEntry}>
         <div className={styles.eyebrow}>SCENARIO OBJECTIVE · {s.physical.objectives.status.toUpperCase()}</div>
         <strong>{s.activeFaction === 'player' ? s.physical.objectives.blueBrief : s.physical.objectives.redBrief}</strong>
@@ -86,15 +104,28 @@ export default function TacticalViewport(p: Props) {
       {target && <p>Track: {target.trackState ?? 'legacy'} · ±{Math.round(target.uncertaintyM ?? 0)} m · {((target.confidence ?? 0) * 100).toFixed(0)}% confidence{['sub', 'space'].includes(target.domain) ? ' · surface round incompatible' : ''}</p>}
       <div className={styles.eyebrow}>ENGAGEMENT LOG</div>
       <div className={styles.log} aria-live="polite">{s.eventLog.slice(-5).reverse().map(e => <div key={e.id}><time>{e.timeFormatted}</time> {e.title}</div>)}{!s.eventLog.length && <p>Awaiting orders.</p>}</div>
-    </aside>
+    </aside>}
+    {replay && frame && <aside className={styles.replayPanel} role="dialog" aria-label="Recorded replay">
+      <div className={styles.intelHead}><div><div className={styles.eyebrow}>RECORDED / {replay.faction.toUpperCase()}</div><h2>Replay & AAR</h2></div>
+        <button onClick={() => setReplay(null)}>Close replay</button></div>
+      <p>Recorded faction view every {(replay.intervalTicks / 10).toFixed(1)} s. T+{frame.session.simTimeSec.toFixed(1)} / {replay.frames.at(-1)?.session.simTimeSec.toFixed(1)}.</p>
+      <input aria-label="Replay time" type="range" min="0" max={replay.frames.length - 1} value={replayIndex}
+        onChange={e => setReplayIndex(+e.target.value)} />
+      <div className={styles.replayActions}><button disabled={replayIndex === 0} onClick={() => setReplayIndex(n => n - 1)}>Previous</button>
+        <button disabled={replayIndex === replay.frames.length - 1} onClick={() => setReplayIndex(n => n + 1)}>Next</button></div>
+      <button onClick={exportReplay}>Export faction AAR JSON</button>
+      <div className={styles.eyebrow}>RECORDED EVENTS</div>
+      {replay.records.filter(r => r.tick <= frame.tick && r.tick >= frame.tick - 100).slice(-8).reverse().map(r =>
+        <div className={styles.intelEntry} key={r.id}><strong>T+{(r.tick / 10).toFixed(1)} · {r.title}</strong><small>{r.detail}</small></div>)}
+    </aside>}
     {error && <div className={styles.error} role="alert">{error}<button onClick={p.onClose}>Return to command map</button></div>}
     {p.runtimeError && !error && <div className={styles.error} role="alert">{p.runtimeError}<button onClick={p.onDismissRuntimeError}>Dismiss order message</button></div>}
     <footer className={styles.footer}>
       <div><div className={styles.eyebrow}>SIMULATION TIME</div><strong data-testid="tactical-time">T+{s.simTimeSec.toFixed(1).padStart(6, '0')}</strong></div>
-      <button className={styles.play} onClick={() => send({ type: 'togglePlay', args: [] })}>{s.status === 'running' ? 'Pause time' : 'Start time'}</button>
+      <button className={styles.play} disabled={Boolean(replay) || p.session.status === 'concluded'} onClick={() => send({ type: 'togglePlay', args: [] })}>{s.status === 'running' ? 'Pause time' : 'Start time'}</button>
       <select aria-label="Tactical time multiplier" value={s.timeMultiplier} onChange={e => send({ type: 'setSpeedMultiplier', args: [+e.target.value] })}>{[1, 3, 5, 10, 30].map(n => <option key={n} value={n}>{n}× speed</option>)}</select>
       <span className={styles.model}>METRE SCALE · {s.physical ? 'CONTINUOUS COLLISION' : 'OBSERVER VIEW'}</span>
-      <button onClick={() => { p.onSelect(null); p.onSelectContact(null); send({ type: 'switchActiveFaction', args: [] }); }}>Switch faction</button>
+      <button disabled={Boolean(replay)} onClick={() => { p.onSelect(null); p.onSelectContact(null); send({ type: 'switchActiveFaction', args: [] }); }}>Switch faction</button>
       <button onClick={p.onExit}>Exit simulation</button>
     </footer>
   </section>;
