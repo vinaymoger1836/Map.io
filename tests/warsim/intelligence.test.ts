@@ -124,6 +124,14 @@ describe('physical reference / intelligence and coordination', () => {
     expect(intel(s).reservations).toHaveLength(0);
     expect(s.physical!.actors[0].rounds).toBe(0);
   });
+  it('rejects a strike reservation backed only by stale local support', () => {
+    const s = createPhysicalReference(); advance(s, 14);
+    const track = observedContacts(s, hq(s.playerIso), 14)[0];
+    const localTrack = intel(s).tracks.find(t => t.scopeId === local('blue-scout') && t.targetRef === 'red-frigate')!;
+    localTrack.observedTick = -100;
+    expect(() => reservePhysicalMission(s, 'blue-frigate', track.contactId, 'blue-scout', track.revision!, 'hold', 14))
+      .toThrow(/fresh local observation/);
+  });
 
   it('aborts on lost support or continues only when the shooter has its own current track', () => {
     const abort = createPhysicalReference(); advance(abort, 14);

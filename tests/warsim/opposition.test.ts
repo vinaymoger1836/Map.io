@@ -96,4 +96,15 @@ describe('Phase 6 scoped opposition', () => {
     expect(runtime.takeReceipts()[0].status).toBe('rejected');
     expect(runtime.checkpoint().status).toBe('concluded');
   });
+
+  it('lets cautious red complete supported strikes after report delivery and acknowledgement', () => {
+    const s = createLittoralReference(); s.status = 'running'; s.physical!.opposition!.doctrine = 'cautious';
+    const runtime = new SimulationRuntime(s, [], 7);
+    for (let n = 0; n < 901 && runtime.running; n++) runtime.step();
+    const saved = runtime.checkpoint();
+    expect(saved.physical!.objectives!.status).toBe('red-victory');
+    expect(saved.physical!.actors.find(a => a.id === 'red-frigate')!.rounds).toBeLessThan(8);
+    expect(saved.physical!.opposition!.decisions.some(d => d.priority === 'coordinated-strike' && d.result === 'accepted')).toBe(true);
+    expect(saved.physical!.opposition!.decisions.some(d => d.priority === 'local-strike')).toBe(false);
+  });
 });

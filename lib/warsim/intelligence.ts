@@ -144,18 +144,19 @@ function fuse(i: PhysicalIntel, o: IntelObservation, scopeId: string, tick: numb
   if (!t.sourceIds.includes(o.sourceId)) t.sourceIds.push(o.sourceId);
   return t;
 }
-function noise(key: string, tick: number) {
+function noise(key: string, tick: number, seed = 0) {
   let h = 2166136261; for (let j = 0; j < key.length; j++) h = Math.imul(h ^ key.charCodeAt(j), 16777619);
+  if (seed) h = Math.imul(h ^ seed, 16777619);
   h = Math.imul(h ^ tick, 16777619);
   return ((h >>> 0) / 0xffffffff) * 2 - 1;
 }
 function observe(s: WarSimSession, sourceId: string, targetRef: string, scopeId: string, tick: number, uncertaintyM: number,
   modality: IntelObservation['modality'], taskId?: string, immediate = false): IntelObservation {
-  const i = ensurePhysicalIntel(s), target = [...s.physical!.actors, ...s.physical!.rounds].find(a => a.id === targetRef)!;
+  const i = ensurePhysicalIntel(s), p = s.physical!, target = [...p.actors, ...p.rounds].find(a => a.id === targetRef)!;
   const o: IntelObservation = { id: nextId(i, 'obs'), targetRef, sourceId, scopeId,
     domain: 'domain' in target ? target.domain ?? 'sea' : 'missile',
-    position: add(target.position, [noise(sourceId + targetRef, tick) * uncertaintyM * .6,
-      noise(targetRef + sourceId, tick + 11) * uncertaintyM * .6, 0]),
+    position: add(target.position, [noise(sourceId + targetRef, tick, p.noiseSeed) * uncertaintyM * .6,
+      noise(targetRef + sourceId, tick + 11, p.noiseSeed) * uncertaintyM * .6, 0]),
     velocity: [...target.velocity], uncertaintyM, confidence: modality === 'seeker' ? .95 : .7,
     collectedTick: tick, processedTick: tick + (immediate ? 0 : modality === 'orbital' ? 10 : 3), modality, taskId, processed: immediate };
   i.observations.push(o); if (immediate) fuse(i, o, scopeId, tick);

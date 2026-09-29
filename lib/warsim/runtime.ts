@@ -76,6 +76,7 @@ export class SimulationRuntime {
     if (![coordination.observations, coordination.collectionTasks, coordination.messages, coordination.dependencies,
       coordination.reservations].every(Array.isArray)) throw new Error('Invalid coordination checkpoint.');
     if (this.world.physical) {
+      this.world.physical.noiseSeed ??= seed >>> 0;
       const intel = ensurePhysicalIntel(this.world);
       if (coordination.physical && JSON.stringify(coordination.physical) !== JSON.stringify(intel)) throw new Error('Conflicting intelligence checkpoint.');
       coordination.physical ??= intel;

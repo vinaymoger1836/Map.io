@@ -21,6 +21,7 @@ export interface PhysicalEvent {
 }
 export interface PhysicalEncounter {
   version: 1; model: 'coastal-pointmass-v1'; origin: Geo; sequence: number;
+  noiseSeed?: number;
   actors: PhysicalActor[]; rounds: PhysicalRound[]; events: PhysicalEvent[];
   environment?: import('./environment').EnvironmentSnapshot;
   opposition?: import('../opposition').OppositionState;

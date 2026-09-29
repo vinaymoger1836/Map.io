@@ -280,6 +280,7 @@ export function syncPhysical(s: WarSimSession, time = s.simTimeSec) {
 }
 export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
   if (p.version !== 1 || p.model !== 'coastal-pointmass-v1' || !Number.isSafeInteger(p.sequence) || p.sequence < 0
+    || p.noiseSeed !== undefined && (!Number.isSafeInteger(p.noiseSeed) || p.noiseSeed < 0 || p.noiseSeed > 0xffffffff)
     || p.origin.length !== 3 || Math.abs(p.origin[0]) > 180 || Math.abs(p.origin[1]) > 89) throw new Error('Unsupported physical encounter.');
   const ids = new Set<string>();
   for (const a of [...p.actors, ...p.rounds]) {
