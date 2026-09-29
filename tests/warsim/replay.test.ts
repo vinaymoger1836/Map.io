@@ -38,4 +38,18 @@ describe('Phase 7 recorded replay', () => {
     const old = structuredClone(archive); old.modelVersion = 'retired-model-v0';
     expect(factionReplay(old, 'player').frames[0].tick).toBe(0);
   });
+
+  it('does not misdate buffered events when upgrading an older checkpoint', () => {
+    const s = createLittoralReference(); s.status = 'running';
+    const runtime = new SimulationRuntime(s, [], 5);
+    for (let n = 0; n < 20; n++) runtime.step();
+    const old = runtime.checkpoint();
+    delete old.runtime!.replay;
+    old.eventLog.push({ id: 'older-report', simTimeSec: 1, timeFormatted: 'T+1.0',
+      faction: 'player', type: 'alert', title: 'Older report', detail: 'Before recording began.' });
+    const upgraded = new SimulationRuntime(old, []).checkpoint();
+    expect(upgraded.runtime!.replay!.records.some(r => r.title === 'Older report')).toBe(false);
+    expect(new SimulationRuntime(upgraded, []).checkpoint().runtime!.replay!.records
+      .some(r => r.title === 'Older report')).toBe(false);
+  });
 });
