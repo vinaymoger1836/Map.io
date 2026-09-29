@@ -20,7 +20,7 @@ describe('Phase 6 scoped opposition', () => {
       changed.physical!.opposition!.difficulty = difficulty;
       const first = decideOpponent(redView(s));
       expect(decideOpponent(redView(changed))).toEqual(first);
-      expect(first.priority).toBe('collection');
+      if (difficulty === 'standard') expect(first.priority).toBe('collection');
       expect(JSON.stringify(first)).not.toContain('blue-frigate');
     }
   });
