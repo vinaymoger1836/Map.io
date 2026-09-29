@@ -62,9 +62,10 @@ const summary = variants.map(variant => {
     maxReplayBytes: Math.max(...group.map(run => run.replayBytes)),
     tickP95Ms: quantile(group.map(run => run.tickP95Ms), .95) };
 });
-const sources = ['lib/warsim/runtime.ts', 'lib/warsim/replay.ts', 'lib/warsim/opposition.ts',
-  'lib/warsim/intelligence.ts',
-  'lib/warsim/physics/model.ts', 'lib/warsim/physics/reference.ts', 'package-lock.json'];
+const sources = ['lib/warsim/contracts.ts', 'lib/warsim/runtime.ts', 'lib/warsim/replay.ts',
+  'lib/warsim/opposition.ts', 'lib/warsim/intelligence.ts', 'lib/warsim/projection.ts',
+  'lib/warsim/physics/types.ts', 'lib/warsim/physics/model.ts', 'lib/warsim/physics/reference.ts',
+  'package-lock.json'];
 const sourceHashes = Object.fromEntries(sources.map(file =>
   [file, createHash('sha256').update(readFileSync(file)).digest('hex')]));
 let revision = 'unavailable';

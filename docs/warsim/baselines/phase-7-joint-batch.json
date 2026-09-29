@@ -1,14 +1,17 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-09-29T05:29:56.628Z",
-  "revision": "a170f762a31dc5b60babfbbfac0356196c2af4ab",
+  "capturedAt": "2026-09-29T05:37:41.653Z",
+  "revision": "69070aefeeb520f296a9a18bf6a558eec584596d",
   "sourceHashes": {
-    "lib/warsim/runtime.ts": "2147c09ef3247013b58f6b7a24590dfb4e083559e3406842419ae57419c4d11f",
+    "lib/warsim/contracts.ts": "a412d4443654b4072d0922425d2736a954105e44442c95ecdfc3f01b70762d37",
+    "lib/warsim/runtime.ts": "0795eabe27ecf6e40dd73a5a8be9ee5d581eb5006710ed74a06bf0d262e9be13",
     "lib/warsim/replay.ts": "7ec7fcda56da0358c6bad53d783965fe023ece7a22eaa141b621176c8a8019cc",
-    "lib/warsim/opposition.ts": "b9bad742d4cbe9930153bf68cdd711424e1a8a8d12d45f705b9ca97646530a27",
-    "lib/warsim/intelligence.ts": "76c2ca7519b7dd2659d694bee07d0b8f9ae849cf511c3ddcc3acb0a181aaaa90",
-    "lib/warsim/physics/model.ts": "daac504f05917ca4ee2bb7461539945b847c63d96c68919e478fed91ed2c0dfd",
-    "lib/warsim/physics/reference.ts": "b9d02232ab685146d1c866b785d119a6ac7b9bb4e78b4720a3442fb348f24071",
+    "lib/warsim/opposition.ts": "d6daa04091c0e9e22e3a917932d8e647b9b115c3141011d033cc33b69a9ff852",
+    "lib/warsim/intelligence.ts": "78f309ad3906bc472a81d275a4be11b54e1a8bf5e4e19762f43dba1c83e27592",
+    "lib/warsim/projection.ts": "b5a35524232875adf1de9f07969eac94bd9314af6a738dcdef8118d184b3c4a4",
+    "lib/warsim/physics/types.ts": "27757694878bf1347f5b4c237433e0ef6c8473e66b58a180feb70ff5dd7cc7a6",
+    "lib/warsim/physics/model.ts": "8f4e10f74d87430ae9d166da12f51347a76501fdfe719935420f2a905ff7d7ea",
+    "lib/warsim/physics/reference.ts": "d18ea7b3da5c98e710f8dad25281df5599029955fbaab7acece43099e6eee75d",
     "package-lock.json": "22ecd1882a1f0c10718be4a120c4229feab144ec2994ed9c70a1068a707677e7"
   },
   "method": {
@@ -50,17 +53,17 @@
       "redVictories": 0,
       "meanRedRoundsSpent": 0,
       "meanAcceptedRedStrikes": 0,
-      "maxReplayBytes": 1583163,
-      "tickP95Ms": 5.6825999999999794
+      "maxReplayBytes": 1583275,
+      "tickP95Ms": 5.663900000000012
     },
     {
       "variant": "cautious",
       "trials": 5,
-      "redVictories": 0,
-      "meanRedRoundsSpent": 0,
-      "meanAcceptedRedStrikes": 89,
-      "maxReplayBytes": 5372673,
-      "tickP95Ms": 7.2138999999997395
+      "redVictories": 5,
+      "meanRedRoundsSpent": 6,
+      "meanAcceptedRedStrikes": 6,
+      "maxReplayBytes": 552722,
+      "tickP95Ms": 9.86469999999963
     },
     {
       "variant": "balanced",
@@ -68,8 +71,8 @@
       "redVictories": 5,
       "meanRedRoundsSpent": 8,
       "meanAcceptedRedStrikes": 8,
-      "maxReplayBytes": 725203,
-      "tickP95Ms": 5.923500000000786
+      "maxReplayBytes": 586908,
+      "tickP95Ms": 9.82300000000032
     },
     {
       "variant": "aggressive",
@@ -77,8 +80,8 @@
       "redVictories": 5,
       "meanRedRoundsSpent": 8,
       "meanAcceptedRedStrikes": 8,
-      "maxReplayBytes": 588924,
-      "tickP95Ms": 6.313100000001214
+      "maxReplayBytes": 588834,
+      "tickP95Ms": 9.476000000000568
     }
   ],
   "runs": [
@@ -102,17 +105,18 @@
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
       "redTerminalOutcomes": [],
+      "missionReasons": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1583163,
+      "replayBytes": 1583275,
       "replayComponents": {
-        "basisBytes": 14713,
+        "basisBytes": 14741,
         "finalPlayer": {
           "simTimeSec": 2,
           "status": 11,
           "timeMultiplier": 1,
           "entities": 2732,
-          "fogOfWarContacts": 3389,
+          "fogOfWarContacts": 3390,
           "activeMissiles": 2,
           "eventLog": 207,
           "intelView": 127,
@@ -130,8 +134,8 @@
           "physical": 1455
         }
       },
-      "tickP50Ms": 0.11549999999999727,
-      "tickP95Ms": 5.6825999999999794
+      "tickP50Ms": 0.10820000000001073,
+      "tickP95Ms": 5.663900000000012
     },
     {
       "variant": "disabled",
@@ -153,11 +157,12 @@
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
       "redTerminalOutcomes": [],
+      "missionReasons": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1583163,
-      "tickP50Ms": 0.0829999999998563,
-      "tickP95Ms": 5.059500000000071
+      "replayBytes": 1583272,
+      "tickP50Ms": 0.10310000000004038,
+      "tickP95Ms": 5.144900000000007
     },
     {
       "variant": "disabled",
@@ -179,11 +184,12 @@
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
       "redTerminalOutcomes": [],
+      "missionReasons": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1583163,
-      "tickP50Ms": 0.07099999999991269,
-      "tickP95Ms": 4.714199999999892
+      "replayBytes": 1583240,
+      "tickP50Ms": 0.0703000000000884,
+      "tickP95Ms": 4.885899999999992
     },
     {
       "variant": "disabled",
@@ -205,11 +211,12 @@
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
       "redTerminalOutcomes": [],
+      "missionReasons": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1583163,
-      "tickP50Ms": 0.06359999999995125,
-      "tickP95Ms": 4.475100000000111
+      "replayBytes": 1583261,
+      "tickP50Ms": 0.053699999999935244,
+      "tickP95Ms": 4.691100000000006
     },
     {
       "variant": "disabled",
@@ -231,157 +238,463 @@
       "redRoundsSpent": 0,
       "acceptedRedStrikes": 0,
       "redTerminalOutcomes": [],
+      "missionReasons": [],
       "replayFrames": 91,
       "replayRecords": 2,
-      "replayBytes": 1583163,
-      "tickP50Ms": 0.05539999999973588,
-      "tickP95Ms": 4.541099999999915
+      "replayBytes": 1583263,
+      "tickP50Ms": 0.05670000000009168,
+      "tickP95Ms": 4.716800000000148
     },
     {
       "variant": "cautious",
       "seed": 7,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 217,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
       "redPosition": [
         3000,
-        1260.0000000004911,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        719.9999999999939,
+        173.599999999997,
         0
       ],
-      "redRoundsSpent": 0,
-      "acceptedRedStrikes": 89,
-      "redTerminalOutcomes": [],
-      "replayFrames": 91,
-      "replayRecords": 92,
-      "replayBytes": 5372673,
-      "tickP50Ms": 0.11259999999992942,
-      "tickP95Ms": 6.880700000000161
+      "redRoundsSpent": 6,
+      "acceptedRedStrikes": 6,
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            559.6592870007631,
+            398.9843572184276,
+            39.22828623424077
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            545.6971825149267,
+            418.7759621718954,
+            39.2497212652809
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            556.2383465042992,
+            410.6081684001066,
+            39.26296531301338
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            551.5491559133649,
+            421.2266546704754,
+            39.28969472871399
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            23.393064194276107,
+            160.20705167085777,
+            21.705188744996782
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            20.192574192561313,
+            184.41779791013425,
+            22.33849224483643
+          ]
+        }
+      ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          6
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 44,
+      "replayBytes": 552593,
+      "tickP50Ms": 0.7211999999999534,
+      "tickP95Ms": 9.86469999999963
     },
     {
       "variant": "cautious",
       "seed": 19,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 217,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
       "redPosition": [
         3000,
-        1260.0000000004911,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        719.9999999999939,
+        173.599999999997,
         0
       ],
-      "redRoundsSpent": 0,
-      "acceptedRedStrikes": 89,
-      "redTerminalOutcomes": [],
-      "replayFrames": 91,
-      "replayRecords": 92,
-      "replayBytes": 5372673,
-      "tickP50Ms": 0.09490000000005239,
-      "tickP95Ms": 6.80580000000009
+      "redRoundsSpent": 6,
+      "acceptedRedStrikes": 6,
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            557.8613731880928,
+            399.993667692501,
+            39.23160090756031
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            544.8215590958862,
+            420.8651142946392,
+            39.25924941309637
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            554.602821826097,
+            410.0875819644432,
+            39.27852289109018
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            550.6660691884699,
+            423.15811813883295,
+            39.29042897146825
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            23.40685634012263,
+            160.07871115872183,
+            21.704087500345324
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            21.848584682670673,
+            179.7340113992829,
+            22.56107078743588
+          ]
+        }
+      ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          6
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 44,
+      "replayBytes": 552634,
+      "tickP50Ms": 0.4128000000000611,
+      "tickP95Ms": 9.039299999999912
     },
     {
       "variant": "cautious",
       "seed": 29,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 217,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
       "redPosition": [
         3000,
-        1260.0000000004911,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        719.9999999999939,
+        173.599999999997,
         0
       ],
-      "redRoundsSpent": 0,
-      "acceptedRedStrikes": 89,
-      "redTerminalOutcomes": [],
-      "replayFrames": 91,
-      "replayRecords": 92,
-      "replayBytes": 5372673,
-      "tickP50Ms": 0.10670000000027358,
-      "tickP95Ms": 7.2138999999997395
+      "redRoundsSpent": 6,
+      "acceptedRedStrikes": 6,
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            559.0429165798419,
+            400.34172929579336,
+            39.22905729750543
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            544.8333419655997,
+            420.98859452880953,
+            39.25432581237632
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            551.8269093655766,
+            413.09129102485014,
+            39.27236317898549
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            543.5139449439093,
+            431.59327415503503,
+            39.301941349633445
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            22.987233545124628,
+            165.8132321880748,
+            20.766306204216374
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            21.70335353253782,
+            181.09169992723542,
+            22.286775464059282
+          ]
+        }
+      ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          6
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 44,
+      "replayBytes": 552722,
+      "tickP50Ms": 0.38930000000027576,
+      "tickP95Ms": 9.014799999999923
     },
     {
       "variant": "cautious",
       "seed": 43,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 217,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
       "redPosition": [
         3000,
-        1260.0000000004911,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        719.9999999999939,
+        173.599999999997,
         0
       ],
-      "redRoundsSpent": 0,
-      "acceptedRedStrikes": 89,
-      "redTerminalOutcomes": [],
-      "replayFrames": 91,
-      "replayRecords": 92,
-      "replayBytes": 5372673,
-      "tickP50Ms": 0.09169999999994616,
-      "tickP95Ms": 6.3906000000006316
+      "redRoundsSpent": 6,
+      "acceptedRedStrikes": 6,
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            560.4317229935127,
+            398.3443684878573,
+            39.22527746981484
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            544.7696950221748,
+            424.3753408894462,
+            39.252343867415775
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            554.098396726173,
+            409.956918370359,
+            39.281738135082044
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            535.9168508856156,
+            445.81328647739696,
+            39.29038367073182
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            21.239376248654864,
+            164.1683563616768,
+            23.0806658943092
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            21.746446369445415,
+            180.91483309146741,
+            22.303752301028297
+          ]
+        }
+      ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          6
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 44,
+      "replayBytes": 552601,
+      "tickP50Ms": 0.43069999999988795,
+      "tickP95Ms": 9.625900000000001
     },
     {
       "variant": "cautious",
       "seed": 61,
-      "ticks": 900,
-      "result": "blue-victory",
+      "ticks": 217,
+      "result": "red-victory",
       "redHealth": 100,
-      "blueHealth": 100,
+      "blueHealth": 0,
       "redPosition": [
         3000,
-        1260.0000000004911,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        719.9999999999939,
+        173.599999999997,
         0
       ],
-      "redRoundsSpent": 0,
-      "acceptedRedStrikes": 89,
-      "redTerminalOutcomes": [],
-      "replayFrames": 91,
-      "replayRecords": 92,
-      "replayBytes": 5372673,
-      "tickP50Ms": 0.09329999999954453,
-      "tickP95Ms": 6.544599999999264
+      "redRoundsSpent": 6,
+      "acceptedRedStrikes": 6,
+      "redTerminalOutcomes": [
+        {
+          "roundId": "round-1",
+          "kind": "intercept",
+          "position": [
+            557.1612235805934,
+            400.5283970401259,
+            39.2408385201171
+          ]
+        },
+        {
+          "roundId": "round-3",
+          "kind": "intercept",
+          "position": [
+            544.974897576071,
+            421.8992047460518,
+            39.259316272389725
+          ]
+        },
+        {
+          "roundId": "round-5",
+          "kind": "intercept",
+          "position": [
+            547.2198188330885,
+            420.28888056742466,
+            39.27553592693772
+          ]
+        },
+        {
+          "roundId": "round-7",
+          "kind": "intercept",
+          "position": [
+            544.0848488097951,
+            430.41855715363357,
+            39.278499101169665
+          ]
+        },
+        {
+          "roundId": "round-11",
+          "kind": "impact",
+          "position": [
+            23.592377267709015,
+            158.367466873068,
+            21.61304242147672
+          ]
+        },
+        {
+          "roundId": "round-16",
+          "kind": "impact",
+          "position": [
+            20.272449619124433,
+            184.16587810187,
+            22.386056908328715
+          ]
+        }
+      ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          6
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 44,
+      "replayBytes": 552708,
+      "tickP50Ms": 0.38099999999940337,
+      "tickP95Ms": 8.702500000000327
     },
     {
       "variant": "balanced",
       "seed": 7,
-      "ticks": 276,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1634.4000000001506,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        220.15999999999602,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -391,86 +704,92 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            531.4182782586228,
-            404.6234420716599,
-            39.31871119051596
+            559.6592870007631,
+            398.9843572184276,
+            39.22828623424077
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            530.3808220658765,
-            411.7857529663183,
-            39.37813477519022
+            545.6971825149267,
+            418.7759621718954,
+            39.2497212652809
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            524.3988649359519,
-            428.72163708150845,
-            39.35434287673667
+            556.2383465042992,
+            410.6081684001066,
+            39.26296531301338
           ]
         },
         {
-          "roundId": "round-10",
+          "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            527.8839383708257,
-            431.47785420081675,
-            39.37910789085909
+            544.0748950018238,
+            429.93304533013907,
+            39.27021381117163
           ]
         },
         {
-          "roundId": "round-15",
+          "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.223750744624354,
-            196.746201544033,
-            20.907998716278893
+            23.393064194276107,
+            160.20705167085777,
+            21.705188744996782
           ]
         },
         {
-          "roundId": "round-20",
+          "roundId": "round-16",
           "kind": "impact",
           "position": [
-            23.204933031005602,
-            226.25229312910952,
-            21.16906043805904
+            20.192574192561313,
+            184.41779791013425,
+            22.33849224483643
           ]
         },
         {
-          "roundId": "round-25",
+          "roundId": "round-21",
           "kind": "in-flight"
         },
         {
-          "roundId": "round-27",
+          "roundId": "round-26",
           "kind": "in-flight"
         }
       ],
-      "replayFrames": 29,
-      "replayRecords": 52,
-      "replayBytes": 725203,
-      "tickP50Ms": 0.33839999999872816,
-      "tickP95Ms": 5.915500000000975
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 586834,
+      "tickP50Ms": 0.41190000000005966,
+      "tickP95Ms": 8.960599999999431
     },
     {
       "variant": "balanced",
       "seed": 19,
-      "ticks": 276,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1634.4000000001506,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        220.15999999999602,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -480,86 +799,92 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            531.4182782586228,
-            404.6234420716599,
-            39.31871119051596
+            557.8613731880928,
+            399.993667692501,
+            39.23160090756031
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            530.3808220658765,
-            411.7857529663183,
-            39.37813477519022
+            544.8215590958862,
+            420.8651142946392,
+            39.25924941309637
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            524.3988649359519,
-            428.72163708150845,
-            39.35434287673667
+            554.602821826097,
+            410.0875819644432,
+            39.27852289109018
           ]
         },
         {
-          "roundId": "round-10",
+          "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            527.8839383708257,
-            431.47785420081675,
-            39.37910789085909
+            542.7332566013902,
+            432.31202700659037,
+            39.27551650676965
           ]
         },
         {
-          "roundId": "round-15",
+          "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.223750744624354,
-            196.746201544033,
-            20.907998716278893
+            23.40685634012263,
+            160.07871115872183,
+            21.704087500345324
           ]
         },
         {
-          "roundId": "round-20",
+          "roundId": "round-16",
           "kind": "impact",
           "position": [
-            23.204933031005602,
-            226.25229312910952,
-            21.16906043805904
+            21.848584682670673,
+            179.7340113992829,
+            22.56107078743588
           ]
         },
         {
-          "roundId": "round-25",
+          "roundId": "round-21",
           "kind": "in-flight"
         },
         {
-          "roundId": "round-27",
+          "roundId": "round-26",
           "kind": "in-flight"
         }
       ],
-      "replayFrames": 29,
-      "replayRecords": 52,
-      "replayBytes": 725203,
-      "tickP50Ms": 0.22730000000046857,
-      "tickP95Ms": 5.923500000000786
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 586803,
+      "tickP50Ms": 0.4539999999997235,
+      "tickP95Ms": 8.978100000000268
     },
     {
       "variant": "balanced",
       "seed": 29,
-      "ticks": 276,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1634.4000000001506,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        220.15999999999602,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -569,86 +894,92 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            531.4182782586228,
-            404.6234420716599,
-            39.31871119051596
+            559.0429165798419,
+            400.34172929579336,
+            39.22905729750543
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            530.3808220658765,
-            411.7857529663183,
-            39.37813477519022
+            544.8333419655997,
+            420.98859452880953,
+            39.25432581237632
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            524.3988649359519,
-            428.72163708150845,
-            39.35434287673667
+            551.8269093655766,
+            413.09129102485014,
+            39.27236317898549
           ]
         },
         {
-          "roundId": "round-10",
+          "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            527.8839383708257,
-            431.47785420081675,
-            39.37910789085909
+            545.6138173441087,
+            427.0460529396796,
+            39.329280380562544
           ]
         },
         {
-          "roundId": "round-15",
+          "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.223750744624354,
-            196.746201544033,
-            20.907998716278893
+            22.987233545124628,
+            165.8132321880748,
+            20.766306204216374
           ]
         },
         {
-          "roundId": "round-20",
+          "roundId": "round-16",
           "kind": "impact",
           "position": [
-            23.204933031005602,
-            226.25229312910952,
-            21.16906043805904
+            21.70335353253782,
+            181.09169992723542,
+            22.286775464059282
           ]
         },
         {
-          "roundId": "round-25",
+          "roundId": "round-21",
           "kind": "in-flight"
         },
         {
-          "roundId": "round-27",
+          "roundId": "round-26",
           "kind": "in-flight"
         }
       ],
-      "replayFrames": 29,
-      "replayRecords": 52,
-      "replayBytes": 725203,
-      "tickP50Ms": 0.2147000000004482,
-      "tickP95Ms": 5.693999999999505
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 586908,
+      "tickP50Ms": 0.3978000000006432,
+      "tickP95Ms": 8.818100000000413
     },
     {
       "variant": "balanced",
       "seed": 43,
-      "ticks": 276,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1634.4000000001506,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        220.15999999999602,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -658,86 +989,92 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            531.4182782586228,
-            404.6234420716599,
-            39.31871119051596
+            560.4317229935127,
+            398.3443684878573,
+            39.22527746981484
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            530.3808220658765,
-            411.7857529663183,
-            39.37813477519022
+            544.7696950221748,
+            424.3753408894462,
+            39.252343867415775
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            524.3988649359519,
-            428.72163708150845,
-            39.35434287673667
+            554.098396726173,
+            409.956918370359,
+            39.281738135082044
           ]
         },
         {
-          "roundId": "round-10",
+          "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            527.8839383708257,
-            431.47785420081675,
-            39.37910789085909
+            537.5851222682923,
+            441.44729420032155,
+            39.27694984566591
           ]
         },
         {
-          "roundId": "round-15",
+          "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.223750744624354,
-            196.746201544033,
-            20.907998716278893
+            21.239376248654864,
+            164.1683563616768,
+            23.0806658943092
           ]
         },
         {
-          "roundId": "round-20",
+          "roundId": "round-16",
           "kind": "impact",
           "position": [
-            23.204933031005602,
-            226.25229312910952,
-            21.16906043805904
+            21.746446369445415,
+            180.91483309146741,
+            22.303752301028297
           ]
         },
         {
-          "roundId": "round-25",
+          "roundId": "round-21",
           "kind": "in-flight"
         },
         {
-          "roundId": "round-27",
+          "roundId": "round-26",
           "kind": "in-flight"
         }
       ],
-      "replayFrames": 29,
-      "replayRecords": 52,
-      "replayBytes": 725203,
-      "tickP50Ms": 0.2162000000007538,
-      "tickP95Ms": 5.807900000001609
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 586810,
+      "tickP50Ms": 0.4926999999997861,
+      "tickP95Ms": 9.82300000000032
     },
     {
       "variant": "balanced",
       "seed": 61,
-      "ticks": 276,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1634.4000000001506,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        220.15999999999602,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -747,86 +1084,92 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            531.4182782586228,
-            404.6234420716599,
-            39.31871119051596
+            557.1612235805934,
+            400.5283970401259,
+            39.2408385201171
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            530.3808220658765,
-            411.7857529663183,
-            39.37813477519022
+            544.974897576071,
+            421.8992047460518,
+            39.259316272389725
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            524.3988649359519,
-            428.72163708150845,
-            39.35434287673667
+            547.2198188330885,
+            420.28888056742466,
+            39.27553592693772
           ]
         },
         {
-          "roundId": "round-10",
+          "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            527.8839383708257,
-            431.47785420081675,
-            39.37910789085909
+            540.149708816458,
+            437.4645658253324,
+            39.31854450830831
           ]
         },
         {
-          "roundId": "round-15",
+          "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.223750744624354,
-            196.746201544033,
-            20.907998716278893
+            23.592377267709015,
+            158.367466873068,
+            21.61304242147672
           ]
         },
         {
-          "roundId": "round-20",
+          "roundId": "round-16",
           "kind": "impact",
           "position": [
-            23.204933031005602,
-            226.25229312910952,
-            21.16906043805904
+            20.272449619124433,
+            184.16587810187,
+            22.386056908328715
           ]
         },
         {
-          "roundId": "round-25",
+          "roundId": "round-21",
           "kind": "in-flight"
         },
         {
-          "roundId": "round-27",
+          "roundId": "round-26",
           "kind": "in-flight"
         }
       ],
-      "replayFrames": 29,
-      "replayRecords": 52,
-      "replayBytes": 725203,
-      "tickP50Ms": 0.23440000000118744,
-      "tickP95Ms": 5.388899999999921
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
+      "replayFrames": 23,
+      "replayRecords": 46,
+      "replayBytes": 586883,
+      "tickP50Ms": 0.4456000000000131,
+      "tickP95Ms": 9.639400000000023
     },
     {
       "variant": "aggressive",
       "seed": 7,
-      "ticks": 218,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1669.200000000119,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        173.759999999997,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -836,54 +1179,54 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            549.4189345597662,
-            409.1596189501447,
-            39.24103522335208
+            559.6592870007631,
+            398.9843572184276,
+            39.22828623424077
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            548.5193843849072,
-            413.5841695410211,
-            39.2805297134103
+            545.6971825149267,
+            418.7759621718954,
+            39.2497212652809
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            549.9373456882432,
-            416.92741449765646,
-            39.269659915303265
+            556.2383465042992,
+            410.6081684001066,
+            39.26296531301338
           ]
         },
         {
           "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            546.3645633693155,
-            426.8137267282736,
-            39.33186858214571
+            544.0748950018238,
+            429.93304533013907,
+            39.27021381117163
           ]
         },
         {
           "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.380518363963915,
-            160.40371593127801,
-            20.564240007476396
+            23.393064194276107,
+            160.20705167085777,
+            21.705188744996782
           ]
         },
         {
           "roundId": "round-16",
           "kind": "impact",
           "position": [
-            19.608719637947683,
-            183.1926427125982,
-            23.400399217318043
+            20.192574192561313,
+            184.41779791013425,
+            22.33849224483643
           ]
         },
         {
@@ -895,27 +1238,33 @@
           "kind": "in-flight"
         }
       ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
       "replayFrames": 23,
       "replayRecords": 46,
-      "replayBytes": 588924,
-      "tickP50Ms": 0.2616999999991094,
-      "tickP95Ms": 6.040100000000166
+      "replayBytes": 588760,
+      "tickP50Ms": 0.5736000000006243,
+      "tickP95Ms": 9.38299999999981
     },
     {
       "variant": "aggressive",
       "seed": 19,
-      "ticks": 218,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1669.200000000119,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        173.759999999997,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -925,54 +1274,54 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            549.4189345597662,
-            409.1596189501447,
-            39.24103522335208
+            557.8613731880928,
+            399.993667692501,
+            39.23160090756031
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            548.5193843849072,
-            413.5841695410211,
-            39.2805297134103
+            544.8215590958862,
+            420.8651142946392,
+            39.25924941309637
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            549.9373456882432,
-            416.92741449765646,
-            39.269659915303265
+            554.602821826097,
+            410.0875819644432,
+            39.27852289109018
           ]
         },
         {
           "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            546.3645633693155,
-            426.8137267282736,
-            39.33186858214571
+            542.7332566013902,
+            432.31202700659037,
+            39.27551650676965
           ]
         },
         {
           "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.380518363963915,
-            160.40371593127801,
-            20.564240007476396
+            23.40685634012263,
+            160.07871115872183,
+            21.704087500345324
           ]
         },
         {
           "roundId": "round-16",
           "kind": "impact",
           "position": [
-            19.608719637947683,
-            183.1926427125982,
-            23.400399217318043
+            21.848584682670673,
+            179.7340113992829,
+            22.56107078743588
           ]
         },
         {
@@ -984,27 +1333,33 @@
           "kind": "in-flight"
         }
       ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
       "replayFrames": 23,
       "replayRecords": 46,
-      "replayBytes": 588924,
-      "tickP50Ms": 0.23070000000006985,
-      "tickP95Ms": 5.741199999998571
+      "replayBytes": 588729,
+      "tickP50Ms": 0.3611000000000786,
+      "tickP95Ms": 8.655499999999847
     },
     {
       "variant": "aggressive",
       "seed": 29,
-      "ticks": 218,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1669.200000000119,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        173.759999999997,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -1014,54 +1369,54 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            549.4189345597662,
-            409.1596189501447,
-            39.24103522335208
+            559.0429165798419,
+            400.34172929579336,
+            39.22905729750543
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            548.5193843849072,
-            413.5841695410211,
-            39.2805297134103
+            544.8333419655997,
+            420.98859452880953,
+            39.25432581237632
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            549.9373456882432,
-            416.92741449765646,
-            39.269659915303265
+            551.8269093655766,
+            413.09129102485014,
+            39.27236317898549
           ]
         },
         {
           "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            546.3645633693155,
-            426.8137267282736,
-            39.33186858214571
+            545.6138173441087,
+            427.0460529396796,
+            39.329280380562544
           ]
         },
         {
           "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.380518363963915,
-            160.40371593127801,
-            20.564240007476396
+            22.987233545124628,
+            165.8132321880748,
+            20.766306204216374
           ]
         },
         {
           "roundId": "round-16",
           "kind": "impact",
           "position": [
-            19.608719637947683,
-            183.1926427125982,
-            23.400399217318043
+            21.70335353253782,
+            181.09169992723542,
+            22.286775464059282
           ]
         },
         {
@@ -1073,27 +1428,33 @@
           "kind": "in-flight"
         }
       ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
       "replayFrames": 23,
       "replayRecords": 46,
-      "replayBytes": 588924,
-      "tickP50Ms": 0.30650000000059663,
-      "tickP95Ms": 6.137500000000728
+      "replayBytes": 588834,
+      "tickP50Ms": 0.38479999999981374,
+      "tickP95Ms": 9.476000000000568
     },
     {
       "variant": "aggressive",
       "seed": 43,
-      "ticks": 218,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1669.200000000119,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        173.759999999997,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -1103,54 +1464,54 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            549.4189345597662,
-            409.1596189501447,
-            39.24103522335208
+            560.4317229935127,
+            398.3443684878573,
+            39.22527746981484
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            548.5193843849072,
-            413.5841695410211,
-            39.2805297134103
+            544.7696950221748,
+            424.3753408894462,
+            39.252343867415775
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            549.9373456882432,
-            416.92741449765646,
-            39.269659915303265
+            554.098396726173,
+            409.956918370359,
+            39.281738135082044
           ]
         },
         {
           "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            546.3645633693155,
-            426.8137267282736,
-            39.33186858214571
+            537.5851222682923,
+            441.44729420032155,
+            39.27694984566591
           ]
         },
         {
           "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.380518363963915,
-            160.40371593127801,
-            20.564240007476396
+            21.239376248654864,
+            164.1683563616768,
+            23.0806658943092
           ]
         },
         {
           "roundId": "round-16",
           "kind": "impact",
           "position": [
-            19.608719637947683,
-            183.1926427125982,
-            23.400399217318043
+            21.746446369445415,
+            180.91483309146741,
+            22.303752301028297
           ]
         },
         {
@@ -1162,27 +1523,33 @@
           "kind": "in-flight"
         }
       ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
       "replayFrames": 23,
       "replayRecords": 46,
-      "replayBytes": 588924,
-      "tickP50Ms": 0.2547999999987951,
-      "tickP95Ms": 5.615200000000186
+      "replayBytes": 588736,
+      "tickP50Ms": 0.43590000000040163,
+      "tickP95Ms": 9.391300000000228
     },
     {
       "variant": "aggressive",
       "seed": 61,
-      "ticks": 218,
+      "ticks": 217,
       "result": "red-victory",
       "redHealth": 100,
       "blueHealth": 0,
       "redPosition": [
         3000,
-        1669.200000000119,
+        1669.8000000001184,
         0
       ],
       "bluePosition": [
         0,
-        173.759999999997,
+        173.599999999997,
         0
       ],
       "redRoundsSpent": 8,
@@ -1192,54 +1559,54 @@
           "roundId": "round-1",
           "kind": "intercept",
           "position": [
-            549.4189345597662,
-            409.1596189501447,
-            39.24103522335208
+            557.1612235805934,
+            400.5283970401259,
+            39.2408385201171
           ]
         },
         {
           "roundId": "round-3",
           "kind": "intercept",
           "position": [
-            548.5193843849072,
-            413.5841695410211,
-            39.2805297134103
+            544.974897576071,
+            421.8992047460518,
+            39.259316272389725
           ]
         },
         {
           "roundId": "round-5",
           "kind": "intercept",
           "position": [
-            549.9373456882432,
-            416.92741449765646,
-            39.269659915303265
+            547.2198188330885,
+            420.28888056742466,
+            39.27553592693772
           ]
         },
         {
           "roundId": "round-7",
           "kind": "intercept",
           "position": [
-            546.3645633693155,
-            426.8137267282736,
-            39.33186858214571
+            540.149708816458,
+            437.4645658253324,
+            39.31854450830831
           ]
         },
         {
           "roundId": "round-11",
           "kind": "impact",
           "position": [
-            24.380518363963915,
-            160.40371593127801,
-            20.564240007476396
+            23.592377267709015,
+            158.367466873068,
+            21.61304242147672
           ]
         },
         {
           "roundId": "round-16",
           "kind": "impact",
           "position": [
-            19.608719637947683,
-            183.1926427125982,
-            23.400399217318043
+            20.272449619124433,
+            184.16587810187,
+            22.386056908328715
           ]
         },
         {
@@ -1251,11 +1618,17 @@
           "kind": "in-flight"
         }
       ],
+      "missionReasons": [
+        [
+          "executed: Coordinated strike launched",
+          8
+        ]
+      ],
       "replayFrames": 23,
       "replayRecords": 46,
-      "replayBytes": 588924,
-      "tickP50Ms": 0.274199999999837,
-      "tickP95Ms": 6.313100000001214
+      "replayBytes": 588809,
+      "tickP50Ms": 0.4327000000012049,
+      "tickP95Ms": 9.211800000000949
     }
   ]
 }

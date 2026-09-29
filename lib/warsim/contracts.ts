@@ -5,7 +5,7 @@ import type { RandomState } from './context';
 
 export const RUNTIME_VERSION = 1 as const;
 export const MODEL_VERSION = 'legacy-fixed-v1' as const;
-export const PHYSICAL_MODEL_VERSION = 'coastal-pointmass-v1' as const;
+export const PHYSICAL_MODEL_VERSION = 'coastal-pointmass-v2' as const;
 export const STEP_MS = 100;
 export type Faction = 'player' | 'enemy';
 export interface KnowledgeScope { faction: Faction; commandGroupId: string }

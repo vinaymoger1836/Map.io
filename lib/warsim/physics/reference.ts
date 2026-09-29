@@ -11,7 +11,7 @@ export function createPhysicalReference(): WarSimSession {
     status: 'paused', simTimeSec: 0, timeMultiplier: 1, playerIso: '840', enemyIso: '156', playerColor: '#61d8ed', enemyColor: '#ff826e',
     activeFaction: 'player', personnel: { player: { ...personnel }, enemy: { ...personnel } }, quotas: { player: {}, enemy: {} },
     bases: [], entities: [], activeMissiles: [], eventLog: [], fogOfWarContacts: { playerContacts: [], enemyContacts: [] },
-    physical: { version: 1, model: 'coastal-pointmass-v1', origin: [-150, 20, 0], sequence: 0, rounds: [], events: [], environment: referenceEnvironment(), actors: [
+    physical: { version: 1, model: 'coastal-pointmass-v2', origin: [-150, 20, 0], sequence: 0, rounds: [], events: [], environment: referenceEnvironment(), actors: [
       { id: 'blue-frigate', iso: '840', domain: 'sea', position: [0, 0, 0], velocity: [0, 8, 0], heading: 0, course: 0, speed: 8, desiredSpeed: 8, fuel: 100, health: 100, rounds: 8, interceptors: 4, cooldown: 0 },
       { id: 'red-frigate', iso: '156', domain: 'sea', position: [3000, 1800, 0], velocity: [0, -6, 0], heading: 180, course: 180, speed: 6, desiredSpeed: 6, fuel: 100, health: 100, rounds: 8, interceptors: 2, cooldown: 0 },
       { id: 'blue-scout', iso: '840', domain: 'sea', position: [-1400, 2700, 0], velocity: [0, 4, 0], heading: 0, course: 0, speed: 4, desiredSpeed: 4, fuel: 100, health: 100, rounds: 0, interceptors: 0, cooldown: 0 },

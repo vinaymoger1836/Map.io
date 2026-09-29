@@ -20,7 +20,7 @@ export interface PhysicalEvent {
   deliveries?: { scopeId: string; linkIds: string[]; deliveryTick: number }[];
 }
 export interface PhysicalEncounter {
-  version: 1; model: 'coastal-pointmass-v1'; origin: Geo; sequence: number;
+  version: 1; model: 'coastal-pointmass-v2'; origin: Geo; sequence: number;
   noiseSeed?: number;
   actors: PhysicalActor[]; rounds: PhysicalRound[]; events: PhysicalEvent[];
   environment?: import('./environment').EnvironmentSnapshot;

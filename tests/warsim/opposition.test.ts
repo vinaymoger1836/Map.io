@@ -107,4 +107,17 @@ describe('Phase 6 scoped opposition', () => {
     expect(saved.physical!.opposition!.decisions.some(d => d.priority === 'coordinated-strike' && d.result === 'accepted')).toBe(true);
     expect(saved.physical!.opposition!.decisions.some(d => d.priority === 'local-strike')).toBe(false);
   });
+
+  it('uses the saved seed for repeatable but distinct sensor errors', () => {
+    const s = createLittoralReference(); s.status = 'running';
+    const first = new SimulationRuntime(s, [], 7), second = new SimulationRuntime(s, [], 19);
+    first.step(); second.step();
+    const a = first.checkpoint(), b = second.checkpoint();
+    const report = (state: typeof a) => state.physical!.intel!.observations.find(o => o.sourceId === 'red-sub');
+    expect(report(a)).toBeDefined();
+    expect(report(a)!.position).not.toEqual(report(b)!.position);
+    expect(a.physical!.actors.map(actor => actor.position)).toEqual(b.physical!.actors.map(actor => actor.position));
+    expect(a.physical!.noiseSeed).toBe(7);
+    expect(b.physical!.noiseSeed).toBe(19);
+  });
 });

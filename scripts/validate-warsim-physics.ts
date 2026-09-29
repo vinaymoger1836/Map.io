@@ -16,7 +16,7 @@ async function main() {
   const costs: number[] = [];
   for (let i = 0; i < 1000; i++) { const t = performance.now(); runtime.step(); runtime.observer(); runtime.checkpoint(); if (i >= 100) costs.push(performance.now() - t); }
   costs.sort((a, b) => a - b);
-  const report = { model: 'coastal-pointmass-v1', profile: PROFILE, sampleCount: costs.length,
+  const report = { model: 'coastal-pointmass-v2', profile: PROFILE, sampleCount: costs.length,
     runtimeWithProjectionAndCheckpointMs: { median: costs[Math.floor(costs.length * .5)], p95: costs[Math.floor(costs.length * .95)] },
     terminalEvents: s.physical!.events, targetHealth: s.physical!.actors[1].health, trajectory };
   const maxTime = Math.max(...trajectory.map(p => p.time)), maxAltitude = Math.ceil(Math.max(...trajectory.map(p => p.altitude)) / 10) * 10;

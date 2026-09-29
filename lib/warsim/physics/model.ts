@@ -1,9 +1,9 @@
 import type { WarSimSession } from '../../warSimTypes';
 import type { PhysicalActor, PhysicalEncounter, PhysicalRound, PhysicalEvent } from './types';
 import { add, sub, scale, length, unit, dot, fromENU, sweptSphere, type Vec3 } from './coordinates';
-import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts,
+import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, hq, local, missionSupport, observedContacts, SUPPORT_FRESH_TICKS,
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
-import { SUPPORT_FRESH_TICKS } from '../intelligence';
+import { PHYSICAL_MODEL_VERSION } from '../contracts';
 import { CAPABILITIES, condition, damageActor, operational, stepPhysicalRepairs } from './readiness';
 import { sampleSurface, seaSpeedFactor, validateEnvironment } from './environment';
 import { validateOpposition } from '../opposition';
@@ -279,7 +279,7 @@ export function syncPhysical(s: WarSimSession, time = s.simTimeSec) {
   });
 }
 export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
-  if (p.version !== 1 || p.model !== 'coastal-pointmass-v1' || !Number.isSafeInteger(p.sequence) || p.sequence < 0
+  if (p.version !== 1 || p.model !== PHYSICAL_MODEL_VERSION || !Number.isSafeInteger(p.sequence) || p.sequence < 0
     || p.noiseSeed !== undefined && (!Number.isSafeInteger(p.noiseSeed) || p.noiseSeed < 0 || p.noiseSeed > 0xffffffff)
     || p.origin.length !== 3 || Math.abs(p.origin[0]) > 180 || Math.abs(p.origin[1]) > 89) throw new Error('Unsupported physical encounter.');
   const ids = new Set<string>();

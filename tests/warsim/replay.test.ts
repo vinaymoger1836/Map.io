@@ -39,6 +39,17 @@ describe('Phase 7 recorded replay', () => {
     expect(factionReplay(old, 'player').frames[0].tick).toBe(0);
   });
 
+  it('reads an older recorded model but rejects resuming its physical checkpoint', () => {
+    const s = createLittoralReference();
+    const archive = new SimulationRuntime(s, [], 7).checkpoint().runtime!.replay!;
+    const olderArchive = structuredClone(archive); olderArchive.modelVersion = 'coastal-pointmass-v1';
+    expect(factionReplay(olderArchive, 'player').frames[0].tick).toBe(0);
+    const oldSave = new SimulationRuntime(s, [], 7).checkpoint();
+    (oldSave.physical as { model: string }).model = 'coastal-pointmass-v1';
+    (oldSave.runtime as { modelVersion: string }).modelVersion = 'coastal-pointmass-v1';
+    expect(() => new SimulationRuntime(oldSave, [])).toThrow('Unsupported physical encounter.');
+  });
+
   it('does not misdate buffered events when upgrading an older checkpoint', () => {
     const s = createLittoralReference(); s.status = 'running';
     const runtime = new SimulationRuntime(s, [], 5);
