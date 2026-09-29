@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ecef, geodetic, fromENU, toENU, sweptSphere, length, sub } from '../../lib/warsim/physics/coordinates';
 import { integrate, launchPhysical, stepPhysical, syncPhysical, PROFILE } from '../../lib/warsim/physics/model';
-import { createPhysicalReference } from '../../lib/warsim/physics/reference';
+import { createLittoralReference, createPhysicalReference } from '../../lib/warsim/physics/reference';
 import { SimulationRuntime } from '../../lib/warsim/runtime';
 import { projectObserver } from '../../lib/warsim/projection';
 
@@ -37,6 +37,14 @@ describe('physical reference / authoritative encounter', () => {
     expect(s.physical!.rounds).toHaveLength(0);
     expect(s.physical!.events.filter(e => e.kind === 'launch')).toHaveLength(1);
     expect(s.physical!.events.filter(e => e.kind === 'impact')).toHaveLength(1);
+  });
+  it('can hit the joint-probe surface objective when defenses are disabled', () => {
+    const s = createLittoralReference();
+    s.activeFaction = 'enemy'; s.observerScope = `${s.enemyIso}:hq`;
+    s.physical!.actors.find(a => a.id === 'blue-frigate')!.interceptors = 0;
+    launchPhysical(s, 'red-frigate', s.fogOfWarContacts.enemyContacts.find(c => c.domain === 'sea')!.contactId);
+    for (let n = 0; n < 450 && s.physical!.rounds.length; n++) { stepPhysical(s, .1); s.simTimeSec += .1; }
+    expect(s.physical!.actors.find(a => a.id === 'blue-frigate')!.health).toBeLessThan(100);
   });
   it('intercepts an incoming round and never gives a destroyed round a later impact', () => {
     const s = createPhysicalReference(); launchPhysical(s, 'blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId);
