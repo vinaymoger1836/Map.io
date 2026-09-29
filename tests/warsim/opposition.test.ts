@@ -32,6 +32,11 @@ describe('Phase 6 scoped opposition', () => {
     const formation = decideOpponent(redView(s));
     expect(formation.priority).toBe('formation');
     expect(formation.command?.type).toBe('setPhysicalCourse');
+    const advancing = structuredClone(s); advancing.status = 'running';
+    const runtime = new SimulationRuntime(advancing, [], 11);
+    runtime.step();
+    expect(runtime.checkpoint().physical!.opposition!.decisions[0].result).toBe('accepted');
+    expect(runtime.checkpoint().physical!.actors.find(a => a.id === 'red-sub')!.desiredSpeed).toBe(6);
     s.physical!.actors.find(a => a.id === 'red-frigate')!.rounds = 0;
     const noMagazine = decideOpponent(redView(s));
     expect(noMagazine.priority).toBe('wait');
