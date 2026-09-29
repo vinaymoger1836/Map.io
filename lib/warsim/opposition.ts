@@ -73,7 +73,8 @@ export function decideOpponent(view: WarSimSession): OpponentChoice {
         command: { type: 'planPhysicalStrike', args: [shooter.id, contact.contactId, support.id, contact.revision ?? 0,
           opponent.doctrine === 'cautious' ? 'abort' : opponent.doctrine === 'aggressive' ? 'continue-local' : 'hold', 0] } };
     }
-    if (opponent.doctrine === 'aggressive' && confidence >= .3 && age <= 4.5) return {
+    if (opponent.doctrine !== 'cautious' && confidence >= (opponent.doctrine === 'aggressive' ? .3 : .7)
+      && age <= 1.5) return {
       priority: 'local-strike', utility: 65 + confidence * 20,
       reason: `No eligible support channel; fire ${shooter.id} at scoped contact ${contact.contactId}.`,
       command: { type: 'launchPhysical', args: [shooter.id, contact.contactId, contact.revision] } };

@@ -173,7 +173,7 @@ export class SimulationRuntime {
     if (!opposition?.enabled || this.world.physical?.objectives?.status !== 'ongoing' || this.tick < opposition.nextDecisionTick) return;
     const view = projectObserver({ ...this.world, activeFaction: 'enemy', observerScope: hq(this.world.enemyIso) });
     const choice = decideOpponent(view);
-    opposition.nextDecisionTick = this.tick + decisionInterval(opposition.difficulty);
+    opposition.nextDecisionTick = this.tick + (choice.priority === 'collection' ? 14 : decisionInterval(opposition.difficulty));
     let result: 'accepted' | 'rejected' | 'wait' = choice.command ? 'accepted' : 'wait', rejection: string | undefined;
     if (choice.command) {
       const randomBefore = { ...this.state.random };
