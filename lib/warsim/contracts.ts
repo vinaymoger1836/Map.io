@@ -57,6 +57,7 @@ export interface RuntimeCheckpoint {
   definitions: SystemSpec[]; pendingCommands: CommandEnvelope[];
   acceptedCommands: Array<CommandEnvelope & { appliedAtTick: number }>;
   coordination: CoordinationState;
+  replay?: import('./replay').ReplayArchive;
 }
 export interface RuntimeDiagnostics {
   tick: number; stepMs: number; lastTickMs: number; droppedWallMs: number;

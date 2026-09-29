@@ -8,6 +8,8 @@ import { projectObserver } from './projection';
 import { stepPhysical, validatePhysical } from './physics/model';
 import { coalitionScope, ensurePhysicalIntel, factionScope, hq, local } from './intelligence';
 import { decideOpponent, decisionInterval, evaluateObjectives } from './opposition';
+import { appendReplayRecord, captureReplayFrame, createReplay, recordReplayOrder, recordVisibleEvents,
+  validateReplay } from './replay';
 
 function finiteData(value: unknown): void {
   if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Non-finite numeric input.');
@@ -43,6 +45,7 @@ export class SimulationRuntime {
   private world: WarSimSession;
   private state: RuntimeCheckpoint;
   private receipts: CommandReceipt[] = [];
+  private replaySeen = new Set<string>();
   constructor(input: WarSimSession, definitions: SystemSpec[], seed?: number) {
     validateSession(input);
     seed ??= seedFromId(input.id);
@@ -78,6 +81,10 @@ export class SimulationRuntime {
       coordination.physical ??= intel;
       this.world.physical.intel = coordination.physical;
       this.world.observerScope ??= `${this.world.activeFaction === 'player' ? this.world.playerIso : this.world.enemyIso}:hq`;
+      if (this.state.replay) validateReplay(this.state.replay);
+      else this.state.replay = createReplay(this.world, this.tick, modelVersion);
+      this.replaySeen = new Set(this.state.replay.records.filter(r => r.kind === 'event').map(r => r.sourceId!));
+      recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
     }
     if (this.state.pendingCommands.some(c => c.version !== 1 || !Number.isSafeInteger(c.sequence) || c.sequence >= this.state.nextSequence
       || c.sequence < 1 || !Number.isSafeInteger(c.executeAtTick) || c.executeAtTick < this.tick
@@ -93,7 +100,10 @@ export class SimulationRuntime {
   takeReceipts() { return this.receipts.splice(0); }
 
   submit(envelope: CommandEnvelope) {
-    const reject = (reason: string) => this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'rejected', reason });
+    const reject = (reason: string) => {
+      this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'rejected', reason });
+      recordReplayOrder(this.state.replay, envelope, this.tick, 'rejected', reason);
+    };
     if (envelope.version !== 1 || envelope.sequence !== this.state.nextSequence) {
       reject('Command version or sequence does not match the current session.'); return;
     }
@@ -166,9 +176,14 @@ export class SimulationRuntime {
         if (next.physical?.intel) this.state.coordination.physical = next.physical.intel;
         this.state.acceptedCommands.push({ ...envelope, appliedAtTick: this.tick });
         this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'accepted' });
+        recordReplayOrder(this.state.replay, envelope, this.tick, 'accepted');
+        recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
+        if (this.state.replay) captureReplayFrame(this.state.replay, this.world, this.tick, true);
       } catch (error) {
         this.state.random = randomBefore;
-        this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'rejected', reason: error instanceof Error ? error.message : String(error) });
+        const reason = error instanceof Error ? error.message : String(error);
+        this.receipts.push({ sequence: envelope.sequence, tick: this.tick, status: 'rejected', reason });
+        recordReplayOrder(this.state.replay, envelope, this.tick, 'rejected', reason);
       }
     }
   }
@@ -202,6 +217,9 @@ export class SimulationRuntime {
     state.decisions.push({ id: ++state.sequence, tick: this.tick, priority: choice.priority, utility: choice.utility,
       reason: choice.reason, command: choice.command, result, rejection });
     state.decisions = state.decisions.slice(-256);
+    if (this.state.replay) appendReplayRecord(this.state.replay, { tick: this.tick, faction: 'enemy', kind: 'decision',
+      title: choice.priority, detail: `${choice.reason}${rejection ? ` ${rejection}` : ''}`, command: choice.command,
+      result });
   }
   step(): boolean {
     this.applyDueCommands();
@@ -214,6 +232,8 @@ export class SimulationRuntime {
     this.state.tick++;
     this.world = { ...next, timeMultiplier: speed, simTimeSec: this.state.originSimTimeSec + this.tick * STEP_MS / 1000 };
     if (this.world.physical) evaluateObjectives(this.world, this.tick);
+    recordVisibleEvents(this.state.replay, this.world, this.tick, this.replaySeen);
+    if (this.state.replay) captureReplayFrame(this.state.replay, this.world, this.tick, !this.running);
     this.applyDueCommands();
     return true;
   }
