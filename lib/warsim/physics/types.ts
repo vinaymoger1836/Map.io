@@ -15,7 +15,7 @@ export interface PhysicalRound {
   sourceScope?: string; aimPosition?: Vec3; aimVelocity?: Vec3; aimObservedTick?: number; trackRevision?: number; seekerLocked?: boolean;
 }
 export interface PhysicalEvent {
-  id: number; time: number; kind: 'launch' | 'impact' | 'intercept' | 'expired';
+  id: number; time: number; kind: 'launch' | 'impact' | 'splash' | 'intercept' | 'expired';
   position: Vec3; roundId: string; visibleTo: string[]; terminatedRoundIds: string[];
   deliveries?: { scopeId: string; linkIds: string[]; deliveryTick: number }[];
 }

@@ -35,7 +35,7 @@ function event(s: WarSimSession, kind: PhysicalEvent['kind'], round: PhysicalRou
       visibleTo.add(local(a.id));
     }
   }
-  if (round.sourceScope) visibleTo.add(round.sourceScope);
+  if (kind === 'launch' && round.sourceScope) visibleTo.add(round.sourceScope);
   const tick = Math.round(time * 10);
   for (const scopeId of visibleTo) schedule(scopeId, [], tick);
   p.events.push({ id: ++p.sequence, time, kind, roundId: round.id, position: [...round.position], visibleTo: [...visibleTo],
@@ -51,7 +51,7 @@ function publishPhysicalEvent(s: WarSimSession, event: PhysicalEvent) {
     if (!event.visibleTo.includes(hq(iso)) || s.eventLog.some(e => e.id === `physical-${event.id}-${iso}`)) continue;
     s.eventLog.push({ id: `physical-${event.id}-${iso}`, simTimeSec: event.time,
       timeFormatted: `T+${event.time.toFixed(1)}`, faction: iso === s.playerIso ? 'player' : 'enemy',
-      type: event.kind === 'expired' ? 'alert' : event.kind, title: `Reference weapon ${event.kind}`,
+      type: event.kind === 'expired' || event.kind === 'splash' ? 'alert' : event.kind, title: `Reference weapon ${event.kind}`,
       detail: 'Synthetic point-mass encounter', lngLat: fromENU(event.position, s.physical!.origin).slice(0, 2) as [number, number] });
   }
   s.eventLog = s.eventLog.slice(-512);
@@ -228,7 +228,7 @@ export function stepPhysical(s: WarSimSession, dt: number): WarSimSession {
         if (fraction !== null) hits.push({ fraction, round: r, target: t, kind: r.interceptor ? 'intercept' : 'impact' });
       }
       const start = starts.get(r.id)!;
-      if (r.position[2] <= 0) hits.push({ fraction: Math.max(0, Math.min(1, start[2] / (start[2] - r.position[2] || 1))), round: r, kind: 'impact' });
+      if (r.position[2] <= 0) hits.push({ fraction: Math.max(0, Math.min(1, start[2] / (start[2] - r.position[2] || 1))), round: r, kind: 'splash' });
       if (r.age >= PROFILE.lifetimeSec) hits.push({ fraction: 1, round: r, kind: 'expired' });
     }
     hits.sort((a, b) => a.fraction - b.fraction || a.round.id.localeCompare(b.round.id));

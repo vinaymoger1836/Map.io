@@ -57,6 +57,16 @@ describe('physical reference / authoritative encounter', () => {
     expect(acquireSeeker(s, strike.id, 0)?.targetRef).toBe('blue-frigate');
     expect(strike.targetId).toBe('blue-frigate');
   });
+  it('records an unobserved water strike as a splash without damage or HQ truth', () => {
+    const s = createPhysicalReference(), p = s.physical!;
+    p.rounds.push({ id: 'round-splash', shooterId: 'blue-frigate', iso: s.playerIso, targetId: 'red-frigate',
+      interceptor: false, position: [10000, 10000, 1], launchPosition: [10000, 10000, 1],
+      velocity: [0, 0, -100], age: 0, sourceScope: `${s.playerIso}:hq` });
+    stepPhysical(s, .1);
+    expect(p.events.at(-1)?.kind).toBe('splash');
+    expect(p.actors.find(a => a.id === 'red-frigate')!.health).toBe(100);
+    expect(projectObserver(s).physical!.events.some(e => e.kind === 'splash')).toBe(false);
+  });
   it('intercepts an incoming round and never gives a destroyed round a later impact', () => {
     const s = createPhysicalReference(); launchPhysical(s, 'blue-frigate', s.fogOfWarContacts.playerContacts[0].contactId);
     for (let i = 0; i < 450; i++) { stepPhysical(s, .1); s.simTimeSec += .1; }

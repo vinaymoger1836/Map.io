@@ -39,7 +39,7 @@ export interface IntelMission {
   id: string; shooterId: string; supportId: string; trackId: string; trackRevision: number; scopeId: string;
   targetRef: string; status: 'awaiting-support' | 'ready' | 'held' | 'executed' | 'aborted';
   onLoss: 'hold' | 'abort' | 'continue-local'; createdTick: number; readyTick?: number;
-  notBeforeTick?: number; firedRoundId?: string; outcome?: 'impact' | 'intercept' | 'expired'; completedTick?: number;
+  notBeforeTick?: number; firedRoundId?: string; outcome?: 'impact' | 'splash' | 'intercept' | 'expired'; completedTick?: number;
   reason: string; evidenceIds: string[];
 }
 export interface PhysicalIntel {
