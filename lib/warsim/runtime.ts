@@ -7,6 +7,7 @@ import { MODEL_VERSION, STEP_MS, type CommandEnvelope, type CommandReceipt, type
 import { projectObserver } from './projection';
 import { stepPhysical, validatePhysical } from './physics/model';
 import { coalitionScope, ensurePhysicalIntel, factionScope, hq, local } from './intelligence';
+import { decideOpponent, decisionInterval, evaluateObjectives } from './opposition';
 
 function finiteData(value: unknown): void {
   if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Non-finite numeric input.');
@@ -107,27 +108,28 @@ export class SimulationRuntime {
     this.applyDueCommands();
   }
 
-  private validateCommand(envelope: CommandEnvelope) {
+  private validateCommand(envelope: CommandEnvelope, world = this.world) {
     const { command, scope } = envelope;
-    const expectedScope = this.world.physical ? this.world.observerScope : `${this.world.activeFaction}:hq`;
-    if (!scope || scope.faction !== this.world.activeFaction || scope.commandGroupId !== expectedScope) {
+    const expectedScope = world.physical ? world.observerScope : `${world.activeFaction}:hq`;
+    if (!scope || scope.faction !== world.activeFaction || scope.commandGroupId !== expectedScope) {
       throw new Error('The command belongs to a different observer. Select the faction again.');
     }
     if (!Object.hasOwn(commandHandlers, command.type) || !Array.isArray(command.args)) throw new Error('Unknown command.');
     const args = command.args as unknown[];
-    if (this.world.physical && !['setPlayback', 'togglePlay', 'setSpeedMultiplier', 'switchActiveFaction', 'launchPhysical', 'setPhysicalCourse',
+    if (world.physical && !['setPlayback', 'togglePlay', 'setSpeedMultiplier', 'switchActiveFaction', 'launchPhysical', 'setPhysicalCourse',
       'setObserverScope', 'requestPhysicalCollection', 'setPhysicalEmission', 'setPhysicalLink', 'forwardPhysicalReport',
-      'setCoalitionSharing', 'planPhysicalStrike', 'cancelPhysicalMission', 'startPhysicalRepair', 'cancelPhysicalRepair'].includes(command.type)) {
+      'setCoalitionSharing', 'planPhysicalStrike', 'cancelPhysicalMission', 'startPhysicalRepair', 'cancelPhysicalRepair',
+      'configureOpponent'].includes(command.type)) {
       throw new Error('This reference encounter does not support that order.');
     }
-    const iso = scope.faction === 'player' ? this.world.playerIso : this.world.enemyIso;
+    const iso = scope.faction === 'player' ? world.playerIso : world.enemyIso;
     const entityCommands = ['orderSortieToPoint', 'orderWaypointPatrol', 'orderRtb', 'orderStrike', 'orderRefuelAtTanker',
       'setEntityRcs', 'assignEntityToNetwork', 'removeEntityFromNetwork', 'orderAsatStrike', 'orderSeadStrike',
       'updateEntityEwMode', 'setEntityThreatLevel', 'orderRearmCarrierAirWing', 'orderLaunchCarrierStrike'];
-    if (entityCommands.includes(command.type) && !this.world.entities.some(e => e.id === args[0] && e.iso === iso && e.status !== 'destroyed')) {
+    if (entityCommands.includes(command.type) && !world.entities.some(e => e.id === args[0] && e.iso === iso && e.status !== 'destroyed')) {
       throw new Error('Select an available platform belonging to this faction.');
     }
-    if (['renameBase', 'deployUnitToBase'].includes(command.type) && !this.world.bases.some(b => b.id === args[0] && b.iso === iso)) {
+    if (['renameBase', 'deployUnitToBase'].includes(command.type) && !world.bases.some(b => b.id === args[0] && b.iso === iso)) {
       throw new Error('The selected base is unavailable to this faction.');
     }
     if (command.type === 'setSpeedMultiplier' && ![1, 3, 5, 10, 30].includes(args[0] as number)) throw new Error('Unsupported simulation speed.');
@@ -136,7 +138,7 @@ export class SimulationRuntime {
     if (command.type === 'setGlobalThreatLevel' && args[0] !== iso) throw new Error('Cannot change the other faction’s orders.');
     const netId = command.type === 'assignEntityToNetwork' ? args[1]
       : ['toggleNetworkOth', 'setNetworkDoctrine'].includes(command.type) ? args[0] : undefined;
-    if (netId !== undefined && !this.world.networks?.some(n => n.id === netId && n.iso === iso)) throw new Error('Network is unavailable to this faction.');
+    if (netId !== undefined && !world.networks?.some(n => n.id === netId && n.iso === iso)) throw new Error('Network is unavailable to this faction.');
     const count = command.type === 'deployUnitToBase' ? args[2] : command.type === 'deployAutonomousBattery' ? args[1] : undefined;
     if (count !== undefined && (!Number.isSafeInteger(count) || (count as number) <= 0)) throw new Error('Deploy a positive whole number of platforms.');
   }
@@ -166,15 +168,48 @@ export class SimulationRuntime {
       }
     }
   }
+  private runOpponent() {
+    const opposition = this.world.physical?.opposition;
+    if (!opposition?.enabled || this.world.physical?.objectives?.status !== 'ongoing' || this.tick < opposition.nextDecisionTick) return;
+    const view = projectObserver({ ...this.world, activeFaction: 'enemy', observerScope: hq(this.world.enemyIso) });
+    const choice = decideOpponent(view);
+    opposition.nextDecisionTick = this.tick + decisionInterval(opposition.difficulty);
+    let result: 'accepted' | 'rejected' | 'wait' = choice.command ? 'accepted' : 'wait', rejection: string | undefined;
+    if (choice.command) {
+      const randomBefore = { ...this.state.random };
+      try {
+        const draft = structuredClone(this.world), activeFaction = draft.activeFaction, observerScope = draft.observerScope;
+        draft.activeFaction = 'enemy'; draft.observerScope = hq(draft.enemyIso);
+        const envelope: CommandEnvelope = { version: 1, sequence: 0, executeAtTick: this.tick,
+          scope: { faction: 'enemy', commandGroupId: draft.observerScope }, command: choice.command };
+        this.validateCommand(envelope, draft);
+        const handler = commandHandlers[choice.command.type] as (s: WarSimSession, d: SystemSpec[], ...args: unknown[]) => WarSimSession | null;
+        const next = withSimulationContext(this.state.random, () => handler(draft, this.state.definitions, ...choice.command!.args));
+        if (!next) throw new Error('Autonomous order was not applied.');
+        next.activeFaction = activeFaction; next.observerScope = observerScope;
+        validateSession(next); finiteData(next);
+        this.world = next;
+        if (next.physical?.intel) this.state.coordination.physical = next.physical.intel;
+      } catch (error) {
+        this.state.random = randomBefore; result = 'rejected'; rejection = error instanceof Error ? error.message : String(error);
+      }
+    }
+    const state = this.world.physical!.opposition!;
+    state.decisions.push({ id: ++state.sequence, tick: this.tick, priority: choice.priority, utility: choice.utility,
+      reason: choice.reason, command: choice.command, result, rejection });
+    state.decisions = state.decisions.slice(-256);
+  }
   step(): boolean {
     this.applyDueCommands();
     if (!this.running) return false;
+    if (this.world.physical) this.runOpponent();
     const speed = this.world.timeMultiplier;
     const next = withSimulationContext(this.state.random, () => this.world.physical
       ? stepPhysical(this.world, STEP_MS / 1000)
       : tickWarSim({ ...this.world, timeMultiplier: 1 }, STEP_MS / 1000, this.state.definitions));
     this.state.tick++;
     this.world = { ...next, timeMultiplier: speed, simTimeSec: this.state.originSimTimeSec + this.tick * STEP_MS / 1000 };
+    if (this.world.physical) evaluateObjectives(this.world, this.tick);
     this.applyDueCommands();
     return true;
   }

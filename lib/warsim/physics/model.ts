@@ -5,6 +5,7 @@ import { acquireSeeker, currentTrack, effectiveConfidence, ensurePhysicalIntel, 
   runPhysicalIntelligence, expireReservations, scopeTracks, validatePhysicalIntel, type IntelTrack } from '../intelligence';
 import { CAPABILITIES, condition, damageActor, operational, stepPhysicalRepairs } from './readiness';
 import { sampleSurface, seaSpeedFactor, validateEnvironment } from './environment';
+import { validateOpposition } from '../opposition';
 
 // Fictional reference profile; SI units. No calibration to real equipment.
 export const PROFILE = Object.freeze({ mass: 180, thrust: 7800, burnSec: 12, dragArea: .035,
@@ -300,5 +301,6 @@ export function validatePhysical(p: PhysicalEncounter, s: WarSimSession) {
   }
   for (const r of p.rounds) if (!p.actors.some(a => a.id === r.shooterId && a.iso === r.iso) || r.age < 0) throw new Error('Invalid physical round.');
   if (p.environment) validateEnvironment(p.environment);
+  validateOpposition(s);
   if (p.intel) validatePhysicalIntel(p.intel, s);
 }

@@ -2,6 +2,7 @@ import type { WarSimSession } from '../../warSimTypes';
 import { syncPhysical } from './model';
 import { createPhysicalIntel } from '../intelligence';
 import { referenceEnvironment } from './environment';
+import { createObjectives, createOpposition } from '../opposition';
 /** Authored fictional encounter. Creating it never reads or edits the user's board. */
 export function createPhysicalReference(): WarSimSession {
   const personnel = { army: 0, navy: 200, airForce: 0, strategicForces: 0, specialOps: 0, total: 200 };
@@ -64,6 +65,8 @@ export function createLittoralReference(): WarSimSession {
   s.entities.push({ ...template, id: 'blue-orbital', name: 'Glint orbital collector', systemId: 'reference-orbital', typeId: 'satellite',
     personnel: 0, speedKmh: 0, magazines: {} });
   p.intel = createPhysicalIntel(s);
+  p.opposition = createOpposition();
+  p.objectives = createObjectives();
   syncPhysical(s);
   return s;
 }

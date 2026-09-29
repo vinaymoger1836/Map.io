@@ -6,6 +6,7 @@ import { cancelPhysicalMission, coalitionScope, factionScope, forwardPhysicalRep
   setCoalitionSharing, setPhysicalEmission, setPhysicalLink } from './intelligence';
 import { launchPhysical, setPhysicalCourse } from './physics/model';
 import { cancelPhysicalRepair, startPhysicalRepair, type Capability } from './physics/readiness';
+import { configureOpponent, type OpponentDoctrine, type OpponentDifficulty } from './opposition';
 import {
   deployEntityToBase,
   deployAutonomousEntity,
@@ -48,6 +49,8 @@ planPhysicalStrike: (s: WarSimSession, _d: SystemSpec[], shooter: string, trackI
 cancelPhysicalMission: (s: WarSimSession, _d: SystemSpec[], missionId: string) => cancelPhysicalMission(s, missionId),
 startPhysicalRepair: (s: WarSimSession, _d: SystemSpec[], actorId: string, capability: Capability) => startPhysicalRepair(s, actorId, capability),
 cancelPhysicalRepair: (s: WarSimSession, _d: SystemSpec[], actorId: string) => cancelPhysicalRepair(s, actorId),
+configureOpponent: (s: WarSimSession, _d: SystemSpec[], doctrine: OpponentDoctrine, difficulty: OpponentDifficulty, enabled: boolean) =>
+  configureOpponent(s, doctrine, difficulty, enabled),
 setPlayback: (prev: WarSimSession, _systems: SystemSpec[], status: 'running' | 'paused'): WarSimSession => ({ ...prev, status }),
 orderWaypointPatrol: (prev: WarSimSession, _systems: SystemSpec[], entityId: string,
   waypoints: [number, number][], altitudeM: number, emcon: 'active' | 'passive',
