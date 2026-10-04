@@ -495,7 +495,7 @@ export function tickWarSim(
   // -------------------------------------------------------------
   // 3. Update Entities (Kinematics, Orbit, Fuel, Lifecycle)
   // -------------------------------------------------------------
-  const updatedEntities: SimEntity[] = session.entities.map((entity) => {
+  let updatedEntities: SimEntity[] = session.entities.map((entity) => {
     if (entity.status === 'destroyed') return entity;
 
     const spec = systemsLibrary.find((s) => s.id === entity.systemId);
@@ -1441,6 +1441,9 @@ export function tickWarSim(
       currentAirspace: currentLoc,
     };
   });
+  // Combat mutates updatedEntities below. Keep the airspace projection and
+  // combat pass on the same entity objects so damage survives later systems.
+  updatedEntities = finalEntitiesWithAirspace;
 
   // -------------------------------------------------------------
   // 4. Multi-Layered Air Defense, Defensive Interceptions & Impacts
@@ -2810,10 +2813,46 @@ export function tickWarSim(
   );
   newEvents.push(...csgEvents);
 
+  // Quota totals include committed platforms; losses and repairs are separate
+  // counters and must follow state transitions rather than the UI event log.
+  let nextQuotas = session.quotas;
+  const newlyDestroyedIds = new Set<string>();
+  const previousEntities = new Map(session.entities.map((entity) => [entity.id, entity]));
+  for (const entity of carrierEntities) {
+    const previous = previousEntities.get(entity.id);
+    if (!previous) continue;
+    const wasDestroyed = previous.status === 'destroyed';
+    const isDestroyed = entity.status === 'destroyed';
+    if (!wasDestroyed && isDestroyed) newlyDestroyedIds.add(entity.id);
+    if (!entity.systemId) continue;
+    const faction = entity.iso === session.playerIso ? 'player'
+      : entity.iso === session.enemyIso ? 'enemy' : null;
+    if (!faction || !session.quotas[faction]?.[entity.systemId]) continue;
+    const wasRepairing = previous.status === 'in_repair';
+    const isRepairing = entity.status === 'in_repair';
+    if ((!wasDestroyed && isDestroyed) || wasRepairing !== isRepairing) {
+      if (nextQuotas === session.quotas) nextQuotas = structuredClone(session.quotas);
+    } else continue;
+    const quota = nextQuotas[faction][entity.systemId];
+    if (!wasDestroyed && isDestroyed) {
+      quota.destroyed = (quota.destroyed ?? 0) + entity.count;
+    }
+    if (!wasRepairing && isRepairing) {
+      quota.inRepair = (quota.inRepair ?? 0) + entity.count;
+    } else if (wasRepairing && !isRepairing) {
+      quota.inRepair = Math.max(0, (quota.inRepair ?? 0) - previous.count);
+    }
+  }
+  const finalBases = newlyDestroyedIds.size > 0
+    ? carrierBases.map((base) => ({ ...base,
+      stationedEntityIds: base.stationedEntityIds.filter((id) => !newlyDestroyedIds.has(id)) }))
+    : carrierBases;
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
-    bases: carrierBases,
+    quotas: nextQuotas,
+    bases: finalBases,
     entities: carrierEntities,
     satellites: updatedSatellites,
     activeMissiles: [...ewMissiles, ...roeMissiles],
@@ -3547,8 +3586,9 @@ export function deployEntityToBase(
   if (!base) return session;
 
   const spec = systemsLibrary.find((s) => s.id === systemId);
-  const typeId = spec?.typeId || 'fighter';
-  const domain = spec ? domainOf(spec) : 'air';
+  if (!spec || !Number.isSafeInteger(count) || count <= 0) return session;
+  const typeId = spec.typeId;
+  const domain = domainOf(spec);
 
   // Check Base Stationing Rules
   const stationCheck = canStationAtBase(base.type, { domain, typeId });
@@ -3557,11 +3597,14 @@ export function deployEntityToBase(
   }
 
   // Check Base Capacity Limits
-  const currentStationedCount = session.entities.filter((e) => e.homeBaseId === homeBaseId && e.status !== 'destroyed').length;
-  if (currentStationedCount >= base.maxCapacity) {
+  const currentStationedCount = session.entities
+    .filter((e) => e.homeBaseId === homeBaseId && e.status !== 'destroyed')
+    .reduce((total, e) => total + e.count, 0);
+  if (currentStationedCount + count > base.maxCapacity) {
     return session;
   }
 
+  if (base.iso !== session.playerIso && base.iso !== session.enemyIso) return session;
   const faction = base.iso === session.playerIso ? 'player' : 'enemy';
   const quotaLedger = { ...session.quotas[faction] };
   const quota = quotaLedger[systemId];
@@ -3608,6 +3651,11 @@ export function deployEntityToBase(
       [faction]: quotaLedger,
     },
     entities: [...session.entities, newEntity],
+    bases: session.bases.map((b) => b.id === homeBaseId
+      ? { ...b, stationedEntityIds: [...session.entities
+        .filter((e) => e.homeBaseId === homeBaseId && e.status !== 'destroyed')
+        .map((e) => e.id), newEntity.id] }
+      : b),
   };
 }
 
@@ -3625,8 +3673,10 @@ export function deployAutonomousEntity(
   rcs?: number
 ): WarSimSession {
   const spec = systemsLibrary.find((s) => s.id === systemId);
-  const typeId = spec?.typeId || 'sam-launcher';
-  const domain = spec ? domainOf(spec) : 'ground';
+  if (!spec || !Number.isSafeInteger(count) || count <= 0) return session;
+  const typeId = spec.typeId;
+  const domain = domainOf(spec);
+  if (domain !== 'ground' && domain !== 'site') return session;
   const faction = session.activeFaction;
   const iso = faction === 'player' ? session.playerIso : session.enemyIso;
 
@@ -3752,7 +3802,7 @@ export function orderPatrol(
 
   if (isPartialSplit) {
     const remainingCount = targetEntity.count - effectiveCount;
-    const personnelPerUnit = Math.max(1, Math.round(targetEntity.personnel / targetEntity.count));
+    const sortiePersonnel = Math.round(targetEntity.personnel * effectiveCount / targetEntity.count);
     const sortieEntityId = `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`;
 
     const sortieName = ensureUniqueEntityName(
@@ -3777,7 +3827,7 @@ export function orderPatrol(
       ...targetEntity,
       name: dockedName,
       count: remainingCount,
-      personnel: remainingCount * personnelPerUnit,
+      personnel: targetEntity.personnel - sortiePersonnel,
     };
 
     const sortieEntity: SimEntity = {
@@ -3785,7 +3835,7 @@ export function orderPatrol(
       id: sortieEntityId,
       name: sortieName,
       count: effectiveCount,
-      personnel: effectiveCount * personnelPerUnit,
+      personnel: sortiePersonnel,
       status: 'takeoff_ingress',
       patrolOrder,
       altitudeM: effectiveAltM,
@@ -3960,43 +4010,29 @@ export function renameSimBase(
  * Orders a specific in-flight or deployed entity to immediately abort mission and return directly to its home base (or nearest friendly base).
  */
 export function orderEntityRtb(session: WarSimSession, entityId: string): WarSimSession {
+  const target = session.entities.find((e) => e.id === entityId);
+  if (!target || ['destroyed', 'docked', 'turnaround', 'in_repair'].includes(target.status)) return session;
+  const homeBase = session.bases.find((b) => b.id === target.homeBaseId && b.iso === target.iso)
+    ?? session.bases.filter((b) => b.iso === target.iso)
+      .sort((a, b) => distanceKm(target.lngLat, a.lngLat) - distanceKm(target.lngLat, b.lngLat))[0];
+  if (!homeBase) return session;
+
   let orderedName = '';
   let entityIso = session.playerIso;
-  let homeLngLat: [number, number] | null = null;
-  let homeBaseName = '';
+  const homeLngLat = homeBase.lngLat;
+  const homeBaseName = homeBase.name;
 
   const updatedEntities = session.entities.map((e) => {
     if (e.id !== entityId) return e;
     orderedName = e.name;
     entityIso = e.iso;
 
-    // Find its designated home base or fallback to nearest friendly base
-    const homeBase = session.bases.find((b) => b.id === e.homeBaseId);
-    if (homeBase) {
-      homeLngLat = homeBase.lngLat;
-      homeBaseName = homeBase.name;
-    } else {
-      const friendlyBases = session.bases.filter((b) => b.iso === e.iso);
-      if (friendlyBases.length > 0) {
-        let nearestDist = Infinity;
-        let nearestCoord = friendlyBases[0].lngLat;
-        for (const fb of friendlyBases) {
-          const d = distanceKm(e.lngLat, fb.lngLat);
-          if (d < nearestDist) {
-            nearestDist = d;
-            nearestCoord = fb.lngLat;
-          }
-        }
-        homeLngLat = nearestCoord;
-        homeBaseName = friendlyBases[0].name;
-      }
-    }
-
-    const nextHeading = homeLngLat ? bearingDeg(e.lngLat, homeLngLat) : e.headingDeg;
+    const nextHeading = bearingDeg(e.lngLat, homeLngLat);
 
     return {
       ...e,
       status: 'bingo_rtb' as const,
+      homeBaseId: homeBase.id,
       headingDeg: nextHeading,
       patrolOrder: undefined, // Clear any orbit/loiter orders so it flies directly home
     };
@@ -4013,8 +4049,8 @@ export function orderEntityRtb(session: WarSimSession, entityId: string): WarSim
           faction,
           type: 'rtb' as const,
           title: `RTB Ordered: ${orderedName}`,
-          detail: `${orderedName} was ordered to RTB immediately towards ${homeBaseName || 'home installation'}.`,
-          lngLat: homeLngLat || undefined,
+          detail: `${orderedName} was ordered to RTB immediately towards ${homeBaseName}.`,
+          lngLat: homeLngLat,
         },
       ]
     : session.eventLog;
@@ -4022,6 +4058,12 @@ export function orderEntityRtb(session: WarSimSession, entityId: string): WarSim
   return {
     ...session,
     entities: updatedEntities,
+    bases: session.bases.map((b) => ({
+      ...b,
+      stationedEntityIds: b.id === homeBase.id
+        ? [...new Set([...b.stationedEntityIds, entityId])]
+        : b.stationedEntityIds.filter((id) => id !== entityId),
+    })),
     eventLog: newEvents.slice(-200),
   };
 }
@@ -4094,7 +4136,7 @@ export function orderStrikeMission(
 
   if (isPartialSplit) {
     const remainingCount = attacker.count - effectiveCount;
-    const personnelPerUnit = Math.max(1, Math.round(attacker.personnel / attacker.count));
+    const sortiePersonnel = Math.round(attacker.personnel * effectiveCount / attacker.count);
     const sortieEntityId = `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`;
 
     const sortieName = ensureUniqueEntityName(
@@ -4119,7 +4161,7 @@ export function orderStrikeMission(
       ...attacker,
       name: dockedName,
       count: remainingCount,
-      personnel: remainingCount * personnelPerUnit,
+      personnel: attacker.personnel - sortiePersonnel,
     };
 
     const sortieEntity: SimEntity = {
@@ -4127,7 +4169,7 @@ export function orderStrikeMission(
       id: sortieEntityId,
       name: sortieName,
       count: effectiveCount,
-      personnel: effectiveCount * personnelPerUnit,
+      personnel: sortiePersonnel,
       status: 'engaging',
       assignedMission: 'strike',
       assignedTargetEntityId: targetEntityId,
