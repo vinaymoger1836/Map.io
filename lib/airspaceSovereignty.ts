@@ -261,6 +261,19 @@ export const COUNTRY_BOUNDARIES: CountryBoundaryInfo[] = [
   },
 ];
 
+// The map and saved scenarios use ISO 3166 numeric IDs; this boundary table
+// uses two-letter IDs. Values come from the bundled world-countries.geojson.
+const NUMERIC_COUNTRY_IDS: Record<string, string> = {
+  PL: '616', UA: '804', RU: '643', BY: '112', RO: '642', DE: '276',
+  GB: '826', FR: '250', TR: '792', FI: '246', SE: '752', NO: '578',
+  EE: '233', LV: '428', LT: '440', IL: '376', IR: '364', SY: '760',
+  IQ: '368', SA: '682', CN: '156', TW: '158', JP: '392', US: '840',
+};
+
+function sameCountry(boundaryIso: string, sessionIso: string): boolean {
+  return boundaryIso === sessionIso || NUMERIC_COUNTRY_IDS[boundaryIso] === sessionIso;
+}
+
 /* ------------------------------------------------------------------ */
 /* 2. Point-in-Polygon (PIP) & Fast Bounding Box Check                */
 /* ------------------------------------------------------------------ */
@@ -310,9 +323,9 @@ export function resolveAirspaceLocation(
             const iso = country.iso;
             let classification: AirspaceClassification = 'neutral';
 
-            if (iso === playerIso || coalitionIsos.player.includes(iso)) {
+            if (sameCountry(iso, playerIso) || coalitionIsos.player.some((item) => sameCountry(iso, item))) {
               classification = 'friendly';
-            } else if (iso === enemyIso || coalitionIsos.enemy.includes(iso)) {
+            } else if (sameCountry(iso, enemyIso) || coalitionIsos.enemy.some((item) => sameCountry(iso, item))) {
               classification = 'hostile';
             }
 
@@ -327,9 +340,9 @@ export function resolveAirspaceLocation(
         // Fallback to bounding box match if polygon is absent
         const iso = country.iso;
         let classification: AirspaceClassification = 'neutral';
-        if (iso === playerIso || coalitionIsos.player.includes(iso)) {
+        if (sameCountry(iso, playerIso) || coalitionIsos.player.some((item) => sameCountry(iso, item))) {
           classification = 'friendly';
-        } else if (iso === enemyIso || coalitionIsos.enemy.includes(iso)) {
+        } else if (sameCountry(iso, enemyIso) || coalitionIsos.enemy.some((item) => sameCountry(iso, item))) {
           classification = 'hostile';
         }
         return {
@@ -359,18 +372,19 @@ export function resolveAirspaceLocation(
 export function evaluateBorderIncursion(
   entity: SimEntity,
   currentLocation: AirspaceLocation,
-  previousLocation?: AirspaceLocation
+  previousLocation: AirspaceLocation | undefined,
+  playerIso: string
 ): BorderIncursionRecord | null {
   if (!previousLocation) return null;
   if (currentLocation.countryIso === previousLocation.countryIso) return null;
 
   // An international border crossing occurred!
-  const isEntityPlayer = entity.iso === 'US' || entity.iso === 'UA' || entity.iso === 'IL' || entity.iso === 'TW';
+  const isEntityPlayer = entity.iso === playerIso;
   const faction: 'player' | 'enemy' = isEntityPlayer ? 'player' : 'enemy';
 
   let incursionType: BorderIncursionRecord['incursionType'] = 'friendly_entry';
 
-  if (currentLocation.classification === 'hostile') {
+  if (currentLocation.classification === (isEntityPlayer ? 'hostile' : 'friendly')) {
     incursionType = 'hostile_breach';
   } else if (currentLocation.classification === 'neutral') {
     incursionType = 'neutral_violation';
@@ -416,9 +430,6 @@ export function canEngageUnderAirspaceRoe(
   if (roeDoctrine === 'adiz_border_defense') {
     if (targetAirspace.classification === 'friendly') {
       return { canFire: true, reason: 'Target has violated Sovereign Friendly Airspace — Engagement Authorized' };
-    }
-    if (targetAirspace.classification === 'international') {
-      return { canFire: true, reason: 'Target in International Airspace — Hot Pursuit Authorized' };
     }
     return {
       canFire: false,

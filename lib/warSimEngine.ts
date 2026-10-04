@@ -1405,7 +1405,7 @@ export function tickWarSim(
     }
 
     const currentLoc = resolveAirspaceLocation(entity.lngLat, session.playerIso, session.enemyIso);
-    const incursion = evaluateBorderIncursion(entity, currentLoc, entity.currentAirspace);
+    const incursion = evaluateBorderIncursion(entity, currentLoc, entity.currentAirspace, session.playerIso);
 
     if (incursion) {
       incursion.simTimeSec = session.simTimeSec;
@@ -1417,6 +1417,8 @@ export function tickWarSim(
           ? `🚨 Sovereign Airspace Incursion: ${entity.name}`
           : incursion.incursionType === 'neutral_violation'
             ? `⚠️ Neutral Airspace Intrusion: ${entity.name}`
+            : incursion.incursionType === 'friendly_entry'
+              ? `Friendly Airspace Entry: ${entity.name}`
             : `ℹ️ International Airspace: ${entity.name}`;
 
       const detail =
@@ -1424,6 +1426,8 @@ export function tickWarSim(
           ? `${entity.name} crossed the international border from ${incursion.fromName} into ${incursion.toName} sovereign airspace!`
           : incursion.incursionType === 'neutral_violation'
             ? `${entity.name} entered airspace over neutral ${incursion.toName} without diplomatic overflight clearance.`
+            : incursion.incursionType === 'friendly_entry'
+              ? `${entity.name} entered friendly airspace over ${incursion.toName}.`
             : `${entity.name} exited ${incursion.fromName} sovereign airspace into international airspace.`;
 
       logEvent(
@@ -1465,6 +1469,10 @@ export function tickWarSim(
       if (liveThreat) {
         m.targetLngLat = liveThreat.currentLngLat;
       }
+    }
+    if (m.weaponCategory === 'sam' && !m.targetMissileId) {
+      const liveTarget = updatedEntities.find((entity) => entity.id === m.targetEntityId && entity.status !== 'destroyed');
+      if (liveTarget) m.targetLngLat = liveTarget.lngLat;
     }
 
     // Dynamic guidance for ASAT interceptors tracking orbiting satellites in Low Earth Orbit
@@ -1608,7 +1616,7 @@ export function tickWarSim(
   // Group active incoming threats by salvo/target to coordinate network fire
   const threatGroups = new Map<string, MissileFlyoutTrack[]>();
   for (const m of session.activeMissiles) {
-    if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress >= 1.0) continue;
+    if (m.isIntercepted || (m.weaponCategory === 'sam' && m.targetMissileId) || m.progress >= 1.0) continue;
     if (session.simTimeSec < m.startSimTimeSec) continue;
     const groupKey = m.salvoId || m.targetEntityId;
     const list = threatGroups.get(groupKey) || [];
@@ -1690,7 +1698,9 @@ export function tickWarSim(
         }
 
         // Airspace Sovereignty & Rules of Engagement (ROE) check
-        const targetAirspace = resolveAirspaceLocation(m.currentLngLat, session.playerIso, session.enemyIso);
+        const targetAirspace = resolveAirspaceLocation(m.currentLngLat,
+          def.iso === session.playerIso ? session.playerIso : session.enemyIso,
+          def.iso === session.playerIso ? session.enemyIso : session.playerIso);
         const roeDoctrine = session.airspaceRoeDoctrine || 'weapons_free';
         const roeCheck = canEngageUnderAirspaceRoe(targetAirspace, roeDoctrine, def.iso === session.playerIso ? 'player' : 'enemy');
         if (!roeCheck.canFire) {
@@ -1835,7 +1845,7 @@ export function tickWarSim(
   const ciwsEngagementsPerSalvo = new Map<string, number>();
 
   for (const m of session.activeMissiles) {
-    if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress < 0.95 || m.progress >= 1.0) continue;
+    if (m.isIntercepted || (m.weaponCategory === 'sam' && m.targetMissileId) || m.progress < 0.95 || m.progress >= 1.0) continue;
 
     const targetEntity = updatedEntities.find((e) => e.id === m.targetEntityId);
     if (
@@ -1968,14 +1978,28 @@ export function tickWarSim(
 
   // Pass 5: Missile Impact Resolution at Target Coordinates & Realistic Subsystem Degradation BDA
   for (const m of session.activeMissiles) {
-    if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress < 1.0) continue;
+    if (m.isIntercepted || (m.weaponCategory === 'sam' && m.targetMissileId) || m.progress < 1.0) continue;
 
     const targetEntity = updatedEntities.find((e) => e.id === m.targetEntityId);
     const targetBase = updatedBases.find((b) => b.id === m.targetEntityId);
 
     if (targetEntity && targetEntity.status !== 'destroyed') {
+      if (m.weaponCategory === 'sam' && simRandom() >= (m.interceptorPk ?? 0.85)) {
+        logEvent(
+          m.attackerIso === session.playerIso ? 'player' : 'enemy',
+          'alert',
+          `Interceptor Missed: ${m.weaponName}`,
+          `${m.weaponName} failed to intercept ${targetEntity.name}.`,
+          targetEntity.lngLat
+        );
+        m.isIntercepted = true;
+        continue;
+      }
       const isNaval = isNavalCombatant(targetEntity.typeId);
-      const isAir = targetEntity.typeId === 'fighter' || targetEntity.typeId === 'strike' || targetEntity.typeId === 'bomber' || targetEntity.typeId === 'awacs' || targetEntity.typeId === 'tanker';
+      const targetSpec = systemsLibrary.find((system) => system.id === targetEntity.systemId);
+      const isAir = targetSpec ? domainOf(targetSpec) === 'air'
+        : ['fighter', 'strike', 'bomber', 'awacs', 'tanker', 'uav', 'drone', 'recon',
+          'helicopter', 'attack-heli', 'transport-heli'].includes(targetEntity.typeId);
 
       // Ensure subsystem record exists
       targetEntity.subsystems = targetEntity.subsystems || {

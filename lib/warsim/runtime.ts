@@ -153,7 +153,18 @@ export class SimulationRuntime {
       throw new Error('The scenario has concluded. Start a new probe to play again.');
     }
     if (command.type === 'setEntityRcs' && (typeof args[1] !== 'number' || args[1] < 0)) throw new Error('RCS must be a nonnegative number.');
+    if (command.type === 'setAirspaceRoe'
+      && !['weapons_free', 'adiz_border_defense', 'neutral_sanctuary'].includes(args[0] as string)) {
+      throw new Error('Invalid theater ROE doctrine.');
+    }
+    if (command.type === 'setEntityThreatLevel' || command.type === 'setGlobalThreatLevel') {
+      if (!['defcon_1', 'defcon_2', 'defcon_3'].includes(args[1] as string)) throw new Error('Invalid DEFCON level.');
+    }
     if (command.type === 'setGlobalThreatLevel' && args[0] !== iso) throw new Error('Cannot change the other faction’s orders.');
+    if (command.type === 'setGlobalThreatLevel' && args[2] !== undefined
+      && !['all', 'air', 'sam', 'naval', 'ground'].includes(args[2] as string)) {
+      throw new Error('Invalid DEFCON category.');
+    }
     const netId = command.type === 'assignEntityToNetwork' ? args[1]
       : ['toggleNetworkOth', 'setNetworkDoctrine'].includes(command.type) ? args[0] : undefined;
     if (netId !== undefined && !world.networks?.some(n => n.id === netId && n.iso === iso)) throw new Error('Network is unavailable to this faction.');
