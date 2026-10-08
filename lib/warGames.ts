@@ -14,7 +14,7 @@
 
 import type { SystemSpec } from './specs';
 
-export type Domain = 'ground' | 'air' | 'sea' | 'sub' | 'site';
+export type Domain = 'ground' | 'air' | 'sea' | 'sub' | 'site' | 'space';
 
 export interface DomainSpec {
   id: Domain;
@@ -29,6 +29,7 @@ export const DOMAINS: DomainSpec[] = [
   { id: 'sea', label: 'Naval', note: 'Surface combatants and groups' },
   { id: 'sub', label: 'Subsurface', note: 'Submarines' },
   { id: 'site', label: 'Installations', note: 'Fixed sites, sensors and air defence' },
+  { id: 'space', label: 'Space', note: 'Orbital observation assets' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -182,6 +183,7 @@ export const UNIT_TYPES: UnitType[] = [
   unit('command', 'Command post', 'site', 'command', SITE_ECHELONS, 'site'),
   unit('depot', 'Depot / ammunition', 'site', 'depot', SITE_ECHELONS, 'site'),
   unit('jammer', 'EW / jamming site', 'site', 'ew', SITE_ECHELONS, 'site'),
+  unit('satellite', 'Reconnaissance satellite', 'space', 'satellite', ['site'], 'site'),
 ];
 
 export const UNIT_BY_ID = new Map(UNIT_TYPES.map((u) => [u.id, u]));

@@ -968,7 +968,7 @@ export const RCS_BASELINE_M2 = 5.0;
  */
 export function getSystemRcs(
   spec?: SystemSpec,
-  domain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air'
+  domain: Domain = 'air'
 ): number {
   if (spec?.rcs && spec.rcs > 0) {
     return spec.rcs;
@@ -989,7 +989,7 @@ export function getSystemRcs(
  */
 export function signatureRangeMultiplier(
   sig?: 'low' | 'medium' | 'high',
-  domain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air',
+  domain: Domain = 'air',
   explicitRcs?: number
 ): number {
   const targetRcs = explicitRcs && explicitRcs > 0 ? explicitRcs : getSystemRcs({ signature: sig } as SystemSpec, domain);
@@ -1002,7 +1002,7 @@ export interface DetectionRangeParams {
   targetHeightM: number;
   targetRcsM2?: number;
   targetSignature?: 'low' | 'medium' | 'high';
-  targetDomain?: 'air' | 'sea' | 'sub' | 'ground' | 'site';
+  targetDomain?: Domain;
   rcsBaselineM2?: number;
   isJammed?: boolean;
   horizonLimited?: boolean;
@@ -1064,7 +1064,7 @@ export function effectiveDetectionKm(
   targetAltM = 10_000,
   targetSignature?: 'low' | 'medium' | 'high',
   isJammed = false,
-  targetDomain: 'air' | 'sea' | 'sub' | 'ground' | 'site' = 'air'
+  targetDomain: Domain = 'air'
 ): number | null {
   const sensor = spec.sensor;
   if (!sensor?.detectionKm) return null;

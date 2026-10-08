@@ -88,6 +88,12 @@ export interface DetectedContact {
   terrainMasked?: boolean;
   terrainElevationM?: number;
   blockingMountainRange?: string;
+  uncertaintyM?: number;
+  confidence?: number;
+  trackState?: 'fresh' | 'stale' | 'lost';
+  evidenceIds?: string[];
+  revision?: number;
+  sourceIds?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -729,6 +735,11 @@ export interface CombatReport {
 /* ------------------------------------------------------------------ */
 
 export interface WarSimSession {
+  physical?: import('./warsim/physics/types').PhysicalEncounter;
+  observerScope?: string;
+  intelView?: ReturnType<typeof import('./warsim/intelligence').projectIntel>;
+  /** Versioned runtime checkpoint. Absent on legacy saves and observer projections. */
+  runtime?: import('./warsim/contracts').RuntimeCheckpoint;
   id: string;
   name: string;
   createdAt: string;

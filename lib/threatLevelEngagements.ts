@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Per-System Threat Level (DEFCON ROE) & Automated Intelligent Firing Solution Engine
  *
@@ -21,9 +22,9 @@ import {
   type AirspaceLocation,
 } from './warSimTypes';
 import { type SystemSpec, type WeaponFacet, domainOf, defaultTerrainSensorFor } from './specs';
-import { canWeaponEngageTarget, isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
+import { isGroundCombatUnit, isStaticAirDefense } from './warSimRules';
 import { isNavalCombatant } from './navalEngagement';
-import { resolveAirspaceLocation } from './airspaceSovereignty';
+import { canEngageUnderAirspaceRoe, resolveAirspaceLocation } from './airspaceSovereignty';
 import { calculateTerrainLineOfSight } from './terrainLOS';
 
 /* ------------------------------------------------------------------ */
@@ -113,7 +114,7 @@ export function canSystemEngageTarget(
     return {
       canFire: true,
       shouldLockOnly: false,
-      reason: `DEFCON 1: Total Engagement — Weapons Free authorized in all sectors (including neutral & enemy airspace).`,
+      reason: `DEFCON 1: System authorization granted; theater ROE still applies.`,
     };
   }
 
@@ -146,36 +147,23 @@ export function stepThreatLevelEngagements(
     return e;
   });
 
-  // 2. Separate active deployed friendlies and active deployed hostiles on map
-  const isPlayer = session.activeFaction === 'player';
-  const playerIso = session.playerIso;
-  const enemyIso = session.enemyIso;
-
-  const deployedHostiles = workingEntities.filter(
-    (e) =>
-      e.iso === enemyIso &&
-      e.status !== 'destroyed' &&
-      e.status !== 'docked' &&
-      e.status !== 'turnaround' &&
-      e.status !== 'in_repair'
-  );
-
-  const deployedFriendlies = workingEntities.filter(
-    (e) =>
-      e.iso === playerIso &&
-      e.status !== 'destroyed' &&
-      e.status !== 'docked' &&
-      e.status !== 'turnaround' &&
-      e.status !== 'in_repair'
-  );
-
-  if (deployedHostiles.length === 0 || deployedFriendlies.length === 0) {
-    return {
-      updatedEntities: workingEntities,
-      newMissiles: [],
-      engagementEvents: [],
-    };
-  }
+  // Release a stale DEFCON 3 lock when the target, radar, or authority is gone.
+  workingEntities = workingEntities.map((defender) => {
+    if (!defender.isTargetLocked) return defender;
+    const target = workingEntities.find((entity) => entity.id === defender.lockedTargetEntityId);
+    const spec = systemsLibrary.find((item) => item.id === defender.systemId);
+    const rangeKm = defender.isRadarJammed && defender.jammedDetectionRangeKm !== undefined
+      ? defender.jammedDetectionRangeKm
+      : spec?.sensor?.detectionKm ?? (isGroundCombatUnit(defender.typeId) ? 35 : 240);
+    const opposingIso = defender.iso === session.playerIso ? session.enemyIso : session.playerIso;
+    const stillAuthorized = target && target.iso === opposingIso
+      && !['destroyed', 'docked', 'turnaround', 'in_repair'].includes(target.status)
+      && defender.subsystems?.radar !== 'destroyed'
+      && distanceKm(defender.lngLat, target.lngLat) <= rangeKm
+      && canSystemEngageTarget(defender, target,
+        resolveAirspaceLocation(target.lngLat, defender.iso, opposingIso), session).shouldLockOnly;
+    return stillAuthorized ? defender : { ...defender, isTargetLocked: false, lockedTargetEntityId: undefined };
+  });
 
   // 3. Track active intercepts to avoid spamming missiles on a single target
   const alreadyTargetedEntityIds = new Set(
@@ -184,12 +172,19 @@ export function stepThreatLevelEngagements(
       .map((m) => m.targetEntityId)
   );
 
-  // 4. Process each hostile target with Intelligent Firing Solutions
+  // 4. Each faction defends its own territory using the same ROE and command path.
+  for (const { defenderIso, opposingIso, faction } of [
+    { defenderIso: session.playerIso, opposingIso: session.enemyIso, faction: 'player' as const },
+    { defenderIso: session.enemyIso, opposingIso: session.playerIso, faction: 'enemy' as const },
+  ]) {
+  const deployedHostiles = workingEntities.filter((entity) => entity.iso === opposingIso
+    && !['destroyed', 'docked', 'turnaround', 'in_repair'].includes(entity.status));
   for (const hostile of deployedHostiles) {
-    const targetAirspace = resolveAirspaceLocation(hostile.lngLat, playerIso, enemyIso);
+    const targetAirspace = resolveAirspaceLocation(hostile.lngLat, defenderIso, opposingIso);
     const hostileSpec = systemsLibrary.find((s) => s.id === hostile.systemId);
     const isHostileNaval = isNavalCombatant(hostile.typeId) || (hostileSpec ? domainOf(hostileSpec) === 'sea' : false);
-    const isHostileAir = hostile.typeId === 'fighter' || hostile.typeId === 'bomber' || hostile.typeId === 'uav' || hostile.typeId === 'recon' || hostile.typeId === 'awacs' || hostile.typeId === 'tanker' || hostile.typeId === 'helicopter';
+    const isHostileAir = hostileSpec ? domainOf(hostileSpec) === 'air'
+      : ['fighter', 'strike', 'bomber', 'uav', 'recon', 'awacs', 'tanker', 'helicopter', 'attack-heli', 'transport-heli'].includes(hostile.typeId);
     const targetClass: import('./specs').TargetClass = isHostileNaval ? 'surface' : isHostileAir ? 'air' : 'ground';
 
     // Check all friendly defenders in range
@@ -203,7 +198,10 @@ export function stepThreatLevelEngagements(
       roeEval: SystemRoeEvaluation;
     }[] = [];
 
-    for (const friendly of deployedFriendlies) {
+    for (const friendly of workingEntities.filter((entity) => entity.iso === defenderIso
+      && !['destroyed', 'docked', 'turnaround', 'in_repair'].includes(entity.status))) {
+      if (friendly.subsystems?.radar === 'destroyed'
+        || friendly.subsystems?.weapons === 'offline') continue;
       const friendlySpec = systemsLibrary.find((s) => s.id === friendly.systemId);
       const dist = distanceKm(friendly.lngLat, hostile.lngLat);
 
@@ -229,6 +227,8 @@ export function stepThreatLevelEngagements(
 
       // Evaluate ROE Threat Level
       const roe = canSystemEngageTarget(friendly, hostile, targetAirspace, session);
+      const theaterRoe = canEngageUnderAirspaceRoe(targetAirspace,
+        session.airspaceRoeDoctrine ?? 'weapons_free', faction);
 
       // Update radar lock state if Level 1 lock-only
       if (roe.shouldLockOnly) {
@@ -238,10 +238,10 @@ export function stepThreatLevelEngagements(
           );
 
           engagementEvents.push({
-            id: `evt-lock-${Date.now()}-${friendly.id.slice(-4)}-${hostile.id.slice(-4)}`,
+            id: `evt-lock-${simNow()}-${friendly.id.slice(-4)}-${hostile.id.slice(-4)}`,
             simTimeSec: simTime,
             timeFormatted: `${Math.floor(simTime / 60)}m`,
-            faction: 'player',
+            faction,
             type: 'alert',
             title: `🎯 DEFCON 3 Radar Lock: ${friendly.name}`,
             detail: `${friendly.name} has illuminated and locked fire-control radar on ${hostile.name} inside sovereign airspace. Weapons on standby, holding fire pending hostile act.`,
@@ -250,7 +250,7 @@ export function stepThreatLevelEngagements(
         }
       }
 
-      if (!roe.canFire) continue;
+      if (!roe.canFire || !theaterRoe.canFire) continue;
 
       // Find best compatible weapon
       const weapons = (friendly.customWeapons && friendly.customWeapons.length > 0)
@@ -262,11 +262,11 @@ export function stepThreatLevelEngagements(
 
       for (let wIdx = 0; wIdx < weapons.length; wIdx++) {
         const w = weapons[wIdx];
-        const mag = (w.magazine !== undefined ? w.magazine : (friendly.magazines?.[wIdx] ?? 2));
+        const mag = friendly.magazines?.[wIdx] ?? w.magazine ?? 0;
         if (mag <= 0) continue;
         if (w.rangeKm < dist) continue;
 
-        const canEngage = canWeaponEngageTarget(w, targetClass) || w.engages?.includes(targetClass);
+        const canEngage = w.engages?.includes(targetClass) ?? false;
         if (canEngage) {
           if (!bestW || w.rangeKm > bestW.rangeKm) {
             bestW = w;
@@ -314,7 +314,7 @@ export function stepThreatLevelEngagements(
       const chosen = eligibleDefenders[0];
 
       const { defender, bestWeapon, bestWeaponIdx, distKm, roeEval } = chosen;
-      const curMag = bestWeapon.magazine !== undefined ? bestWeapon.magazine : (defender.magazines?.[bestWeaponIdx] ?? 2);
+      const curMag = defender.magazines?.[bestWeaponIdx] ?? bestWeapon.magazine ?? 0;
       const salvoCommit = Math.min(curMag, bestWeapon.salvo ?? 1, 1);
 
       // Deduct magazine
@@ -345,7 +345,7 @@ export function stepThreatLevelEngagements(
       const missileCategory = isHostileAir ? 'sam' : isHostileNaval ? 'cruise' : 'bomb';
 
       const newMissile: MissileFlyoutTrack = {
-        id: `msl-roe-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `msl-roe-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         originLngLat: defender.lngLat,
         targetLngLat: hostile.lngLat,
         currentLngLat: defender.lngLat,
@@ -372,16 +372,17 @@ export function stepThreatLevelEngagements(
       const levelLabel = (defender.threatLevel || 'defcon_2').toUpperCase().replace('_', ' ');
 
       engagementEvents.push({
-        id: `evt-fire-roe-${Date.now()}-${defender.id.slice(-4)}`,
+        id: `evt-fire-roe-${simNow()}-${defender.id.slice(-4)}`,
         simTimeSec: simTime,
         timeFormatted: `${Math.floor(simTime / 60)}m`,
-        faction: 'player',
+        faction,
         type: 'strike',
         title: `⚔️ Automated Engagement [${levelLabel}]: ${defender.name}`,
         detail: `${defender.name} committed ${bestWeapon.name || 'Interceptor'} against ${hostile.name} at ${distKm.toFixed(0)} km standoff. Firing Solution: ${roeEval.reason}. Deconfliction active.`,
         lngLat: defender.lngLat,
       });
     }
+  }
   }
 
   return {

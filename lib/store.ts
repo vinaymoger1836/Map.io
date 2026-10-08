@@ -38,11 +38,7 @@ const browserStore: Store = {
   },
   async write<T>(doc: string, value: T): Promise<void> {
     if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(LOCAL_PREFIX + doc, JSON.stringify(value));
-    } catch (err) {
-      console.error(`[store] local write of ${doc} failed`, err);
-    }
+    window.localStorage.setItem(LOCAL_PREFIX + doc, JSON.stringify(value));
   },
 };
 
@@ -60,6 +56,8 @@ const fileStore: Store = {
       body: JSON.stringify(value),
     });
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const reply = await res.json() as { ok?: boolean; readonly?: boolean };
+    if (!reply.ok || reply.readonly) throw new Error('Server did not persist the document.');
   },
 };
 
@@ -137,6 +135,15 @@ export async function readDoc<T>(doc: string): Promise<T | null> {
     return (localVal ?? serverVal ?? null) as T | null;
   }
 
+  if (doc === 'warsim-session' && localVal && serverVal) {
+    const progress = (value: unknown) => {
+      const runtime = (value as { runtime?: { tick?: number; nextSequence?: number } }).runtime;
+      return [runtime?.tick ?? -1, runtime?.nextSequence ?? -1];
+    };
+    const local = progress(localVal), server = progress(serverVal);
+    return (server[0] > local[0] || server[0] === local[0] && server[1] > local[1] ? serverVal : localVal) as T;
+  }
+
   // 3. For board and forces: prefer local if modified, otherwise server
   if (localVal !== null && localVal !== undefined) {
     if (typeof localVal === 'object' && !Array.isArray(localVal)) {
@@ -155,18 +162,15 @@ export async function readDoc<T>(doc: string): Promise<T | null> {
 }
 
 export async function writeDoc<T>(doc: string, value: T): Promise<void> {
-  // Always persist immediately to browser localStorage so it survives page refreshes on Vercel
-  await browserStore.write(doc, value);
-
-  // Also attempt server file write (for local development with Node)
+  let saved = false, failure: unknown;
+  try { await browserStore.write(doc, value); saved = true; }
+  catch (error) { failure = error; }
   const store = await getStore();
   if (store.kind === 'files') {
-    try {
-      await fileStore.write(doc, value);
-    } catch {
-      // Ignored: already saved in browser localStorage
-    }
+    try { await fileStore.write(doc, value); saved = true; }
+    catch (error) { failure = error; }
   }
+  if (!saved) throw new Error(`Document ${doc} was not saved: ${String(failure)}`);
 }
 
 /**

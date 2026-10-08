@@ -3,7 +3,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import maplibregl, { type Map as MLMap } from 'maplibre-gl';
+import maplibregl, { type Map as MLMap, type StyleSpecification } from 'maplibre-gl';
 
 import ControlPanel from './ControlPanel';
 import DetailPanel, { type Selection } from './DetailPanel';
@@ -27,7 +27,11 @@ import { WarSimAarModal } from './wargames/WarSimAarModal';
 import { useWarSim } from '@/lib/useWarSim';
 import { renderWarSimStateToMap, removeWarSimLayers, updateWarSimPatrolPreview } from '@/lib/warSimLayers';
 import { type WarSimSession } from '@/lib/warSimTypes';
-import { readDoc, writeDoc } from '@/lib/store';
+import { readDoc } from '@/lib/store';
+import { measureWarSim } from '@/lib/warsim/diagnostics';
+import dynamic from 'next/dynamic';
+import { stopPresentation } from '@/lib/warsim/mapPresentation';
+const TacticalViewport = dynamic(() => import('./wargames/TacticalViewport'), { ssr: false });
 
 /**
  * Two modes share one map. The situation map is the published assessment;
@@ -44,13 +48,31 @@ type Mode = 'situation' | 'wargames';
  */
 const WARGAMES_VISIBILITY: Record<string, boolean> = { 'wt-ocean': true, 'wt-sea': true };
 
+const OFFLINE_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {},
+  layers: [{ id: 'offline-background', type: 'background', paint: { 'background-color': '#0c1722' } }],
+};
+
 const BASEMAPS = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   light: 'https://tiles.openfreemap.org/styles/positron',
   detail: 'https://tiles.openfreemap.org/styles/liberty',
-} as const;
+  offline: OFFLINE_STYLE,
+} satisfies Record<string, string | StyleSpecification>;
 
 type BasemapId = keyof typeof BASEMAPS;
+
+function isBasemapFetchFailure(message: string): boolean {
+  if (!/AJAXError|Failed to fetch|NetworkError|HTTP error/i.test(message)) return false;
+  const url = message.match(/https?:\/\/[^\s\]]+/)?.[0];
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return host === 'basemaps.cartocdn.com' || host.endsWith('.basemaps.cartocdn.com')
+      || host === 'tiles.openfreemap.org' || host.endsWith('.tiles.openfreemap.org');
+  } catch { return false; }
+}
 
 type Projection = 'mercator' | 'globe';
 
@@ -95,6 +117,7 @@ export default function EurasiaMap() {
   const [dataWarning, setDataWarning] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY);
   const [basemap, setBasemap] = useState<BasemapId>('dark');
+  const basemapRef = useRef<BasemapId>('dark');
   const [projection, setProjection] = useState<'mercator' | 'globe'>('mercator');
   const [projectionNote, setProjectionNote] = useState<string | null>(null);
   const [globeSupported, setGlobeSupported] = useState(true);
@@ -107,6 +130,7 @@ export default function EurasiaMap() {
   const [mode, setModeState] = useState<Mode>('situation');
   const [configOpen, setConfigOpen] = useState(false);
   const [warSimLauncherOpen, setWarSimLauncherOpen] = useState(false);
+  const [tacticalOpen, setTacticalOpen] = useState(false);
   const [activeWarSimSession, setActiveWarSimSession] = useState<WarSimSession | null>(null);
   const [warSimAarOpen, setWarSimAarOpen] = useState(false);
 
@@ -152,7 +176,7 @@ export default function EurasiaMap() {
     mapReady: ready,
     active: mode === 'wargames',
     simulationActive: Boolean(activeWarSimSession),
-    darkBasemap: basemap === 'dark',
+    darkBasemap: basemap === 'dark' || basemap === 'offline',
   });
   warHydrateRef.current = war.hydrate;
 
@@ -161,7 +185,6 @@ export default function EurasiaMap() {
     systemsLibrary: war.systems,
     mapRef,
     onClose: () => {
-      writeDoc('warsim-session', null);
       setActiveWarSimSession(null);
     },
   });
@@ -170,28 +193,30 @@ export default function EurasiaMap() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || mode !== 'wargames') return;
+    if (tacticalOpen) { stopPresentation(map); return; }
     if (!warSim.session) {
       removeWarSimLayers(map);
       return;
     }
-    renderWarSimStateToMap(
+    measureWarSim('render.sync.ms', () => renderWarSimStateToMap(
       map,
-      warSim.session,
-      warSim.session.activeFaction,
+      warSim.session!,
+      warSim.session!.activeFaction,
       warSim.targetPicking,
       warSim.selectedEntityId,
-      war.systems,
+      warSim.systemsLibrary,
       warSim.activeWeaponIndex,
       warSim.showAllEnvelopes,
       warSim.selectedContactId
-    );
+    ));
   }, [
+    tacticalOpen,
     ready,
     mode,
     warSim.session,
     warSim.targetPicking,
     warSim.selectedEntityId,
-    war.systems,
+    warSim.systemsLibrary,
     warSim.activeWeaponIndex,
     warSim.showAllEnvelopes,
     warSim.selectedContactId,
@@ -329,8 +354,26 @@ export default function EurasiaMap() {
     // hardest part of the last outage to diagnose — tile, source and WebGL
     // failures used to be swallowed here.
     const recentErrors: number[] = [];
+    const recentTileErrors: number[] = [];
     map.on('error', (e) => {
       const message = e?.error?.message ?? String(e?.error ?? 'unknown map error');
+      if (isBasemapFetchFailure(message)) {
+        if (basemapRef.current === 'offline') return;
+        const now = Date.now();
+        recentTileErrors.push(now);
+        while (recentTileErrors.length && now - recentTileErrors[0] > 5000) recentTileErrors.shift();
+        if (recentTileErrors.length === 1) console.warn('[map] Basemap request failed:', message);
+        if (recentTileErrors.length >= 3 || /style\.json|\/styles\//.test(message)) {
+          basemapRef.current = 'offline';
+          setBasemap('offline');
+          setBootError(null);
+          setErrorBurst('Basemap tiles unavailable. Offline map active.');
+          map.once('styledata', () => hydrate(map));
+          map.setStyle(OFFLINE_STYLE);
+          recentTileErrors.length = 0;
+        }
+        return;
+      }
       console.error('[map]', message, e?.error ?? e);
 
       if (message.includes('style')) setBootError(message);
@@ -491,9 +534,12 @@ export default function EurasiaMap() {
     (id: BasemapId) => {
       const map = mapRef.current;
       if (!map || id === basemap) return;
+      basemapRef.current = id;
       setBasemap(id);
-      map.setStyle(BASEMAPS[id]);
+      setErrorBurst(null);
+      setBootError(null);
       map.once('styledata', () => hydrate(map));
+      map.setStyle(BASEMAPS[id]);
     },
     [basemap, hydrate]
   );
@@ -562,10 +608,13 @@ export default function EurasiaMap() {
         )}
 
         {errorBurst && (
-          <div className="map-alert" role="alert">
+          <div className={`map-alert${basemap === 'offline' ? ' warning' : ''}`} role="alert">
             {errorBurst}
-            <br />
-            See the console for the full list.
+            {basemap === 'offline' ? (
+              <button type="button" onClick={() => changeBasemap('dark')}>Retry online map</button>
+            ) : (
+              <><br />See the console for the full list.</>
+            )}
           </div>
         )}
 
@@ -706,6 +755,7 @@ export default function EurasiaMap() {
               war.setSimulationNations(session.playerIso, session.playerColor, session.enemyIso, session.enemyColor);
               // 2. Launch the simulation session
               setActiveWarSimSession(session);
+              setTacticalOpen(Boolean(session.physical));
               setWarSimLauncherOpen(false);
             }}
             onOpenConfiguration={(sysId) => {
@@ -715,7 +765,43 @@ export default function EurasiaMap() {
           />
         )}
 
-        {mode === 'wargames' && warSim.session && (
+        {mode === 'wargames' && activeWarSimSession && (
+          <div style={{ position: 'absolute', bottom: 44, left: 480, zIndex: 900, maxWidth: 560,
+            padding: '8px 12px', borderRadius: 6, background: 'rgba(7,12,20,.92)', color: '#dbe5ed', fontSize: 12 }}>
+            {warSim.runtimeError ? <div role="alert">
+              {warSim.runtimeError}
+              <button onClick={warSim.dismissRuntimeError} style={{ marginLeft: 12 }}>Dismiss</button>
+              <button onClick={warSim.restartRuntime} style={{ marginLeft: 12 }}>Reload checkpoint</button>
+              <button onClick={warSim.exitSim} style={{ marginLeft: 12 }}>Exit simulation</button>
+            </div> : <span role="status" data-testid="simulation-runtime" data-tick={warSim.runtimeDiagnostics?.tick ?? 0}>
+              {!warSim.session ? 'Preparing simulation…' : warSim.runtimeDiagnostics?.suspended ? 'Simulation suspended'
+                : warSim.isPlaying && (warSim.runtimeDiagnostics?.lastTickMs ?? 0) * warSim.speedMultiplier > 100
+                  ? 'Large scenario: simulation is running below the requested speed.'
+                  : warSim.isPlaying ? 'Simulation running' : 'Simulation paused'}
+            </span>}
+          </div>
+        )}
+        {mode === 'wargames' && warSim.session?.physical && !tacticalOpen && (
+          <div style={{ position: 'absolute', left: 20, bottom: 100, zIndex: 1000, padding: 18, background: '#0b1b28ed', color: '#dcecf0' }}>
+            <strong>Glasswater · T+{warSim.session.simTimeSec.toFixed(1)}</strong>
+            <p>Open the 3D tactical view to issue fire and maneuver orders.</p>
+            <button className="wg-btn" onClick={warSim.togglePlay}>{warSim.isPlaying ? 'Pause time' : 'Start time'}</button>
+            <button className="wg-btn" onClick={warSim.switchActiveFaction}>Switch faction</button>
+            <button className="wg-btn" onClick={warSim.exitSim}>Exit simulation</button>
+          </div>
+        )}
+        {mode === 'wargames' && warSim.session && !tacticalOpen && (
+          <button style={{ position: 'absolute', top: 80, right: 20, zIndex: 1000 }} className="wg-btn" onClick={() => setTacticalOpen(true)}>Open 3D tactical view</button>
+        )}
+        {mode === 'wargames' && warSim.session && tacticalOpen && (
+          <TacticalViewport session={warSim.session} selectedId={warSim.selectedEntityId} selectedContactId={warSim.selectedContactId}
+            onSelect={warSim.setSelectedEntityId} onSelectContact={warSim.setSelectedContactId} dispatch={warSim.dispatchSimulation}
+            getReplay={warSim.getReplay}
+            onClose={() => { setTacticalOpen(false); const e = warSim.selectedEntity ?? warSim.session?.entities[0];
+              if (e) mapRef.current?.jumpTo({ center: e.lngLat, zoom: 11 });
+            }} onExit={() => { setTacticalOpen(false); warSim.exitSim(); }} runtimeError={warSim.runtimeError} onDismissRuntimeError={warSim.dismissRuntimeError} />
+        )}
+        {mode === 'wargames' && warSim.session && !warSim.session.physical && !tacticalOpen && (
           <WarSimConsole
             session={warSim.session}
             isPlaying={warSim.isPlaying}
@@ -792,7 +878,7 @@ export default function EurasiaMap() {
             onStartCorridorPicking={warSim.startCorridorPicking}
             onOpenAar={() => setWarSimAarOpen(true)}
             onExitSim={warSim.exitSim}
-            systemsLibrary={war.systems}
+            systemsLibrary={warSim.systemsLibrary}
             countries={war.countries}
             onSetAirspaceRoe={warSim.setAirspaceRoe}
             onLaunchAsat={warSim.orderAsatStrike}

@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-25T06:31:24.588Z",
+  "revision": "68a282bff769c9ff8105832c0c5202e2275638b3",
+  "sourceHashes": {
+    "lib/warSimEngine.ts": "12f307580039bfb63e500e13f82f56b40b57ba9e3081b40723705c2a8ad88c1f",
+    "lib/warSimRules.ts": "2af5c50fb0b343d39446ee3ece8dc779a1de8cb9d150cfcd4dcff886c23a2d6f",
+    "lib/specs.ts": "b8f0578f3f929759d75c86ced7f96cc5e00381cf918ae341274fa17ed5975554",
+    "lib/terrainLOS.ts": "ad5ab812d2dd6d0970629507dabb1a91dfde079e5ff740aaee0ee9678eb998b9",
+    "lib/spaceLayer.ts": "bc0f662bdfb2901b9876cd389058dbc00747e4cae10fc026ba0ed3f99f566024",
+    "lib/electronicWarfare.ts": "f9d086bc001edada56fe16feef8800dd0f48a74c6bf2e474321e79bbcf66f575",
+    "lib/carrierOps.ts": "b5c658ea7c0077d46fa9186df8e5280bf8737786d7f8f344a3a0531b70295c6a",
+    "lib/aerialRefueling.ts": "a8ade507d25067d224039530af4e926a933113fe24b531db55f8f6c3e7203dcd",
+    "lib/airspaceSovereignty.ts": "7b521c87d5fb7be8e4b5111db062795fc90a1d35050cb1ee7b5f91636130c789",
+    "lib/threatLevelEngagements.ts": "ac422e4034e3a4b4b0b3df4ed58b8892dd76114e535847009c068f6be7ace3b5",
+    "tests/warsim/fixtures/v1/scenarios.ts": "ca6634272101f3239d62828e9319ae0e1702a3e0e74a0189cb7da7b4313c5155",
+    "package-lock.json": "4970babae8c813cb2cad852287b278093ae55b6aa98774140b4c2a7880120ad2"
+  },
+  "environment": {
+    "os": "win32 10.0.26200",
+    "architecture": "x64",
+    "cpu": "AMD Ryzen 7 7445HS w/ Radeon 740M Graphics",
+    "logicalCores": 12,
+    "ramBytes": 16353656832,
+    "powerScheme": "Power Scheme GUID: 6fecc5ae-f350-48a5-b669-b472cb895ccf  (Turbo)",
+    "node": "v24.15.0",
+    "gcAvailable": true
+  },
+  "method": {
+    "warmupTicks": 20,
+    "measuredTicks": 200,
+    "repetitions": 3,
+    "dtRealSec": 0.1,
+    "timeMultiplier": 1,
+    "caveats": [
+      "Legacy randomness/Date.now controlled only by the synchronous harness; production has no replay seed.",
+      "CPU simulation only; no renderer/React cost. Short-run heap deltas are not a leak test.",
+      "Measurements report this machine and fixture version; they are not universal performance guarantees."
+    ]
+  },
+  "results": [
+    {
+      "id": "transit",
+      "fixtureVersion": 1,
+      "timing": {
+        "count": 600,
+        "meanMs": 0.020358833333334114,
+        "p50Ms": 0.014899999999954616,
+        "p95Ms": 0.03659999999996444,
+        "p99Ms": 0.11570000000000391,
+        "maxMs": 0.648900000000026
+      },
+      "runs": [
+        {
+          "repetition": 0,
+          "initialPopulation": {
+            "platforms": 1,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 1,
+            "projectiles": 0,
+            "contacts": 0
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1613,
+          "finalSessionBytes": 1993,
+          "heapBeforeBytes": 10273664,
+          "heapBeforeGcBytes": 11845592,
+          "heapAfterGcBytes": 10854872
+        },
+        {
+          "repetition": 1,
+          "initialPopulation": {
+            "platforms": 1,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 1,
+            "projectiles": 0,
+            "contacts": 0
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1613,
+          "finalSessionBytes": 1993,
+          "heapBeforeBytes": 10838632,
+          "heapBeforeGcBytes": 11784376,
+          "heapAfterGcBytes": 10862184
+        },
+        {
+          "repetition": 2,
+          "initialPopulation": {
+            "platforms": 1,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 1,
+            "projectiles": 0,
+            "contacts": 0
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1613,
+          "finalSessionBytes": 1993,
+          "heapBeforeBytes": 10859512,
+          "heapBeforeGcBytes": 11779840,
+          "heapAfterGcBytes": 10926696
+        }
+      ]
+    },
+    {
+      "id": "sensor-contact",
+      "fixtureVersion": 1,
+      "timing": {
+        "count": 600,
+        "meanMs": 0.10492783333333591,
+        "p50Ms": 0.08260000000001355,
+        "p95Ms": 0.20020000000005211,
+        "p99Ms": 0.31040000000001555,
+        "maxMs": 1.2390000000000327
+      },
+      "runs": [
+        {
+          "repetition": 0,
+          "initialPopulation": {
+            "platforms": 2,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 2,
+            "projectiles": 0,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1853,
+          "finalSessionBytes": 4724,
+          "heapBeforeBytes": 10920704,
+          "heapBeforeGcBytes": 13654728,
+          "heapAfterGcBytes": 11032128
+        },
+        {
+          "repetition": 1,
+          "initialPopulation": {
+            "platforms": 2,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 2,
+            "projectiles": 0,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1853,
+          "finalSessionBytes": 4724,
+          "heapBeforeBytes": 11042480,
+          "heapBeforeGcBytes": 14188864,
+          "heapAfterGcBytes": 11080736
+        },
+        {
+          "repetition": 2,
+          "initialPopulation": {
+            "platforms": 2,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 2,
+            "projectiles": 0,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1853,
+          "finalSessionBytes": 4724,
+          "heapBeforeBytes": 11069024,
+          "heapBeforeGcBytes": 11212816,
+          "heapAfterGcBytes": 11142600
+        }
+      ]
+    },
+    {
+      "id": "engagement",
+      "fixtureVersion": 1,
+      "timing": {
+        "count": 600,
+        "meanMs": 0.10021233333333214,
+        "p50Ms": 0.08430000000004156,
+        "p95Ms": 0.1733000000000402,
+        "p99Ms": 0.2836000000000354,
+        "maxMs": 1.735900000000015
+      },
+      "runs": [
+        {
+          "repetition": 0,
+          "initialPopulation": {
+            "platforms": 2,
+            "projectiles": 2
+          },
+          "finalPopulation": {
+            "platforms": 2,
+            "projectiles": 2,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1853,
+          "finalSessionBytes": 6935,
+          "heapBeforeBytes": 11118016,
+          "heapBeforeGcBytes": 13264016,
+          "heapAfterGcBytes": 11186560
+        },
+        {
+          "repetition": 1,
+          "initialPopulation": {
+            "platforms": 2,
+            "projectiles": 2
+          },
+          "finalPopulation": {
+            "platforms": 2,
+            "projectiles": 2,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1853,
+          "finalSessionBytes": 6935,
+          "heapBeforeBytes": 11186208,
+          "heapBeforeGcBytes": 12884496,
+          "heapAfterGcBytes": 11163304
+        },
+        {
+          "repetition": 2,
+          "initialPopulation": {
+            "platforms": 2,
+            "projectiles": 2
+          },
+          "finalPopulation": {
+            "platforms": 2,
+            "projectiles": 2,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 1853,
+          "finalSessionBytes": 6935,
+          "heapBeforeBytes": 11350808,
+          "heapBeforeGcBytes": 16874856,
+          "heapAfterGcBytes": 11183040
+        }
+      ]
+    },
+    {
+      "id": "fleet",
+      "fixtureVersion": 1,
+      "timing": {
+        "count": 600,
+        "meanMs": 266.1711786666667,
+        "p50Ms": 274.2633999999962,
+        "p95Ms": 321.09419999999227,
+        "p99Ms": 378.9631999999983,
+        "maxMs": 412.59520000001066
+      },
+      "runs": [
+        {
+          "repetition": 0,
+          "initialPopulation": {
+            "platforms": 100,
+            "projectiles": 50
+          },
+          "finalPopulation": {
+            "platforms": 100,
+            "projectiles": 50,
+            "contacts": 100
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 74099,
+          "finalSessionBytes": 324152,
+          "heapBeforeBytes": 11370144,
+          "heapBeforeGcBytes": 38574080,
+          "heapAfterGcBytes": 12598632
+        },
+        {
+          "repetition": 1,
+          "initialPopulation": {
+            "platforms": 100,
+            "projectiles": 50
+          },
+          "finalPopulation": {
+            "platforms": 100,
+            "projectiles": 50,
+            "contacts": 100
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 74099,
+          "finalSessionBytes": 324152,
+          "heapBeforeBytes": 12570008,
+          "heapBeforeGcBytes": 80255192,
+          "heapAfterGcBytes": 13629024
+        },
+        {
+          "repetition": 2,
+          "initialPopulation": {
+            "platforms": 100,
+            "projectiles": 50
+          },
+          "finalPopulation": {
+            "platforms": 100,
+            "projectiles": 50,
+            "contacts": 100
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 74099,
+          "finalSessionBytes": 324152,
+          "heapBeforeBytes": 12568704,
+          "heapBeforeGcBytes": 59477112,
+          "heapAfterGcBytes": 13616600
+        }
+      ]
+    },
+    {
+      "id": "joint-operations",
+      "fixtureVersion": 1,
+      "timing": {
+        "count": 600,
+        "meanMs": 0.482904333332311,
+        "p50Ms": 0.42170000000623986,
+        "p95Ms": 0.7050000000162981,
+        "p99Ms": 0.9461000000010245,
+        "maxMs": 2.175199999997858
+      },
+      "runs": [
+        {
+          "repetition": 0,
+          "initialPopulation": {
+            "platforms": 4,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 4,
+            "projectiles": 0,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 3192,
+          "finalSessionBytes": 6687,
+          "heapBeforeBytes": 11383440,
+          "heapBeforeGcBytes": 76611392,
+          "heapAfterGcBytes": 11252216
+        },
+        {
+          "repetition": 1,
+          "initialPopulation": {
+            "platforms": 4,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 4,
+            "projectiles": 0,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 3192,
+          "finalSessionBytes": 6687,
+          "heapBeforeBytes": 11254656,
+          "heapBeforeGcBytes": 76402728,
+          "heapAfterGcBytes": 11310128
+        },
+        {
+          "repetition": 2,
+          "initialPopulation": {
+            "platforms": 4,
+            "projectiles": 0
+          },
+          "finalPopulation": {
+            "platforms": 4,
+            "projectiles": 0,
+            "contacts": 1
+          },
+          "simTimeSec": 22.000000000000043,
+          "initialSessionBytes": 3192,
+          "finalSessionBytes": 6687,
+          "heapBeforeBytes": 11290512,
+          "heapBeforeGcBytes": 76208760,
+          "heapAfterGcBytes": 11313080
+        }
+      ]
+    }
+  ]
+}

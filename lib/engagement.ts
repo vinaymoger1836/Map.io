@@ -52,6 +52,7 @@ const CLASS_BY_DOMAIN: Record<Domain, TargetClass> = {
   sub: 'subsurface',
   ground: 'ground',
   site: 'ground',
+  space: 'space',
 };
 
 function ballisticTier(rangeKm: number): TargetClass {

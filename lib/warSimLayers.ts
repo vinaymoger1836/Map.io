@@ -32,10 +32,17 @@ import {
   type SAMThreatZone,
 } from './threatAvoidance';
 import { generateAarRacetrackCoordinates } from './aerialRefueling';
+import { beginPresentation, presentSource, stopPresentation } from './warsim/mapPresentation';
+
+function setMeasuredSourceData(map: MLMap, id: string, data: GeoJSON.FeatureCollection) {
+  presentSource(map, id, data);
+}
+
 
 const SRC_BASES = 'warsim-bases-src';
 const SRC_ENTITIES = 'warsim-entities-src';
 const SRC_CONTACTS = 'warsim-contacts-src';
+const SRC_UNCERTAINTY = 'warsim-uncertainty-src';
 const SRC_PATROLS = 'warsim-patrols-src';
 const SRC_MISSILES = 'warsim-missiles-src';
 const SRC_REACH_RING = 'warsim-reach-ring-src';
@@ -74,6 +81,8 @@ const LYR_CONTACTS_HALO = 'warsim-contacts-halo';
 const LYR_CONTACTS_CIRCLE = 'warsim-contacts-circle';
 const LYR_CONTACTS_LABEL = 'warsim-contacts-label';
 const LYR_CONTACTS_SYMBOL = 'warsim-contacts-symbol';
+const LYR_UNCERTAINTY_FILL = 'warsim-uncertainty-fill';
+const LYR_UNCERTAINTY_LINE = 'warsim-uncertainty-line';
 const LYR_PATROLS_LINE = 'warsim-patrols-line';
 const LYR_MISSILES_LINE = 'warsim-missiles-line';
 const LYR_MISSILES_HEAD = 'warsim-missiles-head';
@@ -179,6 +188,8 @@ export function mapSimTypeToUnitType(typeId: string): string {
     case 'radar':
     case 'early-warning':
       return 'radar';
+    case 'satellite':
+      return 'satellite';
     case 'tank':
     case 'mbt':
     case 'armor':
@@ -462,6 +473,11 @@ export function installWarSimLayers(map: MLMap) {
   });
 
   // 4. Fog of War Contacts Source & Layers
+  map.addSource(SRC_UNCERTAINTY, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({ id: LYR_UNCERTAINTY_FILL, type: 'fill', source: SRC_UNCERTAINTY,
+    paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.055 } });
+  map.addLayer({ id: LYR_UNCERTAINTY_LINE, type: 'line', source: SRC_UNCERTAINTY,
+    paint: { 'line-color': ['get', 'color'], 'line-width': 1.2, 'line-dasharray': [3, 3], 'line-opacity': 0.65 } });
   map.addSource(SRC_CONTACTS, {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: [] },
@@ -780,6 +796,7 @@ export function renderWarSimStateToMap(
   showAllEnvelopes: boolean = false,
   selectedContactId?: string | null
 ) {
+  beginPresentation(map, `${session.id}:${activeFaction}:${session.observerScope ?? 'hq'}`, session.status === 'running');
   if (!map.getSource(SRC_BASES)) {
     installWarSimLayers(map);
   } else {
@@ -792,6 +809,8 @@ export function renderWarSimStateToMap(
       LYR_CONTACTS_CIRCLE,
       LYR_CONTACTS_LABEL,
       LYR_CONTACTS_SYMBOL,
+      LYR_UNCERTAINTY_FILL,
+      LYR_UNCERTAINTY_LINE,
       LYR_MISSILES_LINE,
       LYR_MISSILES_HEAD,
       LYR_MISSILES_SYMBOL,
@@ -820,7 +839,7 @@ export function renderWarSimStateToMap(
       properties: {},
     });
   }
-  (map.getSource(SRC_REACH_RING) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_REACH_RING, {
     type: 'FeatureCollection',
     features: reachRingFeatures,
   });
@@ -984,7 +1003,7 @@ export function renderWarSimStateToMap(
     }
   }
 
-  (map.getSource(SRC_ENVELOPES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_ENVELOPES, {
     type: 'FeatureCollection',
     features: envelopeFeatures,
   });
@@ -1012,7 +1031,7 @@ export function renderWarSimStateToMap(
       },
     };
   });
-  (map.getSource(SRC_BASES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_BASES, {
     type: 'FeatureCollection',
     features: basesFeatures,
   });
@@ -1065,6 +1084,7 @@ export function renderWarSimStateToMap(
 
     return {
       type: 'Feature' as const,
+      id: e.id,
       geometry: { type: 'Point' as const, coordinates: e.lngLat },
       properties: {
         id: e.id,
@@ -1078,7 +1098,7 @@ export function renderWarSimStateToMap(
 
   ensureIcons(map, iconSpecs);
 
-  (map.getSource(SRC_ENTITIES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_ENTITIES, {
     type: 'FeatureCollection',
     features: entityFeatures,
   });
@@ -1170,7 +1190,7 @@ export function renderWarSimStateToMap(
       });
     }
   });
-  (map.getSource(SRC_PATROLS) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_PATROLS, {
     type: 'FeatureCollection',
     features: patrolFeatures,
   });
@@ -1179,6 +1199,12 @@ export function renderWarSimStateToMap(
   const contacts = isPlayer
     ? session.fogOfWarContacts.playerContacts
     : session.fogOfWarContacts.enemyContacts;
+
+  setMeasuredSourceData(map, SRC_UNCERTAINTY, { type: 'FeatureCollection', features: contacts
+    .filter(c => c.uncertaintyM && c.uncertaintyM > 0)
+    .map(c => ({ type: 'Feature' as const, id: `${c.contactId}:uncertainty`,
+      geometry: { type: 'Polygon' as const, coordinates: [geodesicRing(c.lastKnownLngLat, Math.min(3, c.uncertaintyM! / 1000), 32)] },
+      properties: { color: c.trackState === 'stale' ? '#ffca76' : '#ff8b72' } })) });
 
   const contactFeatures = contacts.map((c) => {
     const isTier2 = c.intelTier === 2;
@@ -1197,6 +1223,8 @@ export function renderWarSimStateToMap(
         const mappedKey =
           c.domain === 'air'
             ? 'fighter'
+            : c.domain === 'space'
+              ? 'satellite'
             : c.domain === 'sea'
               ? 'destroyer'
               : c.domain === 'sub'
@@ -1220,11 +1248,12 @@ export function renderWarSimStateToMap(
       const count = c.knownCount ?? (targetEntity?.count ?? 1);
       label = `${count > 1 ? `${count} × ` : ''}${cleanName}`;
     } else {
-      label = `⚠️ UNKNOWN ${c.domain.toUpperCase()} [?]`;
+      label = `${c.trackState === 'stale' ? 'STALE ' : ''}UNKNOWN ${c.domain.toUpperCase()} [?]`;
     }
 
     return {
       type: 'Feature' as const,
+      id: c.contactId,
       geometry: { type: 'Point' as const, coordinates: c.lastKnownLngLat },
       properties: {
         id: c.contactId,
@@ -1240,7 +1269,7 @@ export function renderWarSimStateToMap(
   // Ensure all NATO icon badges (for both friendly units and PID Tier 2 enemy contacts) are registered in MapLibre
   ensureIcons(map, iconSpecs);
 
-  (map.getSource(SRC_CONTACTS) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_CONTACTS, {
     type: 'FeatureCollection',
     features: contactFeatures,
   });
@@ -1260,6 +1289,7 @@ export function renderWarSimStateToMap(
     // Missile line trajectory
     missileFeatures.push({
       type: 'Feature',
+      id: `${m.id}:trail`,
       geometry: { type: 'LineString', coordinates: [m.originLngLat, m.currentLngLat] },
       properties: {
         color: trackColor,
@@ -1268,6 +1298,7 @@ export function renderWarSimStateToMap(
     // Missile warhead tip with rotating playback vector icon & label
     missileFeatures.push({
       type: 'Feature',
+      id: `${m.id}:head`,
       geometry: { type: 'Point', coordinates: m.currentLngLat },
       properties: {
         icon,
@@ -1276,7 +1307,7 @@ export function renderWarSimStateToMap(
       },
     });
   });
-  (map.getSource(SRC_MISSILES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_MISSILES, {
     type: 'FeatureCollection',
     features: missileFeatures,
   });
@@ -1330,7 +1361,7 @@ export function renderWarSimStateToMap(
     });
   });
 
-  (map.getSource(SRC_SATELLITES) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_SATELLITES, {
     type: 'FeatureCollection',
     features: satelliteFeatures,
   });
@@ -1402,7 +1433,7 @@ export function renderWarSimStateToMap(
     }
   });
 
-  (map.getSource(SRC_EW) as GeoJSONSource)?.setData({
+  setMeasuredSourceData(map, SRC_EW, {
     type: 'FeatureCollection',
     features: ewFeatures,
   });
@@ -1651,6 +1682,7 @@ export function updateWarSimPatrolPreview(
 }
 
 export function removeWarSimLayers(map: MLMap) {
+  stopPresentation(map);
   const layerIds = [
     LYR_MISSILES_LABEL,
     LYR_MISSILES_SYMBOL,
@@ -1660,6 +1692,8 @@ export function removeWarSimLayers(map: MLMap) {
     LYR_CONTACTS_LABEL,
     LYR_CONTACTS_CIRCLE,
     LYR_CONTACTS_HALO,
+    LYR_UNCERTAINTY_LINE,
+    LYR_UNCERTAINTY_FILL,
     LYR_ENTITIES_SYMBOL,
     LYR_ENTITIES_MARKER,
     LYR_ENTITIES_HALO,
@@ -1692,6 +1726,7 @@ export function removeWarSimLayers(map: MLMap) {
   const sourceIds = [
     SRC_MISSILES,
     SRC_CONTACTS,
+    SRC_UNCERTAINTY,
     SRC_ENTITIES,
     SRC_PATROLS,
     SRC_BASES,

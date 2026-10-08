@@ -14,7 +14,7 @@ import {
   type SimEntity,
   type WarSimSession,
 } from '@/lib/warSimTypes';
-import { type SystemSpec, type WeaponFacet } from '@/lib/specs';
+import { domainOf, type SystemSpec, type WeaponFacet } from '@/lib/specs';
 import { canStationAtBase, isGroundCombatUnit, isStaticAirDefense } from '@/lib/warSimRules';
 import { SortieTaskingModal } from './SortieTaskingModal';
 
@@ -60,7 +60,14 @@ export function BaseInspectorModal({
 
   const activeFaction = session.activeFaction;
   const quotaLedger = session.quotas[activeFaction] || {};
-  const currentTotal = stationedEntities.reduce((sum, e) => sum + e.count, 0);
+  const currentTotal = stationedEntities
+    .filter((entity) => entity.status !== 'destroyed')
+    .reduce((sum, entity) => sum + entity.count, 0);
+  const quickDeployMax = selectedSysId
+    ? Math.max(0, Math.min(quotaLedger[selectedSysId]?.count - quotaLedger[selectedSysId]?.deployed || 0,
+      base.maxCapacity - currentTotal))
+    : 0;
+  const quickDeployCount = Math.min(deployCount, quickDeployMax);
 
   const getStatusBadge = (e: SimEntity) => {
     switch (e.status) {
@@ -309,9 +316,9 @@ export function BaseInspectorModal({
                 <option value="">-- Choose system from national quota --</option>
                 {Object.entries(quotaLedger).map(([sysId, q]) => {
                   const spec = systemsLibrary.find((s) => s.id === sysId);
-                  const typeId = spec?.typeId || 'fighter';
-                  const domain = spec ? (spec.typeId === 'destroyer' ? 'sea' : 'air') : 'air';
-                  const stationable = canStationAtBase(base.type, { domain, typeId });
+                  const stationable = spec
+                    ? canStationAtBase(base.type, { domain: domainOf(spec), typeId: spec.typeId })
+                    : { allowed: false };
                   const remaining = q.count - q.deployed;
 
                   return (
@@ -330,8 +337,9 @@ export function BaseInspectorModal({
               <input
                 type="number"
                 min="1"
-                max={selectedSysId ? Math.min(quotaLedger[selectedSysId]?.count - quotaLedger[selectedSysId]?.deployed, base.maxCapacity - currentTotal) : 12}
-                value={deployCount}
+                max={Math.max(1, quickDeployMax)}
+                value={quickDeployMax > 0 ? Math.max(1, quickDeployCount) : 1}
+                disabled={quickDeployMax <= 0}
                 onChange={(e) => setDeployCount(Math.max(1, Number(e.target.value)))}
                 style={{
                   width: '70px',
@@ -355,9 +363,9 @@ export function BaseInspectorModal({
                 fontWeight: 600,
                 fontSize: '11px',
               }}
-              disabled={!selectedSysId || currentTotal >= base.maxCapacity}
+              disabled={!selectedSysId || quickDeployMax <= 0}
               onClick={() => {
-                onDeployToThisBase(selectedSysId, deployCount);
+                onDeployToThisBase(selectedSysId, quickDeployCount);
                 setQuickDeployOpen(false);
               }}
             >

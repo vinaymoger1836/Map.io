@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { Profiler, useEffect } from 'react';
+import { recordWarSimCommit, startWarSimDiagnostics } from '@/lib/warsim/diagnostics';
 
 /**
  * MapLibre reaches for `window` on import, so the map is loaded only in the
@@ -19,5 +21,9 @@ const EurasiaMap = dynamic(() => import('./EurasiaMap'), {
 });
 
 export default function MapShell() {
+  useEffect(() => startWarSimDiagnostics(), []);
+  if (process.env.NEXT_PUBLIC_WARSIM_DIAGNOSTICS === '1') {
+    return <Profiler id="map-shell" onRender={recordWarSimCommit}><EurasiaMap /></Profiler>;
+  }
   return <EurasiaMap />;
 }

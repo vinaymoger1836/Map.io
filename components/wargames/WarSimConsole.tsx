@@ -250,6 +250,8 @@ export function WarSimConsole({
   const enemyCountryName = countries?.find((c) => c.iso === session.enemyIso)?.name || session.enemyIso;
   const activeCountryName = isPlayer ? playerCountryName : enemyCountryName;
   const activeCountryIso = isPlayer ? session.playerIso : session.enemyIso;
+  const globalThreatCategory = systemDomainFilter === 'sea' ? 'naval'
+    : systemDomainFilter as 'all' | 'air' | 'sam' | 'ground';
   const otherCountryIso = isPlayer ? session.enemyIso : session.playerIso;
   const activeColor = isPlayer ? session.playerColor : session.enemyColor;
   const otherColor = isPlayer ? session.enemyColor : session.playerColor;
@@ -877,7 +879,7 @@ export function WarSimConsole({
                         className="wg-btn"
                         style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#4FA85F', color: '#4FA85F' }}
                         title="DEFCON 3 (Level 1): Shadow & Radar Lock. Track intruder on border breach; hold fire unless intruder fires first."
-                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_3', systemDomainFilter as any)}
+                        onClick={() => onSetGlobalThreatLevel(activeCountryIso, 'defcon_3', globalThreatCategory)}
                       >
                         🟢 DEFCON 3
                       </button>
@@ -886,7 +888,7 @@ export function WarSimConsole({
                         className="wg-btn"
                         style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#FFB020', color: '#FFB020' }}
                         title="DEFCON 2 (Level 2): Sovereign Defense. Immediate weapons-free engagement on any border breach."
-                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_2', systemDomainFilter as any)}
+                        onClick={() => onSetGlobalThreatLevel(activeCountryIso, 'defcon_2', globalThreatCategory)}
                       >
                         🟡 DEFCON 2
                       </button>
@@ -894,8 +896,8 @@ export function WarSimConsole({
                         type="button"
                         className="wg-btn"
                         style={{ fontSize: '9.5px', padding: '3px 4px', flex: 1, borderColor: '#D9534F', color: '#D9534F' }}
-                        title="DEFCON 1 (Level 3): Total Offensive. Weapons-free engagement anywhere across the map (neutral, enemy, international)."
-                        onClick={() => onSetGlobalThreatLevel(session.playerIso, 'defcon_1', systemDomainFilter as any)}
+                        title="DEFCON 1 (Level 3): Offensive engagement wherever theater ROE permits."
+                        onClick={() => onSetGlobalThreatLevel(activeCountryIso, 'defcon_1', globalThreatCategory)}
                       >
                         🔴 DEFCON 1
                       </button>
@@ -2868,7 +2870,7 @@ export function WarSimConsole({
                             color: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? '#D9534F' : undefined,
                             fontWeight: (selectedEntity.threatLevel || 'defcon_2') === 'defcon_1' ? 700 : 400,
                           }}
-                          title="DEFCON 1 (Level 3): Total Offensive. Weapons-free engagement anywhere across the map (neutral, enemy, international)."
+                          title="DEFCON 1 (Level 3): Offensive engagement wherever theater ROE permits."
                           onClick={() => onSetEntityThreatLevel?.(selectedEntity.id, 'defcon_1')}
                         >
                           🔴 DEFCON 1 (TOTAL)

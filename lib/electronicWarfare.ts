@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * Electronic Warfare (EW), GPS Denial & Anti-Radiation Missiles (SEAD/DEAD) Engine
  *
@@ -194,7 +195,7 @@ export function stepElectronicWarfare(
     // Log significant first-time EW suppression events
     if (isJammed && !entity.isRadarJammed && jammingAuthor) {
       ewEvents.push({
-        id: `evt-ew-jam-${Date.now()}-${entity.id.slice(-4)}`,
+        id: `evt-ew-jam-${simNow()}-${entity.id.slice(-4)}`,
         simTimeSec: simTime,
         timeFormatted: `${Math.floor(simTime / 60)}m`,
         faction: entity.iso === session.playerIso ? 'enemy' : 'player',
@@ -325,7 +326,7 @@ export function orderSeadAntiRadiationStrike(
   const tFlySec = Math.max(15, Math.round((distKm / armSpeedKmh) * 3600));
 
   const armMissile: MissileFlyoutTrack = {
-    id: `arm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `arm-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     originLngLat: attacker.lngLat,
     targetLngLat: targetRadar.lngLat,
     currentLngLat: attacker.lngLat,
@@ -348,7 +349,7 @@ export function orderSeadAntiRadiationStrike(
   const newEvents: SimBattleEvent[] = [
     ...session.eventLog,
     {
-      id: `evt-arm-launch-${Date.now()}`,
+      id: `evt-arm-launch-${simNow()}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: `${Math.floor(session.simTimeSec / 60)}m`,
       faction: isPlayer ? 'player' : 'enemy',

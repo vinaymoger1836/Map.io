@@ -22,33 +22,11 @@ import {
   type BattleOpsTask,
   type AirspaceRoeDoctrine,
 } from './warSimTypes';
-import {
-  tickWarSim,
-  deployEntityToBase,
-  deployAutonomousEntity,
-  orderPatrol,
-  orderEntityRtb,
-  orderStrikeMission,
-  addSimBase,
-  renameSimBase,
-  updateEntityRcs,
-  createDefaultBattleOpsPlan,
-  orderAerialRefueling,
-  setSessionAirspaceRoe,
-  launchAsatStrike,
-  launchSeadStrike,
-  setEntityEwMode,
-  updateEntityThreatLevel,
-  updateGlobalFactionThreatLevel,
-  rearmCarrierAirWing,
-  orderCarrierAirStrike,
-  CARRIER_LOADOUT_PRESETS,
-  isCarrierPlatform,
-} from './warSimEngine';
+import { CARRIER_LOADOUT_PRESETS } from './carrierOps';
+import { useSimulationRuntime } from './warsim/useSimulationRuntime';
 import { type SystemThreatLevel } from './warSimTypes';
 import { type SystemSpec, domainOf } from './specs';
 import { isGroundCombatUnit } from './warSimRules';
-import { writeDoc } from './store';
 import { removeWarSimLayers } from './warSimLayers';
 import {
   getKnownHostileThreatZones,
@@ -97,30 +75,31 @@ export interface UseWarSimProps {
 
 export function useWarSim({
   initialSession,
-  systemsLibrary,
+  systemsLibrary: catalogue,
   mapRef,
   onClose,
 }: UseWarSimProps) {
-  const [session, setSession] = useState<WarSimSession | null>(initialSession);
+  const runtime = useSimulationRuntime(initialSession, catalogue);
+  const { session, dispatch } = runtime;
+  const systemsLibrary = runtime.definitions;
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedBaseId, setSelectedBaseId] = useState<string | null>(null);
   const [targetPicking, setTargetPicking] = useState<TargetPickingState | null>(null);
   const [activeWeaponIndex, setActiveWeaponIndex] = useState<number | null>(null);
   const [showAllEnvelopes, setShowAllEnvelopes] = useState<boolean>(false);
+  const routeWasRunning = useRef(false);
 
   // Reset active weapon envelope preview when entity selection changes
   useEffect(() => {
     setActiveWeaponIndex(null);
   }, [selectedEntityId]);
 
-  const lastTickTimeRef = useRef<number>(Date.now());
   const sessionRef = useRef<WarSimSession | null>(session);
   sessionRef.current = session;
 
   // Sync internal session state from initialSession prop
   useEffect(() => {
-    setSession(initialSession);
     if (!initialSession) {
       setSelectedEntityId(null);
       setSelectedContactId(null);
@@ -134,93 +113,19 @@ export function useWarSim({
 
 
   // -------------------------------------------------------------
-  // Master Clock & Kinematic Loop (Ticks every ~100 ms)
-  // -------------------------------------------------------------
-  useEffect(() => {
-    if (!session || session.status !== 'running') return;
-
-    lastTickTimeRef.current = Date.now();
-
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const dtRealSec = (now - lastTickTimeRef.current) / 1000;
-      lastTickTimeRef.current = now;
-
-      if (sessionRef.current && sessionRef.current.status === 'running') {
-        const next = tickWarSim(sessionRef.current, dtRealSec, systemsLibrary);
-        setSession(next);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [session?.status, systemsLibrary]);
-
-  // Auto-Save to Store every 4 seconds
-  useEffect(() => {
-    if (!session || session.status === 'setup') return;
-
-    // Immediately save on state transition
-    if (sessionRef.current) {
-      writeDoc('warsim-session', sessionRef.current);
-    }
-
-    const saveInterval = setInterval(() => {
-      if (sessionRef.current && sessionRef.current.status !== 'setup') {
-        writeDoc('warsim-session', sessionRef.current);
-      }
-    }, 4000);
-
-    return () => clearInterval(saveInterval);
-  }, [session?.id, session?.status]);
-
-  // Persist paused state immediately before page unload / browser restart
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (sessionRef.current && sessionRef.current.status !== 'setup') {
-        writeDoc('warsim-session', {
-          ...sessionRef.current,
-          status: 'paused',
-        });
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  // -------------------------------------------------------------
   // User Commands & Actions
   // -------------------------------------------------------------
 
   const togglePlay = useCallback(() => {
-    setSession((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        status: prev.status === 'running' ? 'paused' : 'running',
-      };
-    });
+    dispatch({ type: 'togglePlay', args: [] });
   }, []);
 
   const setSpeedMultiplier = useCallback((multiplier: number) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        timeMultiplier: multiplier,
-      };
-    });
+    dispatch({ type: 'setSpeedMultiplier', args: [multiplier] });
   }, []);
 
   const switchActiveFaction = useCallback(() => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const nextFaction = prev.activeFaction === 'player' ? 'enemy' : 'player';
-      return {
-        ...prev,
-        activeFaction: nextFaction,
-      };
-    });
+    dispatch({ type: 'switchActiveFaction', args: [] });
     setSelectedEntityId(null);
     setSelectedContactId(null);
     setSelectedBaseId(null);
@@ -229,20 +134,14 @@ export function useWarSim({
 
   const deployUnitToBase = useCallback(
     (baseId: string, systemId: string, count: number) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return deployEntityToBase(prev, baseId, systemId, count, systemsLibrary);
-      });
+      dispatch({ type: 'deployUnitToBase', args: [baseId, systemId, count] });
     },
     [systemsLibrary]
   );
 
   const deployAutonomousBattery = useCallback(
     (systemId: string, count: number, lngLat: [number, number]) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return deployAutonomousEntity(prev, systemId, count, lngLat, systemsLibrary);
-      });
+      dispatch({ type: 'deployAutonomousBattery', args: [systemId, count, lngLat] });
       setTargetPicking(null);
     },
     [systemsLibrary]
@@ -259,10 +158,7 @@ export function useWarSim({
       customWeapons?: import('./specs').WeaponFacet[],
       rcs?: number
     ) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return orderPatrol(prev, entityId, targetLngLat, patrolRadiusKm, altitudeM, emcon, sortieCount, customWeapons, 'orbit', undefined, rcs);
-      });
+      dispatch({ type: 'orderSortieToPoint', args: [entityId, targetLngLat, patrolRadiusKm, sortieCount, altitudeM, emcon, customWeapons, rcs] });
       setTargetPicking(null);
     },
     []
@@ -270,10 +166,7 @@ export function useWarSim({
 
   const orderRtb = useCallback(
     (entityId: string) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return orderEntityRtb(prev, entityId);
-      });
+      dispatch({ type: 'orderRtb', args: [entityId] });
       setTargetPicking(null);
     },
     []
@@ -293,24 +186,7 @@ export function useWarSim({
       weaponsToFire?: import('./warSimTypes').WeaponSalvoItem[],
       attackWaypoints?: [number, number][]
     ) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return orderStrikeMission(
-          prev,
-          attackerEntityId,
-          targetEntityId,
-          targetLngLat,
-          weaponIndex,
-          salvoCount,
-          postStrikeAction,
-          customPostLngLat,
-          systemsLibrary,
-          sortieCount,
-          customWeapons,
-          weaponsToFire,
-          attackWaypoints
-        );
-      });
+      dispatch({ type: 'orderStrike', args: [attackerEntityId, targetEntityId, targetLngLat, weaponIndex, salvoCount, postStrikeAction, customPostLngLat, sortieCount, customWeapons, weaponsToFire, attackWaypoints] });
       setTargetPicking(null);
     },
     [systemsLibrary]
@@ -318,11 +194,7 @@ export function useWarSim({
 
   const createBaseAtLocation = useCallback(
     (name: string, type: BaseType, lngLat: [number, number]) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        const iso = prev.activeFaction === 'player' ? prev.playerIso : prev.enemyIso;
-        return addSimBase(prev, name, type, iso, lngLat);
-      });
+      dispatch({ type: 'createBaseAtLocation', args: [name, type, lngLat] });
       setTargetPicking(null);
     },
     []
@@ -330,20 +202,14 @@ export function useWarSim({
 
   const renameBase = useCallback(
     (baseId: string, newName: string) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return renameSimBase(prev, baseId, newName);
-      });
+      dispatch({ type: 'renameBase', args: [baseId, newName] });
     },
     []
   );
 
   const orderRefuelAtTanker = useCallback(
     (receiverEntityId: string, tankerEntityId?: string, targetFuelPct = 100) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return orderAerialRefueling(prev, receiverEntityId, tankerEntityId, targetFuelPct, systemsLibrary);
-      });
+      dispatch({ type: 'orderRefuelAtTanker', args: [receiverEntityId, tankerEntityId, targetFuelPct] });
     },
     [systemsLibrary]
   );
@@ -475,8 +341,9 @@ export function useWarSim({
       const targetEntity = session?.entities.find((e) => e.id === params.targetEntityId);
       const targetName = targetEntity?.name || 'Target Track';
 
-      // Temporarily pause clock while plotting attack route
-      setSession((prev) => (prev ? { ...prev, status: 'paused' } : null));
+      // Temporarily pause clock while plotting attack route.
+      routeWasRunning.current = session?.status === 'running';
+      dispatch({ type: 'setPlayback', args: ['paused'] });
 
       setTargetPicking({
         mode: 'strike_route',
@@ -498,7 +365,8 @@ export function useWarSim({
       label?: string;
       onConfirm: (waypoints: [number, number][]) => void;
     }) => {
-      setSession((prev) => (prev ? { ...prev, status: 'paused' } : null));
+      routeWasRunning.current = sessionRef.current?.status === 'running';
+      dispatch({ type: 'setPlayback', args: ['paused'] });
       setTargetPicking({
         mode: 'strike_route',
         originLngLat: params.originLngLat,
@@ -531,14 +399,7 @@ export function useWarSim({
   );
 
   const cancelTargetPicking = useCallback(() => {
-    setSession((prev) => {
-      if (!prev) return null;
-      // If was planning strike route, resume clock
-      if (targetPicking?.mode === 'strike_route' && prev.status === 'paused') {
-        return { ...prev, status: 'running' };
-      }
-      return prev;
-    });
+    if (targetPicking?.mode === 'strike_route' && routeWasRunning.current) dispatch({ type: 'setPlayback', args: ['running'] });
     setTargetPicking(null);
   }, [targetPicking]);
 
@@ -598,7 +459,7 @@ export function useWarSim({
     if (targetPicking.onCorridorConfirmed) {
       const waypoints = targetPicking.pickedWaypoints ?? [];
       targetPicking.onCorridorConfirmed(waypoints);
-      setSession((prev) => (prev && prev.status === 'paused' ? { ...prev, status: 'running' } : prev));
+      dispatch({ type: 'setPlayback', args: ['running'] });
       setTargetPicking(null);
       return;
     }
@@ -606,29 +467,9 @@ export function useWarSim({
     if (targetPicking.mode === 'strike_route' && targetPicking.strikeParams) {
       const waypoints = targetPicking.pickedWaypoints ?? [];
       const p = targetPicking.strikeParams;
-      setSession((prev) => {
-        if (!prev) return null;
-        const updated = orderStrikeMission(
-          prev,
-          p.attackerEntityId,
-          p.targetEntityId,
-          p.targetLngLat,
-          p.weaponIndex,
-          p.salvoCount,
-          p.postStrikeAction,
-          p.customPostLngLat,
-          systemsLibrary,
-          p.sortieCount,
-          p.customWeapons,
-          p.weaponsToFire,
-          waypoints.length > 0 ? waypoints : undefined
-        );
-        // Resume simulation clock
-        return {
-          ...updated,
-          status: 'running',
-        };
-      });
+      dispatch({ type: 'orderStrike', args: [p.attackerEntityId, p.targetEntityId, p.targetLngLat,
+        p.weaponIndex, p.salvoCount, p.postStrikeAction, p.customPostLngLat, p.sortieCount,
+        p.customWeapons, p.weaponsToFire, waypoints.length ? waypoints : undefined, true] });
       setTargetPicking(null);
       return;
     }
@@ -651,22 +492,9 @@ export function useWarSim({
       return;
     }
 
-    setSession((prev) => {
-      if (!prev) return null;
-      return orderPatrol(
-        prev,
-        targetPicking.entityId!,
-        waypoints[0],
-        0,
-        targetPicking.altitudeM ?? 7000,
-        targetPicking.emcon ?? 'active',
-        targetPicking.count,
-        targetPicking.customWeapons,
-        'waypoints',
-        waypoints,
-        targetPicking.rcs
-      );
-    });
+    dispatch({ type: 'orderWaypointPatrol', args: [targetPicking.entityId, waypoints,
+      targetPicking.altitudeM ?? 7000, targetPicking.emcon ?? 'active', targetPicking.count,
+      targetPicking.customWeapons, targetPicking.rcs] });
     setTargetPicking(null);
   }, [targetPicking, orderSortieToPoint, systemsLibrary]);
 
@@ -718,116 +546,29 @@ export function useWarSim({
 
   const setEntityRcs = useCallback(
     (entityId: string, rcs: number) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        return updateEntityRcs(prev, entityId, rcs);
-      });
+      dispatch({ type: 'setEntityRcs', args: [entityId, rcs] });
     },
     []
   );
 
   const createNetwork = useCallback((name: string, doctrine: import('./warSimTypes').NetworkDoctrine = 'layered_optimal') => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const faction = prev.activeFaction;
-      const iso = faction === 'player' ? prev.playerIso : prev.enemyIso;
-      const newNet: import('./warSimTypes').BattlefieldNetwork = {
-        id: `net-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
-        name: name.trim() || `${iso} Tactical Datalink Grid`,
-        faction,
-        iso,
-        doctrine,
-        nodes: [],
-        sharedContactIds: [],
-        othTargetingEnabled: true,
-      };
-      return {
-        ...prev,
-        networks: [...(prev.networks || []), newNet],
-      };
-    });
+    dispatch({ type: 'createNetwork', args: [name, doctrine] });
   }, []);
 
   const assignEntityToNetwork = useCallback((entityId: string, networkId: string) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const targetEntity = prev.entities.find((e) => e.id === entityId);
-      if (!targetEntity || targetEntity.status === 'docked' || targetEntity.status === 'turnaround' || targetEntity.status === 'in_repair' || targetEntity.status === 'destroyed') {
-        return prev;
-      }
-      const updatedEntities = prev.entities.map((e) => (e.id === entityId ? { ...e, networkId } : e));
-      const targetNet = prev.networks?.find((n) => n.id === networkId);
-      const updatedNetworks = (prev.networks || []).map((net) => {
-        if (net.id === networkId) {
-          if (!net.nodes.some((n) => n.entityId === entityId)) {
-            return {
-              ...net,
-              nodes: [
-                ...net.nodes,
-                {
-                  entityId,
-                  role: 'shooter' as const,
-                  datalinkStatus: 'active' as const,
-                  channelCapacity: 4,
-                  activeChannelsUsed: 0,
-                },
-              ],
-            };
-          }
-        } else {
-          return {
-            ...net,
-            nodes: net.nodes.filter((n) => n.entityId !== entityId),
-          };
-        }
-        return net;
-      });
-      return {
-        ...prev,
-        entities: updatedEntities,
-        networks: updatedNetworks,
-      };
-    });
+    dispatch({ type: 'assignEntityToNetwork', args: [entityId, networkId] });
   }, []);
 
   const removeEntityFromNetwork = useCallback((entityId: string) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const updatedEntities = prev.entities.map((e) => (e.id === entityId ? { ...e, networkId: undefined } : e));
-      const updatedNetworks = (prev.networks || []).map((net) => ({
-        ...net,
-        nodes: net.nodes.filter((n) => n.entityId !== entityId),
-      }));
-      return {
-        ...prev,
-        entities: updatedEntities,
-        networks: updatedNetworks,
-      };
-    });
+    dispatch({ type: 'removeEntityFromNetwork', args: [entityId] });
   }, []);
 
   const setNetworkDoctrine = useCallback((networkId: string, doctrine: import('./warSimTypes').NetworkDoctrine) => {
-    setSession((prev) => {
-      if (!prev || !prev.networks) return prev;
-      const updatedNetworks = prev.networks.map((n) => (n.id === networkId ? { ...n, doctrine } : n));
-      return {
-        ...prev,
-        networks: updatedNetworks,
-      };
-    });
+    dispatch({ type: 'setNetworkDoctrine', args: [networkId, doctrine] });
   }, []);
 
   const toggleNetworkOth = useCallback((networkId: string) => {
-    setSession((prev) => {
-      if (!prev || !prev.networks) return prev;
-      const updatedNetworks = prev.networks.map((n) =>
-        n.id === networkId ? { ...n, othTargetingEnabled: !n.othTargetingEnabled } : n
-      );
-      return {
-        ...prev,
-        networks: updatedNetworks,
-      };
-    });
+    dispatch({ type: 'toggleNetworkOth', args: [networkId] });
   }, []);
 
   // -------------------------------------------------------------
@@ -835,168 +576,47 @@ export function useWarSim({
   // -------------------------------------------------------------
 
   const updateBattleOpsPlan = useCallback((updates: Partial<BattleOpsPlan>) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
-      return {
-        ...prev,
-        battleOpsPlan: {
-          ...currentPlan,
-          ...updates,
-        },
-      };
-    });
+    dispatch({ type: 'updateBattleOpsPlan', args: [updates] });
   }, []);
 
   const addBattleOpsPhase = useCallback((name?: string, triggerDelaySec?: number) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
-      const nextNum = currentPlan.phases.length + 1;
-      const lastDelay = currentPlan.phases.length > 0
-        ? currentPlan.phases[currentPlan.phases.length - 1].triggerDelaySec
-        : 0;
-      const newPhase: BattleOpsPhase = {
-        id: `phase-${Date.now()}-${nextNum}`,
-        phaseNumber: nextNum,
-        name: name || `Phase ${nextNum}: Strategic Strike Package`,
-        triggerDelaySec: triggerDelaySec !== undefined ? triggerDelaySec : lastDelay + 900,
-        status: 'pending',
-        tasks: [],
-      };
-      return {
-        ...prev,
-        battleOpsPlan: {
-          ...currentPlan,
-          phases: [...currentPlan.phases, newPhase],
-        },
-      };
-    });
+    dispatch({ type: 'addBattleOpsPhase', args: [name, triggerDelaySec] });
   }, []);
 
   const removeBattleOpsPhase = useCallback((phaseId: string) => {
-    setSession((prev) => {
-      if (!prev || !prev.battleOpsPlan) return prev;
-      const filtered = prev.battleOpsPlan.phases.filter((p) => p.id !== phaseId);
-      const renumbered = filtered.map((p, idx) => ({ ...p, phaseNumber: idx + 1 }));
-      return {
-        ...prev,
-        battleOpsPlan: {
-          ...prev.battleOpsPlan,
-          phases: renumbered,
-        },
-      };
-    });
+    dispatch({ type: 'removeBattleOpsPhase', args: [phaseId] });
   }, []);
 
   const updateBattleOpsPhase = useCallback((phaseId: string, updates: Partial<BattleOpsPhase>) => {
-    setSession((prev) => {
-      if (!prev || !prev.battleOpsPlan) return prev;
-      const updatedPhases = prev.battleOpsPlan.phases.map((p) => (p.id === phaseId ? { ...p, ...updates } : p));
-      return {
-        ...prev,
-        battleOpsPlan: {
-          ...prev.battleOpsPlan,
-          phases: updatedPhases,
-        },
-      };
-    });
+    dispatch({ type: 'updateBattleOpsPhase', args: [phaseId, updates] });
   }, []);
 
   const addBattleOpsTask = useCallback((phaseId: string, taskData: Omit<BattleOpsTask, 'id' | 'status'>) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
-      const newTask: BattleOpsTask = {
-        ...taskData,
-        id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        status: 'pending',
-      };
-      const updatedPhases = currentPlan.phases.map((p) =>
-        p.id === phaseId ? { ...p, tasks: [...p.tasks, newTask] } : p
-      );
-      return {
-        ...prev,
-        battleOpsPlan: {
-          ...currentPlan,
-          phases: updatedPhases,
-        },
-      };
-    });
+    dispatch({ type: 'addBattleOpsTask', args: [phaseId, taskData] });
   }, []);
 
   const removeBattleOpsTask = useCallback((phaseId: string, taskId: string) => {
-    setSession((prev) => {
-      if (!prev || !prev.battleOpsPlan) return prev;
-      const updatedPhases = prev.battleOpsPlan.phases.map((p) =>
-        p.id === phaseId ? { ...p, tasks: p.tasks.filter((t) => t.id !== taskId) } : p
-      );
-      return {
-        ...prev,
-        battleOpsPlan: {
-          ...prev.battleOpsPlan,
-          phases: updatedPhases,
-        },
-      };
-    });
+    dispatch({ type: 'removeBattleOpsTask', args: [phaseId, taskId] });
   }, []);
 
   const startBattleOpsExecution = useCallback(() => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const currentPlan = prev.battleOpsPlan || createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
-      const resetPhases: BattleOpsPhase[] = currentPlan.phases.map((p) => ({
-        ...p,
-        status: 'pending',
-        tasks: p.tasks.map((t) => ({ ...t, status: 'pending', resultSummary: undefined, salvoId: undefined })),
-      }));
-
-      const plan: BattleOpsPlan = {
-        ...currentPlan,
-        status: 'executing',
-        startedAtSimTimeSec: prev.simTimeSec,
-        completedAtSimTimeSec: undefined,
-        finalReportGenerated: false,
-        phases: resetPhases,
-      };
-
-      return {
-        ...prev,
-        status: 'running', // Automatically unpause the simulation
-        battleOpsPlan: plan,
-      };
-    });
+    dispatch({ type: 'startBattleOpsExecution', args: [] });
   }, []);
 
   const resetBattleOpsPlan = useCallback(() => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const newPlan = createDefaultBattleOpsPlan(prev.playerIso, prev.enemyIso);
-      return {
-        ...prev,
-        battleOpsPlan: newPlan,
-      };
-    });
+    dispatch({ type: 'resetBattleOpsPlan', args: [] });
   }, []);
 
   const setAirspaceRoe = useCallback((doctrine: AirspaceRoeDoctrine) => {
-    setSession((prev) => (prev ? setSessionAirspaceRoe(prev, doctrine) : null));
+    dispatch({ type: 'setAirspaceRoe', args: [doctrine] });
   }, []);
 
   const orderAsatStrike = useCallback((launcherEntityId: string, targetSatelliteId: string) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const res = launchAsatStrike(prev, launcherEntityId, targetSatelliteId);
-      return res.session;
-    });
+    dispatch({ type: 'orderAsatStrike', args: [launcherEntityId, targetSatelliteId] });
   }, []);
 
   const orderSeadStrike = useCallback((attackerEntityId: string, targetRadarEntityId: string) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const res = launchSeadStrike(prev, attackerEntityId, targetRadarEntityId);
-      return res.session;
-    });
+    dispatch({ type: 'orderSeadStrike', args: [attackerEntityId, targetRadarEntityId] });
   }, []);
 
   const updateEntityEwMode = useCallback((
@@ -1004,11 +624,11 @@ export function useWarSim({
     mode: 'off' | 'standoff_jamming' | 'gps_denial' | 'self_protection',
     jammingTargetLngLat?: [number, number]
   ) => {
-    setSession((prev) => (prev ? setEntityEwMode(prev, entityId, mode, jammingTargetLngLat) : null));
+    dispatch({ type: 'updateEntityEwMode', args: [entityId, mode, jammingTargetLngLat] });
   }, []);
 
   const setEntityThreatLevel = useCallback((entityId: string, threatLevel: SystemThreatLevel) => {
-    setSession((prev) => (prev ? updateEntityThreatLevel(prev, entityId, threatLevel) : null));
+    dispatch({ type: 'setEntityThreatLevel', args: [entityId, threatLevel] });
   }, []);
 
   const setGlobalThreatLevel = useCallback((
@@ -1016,18 +636,14 @@ export function useWarSim({
     threatLevel: SystemThreatLevel,
     typeCategory?: 'all' | 'air' | 'sam' | 'naval' | 'ground'
   ) => {
-    setSession((prev) => (prev ? updateGlobalFactionThreatLevel(prev, factionIso, threatLevel, typeCategory) : null));
+    dispatch({ type: 'setGlobalThreatLevel', args: [factionIso, threatLevel, typeCategory] });
   }, []);
 
   const orderRearmCarrierAirWing = useCallback((
     squadronEntityId: string,
     presetKey: keyof typeof CARRIER_LOADOUT_PRESETS
   ) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const res = rearmCarrierAirWing(prev, squadronEntityId, presetKey);
-      return res.session;
-    });
+    dispatch({ type: 'orderRearmCarrierAirWing', args: [squadronEntityId, presetKey] });
   }, []);
 
   const orderLaunchCarrierStrike = useCallback((
@@ -1038,25 +654,12 @@ export function useWarSim({
     weaponIndex = 0,
     salvoCount = 2
   ) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const res = orderCarrierAirStrike(
-        prev,
-        carrierEntityId,
-        squadronEntityId,
-        targetEntityId,
-        targetLngLat,
-        weaponIndex,
-        salvoCount,
-        systemsLibrary
-      );
-      return res.session;
-    });
+    dispatch({ type: 'orderLaunchCarrierStrike', args: [carrierEntityId, squadronEntityId, targetEntityId, targetLngLat, weaponIndex, salvoCount] });
   }, [systemsLibrary]);
 
   const exitSim = useCallback(() => {
     // 1. Immediately reset internal session and all sub-selections
-    setSession(null);
+    runtime.close();
     setSelectedEntityId(null);
     setSelectedContactId(null);
     setSelectedBaseId(null);
@@ -1064,8 +667,7 @@ export function useWarSim({
     setActiveWeaponIndex(null);
     setShowAllEnvelopes(false);
 
-    // 2. Erase persisted session doc so subsequent sessions start completely fresh
-    writeDoc('warsim-session', null);
+    // Persistence is serialized by the runtime client, including the final clear.
 
     // 3. Cleanly remove all live WarSim MapLibre layers and sources
     if (mapRef.current) {
@@ -1082,7 +684,13 @@ export function useWarSim({
 
   return {
     session,
-    setSession,
+    dispatchSimulation: runtime.dispatch,
+    getReplay: runtime.getReplay,
+    systemsLibrary,
+    runtimeError: runtime.error,
+    runtimeDiagnostics: runtime.diagnostics,
+    dismissRuntimeError: runtime.dismissError,
+    restartRuntime: runtime.restart,
     activeFaction,
     activeCountryIso,
     activeCountryColor,

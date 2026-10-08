@@ -1,3 +1,4 @@
+import { simNow, simRandom } from './warsim/context';
 /**
  * War Simulation Execution & Kinematics Engine
  *
@@ -293,7 +294,7 @@ export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwor
 
   if (!networks.some((n) => n.faction === 'player')) {
     networks.push({
-      id: `net-player-${Date.now().toString(36)}`,
+      id: `net-player-${simNow().toString(36)}`,
       name: `${session.playerIso} Theater Datalink Grid (CEC)`,
       faction: 'player',
       iso: session.playerIso,
@@ -306,7 +307,7 @@ export function ensureDefaultNetworks(session: WarSimSession): BattlefieldNetwor
 
   if (!networks.some((n) => n.faction === 'enemy')) {
     networks.push({
-      id: `net-enemy-${Date.now().toString(36)}`,
+      id: `net-enemy-${simNow().toString(36)}`,
       name: `${session.enemyIso} Integrated Air Defense Net`,
       faction: 'enemy',
       iso: session.enemyIso,
@@ -431,7 +432,7 @@ export function tickWarSim(
     lngLat?: [number, number]
   ) => {
     newEvents.push({
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: newSimTimeSec,
       timeFormatted,
       faction,
@@ -444,7 +445,7 @@ export function tickWarSim(
 
   const logReport = (report: Omit<CombatReport, 'id' | 'simTimeSec' | 'timeFormatted'>) => {
     newReports.push({
-      id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: `rep-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`,
       simTimeSec: newSimTimeSec,
       timeFormatted,
       ...report,
@@ -494,7 +495,7 @@ export function tickWarSim(
   // -------------------------------------------------------------
   // 3. Update Entities (Kinematics, Orbit, Fuel, Lifecycle)
   // -------------------------------------------------------------
-  const updatedEntities: SimEntity[] = session.entities.map((entity) => {
+  let updatedEntities: SimEntity[] = session.entities.map((entity) => {
     if (entity.status === 'destroyed') return entity;
 
     const spec = systemsLibrary.find((s) => s.id === entity.systemId);
@@ -1239,7 +1240,7 @@ export function tickWarSim(
             };
           });
 
-          const salvoId = `salvo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const salvoId = `salvo-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`;
 
           // Spawn salvoCount missiles in activeMissiles with sequential ripple launch times
           for (let s = 0; s < salvoCount; s++) {
@@ -1248,7 +1249,7 @@ export function tickWarSim(
 
             const munitionProfile = resolveMunitionPhysicalProfile(wName, missileCategory, missileSpeed);
             const newMissile: MissileFlyoutTrack = {
-              id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+              id: `msl-${simNow()}-${wIdx}-${s}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
               originLngLat: entity.lngLat,
               targetLngLat: targetPos,
               currentLngLat: entity.lngLat,
@@ -1284,7 +1285,7 @@ export function tickWarSim(
           : `Hostile ${targetDomain.toUpperCase()} Track (Tier 1 Sensor Track)`;
 
         const totalSalvoSize = itemsToFire.reduce((sum, it) => sum + (it.salvoCount || 1), 0);
-        const activeSalvoId = session.activeMissiles[session.activeMissiles.length - 1]?.salvoId ?? `salvo-${Date.now()}`;
+        const activeSalvoId = session.activeMissiles[session.activeMissiles.length - 1]?.salvoId ?? `salvo-${simNow()}`;
 
         // Register Salvo in Tracker to consolidate into a single comprehensive After-Action Report
         session.salvoTrackers = session.salvoTrackers || [];
@@ -1404,7 +1405,7 @@ export function tickWarSim(
     }
 
     const currentLoc = resolveAirspaceLocation(entity.lngLat, session.playerIso, session.enemyIso);
-    const incursion = evaluateBorderIncursion(entity, currentLoc, entity.currentAirspace);
+    const incursion = evaluateBorderIncursion(entity, currentLoc, entity.currentAirspace, session.playerIso);
 
     if (incursion) {
       incursion.simTimeSec = session.simTimeSec;
@@ -1416,6 +1417,8 @@ export function tickWarSim(
           ? `🚨 Sovereign Airspace Incursion: ${entity.name}`
           : incursion.incursionType === 'neutral_violation'
             ? `⚠️ Neutral Airspace Intrusion: ${entity.name}`
+            : incursion.incursionType === 'friendly_entry'
+              ? `Friendly Airspace Entry: ${entity.name}`
             : `ℹ️ International Airspace: ${entity.name}`;
 
       const detail =
@@ -1423,6 +1426,8 @@ export function tickWarSim(
           ? `${entity.name} crossed the international border from ${incursion.fromName} into ${incursion.toName} sovereign airspace!`
           : incursion.incursionType === 'neutral_violation'
             ? `${entity.name} entered airspace over neutral ${incursion.toName} without diplomatic overflight clearance.`
+            : incursion.incursionType === 'friendly_entry'
+              ? `${entity.name} entered friendly airspace over ${incursion.toName}.`
             : `${entity.name} exited ${incursion.fromName} sovereign airspace into international airspace.`;
 
       logEvent(
@@ -1440,6 +1445,9 @@ export function tickWarSim(
       currentAirspace: currentLoc,
     };
   });
+  // Combat mutates updatedEntities below. Keep the airspace projection and
+  // combat pass on the same entity objects so damage survives later systems.
+  updatedEntities = finalEntitiesWithAirspace;
 
   // -------------------------------------------------------------
   // 4. Multi-Layered Air Defense, Defensive Interceptions & Impacts
@@ -1461,6 +1469,10 @@ export function tickWarSim(
       if (liveThreat) {
         m.targetLngLat = liveThreat.currentLngLat;
       }
+    }
+    if (m.weaponCategory === 'sam' && !m.targetMissileId) {
+      const liveTarget = updatedEntities.find((entity) => entity.id === m.targetEntityId && entity.status !== 'destroyed');
+      if (liveTarget) m.targetLngLat = liveTarget.lngLat;
     }
 
     // Dynamic guidance for ASAT interceptors tracking orbiting satellites in Low Earth Orbit
@@ -1504,7 +1516,7 @@ export function tickWarSim(
         threat.currentLngLat = collisionLngLat;
 
         const effectivePk = sam.interceptorPk ?? 0.82;
-        if (Math.random() < effectivePk) {
+        if (simRandom() < effectivePk) {
           // Both missiles collide and are neutralized simultaneously
           threat.isIntercepted = true;
           sam.isIntercepted = true;
@@ -1578,7 +1590,7 @@ export function tickWarSim(
       if (distToSat <= 35 || asat.progress >= 0.95) {
         asat.isIntercepted = true;
         const pk = asat.interceptorPk ?? 0.88;
-        if (Math.random() < pk) {
+        if (simRandom() < pk) {
           targetSat.status = 'destroyed';
           logEvent(
             asat.attackerIso === session.playerIso ? 'player' : 'enemy',
@@ -1604,7 +1616,7 @@ export function tickWarSim(
   // Group active incoming threats by salvo/target to coordinate network fire
   const threatGroups = new Map<string, MissileFlyoutTrack[]>();
   for (const m of session.activeMissiles) {
-    if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress >= 1.0) continue;
+    if (m.isIntercepted || (m.weaponCategory === 'sam' && m.targetMissileId) || m.progress >= 1.0) continue;
     if (session.simTimeSec < m.startSimTimeSec) continue;
     const groupKey = m.salvoId || m.targetEntityId;
     const list = threatGroups.get(groupKey) || [];
@@ -1686,7 +1698,9 @@ export function tickWarSim(
         }
 
         // Airspace Sovereignty & Rules of Engagement (ROE) check
-        const targetAirspace = resolveAirspaceLocation(m.currentLngLat, session.playerIso, session.enemyIso);
+        const targetAirspace = resolveAirspaceLocation(m.currentLngLat,
+          def.iso === session.playerIso ? session.playerIso : session.enemyIso,
+          def.iso === session.playerIso ? session.enemyIso : session.playerIso);
         const roeDoctrine = session.airspaceRoeDoctrine || 'weapons_free';
         const roeCheck = canEngageUnderAirspaceRoe(targetAirspace, roeDoctrine, def.iso === session.playerIso ? 'player' : 'enemy');
         if (!roeCheck.canFire) {
@@ -1765,7 +1779,7 @@ export function tickWarSim(
 
           // Spawn interceptor directly tracking target threat
           const interceptorTrack: MissileFlyoutTrack = {
-            id: `msl-int-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+            id: `msl-int-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
             originLngLat: def.lngLat,
             targetLngLat: m.currentLngLat,
             currentLngLat: def.lngLat,
@@ -1831,7 +1845,7 @@ export function tickWarSim(
   const ciwsEngagementsPerSalvo = new Map<string, number>();
 
   for (const m of session.activeMissiles) {
-    if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress < 0.95 || m.progress >= 1.0) continue;
+    if (m.isIntercepted || (m.weaponCategory === 'sam' && m.targetMissileId) || m.progress < 0.95 || m.progress >= 1.0) continue;
 
     const targetEntity = updatedEntities.find((e) => e.id === m.targetEntityId);
     if (
@@ -1911,7 +1925,7 @@ export function tickWarSim(
           ciwsPk *= 0.30; // Optical fallback tracking only
         }
 
-        if (ciwsPk > 0 && Math.random() < ciwsPk) {
+        if (ciwsPk > 0 && simRandom() < ciwsPk) {
           m.isIntercepted = true;
 
           if (m.salvoId) {
@@ -1964,14 +1978,28 @@ export function tickWarSim(
 
   // Pass 5: Missile Impact Resolution at Target Coordinates & Realistic Subsystem Degradation BDA
   for (const m of session.activeMissiles) {
-    if (m.isIntercepted || m.weaponCategory === 'sam' || m.progress < 1.0) continue;
+    if (m.isIntercepted || (m.weaponCategory === 'sam' && m.targetMissileId) || m.progress < 1.0) continue;
 
     const targetEntity = updatedEntities.find((e) => e.id === m.targetEntityId);
     const targetBase = updatedBases.find((b) => b.id === m.targetEntityId);
 
     if (targetEntity && targetEntity.status !== 'destroyed') {
+      if (m.weaponCategory === 'sam' && simRandom() >= (m.interceptorPk ?? 0.85)) {
+        logEvent(
+          m.attackerIso === session.playerIso ? 'player' : 'enemy',
+          'alert',
+          `Interceptor Missed: ${m.weaponName}`,
+          `${m.weaponName} failed to intercept ${targetEntity.name}.`,
+          targetEntity.lngLat
+        );
+        m.isIntercepted = true;
+        continue;
+      }
       const isNaval = isNavalCombatant(targetEntity.typeId);
-      const isAir = targetEntity.typeId === 'fighter' || targetEntity.typeId === 'strike' || targetEntity.typeId === 'bomber' || targetEntity.typeId === 'awacs' || targetEntity.typeId === 'tanker';
+      const targetSpec = systemsLibrary.find((system) => system.id === targetEntity.systemId);
+      const isAir = targetSpec ? domainOf(targetSpec) === 'air'
+        : ['fighter', 'strike', 'bomber', 'awacs', 'tanker', 'uav', 'drone', 'recon',
+          'helicopter', 'attack-heli', 'transport-heli'].includes(targetEntity.typeId);
 
       // Ensure subsystem record exists
       targetEntity.subsystems = targetEntity.subsystems || {
@@ -2368,6 +2396,10 @@ export function tickWarSim(
           continue;
         }
 
+        // Tier 2 is the highest possible tier. A farther scanner cannot replace
+        // an already selected Tier 2 scanner; terrain evaluation has no side effects.
+        if (bestTier === 2 && bestScanner && dist >= bestScannerDistKm) continue;
+
         // Sensor detection envelope
         let ratedEnvelopeKm = scanSpec?.sensor?.detectionKm ?? (
           isGroundScanner ? 15 : scanner.typeId === 'awacs' ? 450 : (scanner.typeId === 'uav' || scanner.typeId === 'recon') ? 180 : 250
@@ -2404,6 +2436,10 @@ export function tickWarSim(
           targetDomain,
           horizonLimited,
         });
+
+        // The current terrain model only reduces range (modifier <= 1). Avoid
+        // sampling terrain for targets already outside the unmasked envelope.
+        if (dist > detectionResult.detectionRangeKm) continue;
 
         // Topographic Line-of-Sight & Mountain Masking check
         const scanSensorEquip = defaultTerrainSensorFor(scanSpec, scanner.typeId);
@@ -2801,10 +2837,46 @@ export function tickWarSim(
   );
   newEvents.push(...csgEvents);
 
+  // Quota totals include committed platforms; losses and repairs are separate
+  // counters and must follow state transitions rather than the UI event log.
+  let nextQuotas = session.quotas;
+  const newlyDestroyedIds = new Set<string>();
+  const previousEntities = new Map(session.entities.map((entity) => [entity.id, entity]));
+  for (const entity of carrierEntities) {
+    const previous = previousEntities.get(entity.id);
+    if (!previous) continue;
+    const wasDestroyed = previous.status === 'destroyed';
+    const isDestroyed = entity.status === 'destroyed';
+    if (!wasDestroyed && isDestroyed) newlyDestroyedIds.add(entity.id);
+    if (!entity.systemId) continue;
+    const faction = entity.iso === session.playerIso ? 'player'
+      : entity.iso === session.enemyIso ? 'enemy' : null;
+    if (!faction || !session.quotas[faction]?.[entity.systemId]) continue;
+    const wasRepairing = previous.status === 'in_repair';
+    const isRepairing = entity.status === 'in_repair';
+    if ((!wasDestroyed && isDestroyed) || wasRepairing !== isRepairing) {
+      if (nextQuotas === session.quotas) nextQuotas = structuredClone(session.quotas);
+    } else continue;
+    const quota = nextQuotas[faction][entity.systemId];
+    if (!wasDestroyed && isDestroyed) {
+      quota.destroyed = (quota.destroyed ?? 0) + entity.count;
+    }
+    if (!wasRepairing && isRepairing) {
+      quota.inRepair = (quota.inRepair ?? 0) + entity.count;
+    } else if (wasRepairing && !isRepairing) {
+      quota.inRepair = Math.max(0, (quota.inRepair ?? 0) - previous.count);
+    }
+  }
+  const finalBases = newlyDestroyedIds.size > 0
+    ? carrierBases.map((base) => ({ ...base,
+      stationedEntityIds: base.stationedEntityIds.filter((id) => !newlyDestroyedIds.has(id)) }))
+    : carrierBases;
+
   const nextSessionState: WarSimSession = {
     ...session,
     simTimeSec: newSimTimeSec,
-    bases: carrierBases,
+    quotas: nextQuotas,
+    bases: finalBases,
     entities: carrierEntities,
     satellites: updatedSatellites,
     activeMissiles: [...ewMissiles, ...roeMissiles],
@@ -2828,14 +2900,14 @@ export function tickWarSim(
 
 export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string): BattleOpsPlan {
   return {
-    id: `bop-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `bop-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     title: `Operation ${playerIso} Thunder: Multi-Phase Theater Strike`,
     description: `Synchronized multi-axis theater strike and ISR offensive against ${enemyIso} military complexes.`,
     status: 'draft',
     activePhaseIndex: 0,
     phases: [
       {
-        id: `phase-1-${Date.now()}`,
+        id: `phase-1-${simNow()}`,
         phaseNumber: 1,
         name: 'Phase 1: SEAD & Air Defense Suppression',
         triggerDelaySec: 0, // T+00:00
@@ -2843,7 +2915,7 @@ export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string):
         tasks: [],
       },
       {
-        id: `phase-2-${Date.now() + 1}`,
+        id: `phase-2-${simNow() + 1}`,
         phaseNumber: 2,
         name: 'Phase 2: Deep ISR Ingress & Escort Sorties',
         triggerDelaySec: 900, // T+00:15 (15 mins)
@@ -2851,7 +2923,7 @@ export function createDefaultBattleOpsPlan(playerIso: string, enemyIso: string):
         tasks: [],
       },
       {
-        id: `phase-3-${Date.now() + 2}`,
+        id: `phase-3-${simNow() + 2}`,
         phaseNumber: 3,
         name: 'Phase 3: Main Strategic Strike Package',
         triggerDelaySec: 1800, // T+00:30 (30 mins)
@@ -2928,7 +3000,7 @@ export function generateConsolidatedBattleOpsReport(
         : 'Inconclusive / Heavy Defense Interception';
 
   return {
-    id: `rpt-bop-${plan.id}-${Date.now().toString(36)}`,
+    id: `rpt-bop-${plan.id}-${simNow().toString(36)}`,
     simTimeSec: session.simTimeSec,
     timeFormatted: formatSimTime(session.simTimeSec),
     category: 'battle_ops',
@@ -3088,7 +3160,7 @@ export function launchSimStrikeSalvoDirectly(
       ? 'torpedo'
       : 'cruise';
 
-  const salvoId = `salvo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const salvoId = `salvo-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`;
   const isAttackerPlayer = attacker.iso === session.playerIso;
   const attackerFaction: 'player' | 'enemy' = isAttackerPlayer ? 'player' : 'enemy';
   const targetPID = getContactPID(targetEntityId, attackerFaction, session.fogOfWarContacts);
@@ -3101,7 +3173,7 @@ export function launchSimStrikeSalvoDirectly(
     const launchStaggerSec = s * 1.2;
     const munitionProfile = resolveMunitionPhysicalProfile(weaponName, missileCategory, missileSpeed);
     const msl: MissileFlyoutTrack = {
-      id: `msl-${Date.now()}-${wIdx}-${s}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `msl-${simNow()}-${wIdx}-${s}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       originLngLat: attacker.lngLat,
       targetLngLat: targetPos,
       currentLngLat: attacker.lngLat,
@@ -3176,7 +3248,7 @@ export function launchSimStrikeSalvoDirectly(
   });
 
   const newEvent: SimBattleEvent = {
-    id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
     simTimeSec: session.simTimeSec,
     timeFormatted: formatSimTime(session.simTimeSec),
     faction: attackerFaction,
@@ -3234,7 +3306,7 @@ export function processBattleOpsPlanTick(
       currentSession.eventLog = [
         ...currentSession.eventLog,
         {
-          id: `evt-${Date.now()}-bop-${phase.phaseNumber}`,
+          id: `evt-${simNow()}-bop-${phase.phaseNumber}`,
           simTimeSec: currentSession.simTimeSec,
           timeFormatted: formatSimTime(currentSession.simTimeSec),
           faction: currentSession.activeFaction,
@@ -3380,7 +3452,7 @@ export function processBattleOpsPlanTick(
       currentSession.eventLog = [
         ...currentSession.eventLog,
         {
-          id: `evt-${Date.now()}-bop-done-${phase.phaseNumber}`,
+          id: `evt-${simNow()}-bop-done-${phase.phaseNumber}`,
           simTimeSec: currentSession.simTimeSec,
           timeFormatted: formatSimTime(currentSession.simTimeSec),
           faction: currentSession.activeFaction,
@@ -3420,7 +3492,7 @@ export function processBattleOpsPlanTick(
       currentSession.eventLog = [
         ...currentSession.eventLog,
         {
-          id: `evt-${Date.now()}-bop-final`,
+          id: `evt-${simNow()}-bop-final`,
           simTimeSec: currentSession.simTimeSec,
           timeFormatted: formatSimTime(currentSession.simTimeSec),
           faction: currentSession.activeFaction,
@@ -3538,8 +3610,9 @@ export function deployEntityToBase(
   if (!base) return session;
 
   const spec = systemsLibrary.find((s) => s.id === systemId);
-  const typeId = spec?.typeId || 'fighter';
-  const domain = spec ? domainOf(spec) : 'air';
+  if (!spec || !Number.isSafeInteger(count) || count <= 0) return session;
+  const typeId = spec.typeId;
+  const domain = domainOf(spec);
 
   // Check Base Stationing Rules
   const stationCheck = canStationAtBase(base.type, { domain, typeId });
@@ -3548,11 +3621,14 @@ export function deployEntityToBase(
   }
 
   // Check Base Capacity Limits
-  const currentStationedCount = session.entities.filter((e) => e.homeBaseId === homeBaseId && e.status !== 'destroyed').length;
-  if (currentStationedCount >= base.maxCapacity) {
+  const currentStationedCount = session.entities
+    .filter((e) => e.homeBaseId === homeBaseId && e.status !== 'destroyed')
+    .reduce((total, e) => total + e.count, 0);
+  if (currentStationedCount + count > base.maxCapacity) {
     return session;
   }
 
+  if (base.iso !== session.playerIso && base.iso !== session.enemyIso) return session;
   const faction = base.iso === session.playerIso ? 'player' : 'enemy';
   const quotaLedger = { ...session.quotas[faction] };
   const quota = quotaLedger[systemId];
@@ -3571,7 +3647,7 @@ export function deployEntityToBase(
   const entityName = getUniqueSystemEntityName(rawName, systemId, base.iso, session.entities, count);
 
   const newEntity: SimEntity = {
-    id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    id: `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`,
     iso: base.iso,
     name: entityName,
     typeId,
@@ -3599,6 +3675,11 @@ export function deployEntityToBase(
       [faction]: quotaLedger,
     },
     entities: [...session.entities, newEntity],
+    bases: session.bases.map((b) => b.id === homeBaseId
+      ? { ...b, stationedEntityIds: [...session.entities
+        .filter((e) => e.homeBaseId === homeBaseId && e.status !== 'destroyed')
+        .map((e) => e.id), newEntity.id] }
+      : b),
   };
 }
 
@@ -3616,8 +3697,10 @@ export function deployAutonomousEntity(
   rcs?: number
 ): WarSimSession {
   const spec = systemsLibrary.find((s) => s.id === systemId);
-  const typeId = spec?.typeId || 'sam-launcher';
-  const domain = spec ? domainOf(spec) : 'ground';
+  if (!spec || !Number.isSafeInteger(count) || count <= 0) return session;
+  const typeId = spec.typeId;
+  const domain = domainOf(spec);
+  if (domain !== 'ground' && domain !== 'site') return session;
   const faction = session.activeFaction;
   const iso = faction === 'player' ? session.playerIso : session.enemyIso;
 
@@ -3641,7 +3724,7 @@ export function deployAutonomousEntity(
     : (spec?.rcs ?? (spec ? getSystemRcs(spec, domain) : 5.0));
 
   const newEntity: SimEntity = {
-    id: `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    id: `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`,
     iso,
     name: entityName,
     typeId,
@@ -3672,7 +3755,7 @@ export function deployAutonomousEntity(
   const newEvents = [
     ...session.eventLog,
     {
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: formatSimTime(session.simTimeSec),
       faction,
@@ -3743,8 +3826,8 @@ export function orderPatrol(
 
   if (isPartialSplit) {
     const remainingCount = targetEntity.count - effectiveCount;
-    const personnelPerUnit = Math.max(1, Math.round(targetEntity.personnel / targetEntity.count));
-    const sortieEntityId = `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+    const sortiePersonnel = Math.round(targetEntity.personnel * effectiveCount / targetEntity.count);
+    const sortieEntityId = `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`;
 
     const sortieName = ensureUniqueEntityName(
       targetEntity.name,
@@ -3768,7 +3851,7 @@ export function orderPatrol(
       ...targetEntity,
       name: dockedName,
       count: remainingCount,
-      personnel: remainingCount * personnelPerUnit,
+      personnel: targetEntity.personnel - sortiePersonnel,
     };
 
     const sortieEntity: SimEntity = {
@@ -3776,7 +3859,7 @@ export function orderPatrol(
       id: sortieEntityId,
       name: sortieName,
       count: effectiveCount,
-      personnel: effectiveCount * personnelPerUnit,
+      personnel: sortiePersonnel,
       status: 'takeoff_ingress',
       patrolOrder,
       altitudeM: effectiveAltM,
@@ -3800,7 +3883,7 @@ export function orderPatrol(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -3855,7 +3938,7 @@ export function orderPatrol(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -3910,7 +3993,7 @@ export function addSimBase(
   lngLat: [number, number]
 ): WarSimSession {
   const newBase: SimBase = {
-    id: `base-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+    id: `base-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`,
     name: name || `${iso} ${type.replace('_', ' ').toUpperCase()}`,
     iso,
     type,
@@ -3951,43 +4034,29 @@ export function renameSimBase(
  * Orders a specific in-flight or deployed entity to immediately abort mission and return directly to its home base (or nearest friendly base).
  */
 export function orderEntityRtb(session: WarSimSession, entityId: string): WarSimSession {
+  const target = session.entities.find((e) => e.id === entityId);
+  if (!target || ['destroyed', 'docked', 'turnaround', 'in_repair'].includes(target.status)) return session;
+  const homeBase = session.bases.find((b) => b.id === target.homeBaseId && b.iso === target.iso)
+    ?? session.bases.filter((b) => b.iso === target.iso)
+      .sort((a, b) => distanceKm(target.lngLat, a.lngLat) - distanceKm(target.lngLat, b.lngLat))[0];
+  if (!homeBase) return session;
+
   let orderedName = '';
   let entityIso = session.playerIso;
-  let homeLngLat: [number, number] | null = null;
-  let homeBaseName = '';
+  const homeLngLat = homeBase.lngLat;
+  const homeBaseName = homeBase.name;
 
   const updatedEntities = session.entities.map((e) => {
     if (e.id !== entityId) return e;
     orderedName = e.name;
     entityIso = e.iso;
 
-    // Find its designated home base or fallback to nearest friendly base
-    const homeBase = session.bases.find((b) => b.id === e.homeBaseId);
-    if (homeBase) {
-      homeLngLat = homeBase.lngLat;
-      homeBaseName = homeBase.name;
-    } else {
-      const friendlyBases = session.bases.filter((b) => b.iso === e.iso);
-      if (friendlyBases.length > 0) {
-        let nearestDist = Infinity;
-        let nearestCoord = friendlyBases[0].lngLat;
-        for (const fb of friendlyBases) {
-          const d = distanceKm(e.lngLat, fb.lngLat);
-          if (d < nearestDist) {
-            nearestDist = d;
-            nearestCoord = fb.lngLat;
-          }
-        }
-        homeLngLat = nearestCoord;
-        homeBaseName = friendlyBases[0].name;
-      }
-    }
-
-    const nextHeading = homeLngLat ? bearingDeg(e.lngLat, homeLngLat) : e.headingDeg;
+    const nextHeading = bearingDeg(e.lngLat, homeLngLat);
 
     return {
       ...e,
       status: 'bingo_rtb' as const,
+      homeBaseId: homeBase.id,
       headingDeg: nextHeading,
       patrolOrder: undefined, // Clear any orbit/loiter orders so it flies directly home
     };
@@ -3998,14 +4067,14 @@ export function orderEntityRtb(session: WarSimSession, entityId: string): WarSim
     ? [
         ...session.eventLog,
         {
-          id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
           simTimeSec: session.simTimeSec,
           timeFormatted: formatSimTime(session.simTimeSec),
           faction,
           type: 'rtb' as const,
           title: `RTB Ordered: ${orderedName}`,
-          detail: `${orderedName} was ordered to RTB immediately towards ${homeBaseName || 'home installation'}.`,
-          lngLat: homeLngLat || undefined,
+          detail: `${orderedName} was ordered to RTB immediately towards ${homeBaseName}.`,
+          lngLat: homeLngLat,
         },
       ]
     : session.eventLog;
@@ -4013,6 +4082,12 @@ export function orderEntityRtb(session: WarSimSession, entityId: string): WarSim
   return {
     ...session,
     entities: updatedEntities,
+    bases: session.bases.map((b) => ({
+      ...b,
+      stationedEntityIds: b.id === homeBase.id
+        ? [...new Set([...b.stationedEntityIds, entityId])]
+        : b.stationedEntityIds.filter((id) => id !== entityId),
+    })),
     eventLog: newEvents.slice(-200),
   };
 }
@@ -4085,8 +4160,8 @@ export function orderStrikeMission(
 
   if (isPartialSplit) {
     const remainingCount = attacker.count - effectiveCount;
-    const personnelPerUnit = Math.max(1, Math.round(attacker.personnel / attacker.count));
-    const sortieEntityId = `ent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+    const sortiePersonnel = Math.round(attacker.personnel * effectiveCount / attacker.count);
+    const sortieEntityId = `ent-${simNow().toString(36)}-${simRandom('identifiers').toString(36).slice(2, 5)}`;
 
     const sortieName = ensureUniqueEntityName(
       attacker.name,
@@ -4110,7 +4185,7 @@ export function orderStrikeMission(
       ...attacker,
       name: dockedName,
       count: remainingCount,
-      personnel: remainingCount * personnelPerUnit,
+      personnel: attacker.personnel - sortiePersonnel,
     };
 
     const sortieEntity: SimEntity = {
@@ -4118,7 +4193,7 @@ export function orderStrikeMission(
       id: sortieEntityId,
       name: sortieName,
       count: effectiveCount,
-      personnel: effectiveCount * personnelPerUnit,
+      personnel: sortiePersonnel,
       status: 'engaging',
       assignedMission: 'strike',
       assignedTargetEntityId: targetEntityId,
@@ -4145,7 +4220,7 @@ export function orderStrikeMission(
     const newReports: CombatReport[] = [
       ...(session.reports || []),
       {
-        id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: `rep-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 7)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         category: 'offensive_strike',
@@ -4199,7 +4274,7 @@ export function orderStrikeMission(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -4243,7 +4318,7 @@ export function orderStrikeMission(
     const newEvents = [
       ...session.eventLog,
       {
-        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
         simTimeSec: session.simTimeSec,
         timeFormatted: formatSimTime(session.simTimeSec),
         faction,
@@ -4314,7 +4389,7 @@ export function orderAerialRefueling(
   const newEvents = [
     ...session.eventLog,
     {
-      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: formatSimTime(session.simTimeSec),
       faction,
@@ -4348,7 +4423,7 @@ export function setSessionAirspaceRoe(
   const newEvents = [
     ...session.eventLog,
     {
-      id: `evt-${Date.now()}-roe-${Math.random().toString(36).slice(2, 6)}`,
+      id: `evt-${simNow()}-roe-${simRandom('identifiers').toString(36).slice(2, 6)}`,
       simTimeSec: session.simTimeSec,
       timeFormatted: formatSimTime(session.simTimeSec),
       faction: session.activeFaction,

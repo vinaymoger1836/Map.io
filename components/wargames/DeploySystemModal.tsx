@@ -44,6 +44,12 @@ export function DeploySystemModal({
   const [count, setCount] = useState<number>(Math.min(12, remainingQuota));
 
   const targetBase = bases.find((b) => b.id === selectedBaseId);
+  const occupiedCapacity = session.entities
+    .filter((entity) => entity.homeBaseId === selectedBaseId && entity.status !== 'destroyed')
+    .reduce((total, entity) => total + entity.count, 0);
+  const availableCapacity = Math.max(0, (targetBase?.maxCapacity ?? 0) - occupiedCapacity);
+  const maxDeployable = Math.min(remainingQuota, availableCapacity);
+  const deployCount = Math.min(count, maxDeployable);
 
   return (
     <div
@@ -137,7 +143,9 @@ export function DeploySystemModal({
               >
                 {compatibleBases.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.type.replace('_', ' ').toUpperCase()} · Max: {b.maxCapacity})
+                    {b.name} ({b.type.replace('_', ' ').toUpperCase()} · {Math.max(0, b.maxCapacity - session.entities
+                      .filter((entity) => entity.homeBaseId === b.id && entity.status !== 'destroyed')
+                      .reduce((total, entity) => total + entity.count, 0))} spaces available)
                   </option>
                 ))}
               </select>
@@ -152,14 +160,15 @@ export function DeploySystemModal({
                   Deploy Quantity:
                 </label>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#4FC3F7' }}>
-                  {count} units
+                  {deployCount} units
                 </span>
               </div>
               <input
                 type="range"
                 min="1"
-                max={Math.max(1, remainingQuota)}
-                value={count}
+                max={Math.max(1, maxDeployable)}
+                value={Math.max(1, deployCount)}
+                disabled={maxDeployable <= 0}
                 onChange={(e) => setCount(Number(e.target.value))}
                 style={{ width: '100%', accentColor: '#4FA85F' }}
               />
@@ -196,9 +205,9 @@ export function DeploySystemModal({
               color: '#070C14',
               fontWeight: 600,
             }}
-            disabled={!selectedBaseId || remainingQuota <= 0}
+            disabled={!selectedBaseId || maxDeployable <= 0}
             onClick={() => {
-              onDeploy(selectedBaseId, count);
+              onDeploy(selectedBaseId, deployCount);
               onClose();
             }}
           >
